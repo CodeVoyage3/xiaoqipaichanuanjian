@@ -30,6 +30,7 @@ public sealed class ImportPersistenceDatabaseTests
         Assert.Equal(
             new[]
             {
+                "backups",
                 "batches",
                 "draft_items",
                 "drafts",
