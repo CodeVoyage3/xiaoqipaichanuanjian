@@ -127,6 +127,9 @@ public sealed class InspectionHistoryDatabaseTests
 
         AssertInspectionRejected(
             context,
+            NewInspection(firstTask.Id, firstProduct.Id, "SKU-DUPLICATE-TASK", "Inspector", 1));
+        AssertInspectionRejected(
+            context,
             NewInspection(secondTask.Id, firstProduct.Id, "SKU-CROSS-TASK", "Inspector", 1));
         AssertInspectionRejected(
             context,
