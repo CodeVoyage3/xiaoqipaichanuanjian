@@ -6,26 +6,26 @@ using Xunit;
 
 namespace StoreExpiryInspector.Tests;
 
-public sealed class StoreDatabaseTests
+public sealed class TaskDraftDatabaseTests
 {
     [Fact]
     public void InitialMigrationCreatesTablesAndRequiredIndexes()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
 
         var appliedMigrations = context.Database.GetAppliedMigrations().ToArray();
         Assert.Contains(appliedMigrations, migration => migration.EndsWith("_InitialCreate", StringComparison.Ordinal));
         Assert.Contains(appliedMigrations, migration => migration.EndsWith("_AddTasksAndDrafts", StringComparison.Ordinal));
-        Assert.Equal("wal", ReadPragma(context, "journal_mode"));
-        Assert.Contains("products", ReadSchemaNames(context, "table"));
-        Assert.Contains("batches", ReadSchemaNames(context, "table"));
-        Assert.Contains("tasks", ReadSchemaNames(context, "table"));
-        Assert.Contains("task_items", ReadSchemaNames(context, "table"));
-        Assert.Contains("drafts", ReadSchemaNames(context, "table"));
-        Assert.Contains("draft_items", ReadSchemaNames(context, "table"));
+        Assert.Equal("wal", SqliteTestDatabase.ReadPragma(context, "journal_mode"));
+        Assert.Contains("products", SqliteTestDatabase.ReadSchemaNames(context, "table"));
+        Assert.Contains("batches", SqliteTestDatabase.ReadSchemaNames(context, "table"));
+        Assert.Contains("tasks", SqliteTestDatabase.ReadSchemaNames(context, "table"));
+        Assert.Contains("task_items", SqliteTestDatabase.ReadSchemaNames(context, "table"));
+        Assert.Contains("drafts", SqliteTestDatabase.ReadSchemaNames(context, "table"));
+        Assert.Contains("draft_items", SqliteTestDatabase.ReadSchemaNames(context, "table"));
 
-        var indexes = ReadSchemaNames(context, "index");
+        var indexes = SqliteTestDatabase.ReadSchemaNames(context, "index");
         Assert.Contains("IX_products_product_code", indexes);
         Assert.Contains("IX_batches_product_id", indexes);
         Assert.Contains("IX_batches_expiry_date", indexes);
@@ -35,11 +35,11 @@ public sealed class StoreDatabaseTests
 
         Assert.Contains(
             "production_date IS NOT NULL",
-            ReadIndexSql(context, "IX_batches_product_id_production_date_expiry_date"),
+            SqliteTestDatabase.ReadIndexSql(context, "IX_batches_product_id_production_date_expiry_date"),
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains(
             "production_date IS NULL",
-            ReadIndexSql(context, "IX_batches_product_id_expiry_date"),
+            SqliteTestDatabase.ReadIndexSql(context, "IX_batches_product_id_expiry_date"),
             StringComparison.OrdinalIgnoreCase);
 
         Assert.Contains("IX_tasks_product_id_open", indexes);
@@ -49,18 +49,18 @@ public sealed class StoreDatabaseTests
         Assert.Contains("IX_draft_items_draft_id_task_item_id", indexes);
         Assert.DoesNotContain(
             "WHERE",
-            ReadIndexSql(context, "IX_tasks_product_id_status"),
+            SqliteTestDatabase.ReadIndexSql(context, "IX_tasks_product_id_status"),
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains(
             "status = 'open'",
-            ReadIndexSql(context, "IX_tasks_product_id_open"),
+            SqliteTestDatabase.ReadIndexSql(context, "IX_tasks_product_id_open"),
             StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void MigrationFromInitialCreatePreservesExistingProductAndBatch()
     {
-        using var database = TemporaryDatabase.CreateEmpty();
+        using var database = SqliteTestDatabase.CreateEmpty();
         string initialMigration;
 
         using (var context = database.Open())
@@ -92,7 +92,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void OpenTasksAreUniquePerProductButClosedHistoryIsRetained()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-TASK-UNIQUE");
 
@@ -115,7 +115,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void TasksRejectInvalidStatusStageAndCloseFieldCombinations()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-TASK-CHECKS");
 
@@ -157,7 +157,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void TaskItemsAreUniquePerTaskBatchAndCannotCrossProducts()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var firstProduct = AddProduct(context, "SKU-ITEM-ONE");
         var secondProduct = AddProduct(context, "SKU-ITEM-TWO");
@@ -179,7 +179,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void TaskItemsRejectInvalidStageAndNegativeAttentionVersion()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-ITEM-CHECKS");
         var batch = AddBatch(context, product.Id, new DateOnly(2026, 12, 31));
@@ -204,7 +204,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void DraftsAreUniquePerTaskAndInvalidationFieldsAreConsistent()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-DRAFT-CHECKS");
         var task = AddTask(context, product.Id);
@@ -255,7 +255,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void DraftItemCheckedQuantitySupportsNullZeroAndPositiveButRejectsNegative()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-DRAFT-QTY");
         var task = AddTask(context, product.Id);
@@ -304,7 +304,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void DraftItemsAreUniquePerDraftTaskItemAndCannotCrossTasks()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-DRAFT-ITEMS");
         var firstTask = AddTask(context, product.Id);
@@ -342,7 +342,7 @@ public sealed class StoreDatabaseTests
     [Fact]
     public void ReferencedRecordsCannotBeDeletedOrCascadeIntoHistory()
     {
-        using var database = TemporaryDatabase.Create();
+        using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var product = AddProduct(context, "SKU-NO-CASCADE");
         var batch = AddBatch(context, product.Id, new DateOnly(2026, 12, 31));
@@ -372,6 +372,36 @@ public sealed class StoreDatabaseTests
         Assert.Equal(1, context.DraftItems.Count());
     }
 
+    private static Product AddProduct(StoreDbContext context, string code)
+    {
+        var product = new Product { ProductCode = code };
+        context.Products.Add(product);
+        context.SaveChanges();
+        return product;
+    }
+
+    private static Batch AddBatch(StoreDbContext context, long productId, DateOnly expiryDate)
+    {
+        var batch = NewBatch(productId, null, expiryDate);
+        context.Batches.Add(batch);
+        context.SaveChanges();
+        return batch;
+    }
+
+    private static Batch NewBatch(long productId, DateOnly? productionDate, DateOnly expiryDate)
+    {
+        return new Batch
+        {
+            ProductId = productId,
+            ProductionDate = productionDate,
+            ExpiryDate = expiryDate,
+            ShelfLifeValue = 12,
+            ShelfLifeUnit = "M",
+            CurrentArrivalQty = 10,
+            MaxArrivalQty = 10
+        };
+    }
+
     private static ProductTask AddTask(
         StoreDbContext context,
         long productId,
@@ -399,14 +429,6 @@ public sealed class StoreDatabaseTests
             ClosedAtUtc = status == "open" ? null : DateTime.UtcNow,
             CloseReason = closeReason
         };
-    }
-
-    private static Batch AddBatch(StoreDbContext context, long productId, DateOnly expiryDate)
-    {
-        var batch = NewBatch(productId, null, expiryDate);
-        context.Batches.Add(batch);
-        context.SaveChanges();
-        return batch;
     }
 
     private static ProductTaskItem AddTaskItem(StoreDbContext context, long taskId, long batchId, long productId)
@@ -470,292 +492,5 @@ public sealed class StoreDatabaseTests
             _ => throw new ArgumentOutOfRangeException(nameof(table))
         };
         context.Database.ExecuteSqlRaw(statement, id);
-    }
-
-    [Fact]
-    public void ProductCodeIsTrimmedAndUniqueInSqlite()
-    {
-        using var database = TemporaryDatabase.Create();
-        using var context = database.Open();
-
-        context.Products.Add(new Product { ProductCode = "  SKU-001  " });
-        context.SaveChanges();
-        context.ChangeTracker.Clear();
-        Assert.Equal("SKU-001", context.Products.AsNoTracking().Single().ProductCode);
-
-        context.Products.Add(new Product { ProductCode = "SKU-001" });
-        Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-
-        var rawCode = " SKU-002 ";
-        Assert.Throws<SqliteException>(() =>
-            context.Database.ExecuteSqlInterpolated($"INSERT INTO products (product_code, excel_stock_qty, effective_stock_qty) VALUES ({rawCode}, 0, 0)"));
-    }
-
-    [Fact]
-    public void CategoryAndPolicyCodesRejectBlankValuesButAllowStableFutureCodes()
-    {
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            context.Products.Add(new Product
-            {
-                ProductCode = "SKU-BLANK-CATEGORY",
-                CategoryCode = " ",
-                PolicyCode = "food_v1"
-            });
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            context.Products.Add(new Product
-            {
-                ProductCode = "SKU-BLANK-POLICY",
-                CategoryCode = "food",
-                PolicyCode = " "
-            });
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            context.Products.Add(new Product
-            {
-                ProductCode = "SKU-FUTURE",
-                CategoryCode = "medicine",
-                PolicyCode = "medicine_v1"
-            });
-            context.SaveChanges();
-            Assert.Equal("medicine", context.Products.Single().CategoryCode);
-            Assert.Equal("medicine_v1", context.Products.Single().PolicyCode);
-        }
-    }
-
-    [Fact]
-    public void BatchesWithProductionDateUseTheThreePartUniqueKey()
-    {
-        using var database = TemporaryDatabase.Create();
-        using var context = database.Open();
-        var product = AddProduct(context, "SKU-001");
-        var productionDate = new DateOnly(2026, 1, 1);
-        var expiryDate = new DateOnly(2026, 12, 31);
-
-        context.Batches.Add(NewBatch(product.Id, productionDate, expiryDate));
-        context.SaveChanges();
-        context.Batches.Add(NewBatch(product.Id, productionDate, expiryDate));
-
-        Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-    }
-
-    [Fact]
-    public void BatchesWithoutProductionDateUseTheTwoPartUniqueKey()
-    {
-        using var database = TemporaryDatabase.Create();
-        using var context = database.Open();
-        var product = AddProduct(context, "SKU-001");
-        var expiryDate = new DateOnly(2026, 12, 31);
-
-        context.Batches.Add(NewBatch(product.Id, null, expiryDate));
-        context.SaveChanges();
-        context.Batches.Add(NewBatch(product.Id, null, expiryDate));
-
-        Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-    }
-
-    [Fact]
-    public void DifferentProductsMayShareTheSameDates()
-    {
-        using var database = TemporaryDatabase.Create();
-        using var context = database.Open();
-        var firstProduct = AddProduct(context, "SKU-001");
-        var secondProduct = AddProduct(context, "SKU-002");
-        var productionDate = new DateOnly(2026, 1, 1);
-        var expiryDate = new DateOnly(2026, 12, 31);
-
-        context.Batches.Add(NewBatch(firstProduct.Id, productionDate, expiryDate));
-        context.Batches.Add(NewBatch(secondProduct.Id, productionDate, expiryDate));
-
-        context.SaveChanges();
-        Assert.Equal(2, context.Batches.Count());
-    }
-
-    [Fact]
-    public void SqliteRejectsInvalidUnitNegativeQuantitiesAndMissingProduct()
-    {
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            var product = AddProduct(context, "SKU-001");
-            var invalidUnitBatch = NewBatch(product.Id, null, new DateOnly(2026, 12, 31));
-            invalidUnitBatch.ShelfLifeUnit = "W";
-            context.Batches.Add(invalidUnitBatch);
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            context.Products.Add(new Product { ProductCode = "SKU-NEG-EXCEL", ExcelStockQty = -1 });
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            context.Products.Add(new Product { ProductCode = "SKU-NEG-EFFECTIVE", EffectiveStockQty = -1 });
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            var product = AddProduct(context, "SKU-NEG");
-            var negativeBatch = NewBatch(product.Id, null, new DateOnly(2026, 12, 31));
-            negativeBatch.CurrentArrivalQty = -1;
-            context.Batches.Add(negativeBatch);
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            var product = AddProduct(context, "SKU-NEG-MAX");
-            var negativeBatch = NewBatch(product.Id, null, new DateOnly(2026, 12, 31));
-            negativeBatch.MaxArrivalQty = -1;
-            context.Batches.Add(negativeBatch);
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-
-        using (var database = TemporaryDatabase.Create())
-        using (var context = database.Open())
-        {
-            context.Batches.Add(NewBatch(999, null, new DateOnly(2026, 12, 31)));
-            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
-        }
-    }
-
-    private static Product AddProduct(StoreDbContext context, string code)
-    {
-        var product = new Product { ProductCode = code };
-        context.Products.Add(product);
-        context.SaveChanges();
-        return product;
-    }
-
-    private static Batch NewBatch(long productId, DateOnly? productionDate, DateOnly expiryDate)
-    {
-        return new Batch
-        {
-            ProductId = productId,
-            ProductionDate = productionDate,
-            ExpiryDate = expiryDate,
-            ShelfLifeValue = 12,
-            ShelfLifeUnit = "M",
-            CurrentArrivalQty = 10,
-            MaxArrivalQty = 10
-        };
-    }
-
-    private static HashSet<string> ReadSchemaNames(StoreDbContext context, string type)
-    {
-        context.Database.OpenConnection();
-        try
-        {
-            using var command = context.Database.GetDbConnection().CreateCommand();
-            command.CommandText = "SELECT name FROM sqlite_master WHERE type = $type";
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "$type";
-            parameter.Value = type;
-            command.Parameters.Add(parameter);
-            using var reader = command.ExecuteReader();
-            var names = new HashSet<string>(StringComparer.Ordinal);
-            while (reader.Read())
-            {
-                names.Add(reader.GetString(0));
-            }
-
-            return names;
-        }
-        finally
-        {
-            context.Database.CloseConnection();
-        }
-    }
-
-    private static string ReadIndexSql(StoreDbContext context, string indexName)
-    {
-        context.Database.OpenConnection();
-        try
-        {
-            using var command = context.Database.GetDbConnection().CreateCommand();
-            command.CommandText = "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = $name";
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "$name";
-            parameter.Value = indexName;
-            command.Parameters.Add(parameter);
-            return (string?)command.ExecuteScalar() ?? string.Empty;
-        }
-        finally
-        {
-            context.Database.CloseConnection();
-        }
-    }
-
-    private static string ReadPragma(StoreDbContext context, string pragma)
-    {
-        context.Database.OpenConnection();
-        try
-        {
-            using var command = context.Database.GetDbConnection().CreateCommand();
-            command.CommandText = $"PRAGMA {pragma}";
-            return (string?)command.ExecuteScalar() ?? string.Empty;
-        }
-        finally
-        {
-            context.Database.CloseConnection();
-        }
-    }
-
-    private sealed class TemporaryDatabase : IDisposable
-    {
-        private TemporaryDatabase(string directory)
-        {
-            Directory = directory;
-            Path = System.IO.Path.Combine(directory, "app.db");
-        }
-
-        public string Directory { get; }
-
-        public string Path { get; }
-
-        public static TemporaryDatabase Create()
-        {
-            var database = CreateEmpty();
-            DatabaseInitializer.Initialize(database.Path);
-            return database;
-        }
-
-        public static TemporaryDatabase CreateEmpty()
-        {
-            var directory = System.IO.Path.Combine(
-                System.IO.Path.GetTempPath(),
-                "StoreExpiryInspectorTests",
-                Guid.NewGuid().ToString("N"));
-            System.IO.Directory.CreateDirectory(directory);
-            return new TemporaryDatabase(directory);
-        }
-
-        public StoreDbContext Open() => DatabaseInitializer.CreateContext(Path);
-
-        public void Dispose()
-        {
-            SqliteConnection.ClearAllPools();
-            if (System.IO.Directory.Exists(Directory))
-            {
-                System.IO.Directory.Delete(Directory, recursive: true);
-            }
-        }
     }
 }
