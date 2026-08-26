@@ -43,4 +43,6 @@ public sealed class Batch
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public ICollection<ProductTaskItem> TaskItems { get; } = new List<ProductTaskItem>();
 }

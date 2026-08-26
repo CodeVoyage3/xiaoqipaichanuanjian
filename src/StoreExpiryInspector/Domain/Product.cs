@@ -31,4 +31,6 @@ public sealed class Product
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public ICollection<Batch> Batches { get; } = new List<Batch>();
+
+    public ICollection<ProductTask> Tasks { get; } = new List<ProductTask>();
 }
