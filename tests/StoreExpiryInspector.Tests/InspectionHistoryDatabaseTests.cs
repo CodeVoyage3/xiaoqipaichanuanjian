@@ -77,6 +77,11 @@ public sealed class InspectionHistoryDatabaseTests
             inspection.Id,
             product.Id,
             nullBatch.Id));
+        Assert.Throws<SqliteException>(() => context.Database.ExecuteSqlRaw(
+            "INSERT INTO inspection_items (inspection_id, product_id, batch_id, production_date_snapshot, expiry_date_snapshot, stage_snapshot, arrival_qty_snapshot, checked_qty) VALUES ({0}, {1}, {2}, NULL, NULL, 'discount_50', 0, 0)",
+            inspection.Id,
+            product.Id,
+            nullBatch.Id));
 
         AssertItemRejected(context, NewInspectionItem(inspection.Id, product.Id, nullBatch.Id, -1));
         AssertItemRejected(context, new InspectionItem

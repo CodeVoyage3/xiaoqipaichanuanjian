@@ -58,7 +58,7 @@ namespace StoreExpiryInspector.Migrations
                     product_id = table.Column<long>(type: "INTEGER", nullable: false),
                     batch_id = table.Column<long>(type: "INTEGER", nullable: false),
                     production_date_snapshot = table.Column<DateOnly>(type: "TEXT", nullable: true),
-                    expiry_date_snapshot = table.Column<DateOnly>(type: "TEXT", nullable: true),
+                    expiry_date_snapshot = table.Column<DateOnly>(type: "TEXT", nullable: false),
                     stage_snapshot = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     arrival_qty_snapshot = table.Column<int>(type: "INTEGER", nullable: false),
                     checked_qty = table.Column<int>(type: "INTEGER", nullable: false),

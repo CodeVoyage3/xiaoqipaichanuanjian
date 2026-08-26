@@ -36,7 +36,8 @@ public sealed class InspectionItemConfiguration : IEntityTypeConfiguration<Inspe
             .HasColumnType("TEXT");
         entity.Property(item => item.ExpiryDateSnapshot)
             .HasColumnName("expiry_date_snapshot")
-            .HasColumnType("TEXT");
+            .HasColumnType("TEXT")
+            .IsRequired();
         entity.Property(item => item.StageSnapshot)
             .HasColumnName("stage_snapshot")
             .HasMaxLength(50)

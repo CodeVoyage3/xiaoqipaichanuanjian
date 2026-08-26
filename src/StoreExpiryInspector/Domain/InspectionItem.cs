@@ -18,7 +18,7 @@ public sealed class InspectionItem
 
     public DateOnly? ProductionDateSnapshot { get; set; }
 
-    public DateOnly? ExpiryDateSnapshot { get; set; }
+    public DateOnly ExpiryDateSnapshot { get; set; }
 
     public string StageSnapshot { get; set; } = "discount_50";
 

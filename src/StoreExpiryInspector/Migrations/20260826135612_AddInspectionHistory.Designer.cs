@@ -365,7 +365,7 @@ namespace StoreExpiryInspector.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("checked_qty");
 
-                    b.Property<DateOnly?>("ExpiryDateSnapshot")
+                    b.Property<DateOnly>("ExpiryDateSnapshot")
                         .HasColumnType("TEXT")
                         .HasColumnName("expiry_date_snapshot");
 
