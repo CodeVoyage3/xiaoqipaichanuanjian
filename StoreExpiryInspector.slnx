@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src\StoreExpiryInspector\StoreExpiryInspector.csproj" />
+  <Project Path="tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj" />
+</Solution>

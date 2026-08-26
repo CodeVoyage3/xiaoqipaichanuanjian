@@ -1,0 +1,15 @@
+<Window x:Class="StoreExpiryInspector.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="门店效期排查软件"
+        Width="960"
+        Height="640"
+        MinWidth="640"
+        MinHeight="420">
+    <Grid>
+        <TextBlock HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="24"
+                   Text="门店效期排查软件" />
+    </Grid>
+</Window>
