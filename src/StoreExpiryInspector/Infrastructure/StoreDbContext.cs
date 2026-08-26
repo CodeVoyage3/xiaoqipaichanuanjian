@@ -29,6 +29,8 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<InspectionItemRevision> InspectionItemRevisions => Set<InspectionItemRevision>();
 
+    public DbSet<InventoryAdjustment> InventoryAdjustments => Set<InventoryAdjustment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -40,5 +42,6 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new InspectionConfiguration());
         modelBuilder.ApplyConfiguration(new InspectionItemConfiguration());
         modelBuilder.ApplyConfiguration(new InspectionItemRevisionConfiguration());
+        modelBuilder.ApplyConfiguration(new InventoryAdjustmentConfiguration());
     }
 }

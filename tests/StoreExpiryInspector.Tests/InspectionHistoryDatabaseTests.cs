@@ -35,16 +35,16 @@ public sealed class InspectionHistoryDatabaseTests
             SqliteTestDatabase.ReadIndexSql(context, "IX_inspection_item_revisions_inspection_item_id_changed_at_utc_id"),
             StringComparison.OrdinalIgnoreCase);
 
-        Assert.Contains("product_code_snapshot", ReadTableSql(context, "inspections"));
-        Assert.Contains("inspector_name", ReadTableSql(context, "inspections"));
-        Assert.Contains("stage_snapshot", ReadTableSql(context, "inspection_items"));
-        Assert.Contains("checked_qty", ReadTableSql(context, "inspection_items"));
-        Assert.Contains("previous_checked_qty", ReadTableSql(context, "inspection_item_revisions"));
-        Assert.Contains("new_checked_qty", ReadTableSql(context, "inspection_item_revisions"));
+        Assert.Contains("product_code_snapshot", SqliteTestDatabase.ReadTableSql(context, "inspections"));
+        Assert.Contains("inspector_name", SqliteTestDatabase.ReadTableSql(context, "inspections"));
+        Assert.Contains("stage_snapshot", SqliteTestDatabase.ReadTableSql(context, "inspection_items"));
+        Assert.Contains("checked_qty", SqliteTestDatabase.ReadTableSql(context, "inspection_items"));
+        Assert.Contains("previous_checked_qty", SqliteTestDatabase.ReadTableSql(context, "inspection_item_revisions"));
+        Assert.Contains("new_checked_qty", SqliteTestDatabase.ReadTableSql(context, "inspection_item_revisions"));
 
         Assert.All(
             new[] { "inspections", "inspection_items", "inspection_item_revisions" },
-            table => Assert.All(ReadForeignKeyDeleteActions(context, table), action => Assert.Equal("NO ACTION", action)));
+            table => Assert.All(SqliteTestDatabase.ReadForeignKeyDeleteActions(context, table), action => Assert.Equal("NO ACTION", action)));
     }
 
     [Fact]
@@ -423,44 +423,4 @@ public sealed class InspectionHistoryDatabaseTests
         context.Database.ExecuteSqlRaw(statement, id);
     }
 
-    private static string ReadTableSql(StoreDbContext context, string tableName)
-    {
-        context.Database.OpenConnection();
-        try
-        {
-            using var command = context.Database.GetDbConnection().CreateCommand();
-            command.CommandText = "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = $name";
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "$name";
-            parameter.Value = tableName;
-            command.Parameters.Add(parameter);
-            return (string?)command.ExecuteScalar() ?? string.Empty;
-        }
-        finally
-        {
-            context.Database.CloseConnection();
-        }
-    }
-
-    private static string[] ReadForeignKeyDeleteActions(StoreDbContext context, string tableName)
-    {
-        context.Database.OpenConnection();
-        try
-        {
-            using var command = context.Database.GetDbConnection().CreateCommand();
-            command.CommandText = $"PRAGMA foreign_key_list({tableName})";
-            using var reader = command.ExecuteReader();
-            var actions = new List<string>();
-            while (reader.Read())
-            {
-                actions.Add(reader.GetString(6));
-            }
-
-            return actions.ToArray();
-        }
-        finally
-        {
-            context.Database.CloseConnection();
-        }
-    }
 }

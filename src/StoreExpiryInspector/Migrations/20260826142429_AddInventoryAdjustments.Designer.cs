@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StoreExpiryInspector.Infrastructure;
 
@@ -10,9 +11,11 @@ using StoreExpiryInspector.Infrastructure;
 namespace StoreExpiryInspector.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    partial class StoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826142429_AddInventoryAdjustments")]
+    partial class AddInventoryAdjustments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -639,13 +642,13 @@ namespace StoreExpiryInspector.Migrations
                     b.HasAlternateKey("Id", "ProductId")
                         .HasName("AK_tasks_id_product_id");
 
-                    b.HasIndex("ProductId", "Status")
-                        .HasDatabaseName("IX_tasks_product_id_status");
-
                     b.HasIndex("ProductId")
                         .IsUnique()
                         .HasDatabaseName("IX_tasks_product_id_open")
                         .HasFilter("status = 'open'");
+
+                    b.HasIndex("ProductId", "Status")
+                        .HasDatabaseName("IX_tasks_product_id_status");
 
                     b.ToTable("tasks", null, t =>
                         {
