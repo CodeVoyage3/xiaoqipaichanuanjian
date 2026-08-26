@@ -37,6 +37,8 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<ImportIssue> ImportIssues => Set<ImportIssue>();
 
+    public DbSet<BackupRecord> BackupRecords => Set<BackupRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -52,5 +54,6 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ImportRecordConfiguration());
         modelBuilder.ApplyConfiguration(new ImportWorkbookConfiguration());
         modelBuilder.ApplyConfiguration(new ImportIssueConfiguration());
+        modelBuilder.ApplyConfiguration(new BackupRecordConfiguration());
     }
 }
