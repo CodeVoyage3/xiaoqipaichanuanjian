@@ -2,9 +2,9 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 1｜数据底座
-- 状态：Stage 0 已通过；Stage 1 架构质量门禁任务准备执行
+- 状态：Stage 0 已通过；S1-T01、S1-T02、S1-T03 已验收，Stage 1 尚未整体完成
 - 当前分支：`master`
-- 当前实现：WPF/.NET 10 solution；Product/Batch、商品任务/任务项、草稿/草稿项 SQLite 数据底座；两条 migration；16 项真实 SQLite 测试
+- 当前实现：WPF/.NET 10 solution；Product/Batch、商品任务/任务项、草稿/草稿项 SQLite 数据底座；两条 migration；6 个独立 EF 实体配置；16 项真实 SQLite 测试
 - 需求基线：
   - `D:\下载\门店效期排查软件_V1_Codex开发总纲.md`
   - `D:\下载\门店效期排查软件_Sol产品经理启动指令.md`
@@ -25,4 +25,4 @@
 
 ## 下一步
 
-只派发 `TASKS/S1-T03.md` 给 GPT-5.6 Luna（max），完成 EF 映射和数据库测试的等价拆分。验收必须证明 migration、schema 和 16 项测试行为均未变化；未通过前不新增正式排查实体。
+S1-T03 已独立验收通过。当前停在 Stage 1，不创建下一张任务卡、不进入 Stage 2；下一轮先根据 Stage 1 已批准范围重新核对剩余缺口，再只拆一张最小任务卡。
