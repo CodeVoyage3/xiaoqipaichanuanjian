@@ -2,9 +2,9 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 1｜数据底座
-- 状态：Stage 0 已通过；Stage 1 第一张任务准备执行
+- 状态：Stage 0 已通过；Stage 1 第一张任务已验收通过
 - 当前分支：`master`
-- 仓库事实：空仓库，无提交、无代码、无测试、无既有技术栈
+- 当前实现：WPF/.NET 10 solution、Product/Batch SQLite 数据底座、初始 migration、7 项真实 SQLite 测试
 - 需求基线：
   - `D:\下载\门店效期排查软件_V1_Codex开发总纲.md`
   - `D:\下载\门店效期排查软件_Sol产品经理启动指令.md`
@@ -25,4 +25,4 @@
 
 ## 下一步
 
-派发 `TASKS/S1-T01.md` 给 GPT-5.6 Luna（max）；完成后由 Sol 独立审查 diff、迁移、约束与测试，再决定是否通过本任务。
+`S1-T01` 已通过，验收见 `ACCEPTANCE/S1-T01.md`。按用户批准边界停止；尚未创建或派发 Stage 1 第二张任务卡。
