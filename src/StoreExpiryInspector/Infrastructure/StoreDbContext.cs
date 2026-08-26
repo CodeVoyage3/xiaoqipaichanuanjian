@@ -43,6 +43,8 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<AppState> AppStates => Set<AppState>();
 
+    public DbSet<LifecycleEvent> LifecycleEvents => Set<LifecycleEvent>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -61,5 +63,6 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BackupRecordConfiguration());
         modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
         modelBuilder.ApplyConfiguration(new AppStateConfiguration());
+        modelBuilder.ApplyConfiguration(new LifecycleEventConfiguration());
     }
 }

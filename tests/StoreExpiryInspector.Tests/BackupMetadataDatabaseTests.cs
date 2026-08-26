@@ -42,6 +42,7 @@ public sealed class BackupMetadataDatabaseTests
                 "inspection_items",
                 "inspections",
                 "inventory_adjustments",
+                "lifecycle_events",
                 "products",
                 "settings",
                 "task_items",
