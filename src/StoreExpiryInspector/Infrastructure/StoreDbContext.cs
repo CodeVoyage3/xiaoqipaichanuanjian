@@ -23,6 +23,12 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<InspectionDraftItem> DraftItems => Set<InspectionDraftItem>();
 
+    public DbSet<Inspection> Inspections => Set<Inspection>();
+
+    public DbSet<InspectionItem> InspectionItems => Set<InspectionItem>();
+
+    public DbSet<InspectionItemRevision> InspectionItemRevisions => Set<InspectionItemRevision>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -31,5 +37,8 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ProductTaskItemConfiguration());
         modelBuilder.ApplyConfiguration(new InspectionDraftConfiguration());
         modelBuilder.ApplyConfiguration(new InspectionDraftItemConfiguration());
+        modelBuilder.ApplyConfiguration(new InspectionConfiguration());
+        modelBuilder.ApplyConfiguration(new InspectionItemConfiguration());
+        modelBuilder.ApplyConfiguration(new InspectionItemRevisionConfiguration());
     }
 }
