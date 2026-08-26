@@ -2,9 +2,9 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 1｜数据底座
-- 状态：Stage 0 已通过；S1-T01 至 S1-T09 已验收，Stage 1 尚未整体完成
+- 状态：Stage 0 已通过；S1-T01 至 S1-T10 及 Stage 1 整体回归均已验收，等待用户确认是否进入 Stage 2
 - 当前分支：`master`
-- 当前实现：WPF/.NET 10 solution；Product/Batch、任务/草稿、正式排查/修改历史、库存修正、导入记录/工作簿/异常、备份元数据、设置/运行状态 SQLite 数据底座；本地 JSON Lines 日志基础设施；七条 migration；16 个独立 EF 实体配置；51 项测试
+- 当前实现：WPF/.NET 10 solution；Product/Batch、任务/草稿、正式排查/修改历史、库存修正、导入记录/工作簿/异常、备份元数据、设置/运行状态、生命周期事件 SQLite 数据底座；本地 JSON Lines 日志基础设施；八条 migration；17 个独立 EF 实体配置；58 项测试
 - 需求基线：
   - `D:\下载\门店效期排查软件_V1_Codex开发总纲.md`
   - `D:\下载\门店效期排查软件_Sol产品经理启动指令.md`
@@ -25,8 +25,6 @@
 
 ## 下一步
 
-Stage 1 尚未落地的数据底座：
+Stage 1 数据底座已经全部落地并通过整体回归，详见 `.ai-dev/ACCEPTANCE/STAGE-1.md`。
 
-1. 生命周期事件留痕（`S1-T10` 已创建、未派发）。
-
-只创建 `TASKS/S1-T10.md`：生命周期事件留痕数据底座。当前不派发实现；保持 Stage 1，不进入 Stage 2。S1-T10 独立验收后先执行 Stage 1 整体回归验收，再申请进入 Stage 2。
+保持当前基线，不创建 Stage 2 编码任务；等待用户确认是否进入 Stage 2。
