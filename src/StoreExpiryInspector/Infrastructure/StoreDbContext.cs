@@ -22,7 +22,7 @@ public sealed class StoreDbContext : DbContext
             {
                 table.HasCheckConstraint(
                     "CK_products_product_code_not_blank",
-                    "length(trim(product_code)) > 0");
+                    "length(product_code) > 0 AND product_code = trim(product_code)");
                 table.HasCheckConstraint(
                     "CK_products_excel_stock_qty_nonnegative",
                     "excel_stock_qty >= 0");
@@ -30,11 +30,11 @@ public sealed class StoreDbContext : DbContext
                     "CK_products_effective_stock_qty_nonnegative",
                     "effective_stock_qty >= 0");
                 table.HasCheckConstraint(
-                    "CK_products_category_code",
-                    "category_code = 'food'");
+                    "CK_products_category_code_not_blank",
+                    "length(trim(category_code)) > 0");
                 table.HasCheckConstraint(
-                    "CK_products_policy_code",
-                    "policy_code = 'food_v1'");
+                    "CK_products_policy_code_not_blank",
+                    "length(trim(policy_code)) > 0");
             });
 
             entity.HasKey(product => product.Id);

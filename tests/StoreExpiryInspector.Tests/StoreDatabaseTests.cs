@@ -50,6 +50,52 @@ public sealed class StoreDatabaseTests
 
         context.Products.Add(new Product { ProductCode = "SKU-001" });
         Assert.Throws<DbUpdateException>(() => context.SaveChanges());
+
+        var rawCode = " SKU-002 ";
+        Assert.Throws<SqliteException>(() =>
+            context.Database.ExecuteSqlInterpolated($"INSERT INTO products (product_code, excel_stock_qty, effective_stock_qty) VALUES ({rawCode}, 0, 0)"));
+    }
+
+    [Fact]
+    public void CategoryAndPolicyCodesRejectBlankValuesButAllowStableFutureCodes()
+    {
+        using (var database = TemporaryDatabase.Create())
+        using (var context = database.Open())
+        {
+            context.Products.Add(new Product
+            {
+                ProductCode = "SKU-BLANK-CATEGORY",
+                CategoryCode = " ",
+                PolicyCode = "food_v1"
+            });
+            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
+        }
+
+        using (var database = TemporaryDatabase.Create())
+        using (var context = database.Open())
+        {
+            context.Products.Add(new Product
+            {
+                ProductCode = "SKU-BLANK-POLICY",
+                CategoryCode = "food",
+                PolicyCode = " "
+            });
+            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
+        }
+
+        using (var database = TemporaryDatabase.Create())
+        using (var context = database.Open())
+        {
+            context.Products.Add(new Product
+            {
+                ProductCode = "SKU-FUTURE",
+                CategoryCode = "medicine",
+                PolicyCode = "medicine_v1"
+            });
+            context.SaveChanges();
+            Assert.Equal("medicine", context.Products.Single().CategoryCode);
+            Assert.Equal("medicine_v1", context.Products.Single().PolicyCode);
+        }
     }
 
     [Fact]
@@ -116,7 +162,14 @@ public sealed class StoreDatabaseTests
         using (var database = TemporaryDatabase.Create())
         using (var context = database.Open())
         {
-            context.Products.Add(new Product { ProductCode = "SKU-NEG", ExcelStockQty = -1 });
+            context.Products.Add(new Product { ProductCode = "SKU-NEG-EXCEL", ExcelStockQty = -1 });
+            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
+        }
+
+        using (var database = TemporaryDatabase.Create())
+        using (var context = database.Open())
+        {
+            context.Products.Add(new Product { ProductCode = "SKU-NEG-EFFECTIVE", EffectiveStockQty = -1 });
             Assert.Throws<DbUpdateException>(() => context.SaveChanges());
         }
 
@@ -126,6 +179,16 @@ public sealed class StoreDatabaseTests
             var product = AddProduct(context, "SKU-NEG");
             var negativeBatch = NewBatch(product.Id, null, new DateOnly(2026, 12, 31));
             negativeBatch.CurrentArrivalQty = -1;
+            context.Batches.Add(negativeBatch);
+            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
+        }
+
+        using (var database = TemporaryDatabase.Create())
+        using (var context = database.Open())
+        {
+            var product = AddProduct(context, "SKU-NEG-MAX");
+            var negativeBatch = NewBatch(product.Id, null, new DateOnly(2026, 12, 31));
+            negativeBatch.MaxArrivalQty = -1;
             context.Batches.Add(negativeBatch);
             Assert.Throws<DbUpdateException>(() => context.SaveChanges());
         }

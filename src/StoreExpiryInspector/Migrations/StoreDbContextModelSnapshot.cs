@@ -235,15 +235,15 @@ namespace StoreExpiryInspector.Migrations
 
                     b.ToTable("products", null, t =>
                         {
-                            t.HasCheckConstraint("CK_products_category_code", "category_code = 'food'");
+                            t.HasCheckConstraint("CK_products_category_code_not_blank", "length(trim(category_code)) > 0");
 
                             t.HasCheckConstraint("CK_products_effective_stock_qty_nonnegative", "effective_stock_qty >= 0");
 
                             t.HasCheckConstraint("CK_products_excel_stock_qty_nonnegative", "excel_stock_qty >= 0");
 
-                            t.HasCheckConstraint("CK_products_policy_code", "policy_code = 'food_v1'");
+                            t.HasCheckConstraint("CK_products_policy_code_not_blank", "length(trim(policy_code)) > 0");
 
-                            t.HasCheckConstraint("CK_products_product_code_not_blank", "length(trim(product_code)) > 0");
+                            t.HasCheckConstraint("CK_products_product_code_not_blank", "length(product_code) > 0 AND product_code = trim(product_code)");
                         });
                 });
 

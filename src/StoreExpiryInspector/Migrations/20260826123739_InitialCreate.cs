@@ -34,11 +34,11 @@ namespace StoreExpiryInspector.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_products", x => x.id);
-                    table.CheckConstraint("CK_products_category_code", "category_code = 'food'");
+                    table.CheckConstraint("CK_products_category_code_not_blank", "length(trim(category_code)) > 0");
                     table.CheckConstraint("CK_products_effective_stock_qty_nonnegative", "effective_stock_qty >= 0");
                     table.CheckConstraint("CK_products_excel_stock_qty_nonnegative", "excel_stock_qty >= 0");
-                    table.CheckConstraint("CK_products_policy_code", "policy_code = 'food_v1'");
-                    table.CheckConstraint("CK_products_product_code_not_blank", "length(trim(product_code)) > 0");
+                    table.CheckConstraint("CK_products_policy_code_not_blank", "length(trim(policy_code)) > 0");
+                    table.CheckConstraint("CK_products_product_code_not_blank", "length(product_code) > 0 AND product_code = trim(product_code)");
                 });
 
             migrationBuilder.CreateTable(
