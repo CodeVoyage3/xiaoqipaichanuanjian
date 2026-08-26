@@ -413,6 +413,9 @@ namespace StoreExpiryInspector.Migrations
                     b.HasAlternateKey("Id", "ProductId")
                         .HasName("AK_tasks_id_product_id");
 
+                    b.HasIndex("ProductId", "Status")
+                        .HasDatabaseName("IX_tasks_product_id_status");
+
                     b.HasIndex("ProductId")
                         .IsUnique()
                         .HasDatabaseName("IX_tasks_product_id_open")

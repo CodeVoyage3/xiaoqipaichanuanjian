@@ -257,8 +257,8 @@ public sealed class StoreDbContext : DbContext
 
             entity.HasAlternateKey(task => new { task.Id, task.ProductId })
                 .HasName("AK_tasks_id_product_id");
-            entity.HasIndex(task => task.ProductId)
-                .HasDatabaseName("IX_tasks_product_id");
+            entity.HasIndex(task => new { task.ProductId, task.Status })
+                .HasDatabaseName("IX_tasks_product_id_status");
             entity.HasIndex(task => task.ProductId)
                 .HasDatabaseName("IX_tasks_product_id_open")
                 .HasFilter("status = 'open'")

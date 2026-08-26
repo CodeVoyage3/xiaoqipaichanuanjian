@@ -43,9 +43,18 @@ public sealed class StoreDatabaseTests
             StringComparison.OrdinalIgnoreCase);
 
         Assert.Contains("IX_tasks_product_id_open", indexes);
+        Assert.Contains("IX_tasks_product_id_status", indexes);
         Assert.Contains("IX_task_items_task_id_batch_id", indexes);
         Assert.Contains("IX_drafts_task_id", indexes);
         Assert.Contains("IX_draft_items_draft_id_task_item_id", indexes);
+        Assert.DoesNotContain(
+            "WHERE",
+            ReadIndexSql(context, "IX_tasks_product_id_status"),
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "status = 'open'",
+            ReadIndexSql(context, "IX_tasks_product_id_open"),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

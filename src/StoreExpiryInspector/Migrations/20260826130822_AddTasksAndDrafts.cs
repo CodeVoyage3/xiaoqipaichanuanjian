@@ -186,6 +186,11 @@ namespace StoreExpiryInspector.Migrations
                 columns: new[] { "task_id", "product_id" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_tasks_product_id_status",
+                table: "tasks",
+                columns: new[] { "product_id", "status" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_tasks_product_id_open",
                 table: "tasks",
                 column: "product_id",
