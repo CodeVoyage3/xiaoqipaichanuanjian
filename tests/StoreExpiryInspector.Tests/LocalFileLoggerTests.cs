@@ -101,6 +101,29 @@ public sealed class LocalFileLoggerTests
     }
 
     [Fact]
+    public void UsesOneUtcNowForTimestampAndLocalFileDate()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var firstUtcNow = new DateTimeOffset(2026, 8, 26, 15, 59, 59, TimeSpan.Zero);
+        var time = new AdvancingTimeProvider(
+            firstUtcNow,
+            new DateTimeOffset(2026, 8, 26, 16, 0, 1, TimeSpan.Zero),
+            TestTimeZone);
+        var logger = new LocalFileLogger(directory.Path, time);
+
+        Assert.True(logger.TryWrite("info", "single_clock_read", "one"));
+
+        var path = Path.Combine(directory.Path, "app-20260826.log");
+        Assert.Equal(1, time.UtcNowCallCount);
+        Assert.True(File.Exists(path));
+        Assert.False(File.Exists(Path.Combine(directory.Path, "app-20260827.log")));
+        using var document = JsonDocument.Parse(File.ReadAllLines(path).Single());
+        Assert.Equal(
+            firstUtcNow.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
+            document.RootElement.GetProperty("timestamp_utc").GetString());
+    }
+
+    [Fact]
     public void ConcurrentWritesProduceCompleteUniqueJsonLines()
     {
         using var directory = TemporaryDirectory.Create();
@@ -239,6 +262,33 @@ public sealed class LocalFileLoggerTests
         public override DateTimeOffset GetUtcNow() => _utcNow;
 
         public void SetUtcNow(DateTimeOffset utcNow) => _utcNow = utcNow;
+    }
+
+    private sealed class AdvancingTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset _firstUtcNow;
+        private readonly DateTimeOffset _laterUtcNow;
+        private int _utcNowCallCount;
+
+        public AdvancingTimeProvider(
+            DateTimeOffset firstUtcNow,
+            DateTimeOffset laterUtcNow,
+            TimeZoneInfo localTimeZone)
+        {
+            _firstUtcNow = firstUtcNow;
+            _laterUtcNow = laterUtcNow;
+            LocalTimeZone = localTimeZone;
+        }
+
+        public override TimeZoneInfo LocalTimeZone { get; }
+
+        public int UtcNowCallCount => _utcNowCallCount;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            _utcNowCallCount++;
+            return _utcNowCallCount == 1 ? _firstUtcNow : _laterUtcNow;
+        }
     }
 
     private static bool IsValidLogFileName(string? fileName)

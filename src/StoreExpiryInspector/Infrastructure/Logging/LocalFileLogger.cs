@@ -42,7 +42,7 @@ public sealed class LocalFileLogger
                 Directory.CreateDirectory(_logDirectory);
 
                 var utcNow = _timeProvider.GetUtcNow();
-                var localDate = _timeProvider.GetLocalNow().Date;
+                var localDate = TimeZoneInfo.ConvertTime(utcNow, _timeProvider.LocalTimeZone).Date;
                 var filePath = Path.Combine(
                     _logDirectory,
                     LogFilePrefix
