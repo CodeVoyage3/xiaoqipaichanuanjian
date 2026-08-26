@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 1｜数据底座
-- 状态：Stage 0 已通过；Stage 1 第二张任务已验收通过
+- 状态：Stage 0 已通过；Stage 1 架构质量门禁任务准备执行
 - 当前分支：`master`
 - 当前实现：WPF/.NET 10 solution；Product/Batch、商品任务/任务项、草稿/草稿项 SQLite 数据底座；两条 migration；16 项真实 SQLite 测试
 - 需求基线：
@@ -25,4 +25,4 @@
 
 ## 下一步
 
-`S1-T02` 已通过，验收见 `ACCEPTANCE/S1-T02.md`。按逐卡边界停止；尚未创建或派发 Stage 1 下一张任务卡，Stage 1 整体仍未完成。
+只派发 `TASKS/S1-T03.md` 给 GPT-5.6 Luna（max），完成 EF 映射和数据库测试的等价拆分。验收必须证明 migration、schema 和 16 项测试行为均未变化；未通过前不新增正式排查实体。
