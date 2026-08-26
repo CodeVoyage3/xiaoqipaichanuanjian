@@ -30,6 +30,7 @@ public sealed class BackupMetadataDatabaseTests
         Assert.Equal(
             new[]
             {
+                "app_state",
                 "backups",
                 "batches",
                 "draft_items",
@@ -42,6 +43,7 @@ public sealed class BackupMetadataDatabaseTests
                 "inspections",
                 "inventory_adjustments",
                 "products",
+                "settings",
                 "task_items",
                 "tasks"
             },

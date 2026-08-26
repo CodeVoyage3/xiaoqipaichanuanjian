@@ -39,6 +39,10 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<BackupRecord> BackupRecords => Set<BackupRecord>();
 
+    public DbSet<AppSetting> Settings => Set<AppSetting>();
+
+    public DbSet<AppState> AppStates => Set<AppState>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -55,5 +59,7 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ImportWorkbookConfiguration());
         modelBuilder.ApplyConfiguration(new ImportIssueConfiguration());
         modelBuilder.ApplyConfiguration(new BackupRecordConfiguration());
+        modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
+        modelBuilder.ApplyConfiguration(new AppStateConfiguration());
     }
 }
