@@ -88,6 +88,11 @@ public sealed class BatchConfiguration : IEntityTypeConfiguration<Batch>
             .HasForeignKey(batch => batch.ProductId)
             .OnDelete(DeleteBehavior.NoAction);
 
+        entity.HasOne<ImportRecord>()
+            .WithMany()
+            .HasForeignKey(batch => batch.LastSeenImportId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         entity.HasIndex(batch => batch.ProductId)
             .HasDatabaseName("IX_batches_product_id");
         entity.HasIndex(batch => batch.ExpiryDate)

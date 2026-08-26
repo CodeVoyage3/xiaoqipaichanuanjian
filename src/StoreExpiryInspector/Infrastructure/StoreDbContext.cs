@@ -31,6 +31,12 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<InventoryAdjustment> InventoryAdjustments => Set<InventoryAdjustment>();
 
+    public DbSet<ImportRecord> Imports => Set<ImportRecord>();
+
+    public DbSet<ImportWorkbook> ImportWorkbooks => Set<ImportWorkbook>();
+
+    public DbSet<ImportIssue> ImportIssues => Set<ImportIssue>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -43,5 +49,8 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new InspectionItemConfiguration());
         modelBuilder.ApplyConfiguration(new InspectionItemRevisionConfiguration());
         modelBuilder.ApplyConfiguration(new InventoryAdjustmentConfiguration());
+        modelBuilder.ApplyConfiguration(new ImportRecordConfiguration());
+        modelBuilder.ApplyConfiguration(new ImportWorkbookConfiguration());
+        modelBuilder.ApplyConfiguration(new ImportIssueConfiguration());
     }
 }

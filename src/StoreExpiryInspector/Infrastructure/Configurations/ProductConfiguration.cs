@@ -78,5 +78,10 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         entity.HasIndex(product => product.ProductCode)
             .HasDatabaseName("IX_products_product_code")
             .IsUnique();
+
+        entity.HasOne<ImportRecord>()
+            .WithMany()
+            .HasForeignKey(product => product.LastSeenImportId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
