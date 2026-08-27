@@ -96,10 +96,11 @@ public sealed class ExcelFileClassifier
 
             if (differingFields.Count == 0)
             {
+                var representative = groups[0].Representative with { StoreStockQuantity = null };
                 normalBatches.Add(new ExcelNormalBatch(
                     pair.Key,
-                    groups[0].Representative.ExcelRowNumber,
-                    groups[0].Representative,
+                    representative.ExcelRowNumber,
+                    representative,
                     Array.AsReadOnly(sourceRowNumbers)));
             }
             else

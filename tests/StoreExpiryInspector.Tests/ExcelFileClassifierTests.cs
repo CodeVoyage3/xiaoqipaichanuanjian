@@ -110,7 +110,9 @@ public sealed class ExcelFileClassifierTests
         Assert.Equal([20, 21], result.BatchConflicts[0].RowNumbers);
         Assert.Equal(["保质期"], result.BatchConflicts[0].DifferingFields);
         Assert.Equal(2, result.NormalBatches.Count);
-        Assert.Equal([30, 31], result.NormalBatches.Single(batch => batch.BatchKey.ProductCode == "P-stock").SourceRowNumbers);
+        var stockBatch = result.NormalBatches.Single(batch => batch.BatchKey.ProductCode == "P-stock");
+        Assert.Equal([30, 31], stockBatch.SourceRowNumbers);
+        Assert.Null(stockBatch.RepresentativeRow.StoreStockQuantity);
 
         var stock = Assert.Single(result.StockConflicts);
         Assert.Equal("P-stock", stock.ProductCode);
@@ -137,6 +139,102 @@ public sealed class ExcelFileClassifierTests
         Assert.Equal(2, result.NormalBatches.Count);
         Assert.Contains(result.NormalBatches, batch => batch.BatchKey.ProductCode == "P");
         Assert.Contains(result.NormalBatches, batch => batch.BatchKey.ProductCode == "Q");
+    }
+
+    [Fact]
+    public void DifferentProductCodesRemainDifferentKeysWhenDatesMatch()
+    {
+        var result = new ExcelFileClassifier().Classify(Workbook(
+            Row(2, code: "P1"),
+            Row(3, code: "P2")));
+
+        Assert.Equal(2, result.BatchKeyCount);
+        Assert.Equal(2, result.NormalBatches.Count);
+        Assert.Equal(
+            ["P1", "P2"],
+            result.NormalBatches.Select(batch => batch.BatchKey.ProductCode));
+        Assert.All(result.NormalBatches, batch =>
+        {
+            Assert.Equal(new DateOnly(2026, 1, 1), batch.BatchKey.ProductionDate);
+            Assert.Equal(new DateOnly(2026, 12, 31), batch.BatchKey.ExpiryDate);
+        });
+    }
+
+    [Fact]
+    public void KeepsConflictAndStockResultsDeterministicWhenInputOrderChanges()
+    {
+        var rows = new[]
+        {
+            Row(10, code: "P-conflict", shelfLife: "12", stock: "4"),
+            Row(11, code: "P-conflict", shelfLife: "24", stock: "0"),
+            Row(20, code: "P-stock", stock: null),
+            Row(21, code: "P-stock", stock: "0")
+        };
+
+        var first = new ExcelFileClassifier().Classify(Workbook(rows));
+        var second = new ExcelFileClassifier().Classify(Workbook(rows.Reverse().ToArray()));
+
+        Assert.Equal(first.BatchConflicts.Count, second.BatchConflicts.Count);
+        for (var index = 0; index < first.BatchConflicts.Count; index++)
+        {
+            Assert.Equal(first.BatchConflicts[index].BatchKey, second.BatchConflicts[index].BatchKey);
+            Assert.Equal(first.BatchConflicts[index].RowNumbers, second.BatchConflicts[index].RowNumbers);
+            Assert.Equal(first.BatchConflicts[index].DifferingFields, second.BatchConflicts[index].DifferingFields);
+        }
+
+        Assert.Equal(first.StockConflicts.Count, second.StockConflicts.Count);
+        for (var index = 0; index < first.StockConflicts.Count; index++)
+        {
+            var firstStock = first.StockConflicts[index];
+            var secondStock = second.StockConflicts[index];
+            Assert.Equal(firstStock.ProductCode, secondStock.ProductCode);
+            Assert.Equal(firstStock.StockValue, secondStock.StockValue);
+            Assert.Equal(firstStock.Values.Count, secondStock.Values.Count);
+            for (var valueIndex = 0; valueIndex < firstStock.Values.Count; valueIndex++)
+            {
+                Assert.Equal(firstStock.Values[valueIndex].Value, secondStock.Values[valueIndex].Value);
+                Assert.Equal(firstStock.Values[valueIndex].RowNumbers, secondStock.Values[valueIndex].RowNumbers);
+            }
+        }
+        Assert.Null(first.StockConflicts.Single(stock => stock.ProductCode == "P-stock").StockValue);
+        Assert.Null(first.NormalBatches.Single(batch => batch.BatchKey.ProductCode == "P-stock").RepresentativeRow.StoreStockQuantity);
+    }
+
+    [Fact]
+    public void KeepsTheLastThreeManualFieldsOutOfParsingAndClassificationDtos()
+    {
+        var dtoPropertyNames = typeof(ExcelRowDto)
+            .GetProperties()
+            .Select(property => property.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        var expectedNames = new[]
+        {
+            "CumulativeArrivalQuantity",
+            "ExcelRowNumber",
+            "ExpiryDate",
+            "IsNearExpiryDiscountRequired",
+            "ProductBarcode",
+            "ProductCategory",
+            "ProductCode",
+            "ProductName",
+            "ProductionDate",
+            "ShelfLife",
+            "ShelfLifeUnit",
+            "StoreStockQuantity"
+        };
+
+        Assert.Equal(expectedNames, dtoPropertyNames);
+        Assert.DoesNotContain(
+            typeof(ExcelClassificationResult).GetProperties(),
+            property => property.Name.Contains("Inspection", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Signature", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Check", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            typeof(ExcelProductStock).GetProperties(),
+            property => property.Name.Contains("Status", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("State", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Zero", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
