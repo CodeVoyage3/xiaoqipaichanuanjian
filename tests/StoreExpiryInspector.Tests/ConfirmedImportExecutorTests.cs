@@ -244,8 +244,13 @@ public sealed class ConfirmedImportExecutorTests
         Assert.False(execute.ChangeTracker.HasChanges());
     }
 
-    [Fact]
-    public void RejectsChangedSourceBeforeCreatingSnapshot()
+    [Theory]
+    [InlineData("changed", ConfirmedImportCodes.FileChanged)]
+    [InlineData("missing", ConfirmedImportCodes.FileMissing)]
+    [InlineData("locked", ConfirmedImportCodes.FileUnavailable)]
+    public void RejectsChangedOrUnavailableSourceBeforeCreatingSnapshot(
+        string sourceState,
+        string expectedCode)
     {
         using var database = SqliteTestDatabase.Create();
         using var source = CreateSource(database.Directory, [
@@ -266,27 +271,141 @@ public sealed class ConfirmedImportExecutorTests
         }
 
         ImportConfirmationContract contract;
+        ProductState beforeProduct;
         using (var preview = database.Open())
         {
+            beforeProduct = ReadProduct(preview, "P");
             var workbook = new ExcelTemplateReader().Read(source.Path);
             var plan = new ExcelImportPlanner().Plan(preview, new ExcelFileClassifier().Classify(workbook));
             contract = Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(
                 new ImportConfirmationGuard().BindPreview(source.Path, workbook, plan)).Contract);
         }
 
-        File.WriteAllBytes(source.Path, [1, 2, 3]);
-        using var execute = database.Open();
-        var result = new ConfirmedImportExecutor().Execute(
-            contract,
-            execute,
-            Path.Combine(database.Directory, "snapshots"),
-            new DateTime(2020, 8, 27, 9, 0, 0, DateTimeKind.Utc));
+        var snapshotDirectory = Path.Combine(database.Directory, "snapshots");
+        ConfirmedImportResult result;
+        using (var execute = database.Open())
+        {
+            if (sourceState == "changed")
+            {
+                File.WriteAllBytes(source.Path, [1, 2, 3]);
+            }
+            else if (sourceState == "missing")
+            {
+                File.Delete(source.Path);
+            }
+
+            if (sourceState == "locked")
+            {
+                using var sourceLock = new FileStream(source.Path, FileMode.Open, FileAccess.Read, FileShare.None);
+                result = new ConfirmedImportExecutor().Execute(
+                    contract,
+                    execute,
+                    snapshotDirectory,
+                    new DateTime(2020, 8, 27, 9, 0, 0, DateTimeKind.Utc));
+            }
+            else
+            {
+                result = new ConfirmedImportExecutor().Execute(
+                    contract,
+                    execute,
+                    snapshotDirectory,
+                    new DateTime(2020, 8, 27, 9, 0, 0, DateTimeKind.Utc));
+            }
+
+            Assert.Equal(0, execute.Imports.AsNoTracking().Count());
+            Assert.Equal(0, execute.BackupRecords.AsNoTracking().Count());
+            Assert.Equal(0, execute.ImportIssues.AsNoTracking().Count());
+            Assert.Equal(0, execute.ImportWorkbooks.AsNoTracking().Count());
+            Assert.Equal(1, execute.Products.AsNoTracking().Count());
+            Assert.Equal(0, execute.Batches.AsNoTracking().Count());
+        }
 
         Assert.False(result.Succeeded);
-        Assert.Equal(ConfirmedImportCodes.FileChanged, result.Code);
+        Assert.Equal(expectedCode, result.Code);
         Assert.Null(result.SnapshotPath);
-        Assert.Equal(0, execute.Imports.AsNoTracking().Count());
-        Assert.False(Directory.Exists(Path.Combine(database.Directory, "snapshots")));
+        Assert.False(Directory.Exists(snapshotDirectory));
+        using var verify = database.Open();
+        Assert.Equal(beforeProduct, ReadProduct(verify, "P"));
+        Assert.Empty(verify.Batches.AsNoTracking());
+        Assert.Empty(verify.Imports.AsNoTracking());
+        Assert.Empty(verify.BackupRecords.AsNoTracking());
+        Assert.Empty(verify.ImportIssues.AsNoTracking());
+        Assert.Empty(verify.ImportWorkbooks.AsNoTracking());
+    }
+
+    [Fact]
+    public void RejectsSnapshotDestinationFileWithoutStartingFormalWrites()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var source = CreateSource(database.Directory, [
+            ["食品", "P", "B", "新商品", "2026-01-01", "2026-12-31", "12", "M", "否", "2", "2"]
+        ]);
+        using (var seed = database.Open())
+        {
+            var product = new Product
+            {
+                ProductCode = "P",
+                CurrentName = "旧商品",
+                CurrentBarcode = "旧条码",
+                ExcelStockQty = 1,
+                EffectiveStockQty = 1,
+                EffectiveStockSource = "manual"
+            };
+            seed.Products.Add(product);
+            seed.SaveChanges();
+            seed.Batches.Add(new Batch
+            {
+                ProductId = product.Id,
+                ProductionDate = new DateOnly(2026, 1, 1),
+                ExpiryDate = new DateOnly(2026, 12, 31),
+                ShelfLifeValue = 6,
+                ShelfLifeUnit = "M",
+                CurrentArrivalQty = 1,
+                MaxArrivalQty = 1,
+                SourceDiscountReference = "否"
+            });
+            seed.SaveChanges();
+        }
+
+        ProductState beforeProduct;
+        BatchState beforeBatch;
+        ImportConfirmationContract contract;
+        using (var preview = database.Open())
+        {
+            beforeProduct = ReadProduct(preview, "P");
+            beforeBatch = ReadBatch(preview, "P");
+            var workbook = new ExcelTemplateReader().Read(source.Path);
+            var plan = new ExcelImportPlanner().Plan(
+                preview,
+                new ExcelFileClassifier().Classify(workbook));
+            contract = Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(
+                new ImportConfirmationGuard().BindPreview(source.Path, workbook, plan)).Contract);
+        }
+
+        var blockedDestination = Path.Combine(database.Directory, "snapshot-target");
+        File.WriteAllText(blockedDestination, "not a directory");
+        using (var execute = database.Open())
+        {
+            var result = new ConfirmedImportExecutor().Execute(
+                contract,
+                execute,
+                blockedDestination,
+                new DateTime(2020, 8, 27, 9, 0, 0, DateTimeKind.Utc));
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(ConfirmedImportCodes.SnapshotFailed, result.Code);
+            Assert.Null(result.ImportId);
+            Assert.Null(result.SnapshotPath);
+            Assert.Empty(execute.Imports.AsNoTracking());
+            Assert.Empty(execute.BackupRecords.AsNoTracking());
+            Assert.Empty(execute.ImportIssues.AsNoTracking());
+            Assert.Empty(execute.ImportWorkbooks.AsNoTracking());
+            Assert.Equal(beforeProduct, ReadProduct(execute, "P"));
+            Assert.Equal(beforeBatch, ReadBatch(execute, "P"));
+        }
+
+        Assert.True(File.Exists(blockedDestination));
+        Assert.False(Directory.Exists(blockedDestination));
     }
 
     [Fact]
