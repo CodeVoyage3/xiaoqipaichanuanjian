@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
@@ -366,6 +367,102 @@ public sealed class InspectionTaskQueryTests
         Assert.Throws<ObjectDisposedException>(() => new InspectionTaskQuery().Dashboard(context));
     }
 
+    [Fact]
+    public void AllReadQueriesPreserveEveryRelatedBusinessRowAndTimestamp()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long openTaskId;
+        using (var seed = database.Open())
+        {
+            var product = NewProduct("SNAPSHOT-001", "快照商品", "SNAPSHOT-BAR", 17);
+            product.CreatedAtUtc = new DateTime(2026, 8, 1, 1, 2, 3, DateTimeKind.Utc);
+            product.UpdatedAtUtc = new DateTime(2026, 8, 2, 4, 5, 6, DateTimeKind.Utc);
+            seed.Products.Add(product);
+            seed.SaveChanges();
+
+            var taskBatch = AddBatch(seed, product.Id, new DateOnly(2026, 9, 1), null, 7);
+            taskBatch.CreatedAtUtc = new DateTime(2026, 8, 3, 7, 8, 9, DateTimeKind.Utc);
+            taskBatch.UpdatedAtUtc = new DateTime(2026, 8, 4, 10, 11, 12, DateTimeKind.Utc);
+            var normalBatch = AddBatch(seed, product.Id, new DateOnly(2026, 9, 2), null, 8);
+            normalBatch.CurrentStage = ExpiryStageCalculator.Discount20;
+            normalBatch.CreatedAtUtc = new DateTime(2026, 8, 5, 13, 14, 15, DateTimeKind.Utc);
+            normalBatch.UpdatedAtUtc = new DateTime(2026, 8, 6, 16, 17, 18, DateTimeKind.Utc);
+
+            var openTask = AddTask(seed, product.Id, ExpiryStageCalculator.Withdraw);
+            openTask.CreatedAtUtc = new DateTime(2026, 8, 7, 19, 20, 21, DateTimeKind.Utc);
+            openTask.UpdatedAtUtc = new DateTime(2026, 8, 8, 22, 23, 24, DateTimeKind.Utc);
+            var taskItem = AddTaskItem(seed, openTask, product, taskBatch, ExpiryStageCalculator.Withdraw, 3, true);
+            taskItem.CreatedAtUtc = new DateTime(2026, 8, 9, 1, 2, 3, DateTimeKind.Utc);
+            taskItem.UpdatedAtUtc = new DateTime(2026, 8, 10, 4, 5, 6, DateTimeKind.Utc);
+            openTaskId = openTask.Id;
+
+            var draft = new InspectionDraft
+            {
+                TaskId = openTask.Id,
+                InspectorName = "快照检查员",
+                CheckDate = new DateOnly(2026, 8, 27),
+                CreatedAtUtc = new DateTime(2026, 8, 11, 7, 8, 9, DateTimeKind.Utc),
+                UpdatedAtUtc = new DateTime(2026, 8, 12, 10, 11, 12, DateTimeKind.Utc)
+            };
+            seed.Drafts.Add(draft);
+            seed.SaveChanges();
+            var draftItem = new InspectionDraftItem
+            {
+                DraftId = draft.Id,
+                TaskItemId = taskItem.Id,
+                TaskId = openTask.Id,
+                CheckedQty = 0,
+                ConfirmedAttentionVersion = taskItem.AttentionVersion
+            };
+            seed.DraftItems.Add(draftItem);
+            seed.SaveChanges();
+
+            var completedTask = AddTask(
+                seed,
+                product.Id,
+                ExpiryStageCalculator.Discount20,
+                "completed");
+            var inspection = AddInspection(
+                seed,
+                completedTask,
+                product,
+                taskBatch,
+                5,
+                new DateTime(2026, 8, 13, 13, 14, 15, DateTimeKind.Utc));
+            var inspectionItem = seed.InspectionItems.Single(item => item.InspectionId == inspection.Id);
+            inspectionItem.UpdatedAtUtc = new DateTime(2026, 8, 14, 16, 17, 18, DateTimeKind.Utc);
+
+            seed.InventoryAdjustments.Add(new InventoryAdjustment
+            {
+                ProductId = product.Id,
+                ExcelStockQtySnapshot = 20,
+                AdjustedStockQty = 17,
+                AdjustedAtUtc = new DateTime(2026, 8, 15, 19, 20, 21, DateTimeKind.Utc)
+            });
+            seed.LifecycleEvents.Add(new LifecycleEvent
+            {
+                ProductId = product.Id,
+                BatchId = taskBatch.Id,
+                EventType = "batch_checked_zero",
+                Reason = "snapshot-test",
+                OccurredAtUtc = new DateTime(2026, 8, 16, 22, 23, 24, DateTimeKind.Utc),
+                SourceInspectionId = inspection.Id
+            });
+            seed.SaveChanges();
+        }
+
+        using var context = database.Open();
+        var before = CaptureSnapshot(context);
+        var query = new InspectionTaskQuery();
+        _ = query.Dashboard(context);
+        _ = query.SearchOpenTasks(context, new InspectionTaskSearchRequest());
+        _ = query.GetDetail(context, openTaskId);
+        var after = CaptureSnapshot(context);
+
+        AssertSnapshotEqual(before, after);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
     private static (Product Product, ProductTask Task, Batch Batch) AddOpenTask(
         StoreDbContext context,
         string productCode,
@@ -496,4 +593,203 @@ public sealed class InspectionTaskQueryTests
         context.SaveChanges();
         return inspection;
     }
+
+    private static DatabaseSnapshot CaptureSnapshot(StoreDbContext context) => new(
+        JsonSerializer.Serialize(context.Products
+            .AsNoTracking()
+            .OrderBy(product => product.Id)
+            .Select(product => new
+            {
+                product.Id,
+                product.ProductCode,
+                product.CurrentName,
+                product.CurrentBarcode,
+                product.CategoryCode,
+                product.PolicyCode,
+                product.ExcelStockQty,
+                product.EffectiveStockQty,
+                product.EffectiveStockSource,
+                product.LifecycleGeneration,
+                product.IsStockZeroTerminated,
+                product.LastSeenImportId,
+                product.CreatedAtUtc,
+                product.UpdatedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.Batches
+            .AsNoTracking()
+            .OrderBy(batch => batch.Id)
+            .Select(batch => new
+            {
+                batch.Id,
+                batch.ProductId,
+                batch.ProductionDate,
+                batch.ExpiryDate,
+                batch.ShelfLifeValue,
+                batch.ShelfLifeUnit,
+                batch.CurrentArrivalQty,
+                batch.MaxArrivalQty,
+                batch.SourceDiscountReference,
+                batch.LifecycleGeneration,
+                batch.TrackingStatus,
+                batch.StopReason,
+                batch.StoppedAtUtc,
+                batch.CurrentStage,
+                batch.NextTriggerDate,
+                batch.AttentionVersion,
+                batch.HandledAttentionVersion,
+                batch.LastSeenImportId,
+                batch.CreatedAtUtc,
+                batch.UpdatedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.Tasks
+            .AsNoTracking()
+            .OrderBy(task => task.Id)
+            .Select(task => new
+            {
+                task.Id,
+                task.ProductId,
+                task.Status,
+                task.HighestStage,
+                task.CreatedAtUtc,
+                task.UpdatedAtUtc,
+                task.ClosedAtUtc,
+                task.CloseReason
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.TaskItems
+            .AsNoTracking()
+            .OrderBy(item => item.Id)
+            .Select(item => new
+            {
+                item.Id,
+                item.TaskId,
+                item.BatchId,
+                item.ProductId,
+                item.Stage,
+                item.AttentionVersion,
+                item.RequiresReconfirmation,
+                item.CreatedAtUtc,
+                item.UpdatedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.Drafts
+            .AsNoTracking()
+            .OrderBy(draft => draft.Id)
+            .Select(draft => new
+            {
+                draft.Id,
+                draft.TaskId,
+                draft.InspectorName,
+                draft.CheckDate,
+                draft.IsInvalid,
+                draft.InvalidReason,
+                draft.InvalidatedAtUtc,
+                draft.CreatedAtUtc,
+                draft.UpdatedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.DraftItems
+            .AsNoTracking()
+            .OrderBy(item => item.Id)
+            .Select(item => new
+            {
+                item.Id,
+                item.DraftId,
+                item.TaskItemId,
+                item.TaskId,
+                item.CheckedQty,
+                item.ConfirmedAttentionVersion
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.Inspections
+            .AsNoTracking()
+            .OrderBy(inspection => inspection.Id)
+            .Select(inspection => new
+            {
+                inspection.Id,
+                inspection.TaskId,
+                inspection.ProductId,
+                inspection.ProductCodeSnapshot,
+                inspection.ProductNameSnapshot,
+                inspection.BarcodeSnapshot,
+                inspection.StageSnapshot,
+                inspection.StockQtySnapshot,
+                inspection.InspectorName,
+                inspection.CheckDate,
+                inspection.SubmittedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.InspectionItems
+            .AsNoTracking()
+            .OrderBy(item => item.Id)
+            .Select(item => new
+            {
+                item.Id,
+                item.InspectionId,
+                item.ProductId,
+                item.BatchId,
+                item.ProductionDateSnapshot,
+                item.ExpiryDateSnapshot,
+                item.StageSnapshot,
+                item.ArrivalQtySnapshot,
+                item.CheckedQty,
+                item.UpdatedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.InventoryAdjustments
+            .AsNoTracking()
+            .OrderBy(adjustment => adjustment.Id)
+            .Select(adjustment => new
+            {
+                adjustment.Id,
+                adjustment.ProductId,
+                adjustment.ExcelStockQtySnapshot,
+                adjustment.AdjustedStockQty,
+                adjustment.AdjustedAtUtc
+            })
+            .ToArray()),
+        JsonSerializer.Serialize(context.LifecycleEvents
+            .AsNoTracking()
+            .OrderBy(lifecycleEvent => lifecycleEvent.Id)
+            .Select(lifecycleEvent => new
+            {
+                lifecycleEvent.Id,
+                lifecycleEvent.ProductId,
+                lifecycleEvent.BatchId,
+                lifecycleEvent.EventType,
+                lifecycleEvent.Reason,
+                lifecycleEvent.OccurredAtUtc,
+                lifecycleEvent.SourceImportId,
+                lifecycleEvent.SourceInspectionId,
+                lifecycleEvent.SourceAdjustmentId
+            })
+            .ToArray()));
+
+    private static void AssertSnapshotEqual(DatabaseSnapshot before, DatabaseSnapshot after)
+    {
+        Assert.Equal(before.Products, after.Products);
+        Assert.Equal(before.Batches, after.Batches);
+        Assert.Equal(before.Tasks, after.Tasks);
+        Assert.Equal(before.TaskItems, after.TaskItems);
+        Assert.Equal(before.Drafts, after.Drafts);
+        Assert.Equal(before.DraftItems, after.DraftItems);
+        Assert.Equal(before.Inspections, after.Inspections);
+        Assert.Equal(before.InspectionItems, after.InspectionItems);
+        Assert.Equal(before.InventoryAdjustments, after.InventoryAdjustments);
+        Assert.Equal(before.LifecycleEvents, after.LifecycleEvents);
+    }
+
+    private sealed record DatabaseSnapshot(
+        string Products,
+        string Batches,
+        string Tasks,
+        string TaskItems,
+        string Drafts,
+        string DraftItems,
+        string Inspections,
+        string InspectionItems,
+        string InventoryAdjustments,
+        string LifecycleEvents);
 }
