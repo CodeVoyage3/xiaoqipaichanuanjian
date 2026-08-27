@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using System.Runtime.InteropServices;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Infrastructure.Excel;
@@ -49,7 +50,10 @@ public sealed class ImportConfirmationGuardTests
             contract.SourceFileSha256,
             Convert.ToHexString(SHA256.HashData(bytesBeforePathChange)).ToLowerInvariant());
         Assert.Equal(ImportStatuses.Succeeded, contract.TargetImportStatus);
-        Assert.Equal(0, contract.NewTaskProductCount);
+        Assert.Equal(0, contract.NewTaskProductCountSchemaPlaceholder);
+        Assert.DoesNotContain(
+            typeof(ImportConfirmationContract).GetProperties(),
+            property => property.Name == "NewTaskProductCount");
         Assert.DoesNotContain(
             typeof(ImportConfirmationContract).GetProperties(),
             property => property.PropertyType == typeof(byte[]));
@@ -59,6 +63,14 @@ public sealed class ImportConfirmationGuardTests
         Assert.Equal(
             "ready",
             result.Code);
+        Assert.Equal(
+            contract.SourceFileSha256,
+            Convert.ToHexString(SHA256.HashData(contract.WorkbookBytes.ToArray())).ToLowerInvariant());
+
+        var exposedBytes = contract.WorkbookBytes;
+        Assert.True(MemoryMarshal.TryGetArray(exposedBytes, out var exposedArray));
+        exposedArray.Array![exposedArray.Offset] ^= 0xff;
+        Assert.Equal(bytesBeforePathChange, contract.WorkbookBytes.ToArray());
         Assert.Equal(
             contract.SourceFileSha256,
             Convert.ToHexString(SHA256.HashData(contract.WorkbookBytes.ToArray())).ToLowerInvariant());

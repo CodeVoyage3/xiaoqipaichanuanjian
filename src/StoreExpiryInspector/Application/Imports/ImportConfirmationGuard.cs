@@ -188,6 +188,8 @@ public sealed class ImportConfirmationResult
 
 public sealed class ImportConfirmationContract
 {
+    private readonly byte[] _workbookBytes;
+
     internal ImportConfirmationContract(
         string sourceFilePath,
         string sourceFileName,
@@ -198,7 +200,7 @@ public sealed class ImportConfirmationContract
         SourceFilePath = sourceFilePath;
         SourceFileName = sourceFileName;
         SourceFileSha256 = sourceFileSha256;
-        WorkbookBytes = new ReadOnlyMemory<byte>(workbookBytes);
+        _workbookBytes = workbookBytes.ToArray();
         Plan = plan;
     }
 
@@ -208,11 +210,11 @@ public sealed class ImportConfirmationContract
 
     public string SourceFileSha256 { get; }
 
-    public ReadOnlyMemory<byte> WorkbookBytes { get; }
+    public ReadOnlyMemory<byte> WorkbookBytes => new(_workbookBytes.ToArray());
 
     public ImportPlan Plan { get; }
 
     public string TargetImportStatus => ImportStatuses.Succeeded;
 
-    public int NewTaskProductCount => 0;
+    public int NewTaskProductCountSchemaPlaceholder => 0;
 }
