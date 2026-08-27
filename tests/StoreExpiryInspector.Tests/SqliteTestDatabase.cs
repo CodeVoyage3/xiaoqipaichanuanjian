@@ -160,7 +160,12 @@ public sealed class SqliteTestDatabase : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = Path,
+            ForeignKeys = true
+        }.ToString());
+        SqliteConnection.ClearPool(connection);
         if (System.IO.Directory.Exists(Directory))
         {
             System.IO.Directory.Delete(Directory, recursive: true);
