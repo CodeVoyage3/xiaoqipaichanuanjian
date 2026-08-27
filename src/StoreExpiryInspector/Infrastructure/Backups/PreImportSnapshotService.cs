@@ -288,36 +288,6 @@ public sealed class PreImportSnapshotService
         }
     }
 
-    public bool ValidateSavedSnapshot(string snapshotPath, string sha256)
-    {
-        if (string.IsNullOrWhiteSpace(snapshotPath) || string.IsNullOrWhiteSpace(sha256))
-        {
-            return false;
-        }
-
-        try
-        {
-            var fullPath = Path.GetFullPath(snapshotPath);
-            var fileSize = new FileInfo(fullPath).Length;
-            if (fileSize <= 0)
-            {
-                return false;
-            }
-
-            return ValidateSnapshot(new PreImportSnapshotMetadata(
-                fullPath,
-                fullPath,
-                sha256,
-                DateTime.UtcNow,
-                fileSize,
-                RequiredMigrationIds));
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
     public bool ValidateSavedSnapshot(string snapshotPath, string sha256, string sourceDatabasePath)
     {
         if (string.IsNullOrWhiteSpace(snapshotPath) ||
