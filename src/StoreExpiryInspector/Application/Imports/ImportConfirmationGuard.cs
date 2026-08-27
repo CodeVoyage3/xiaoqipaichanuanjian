@@ -122,7 +122,7 @@ public sealed class ImportConfirmationGuard
         }
     }
 
-    private static (byte[] Bytes, string Sha256) ReadFileBytes(string path)
+    internal static (byte[] Bytes, string Sha256) ReadFileBytes(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         using var content = new MemoryStream();
