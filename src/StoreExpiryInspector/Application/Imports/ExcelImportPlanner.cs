@@ -82,6 +82,7 @@ public sealed class ExcelImportPlanner
         var newBatches = new List<NewBatchPlan>();
         var updatedBatches = new List<BatchUpdatePlan>();
         var unchangedBatches = new List<BatchUnchangedPlan>();
+        var explicitProductStocks = new List<ExplicitProductStock>();
 
         foreach (var productCode in productCodes)
         {
@@ -95,6 +96,10 @@ public sealed class ExcelImportPlanner
             var stockDecision = hasExistingProduct || canCreateProduct
                 ? ReadStock(productCode, stock, canCreateProduct, planningIssues)
                 : StockDecision.Unavailable;
+            if (stockDecision.IsValid)
+            {
+                explicitProductStocks.Add(new ExplicitProductStock(productCode, stockDecision.Quantity!.Value));
+            }
             var productValues = ReadProductValues(productCode, productNormalBatches, planningIssues);
             var sourceRows = SourceRows(productNormalBatches, stock);
             var canPlanNewProduct = canCreateProduct && stockDecision.IsValid;
@@ -233,6 +238,9 @@ public sealed class ExcelImportPlanner
             .ThenBy(issue => issue.Code, StringComparer.Ordinal)
             .ThenBy(issue => issue.FieldName, StringComparer.Ordinal)
             .ToArray();
+        var sortedExplicitProductStocks = explicitProductStocks
+            .OrderBy(stock => stock.ProductCode, StringComparer.Ordinal)
+            .ToArray();
         var hasChanges = sortedNewProducts.Length > 0
             || sortedUpdatedProducts.Length > 0
             || sortedNewBatches.Length > 0
@@ -254,7 +262,8 @@ public sealed class ExcelImportPlanner
             sortedUnchangedProducts,
             sortedNewBatches,
             sortedUpdatedBatches,
-            sortedUnchangedBatches);
+            sortedUnchangedBatches,
+            sortedExplicitProductStocks);
     }
 
     private static IReadOnlyList<ImportFieldChange> CompareProduct(
@@ -599,7 +608,8 @@ public sealed class ImportPlan
         IReadOnlyList<ProductUnchangedPlan> unchangedProducts,
         IReadOnlyList<NewBatchPlan> newBatches,
         IReadOnlyList<BatchUpdatePlan> updatedBatches,
-        IReadOnlyList<BatchUnchangedPlan> unchangedBatches)
+        IReadOnlyList<BatchUnchangedPlan> unchangedBatches,
+        IReadOnlyList<ExplicitProductStock> explicitProductStocks)
     {
         Preview = preview;
         NewProducts = Array.AsReadOnly(newProducts.ToArray());
@@ -608,6 +618,7 @@ public sealed class ImportPlan
         NewBatches = Array.AsReadOnly(newBatches.ToArray());
         UpdatedBatches = Array.AsReadOnly(updatedBatches.ToArray());
         UnchangedBatches = Array.AsReadOnly(unchangedBatches.ToArray());
+        ExplicitProductStocks = Array.AsReadOnly(explicitProductStocks.ToArray());
     }
 
     public ImportPreview Preview { get; }
@@ -623,6 +634,8 @@ public sealed class ImportPlan
     public IReadOnlyList<BatchUpdatePlan> UpdatedBatches { get; }
 
     public IReadOnlyList<BatchUnchangedPlan> UnchangedBatches { get; }
+
+    public IReadOnlyList<ExplicitProductStock> ExplicitProductStocks { get; }
 
     public int NewProductCount => NewProducts.Count;
 
@@ -641,6 +654,8 @@ public sealed class ImportPlan
         || NewBatches.Count > 0
         || UpdatedBatches.Count > 0;
 }
+
+public sealed record ExplicitProductStock(string ProductCode, int Quantity);
 
 public sealed class ImportPreview
 {

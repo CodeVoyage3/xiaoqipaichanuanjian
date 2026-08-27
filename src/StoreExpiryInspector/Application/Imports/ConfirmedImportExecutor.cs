@@ -205,15 +205,19 @@ public sealed class ConfirmedImportExecutor
         var metadata = snapshot.Metadata;
         var plan = contract.Plan;
         var pendingIssues = BuildIssues(plan.Preview);
+        var ownsTransaction = context.Database.CurrentTransaction is null;
         var transaction = (IDbContextTransaction?)null;
         var committed = false;
         try
         {
-            transaction = context.Database.BeginTransaction();
+            if (ownsTransaction)
+            {
+                transaction = context.Database.BeginTransaction();
+            }
 
             if (!TryValidateCurrentPlan(context, plan, out var currentPlan))
             {
-                transaction.Rollback();
+                transaction?.Rollback();
                 context.ChangeTracker.Clear();
                 return ConfirmedImportResult.Fail(
                     ConfirmedImportCodes.StalePlan,
@@ -297,13 +301,13 @@ public sealed class ConfirmedImportExecutor
             }
 
             context.ChangeTracker.Clear();
-            transaction.Commit();
+            transaction?.Commit();
             committed = true;
             return ConfirmedImportResult.Succeed(import.Id, metadata);
         }
         catch (Exception)
         {
-            if (!committed)
+            if (ownsTransaction && !committed)
             {
                 try
                 {
