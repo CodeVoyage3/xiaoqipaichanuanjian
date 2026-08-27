@@ -138,7 +138,7 @@
 
 ## D-018｜S4-T03 手工库存修正与商品归零编排
 
-- 状态：S4-T02 已独立验收通过；用户已批准只创建 S4-T03，尚未创建 S4-T04。
+- 状态：S4-T03 已由 GPT-5.6 Sol 独立验收通过；尚未创建 S4-T04，等待用户明确批准。
 - 库存事实：每次真实修正新增 InventoryAdjustment，ExcelStockQtySnapshot 固定取 Product 当前 ExcelStockQty；Product 只更新 EffectiveStockQty、EffectiveStockSource=`manual` 与 UpdatedAtUtc。连续手工修正不得把上次 Effective 值伪装成 Excel 快照。
 - 同值：按重新读取的 EffectiveStockQty 判断；同值不写 Adjustment、不改时间、不触发生命周期。0 值确认门禁先于同值判断。
 - 归零：0 值必须显式确认；本卡先保存 Adjustment 与 Product=0，再在同一外层事务内只调用 S3-T04，并把本次 AdjustmentId 作为唯一来源。S4-T03 不复制归零状态机。
