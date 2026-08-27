@@ -10,6 +10,21 @@ public static class ExpiryStageCalculator
     public const string Withdraw = "withdraw";
     public const string Expired = "expired";
 
+    public static int GetStagePriority(string stage) => stage switch
+    {
+        None => 0,
+        Discount50 => 1,
+        Discount20 => 2,
+        Withdraw => 3,
+        Expired => 4,
+        _ => throw new ArgumentException(
+            "Stage must be one of the canonical expiry stages.",
+            nameof(stage))
+    };
+
+    public static int CompareStages(string left, string right) =>
+        GetStagePriority(left).CompareTo(GetStagePriority(right));
+
     public static ExpiryStageResult Calculate(
         DateOnly businessDate,
         DateOnly expiryDate,
