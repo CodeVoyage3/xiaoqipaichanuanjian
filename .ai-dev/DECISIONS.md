@@ -135,3 +135,13 @@
 - 系统失效：S3-T04 留下的 IsInvalid Draft 是必须保留的系统痕迹，S4-T02 不得复活、覆盖或删除。
 - 用户主动清空：只对仍开放 Task 的当前有效 Draft 生效，事务内先删除 DraftItem 再删除 Draft；无 Draft 为幂等无变化。该策略不决定 S4-T04 正式提交后的 Draft 处置，D-016 门禁保持不变。
 - 边界：Application 显式接收 BusinessDate 与 UTC 操作时间，不接 WPF，不新增 schema/依赖，不调用 S3-T04/S3-T06，不创建 Inspection 或完成 Task。
+
+## D-018｜S4-T03 手工库存修正与商品归零编排
+
+- 状态：S4-T02 已独立验收通过；用户已批准只创建 S4-T03，尚未创建 S4-T04。
+- 库存事实：每次真实修正新增 InventoryAdjustment，ExcelStockQtySnapshot 固定取 Product 当前 ExcelStockQty；Product 只更新 EffectiveStockQty、EffectiveStockSource=`manual` 与 UpdatedAtUtc。连续手工修正不得把上次 Effective 值伪装成 Excel 快照。
+- 同值：按重新读取的 EffectiveStockQty 判断；同值不写 Adjustment、不改时间、不触发生命周期。0 值确认门禁先于同值判断。
+- 归零：0 值必须显式确认；本卡先保存 Adjustment 与 Product=0，再在同一外层事务内只调用 S3-T04，并把本次 AdjustmentId 作为唯一来源。S4-T03 不复制归零状态机。
+- 恢复：曾归零商品修正为正数只改变当前库存事实，不清除商品历史、不恢复旧 Batch/Task/Draft；真正新批次仍只由 S3-T05 处理。
+- 导入：本卡不修改 ConfirmedImportExecutor；下一次合法 Excel 明确出现商品时仍由 Stage 2 覆盖当前库存/来源，历史 Adjustment 永久保留。
+- 边界：不接 WPF，不实现排查提交，不修改 schema/migration/依赖、S3-T04/S3-T05、HandledAttentionVersion 或正式提交后的 Draft 处置。
