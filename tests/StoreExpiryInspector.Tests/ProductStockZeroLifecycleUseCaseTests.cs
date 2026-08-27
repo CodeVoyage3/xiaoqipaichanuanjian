@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Domain;
@@ -235,7 +236,11 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
         using var database = SqliteTestDatabase.Create();
         long firstProductId;
         long secondProductId;
+        long thirdProductId;
+        ProductSnapshot secondProductBefore;
+        ProductSnapshot thirdProductBefore;
         BatchSnapshot secondBatchBefore;
+        BatchSnapshot thirdBatchBefore;
         using (var seed = database.Open())
         {
             var first = AddProduct(seed, "SKU-ZERO-A");
@@ -246,6 +251,7 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
 
             var second = AddProduct(seed, "SKU-ZERO-B", stock: 4, generation: 7);
             secondProductId = second.Id;
+            secondProductBefore = Snapshot(second);
             var secondBatch = AddBatch(
                 seed,
                 second.Id,
@@ -254,6 +260,21 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
                 lifecycleGeneration: 7,
                 attentionVersion: 3);
             secondBatchBefore = Snapshot(secondBatch);
+
+            var third = AddProduct(seed, "SKU-ZERO-C", stock: 9, generation: 2);
+            thirdProductId = third.Id;
+            thirdProductBefore = Snapshot(third);
+            var thirdBatch = AddBatch(
+                seed,
+                third.Id,
+                ExpiryStageCalculator.Expired,
+                null,
+                lifecycleGeneration: 1,
+                trackingStatus: "stopped",
+                stopReason: "manual_stop",
+                stoppedAtUtc: SeedUtc,
+                attentionVersion: 4);
+            thirdBatchBefore = Snapshot(thirdBatch);
         }
 
         using (var context = database.Open())
@@ -262,12 +283,12 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
         }
 
         using var verify = database.Open();
-        var secondAfter = verify.Products.AsNoTracking().Single(product => product.Id == secondProductId);
-        Assert.Equal(4, secondAfter.EffectiveStockQty);
-        Assert.Equal(7, secondAfter.LifecycleGeneration);
-        Assert.False(secondAfter.IsStockZeroTerminated);
+        Assert.Equal(secondProductBefore, Snapshot(verify.Products.AsNoTracking().Single(product => product.Id == secondProductId)));
+        Assert.Equal(thirdProductBefore, Snapshot(verify.Products.AsNoTracking().Single(product => product.Id == thirdProductId)));
         Assert.Empty(verify.LifecycleEvents.Where(item => item.ProductId == secondProductId));
+        Assert.Empty(verify.LifecycleEvents.Where(item => item.ProductId == thirdProductId));
         Assert.Equal(secondBatchBefore, Snapshot(verify.Batches.AsNoTracking().Single(batch => batch.ProductId == secondProductId)));
+        Assert.Equal(thirdBatchBefore, Snapshot(verify.Batches.AsNoTracking().Single(batch => batch.ProductId == thirdProductId)));
         Assert.Single(verify.Tasks);
         Assert.Equal(firstProductId, verify.Tasks.Single().ProductId);
     }
@@ -336,6 +357,45 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
             Assert.False(second.TaskClosed);
             Assert.False(second.DraftInvalidated);
             Assert.Equal(0, second.LifecycleEventCount);
+        }
+
+        using var verify = database.Open();
+        Assert.Equal(productBefore, Snapshot(verify.Products.AsNoTracking().Single()));
+        Assert.Equal(batchBefore, Snapshot(verify.Batches.AsNoTracking().Single()));
+        Assert.Single(verify.LifecycleEvents);
+    }
+
+    [Fact]
+    public void RepeatingWithLaterTimestampLeavesCompleteBatchTerminalStateUntouched()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long productId;
+        using (var seed = database.Open())
+        {
+            productId = AddProduct(seed, "SKU-ZERO-LATER-TIMESTAMP", generation: 6).Id;
+            AddBatch(seed, productId, ExpiryStageCalculator.Withdraw, DateOnly.MaxValue, lifecycleGeneration: 6);
+        }
+
+        using (var context = database.Open())
+        {
+            Execute(context, productId);
+        }
+
+        ProductSnapshot productBefore;
+        BatchSnapshot batchBefore;
+        using (var context = database.Open())
+        {
+            productBefore = Snapshot(context.Products.AsNoTracking().Single());
+            batchBefore = Snapshot(context.Batches.AsNoTracking().Single());
+        }
+
+        var laterOccurredAtUtc = OccurredAtUtc.AddDays(1);
+        using (var context = database.Open())
+        {
+            var result = ExecuteAt(context, productId, laterOccurredAtUtc);
+            Assert.False(result.ProductTerminated);
+            Assert.Equal(0, result.StoppedBatchCount);
+            Assert.Equal(0, result.LifecycleEventCount);
         }
 
         using var verify = database.Open();
@@ -541,6 +601,96 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
         Assert.False(verify.Products.Single(product => product.Id == firstProductId).IsStockZeroTerminated);
         Assert.False(verify.Products.Single(product => product.Id == secondProductId).IsStockZeroTerminated);
         Assert.Empty(verify.LifecycleEvents);
+    }
+
+    [Fact]
+    public void NonZeroAdjustmentSourceIsRejectedBeforeAnyLifecycleWrite()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long productId;
+        long adjustmentId;
+        using (var seed = database.Open())
+        {
+            productId = AddProduct(seed, "SKU-ZERO-SOURCE-NONZERO").Id;
+            var adjustment = new InventoryAdjustment
+            {
+                ProductId = productId,
+                ExcelStockQtySnapshot = 4,
+                AdjustedStockQty = 2,
+                AdjustedAtUtc = OccurredAtUtc
+            };
+            seed.InventoryAdjustments.Add(adjustment);
+            seed.SaveChanges();
+            adjustmentId = adjustment.Id;
+        }
+
+        using (var context = database.Open())
+        {
+            Assert.Throws<ArgumentException>(() => Execute(
+                context,
+                productId,
+                sourceAdjustmentId: adjustmentId));
+            Assert.False(context.Products.Single().IsStockZeroTerminated);
+            Assert.Empty(context.LifecycleEvents);
+        }
+
+        using var verify = database.Open();
+        Assert.False(verify.Products.Single().IsStockZeroTerminated);
+        Assert.Empty(verify.LifecycleEvents);
+    }
+
+    [Fact]
+    public void ExistingTaskDraftAndLifecycleEventConstraintsRejectIllegalRows()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long productId;
+        long batchId;
+        long otherBatchId;
+        long taskId;
+        long draftId;
+        using (var seed = database.Open())
+        {
+            var product = AddProduct(seed, "SKU-ZERO-CONSTRAINTS");
+            productId = product.Id;
+            batchId = AddBatch(seed, productId, ExpiryStageCalculator.Discount50, DateOnly.MaxValue).Id;
+            var otherProduct = AddProduct(seed, "SKU-ZERO-CONSTRAINTS-OTHER", stock: 1);
+            otherBatchId = AddBatch(seed, otherProduct.Id, ExpiryStageCalculator.Discount50, DateOnly.MaxValue).Id;
+            taskId = AddTask(seed, productId, ExpiryStageCalculator.Discount50).Id;
+            draftId = AddDraft(seed, taskId, "约束测试").Id;
+        }
+
+        using var context = database.Open();
+        Assert.Throws<SqliteException>(() => context.Database.ExecuteSqlInterpolated($"""
+            UPDATE tasks
+            SET status = 'system_closed', closed_at_utc = NULL, close_reason = NULL
+            WHERE id = {taskId};
+            """));
+        Assert.Throws<SqliteException>(() => context.Database.ExecuteSqlInterpolated($"""
+            UPDATE drafts
+            SET is_invalid = 1, invalid_reason = NULL, invalidated_at_utc = NULL
+            WHERE id = {draftId};
+            """));
+        Assert.Throws<SqliteException>(() => context.Database.ExecuteSqlInterpolated($"""
+            INSERT INTO lifecycle_events
+                (product_id, event_type, reason, occurred_at_utc)
+            VALUES ({productId}, 'unknown_type', 'product_stock_zero', {OccurredAtUtc});
+            """));
+        Assert.Throws<SqliteException>(() => context.Database.ExecuteSqlInterpolated($"""
+            INSERT INTO lifecycle_events
+                (product_id, event_type, reason, occurred_at_utc)
+            VALUES ({productId}, 'product_stock_zero', ' ', {OccurredAtUtc});
+            """));
+        Assert.Throws<SqliteException>(() => context.Database.ExecuteSqlInterpolated($"""
+            INSERT INTO lifecycle_events
+                (product_id, batch_id, event_type, reason, occurred_at_utc)
+            VALUES ({productId}, {otherBatchId}, 'batch_checked_zero', 'wrong product batch', {OccurredAtUtc});
+            """));
+
+        Assert.Equal("open", context.Tasks.AsNoTracking().Single().Status);
+        Assert.False(context.Drafts.AsNoTracking().Single().IsInvalid);
+        Assert.Empty(context.LifecycleEvents);
+        Assert.Equal(productId, context.Batches.AsNoTracking().Single(batch => batch.Id == batchId).ProductId);
+        Assert.Equal(2, context.Batches.AsNoTracking().Count());
     }
 
     [Fact]
@@ -778,11 +928,19 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
         long productId,
         long? sourceImportId = null,
         long? sourceAdjustmentId = null) =>
+        ExecuteAt(context, productId, OccurredAtUtc, sourceImportId, sourceAdjustmentId);
+
+    private static ProductStockZeroResult ExecuteAt(
+        StoreDbContext context,
+        long productId,
+        DateTime occurredAtUtc,
+        long? sourceImportId = null,
+        long? sourceAdjustmentId = null) =>
         new ProductStockZeroLifecycleUseCase().Execute(
             context,
             new ProductStockZeroRequest(
                 productId,
-                OccurredAtUtc,
+                occurredAtUtc,
                 sourceImportId,
                 sourceAdjustmentId));
 
@@ -905,14 +1063,30 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
 
     private static ProductSnapshot Snapshot(Product product) => new(
         product.Id,
+        product.ProductCode,
+        product.CurrentName,
+        product.CurrentBarcode,
+        product.CategoryCode,
+        product.PolicyCode,
+        product.ExcelStockQty,
         product.EffectiveStockQty,
+        product.EffectiveStockSource,
         product.LifecycleGeneration,
         product.IsStockZeroTerminated,
+        product.LastSeenImportId,
+        product.CreatedAtUtc,
         product.UpdatedAtUtc);
 
     private static BatchSnapshot Snapshot(Batch batch) => new(
         batch.Id,
         batch.ProductId,
+        batch.ProductionDate,
+        batch.ExpiryDate,
+        batch.ShelfLifeValue,
+        batch.ShelfLifeUnit,
+        batch.CurrentArrivalQty,
+        batch.MaxArrivalQty,
+        batch.SourceDiscountReference,
         batch.LifecycleGeneration,
         batch.TrackingStatus,
         batch.StopReason,
@@ -921,21 +1095,36 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
         batch.NextTriggerDate,
         batch.AttentionVersion,
         batch.HandledAttentionVersion,
-        batch.CurrentArrivalQty,
-        batch.MaxArrivalQty,
-        batch.SourceDiscountReference,
+        batch.LastSeenImportId,
+        batch.CreatedAtUtc,
         batch.UpdatedAtUtc);
 
     private sealed record ProductSnapshot(
         long Id,
+        string ProductCode,
+        string? CurrentName,
+        string? CurrentBarcode,
+        string CategoryCode,
+        string PolicyCode,
+        int ExcelStockQty,
         int EffectiveStockQty,
+        string? EffectiveStockSource,
         int LifecycleGeneration,
         bool IsStockZeroTerminated,
+        long? LastSeenImportId,
+        DateTime CreatedAtUtc,
         DateTime UpdatedAtUtc);
 
     private sealed record BatchSnapshot(
         long Id,
         long ProductId,
+        DateOnly? ProductionDate,
+        DateOnly ExpiryDate,
+        int ShelfLifeValue,
+        string ShelfLifeUnit,
+        int CurrentArrivalQty,
+        int MaxArrivalQty,
+        string? SourceDiscountReference,
         int LifecycleGeneration,
         string TrackingStatus,
         string? StopReason,
@@ -944,8 +1133,7 @@ public sealed class ProductStockZeroLifecycleUseCaseTests
         DateOnly? NextTriggerDate,
         int AttentionVersion,
         int HandledAttentionVersion,
-        int CurrentArrivalQty,
-        int MaxArrivalQty,
-        string? SourceDiscountReference,
+        long? LastSeenImportId,
+        DateTime CreatedAtUtc,
         DateTime UpdatedAtUtc);
 }

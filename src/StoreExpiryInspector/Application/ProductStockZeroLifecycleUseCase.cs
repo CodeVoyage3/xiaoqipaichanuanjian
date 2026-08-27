@@ -96,26 +96,15 @@ public sealed class ProductStockZeroLifecycleUseCase
                     batch.StopReason == "product_stock_zero" &&
                     batch.StoppedAtUtc.HasValue &&
                     batch.NextTriggerDate is null;
-                if ((productTerminated && hasProductZeroTerminalState) ||
-                    (!productTerminated &&
-                     hasProductZeroTerminalState &&
-                     batch.StoppedAtUtc == request.OccurredAtUtc &&
-                     batch.UpdatedAtUtc == request.OccurredAtUtc))
+                if (hasProductZeroTerminalState)
                 {
                     continue;
                 }
 
                 journal.Capture(batch);
-                var preserveExistingStopTime = productTerminated &&
-                    batch.TrackingStatus == "stopped" &&
-                    batch.StopReason == "product_stock_zero" &&
-                    batch.StoppedAtUtc.HasValue;
                 batch.TrackingStatus = "stopped";
                 batch.StopReason = "product_stock_zero";
-                if (!preserveExistingStopTime)
-                {
-                    batch.StoppedAtUtc = request.OccurredAtUtc;
-                }
+                batch.StoppedAtUtc = request.OccurredAtUtc;
                 batch.NextTriggerDate = null;
                 batch.UpdatedAtUtc = request.OccurredAtUtc;
                 stoppedBatchCount++;
@@ -273,6 +262,13 @@ public sealed class ProductStockZeroLifecycleUseCase
         {
             throw new ArgumentException(
                 $"Inventory adjustment {adjustmentId} does not belong to product {productId}.",
+                nameof(request));
+        }
+
+        if (adjustment.AdjustedStockQty != 0)
+        {
+            throw new ArgumentException(
+                $"Inventory adjustment {adjustmentId} does not confirm zero stock.",
                 nameof(request));
         }
     }
