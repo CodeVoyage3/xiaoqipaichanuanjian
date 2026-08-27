@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T01 已独立验收通过，暂停在 S4-T01 → S4-T02 门禁）
-- 状态：Stage 0～Stage 3 整体通过；Stage 4 总体拆分已批准；S4-T01 已通过；尚未创建 S4-T02
+- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T02 已创建，待实现）
+- 状态：Stage 0～Stage 3 整体通过；S4-T01 已独立验收通过；当前只创建 S4-T02，尚未创建 S4-T03
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -18,6 +18,7 @@
 - Release 全量 348/348；Stage 3 精确证据 170/170；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。
 - Release EXE 已实际启动验收：主窗口正常；新空库完成 migration、写入 `last_normal_run_date` 与启动完成日志。
 - S4-T01 已交付 Application 层 Dashboard、开放任务列表和排查详情只读查询 DTO；真实 SQLite 专项 10/10，Release 全量 358/358，Stage 3 精确回归 170/170。
+- S4-T02 任务卡已建立，只授权 Application 层草稿保存、显式重新确认、readiness 与用户主动清空；尚无 S4-T02 生产实现。
 
 ## 冻结业务红线
 
@@ -47,6 +48,7 @@
 
 ## 下一步门禁
 
-- 暂停等待用户决定是否创建 S4-T02；当前不得自动创建或派发。
-- 当前不得实现 WPF、库存修正或正式提交。
+- 只允许 GPT-5.6 Luna（max）实现 `.ai-dev/TASKS/S4-T02.md` 授权范围。
+- S4-T02 完成后只提交 GPT-5.6 Sol 独立验收；未正式通过前不得创建 S4-T03。
+- 当前不得实现 WPF、库存修正或正式提交；不得定义 HandledAttentionVersion 或提交后 Draft 处置。
 - S4-T01～S4-T04 完成后、创建 S4-T05 前，必须先形成经产品治理的 Stage 4 UI/UX Pro Max 基线。

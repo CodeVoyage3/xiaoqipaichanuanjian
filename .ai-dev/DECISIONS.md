@@ -126,3 +126,12 @@
 
 - `HandledAttentionVersion`：当前不定义为正式提交时保持不变，也不定义为必须更新。S4-T04 创建前必须重新核对 Stage 1 数据模型、DATA_MODEL、DECISIONS、相关验收和 Stage 3 实际使用，明确它是否承担“当前 AttentionVersion 已被正式处理”的持久化语义；未核验前不得创造或放弃该语义。
 - 正式提交后的 Draft：只冻结业务结果——提交成功后不得继续作为有效草稿恢复或编辑。物理删除 Draft/DraftItem，还是利用现有状态字段失效，留到 S4-T04 创建前按当前 schema 与追踪要求决定；当前不得写死全局删除规则。
+
+## D-017｜S4-T02 草稿写入与用户主动清空
+
+- 状态：S4-T01 已独立验收通过；用户已批准只创建 S4-T02，尚未创建 S4-T03。
+- 保存：草稿允许不完整；SaveDraft 是 patch，只保存请求明确包含的 Item，并严格保留 null/0/正数语义。普通保存不得清除 RequiresReconfirmation 或推进既有 ConfirmedAttentionVersion。
+- 陈旧页面：SaveDraft 允许保留观察版本落后于数据库当前版本的用户输入，但不得改变当前 AttentionVersion/RequiresReconfirmation；只有独立 ReconfirmItem 在请求版本同时匹配当前 Batch/TaskItem 时才可清除重新确认。
+- 系统失效：S3-T04 留下的 IsInvalid Draft 是必须保留的系统痕迹，S4-T02 不得复活、覆盖或删除。
+- 用户主动清空：只对仍开放 Task 的当前有效 Draft 生效，事务内先删除 DraftItem 再删除 Draft；无 Draft 为幂等无变化。该策略不决定 S4-T04 正式提交后的 Draft 处置，D-016 门禁保持不变。
+- 边界：Application 显式接收 BusinessDate 与 UTC 操作时间，不接 WPF，不新增 schema/依赖，不调用 S3-T04/S3-T06，不创建 Inspection 或完成 Task。
