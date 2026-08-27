@@ -129,7 +129,7 @@
 
 ## D-017｜S4-T02 草稿写入与用户主动清空
 
-- 状态：S4-T01 已独立验收通过；用户已批准只创建 S4-T02，尚未创建 S4-T03。
+- 状态：S4-T02 已由 GPT-5.6 Sol 独立验收通过；尚未创建 S4-T03，等待用户明确批准。
 - 保存：草稿允许不完整；SaveDraft 是 patch，只保存请求明确包含的 Item，并严格保留 null/0/正数语义。普通保存不得清除 RequiresReconfirmation 或推进既有 ConfirmedAttentionVersion。
 - 陈旧页面：SaveDraft 允许保留观察版本落后于数据库当前版本的用户输入，但不得改变当前 AttentionVersion/RequiresReconfirmation；只有独立 ReconfirmItem 在请求版本同时匹配当前 Batch/TaskItem 时才可清除重新确认。
 - 系统失效：S3-T04 留下的 IsInvalid Draft 是必须保留的系统痕迹，S4-T02 不得复活、覆盖或删除。
