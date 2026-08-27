@@ -1,159 +1,154 @@
-# 数据模型草案
+# 当前数据模型
 
-> Stage 0 逻辑模型；字段名可在 Stage 1 任务卡中做一次最小收敛，业务语义不可漂移。
+> 更新于 2026-08-27。以下为 Stage 1 验收通过后的代码与 SQLite schema 事实；业务状态转换尚未实现。权威结构以 8 条 migration 和 `StoreDbContextModelSnapshot` 为准。
 
-## 主数据
+## 总览
 
-### products
+- 17 张业务表、17 个领域实体、17 个独立 EF 配置、17 个 DbSet。
+- 所有主键均为整数 `id`；业务日期保存为 SQLite `TEXT`，时间戳为 UTC `TEXT`，数量为非负整数。
+- 关系默认采用 `NO ACTION`，不依赖级联删除。
+- 当前 migration：`InitialCreate`、`AddTasksAndDrafts`、`AddInspectionHistory`、`AddInventoryAdjustments`、`AddImportPersistence`、`AddBackupMetadata`、`AddSettingsAndAppState`、`AddLifecycleEvents`。
 
-- `id`
-- `product_code`：唯一且非空，商品唯一身份
-- `current_name`、`current_barcode`
-- `category_code`、`policy_code`
-- `excel_stock_qty`、`effective_stock_qty`、`effective_stock_source`
-- `lifecycle_generation`：每次商品从非零生命周期进入明确库存归零时递增
-- `is_stock_zero_terminated`
-- `last_seen_import_id`
-- `created_at_utc`、`updated_at_utc`
+## 商品与批次
 
-约束：`UNIQUE(product_code)`。
+### `products`
 
-### batches
+字段：`id`、`product_code`、`current_name`、`current_barcode`、`category_code`、`policy_code`、`excel_stock_qty`、`effective_stock_qty`、`effective_stock_source`、`lifecycle_generation`、`is_stock_zero_terminated`、`last_seen_import_id`、`created_at_utc`、`updated_at_utc`。
 
-- `id`、`product_id`
-- `production_date`：可空
-- `expiry_date`
-- `shelf_life_value`、`shelf_life_unit`
-- `current_arrival_qty`、`max_arrival_qty`
-- `source_discount_reference`
-- `lifecycle_generation`
-- `tracking_status`、`stop_reason`、`stopped_at_utc`
-- `current_stage`、`next_trigger_date`
-- `attention_version`：阶段升级、真正新到货或合法恢复时递增
-- `handled_attention_version`
-- `last_seen_import_id`
-- `created_at_utc`、`updated_at_utc`
+- `product_code` Trim 后非空且唯一，是商品主体唯一身份。
+- `current_name`、`current_barcode` 可空；名称或条码变化不产生新商品。
+- 默认 `category_code = food`、`policy_code = food_v1`；当前只批准食品 V1。
+- `last_seen_import_id` 可空并引用 `imports`，删除行为 `NO ACTION`。
 
-批次键：
+### `batches`
 
-- 有生产日期：`商品编码 + 生产日期 + 有效日期`
-- 无生产日期：`商品编码 + 有效日期`
+字段：`id`、`product_id`、`production_date`、`expiry_date`、`shelf_life_value`、`shelf_life_unit`、`current_arrival_qty`、`max_arrival_qty`、`source_discount_reference`、`lifecycle_generation`、`tracking_status`、`stop_reason`、`stopped_at_utc`、`current_stage`、`next_trigger_date`、`attention_version`、`handled_attention_version`、`last_seen_import_id`、`created_at_utc`、`updated_at_utc`。
 
-约束使用 SQLite 原生部分唯一索引，不拼接字符串键：
-
-- `production_date IS NOT NULL`：`UNIQUE(product_id, production_date, expiry_date)`。
-- `production_date IS NULL`：`UNIQUE(product_id, expiry_date)`。
-
-批次一旦出现，停止跟踪后仍永久保留记录；不同商品允许日期相同。
-
-关键索引：`(tracking_status, next_trigger_date)`、`product_id`、`expiry_date`。
+- 有生产日期的唯一键：`UNIQUE(product_id, production_date, expiry_date) WHERE production_date IS NOT NULL`。
+- 无生产日期的唯一键：`UNIQUE(product_id, expiry_date) WHERE production_date IS NULL`。
+- 这两条键对应产品规则中的“商品编码 + 生产日期 + 有效日期”与“商品编码 + 有效日期”；旧批次记录永久保留。
+- `shelf_life_unit` 只允许 `M`、`D`、`Y`；当前/历史最高累计到货均非负。
+- 已有 `(tracking_status, next_trigger_date)`、`product_id`、`expiry_date` 索引，支持后续避免启动全历史扫描。
 
 ## 当前任务与草稿
 
-### tasks
+### `tasks`
 
-- `id`、`product_id`
-- `status`：open / completed / system_closed
-- `highest_stage`
-- `created_at_utc`、`updated_at_utc`、`closed_at_utc`
-- `close_reason`
+字段：`id`、`product_id`、`status`、`highest_stage`、`created_at_utc`、`updated_at_utc`、`closed_at_utc`、`close_reason`。
 
-约束：SQLite 部分唯一索引保证每个商品最多一条 `open` 任务。
+- `status`：`open`、`completed`、`system_closed`。
+- `highest_stage`：`discount_50`、`discount_20`、`withdraw`、`expired`。
+- 部分唯一索引保证每个商品最多一条 `open` 任务。
 
-### task_items
+### `task_items`
 
-- `id`、`task_id`、`batch_id`
-- `stage`
-- `attention_version`
-- `requires_reconfirmation`
-- `created_at_utc`、`updated_at_utc`
+字段：`id`、`task_id`、`batch_id`、`product_id`、`stage`、`attention_version`、`requires_reconfirmation`、`created_at_utc`、`updated_at_utc`。
 
-约束：同一开放任务中一个批次最多一项；版本字段用于幂等生成和草稿重新确认。
+- `(task_id, batch_id)` 唯一。
+- 组合外键保证任务、批次项和商品一致。
 
-### drafts / draft_items
+### `drafts`
 
-- `drafts`：`task_id` 唯一、排查人、检查日期、更新时间、是否失效、失效原因
-- `draft_items`：`draft_id`、`task_item_id`、排查件数、已确认的 `attention_version`
+字段：`id`、`task_id`、`inspector_name`、`check_date`、`is_invalid`、`invalid_reason`、`invalidated_at_utc`、`created_at_utc`、`updated_at_utc`。
 
-草稿失效保留记录，不转换为正式排查。
+- 每个任务最多一条草稿；失效时必须同时具有非空原因和失效时间。
+
+### `draft_items`
+
+字段：`id`、`draft_id`、`task_item_id`、`task_id`、`checked_qty`、`confirmed_attention_version`。
+
+- `checked_qty` 可空；非空时不得为负。
+- `(draft_id, task_item_id)` 唯一，组合外键保证草稿与任务项属于同一任务。
 
 ## 正式排查与修改历史
 
-### inspections
+### `inspections`
 
-- `id`、`task_id`
-- 商品编码/名称/条码快照
-- 排查阶段快照、商品库存快照
-- 排查人、检查日期、提交时间
+字段：`id`、`task_id`、`product_id`、`product_code_snapshot`、`product_name_snapshot`、`barcode_snapshot`、`stage_snapshot`、`stock_qty_snapshot`、`inspector_name`、`check_date`、`submitted_at_utc`。
 
-### inspection_items
+- 每个任务最多一条正式排查；商品编码、阶段、库存、人员等保存提交时快照。
 
-- `id`、`inspection_id`、`batch_id`
-- 生产日期/有效日期/阶段/累计到货快照
-- `checked_qty`
-- `updated_at_utc`
+### `inspection_items`
 
-### inspection_item_revisions
+字段：`id`、`inspection_id`、`product_id`、`batch_id`、`production_date_snapshot`、`expiry_date_snapshot`、`stage_snapshot`、`arrival_qty_snapshot`、`checked_qty`、`updated_at_utc`。
 
-- `id`、`inspection_item_id`
-- 修改前值、修改后值、修改时间
+- `(inspection_id, batch_id)` 唯一；组合外键保证排查、批次和商品一致。
 
-正式记录不提供删除路径。只有批次最近一次正式排查项的当前值变化可以触发当前跟踪状态重算。
+### `inspection_item_revisions`
+
+字段：`id`、`inspection_item_id`、`previous_checked_qty`、`new_checked_qty`、`changed_at_utc`。
+
+- 修改前后数量均非负且必须不同；按明细、修改时间、ID 建稳定历史索引。
+- 正式记录不提供删除业务；“只有最近一次正式结果可影响当前状态”是后续业务规则，不在 EF 配置中实现。
 
 ## 库存与生命周期留痕
 
-### inventory_adjustments
+### `inventory_adjustments`
 
-- `id`、`product_id`
-- Excel 原始库存、修正后库存、修正时间
+字段：`id`、`product_id`、`excel_stock_qty_snapshot`、`adjusted_stock_qty`、`adjusted_at_utc`。
 
-### lifecycle_events
+- 两个数量均非负；记录永久留存。
+- 当前只保证调整记录引用商品；真正修改库存及归零联动尚未实现。
 
-- `id`、`product_id`、`batch_id`（可空）
-- `event_type`、`reason`、`occurred_at_utc`
-- `source_import_id`、`source_inspection_id`、`source_adjustment_id`（按来源可空）
+### `lifecycle_events`
 
-用于记录商品归零、批次 0 件停止、合法恢复、任务系统自动结束和草稿失效，不代替正式排查记录。
+精确 9 字段：`id`、`product_id`、`batch_id`、`event_type`、`reason`、`occurred_at_utc`、`source_import_id`、`source_inspection_id`、`source_adjustment_id`。
 
-## 导入、文件、备份与设置
+- 商品必填、批次可空；批次和正式排查来源用组合外键保证属于同一商品。
+- 三个来源最多一个非空，也允许全部为空；库存修正来源只在数据库层保证记录存在。
+- 事件类型仅为 `product_stock_zero`、`batch_checked_zero`、`batch_tracking_resumed`、`task_auto_closed`、`draft_invalidated`。
+- 所有外键为 `NO ACTION`。本表不是通用事件框架，也不执行状态转换。
 
-### imports
+## 导入、工作簿与异常
 
-- `id`、文件名、文件哈希
-- 解析/确认时间、结果状态
-- 商品数、批次数、新增数、更新数、异常数、非食品跳过数、新增任务商品数
-- 导入前快照路径、是否已撤销、撤销时间
+### `imports`
 
-导入记录长期保存；不长期保存每份原始工作簿。
+字段：`id`、`source_file_name`、`source_file_sha256`、`parsed_at_utc`、`confirmed_at_utc`、`status`、`product_count`、`batch_count`、`new_product_count`、`new_batch_count`、`updated_batch_count`、`issue_count`、`unsupported_category_count`、`new_task_product_count`、`pre_import_snapshot_path`、`is_undone`、`undone_at_utc`。
 
-### import_workbooks
+- 文件名、64 位小写十六进制 SHA-256、状态必填；计数均非负。
+- `is_undone` 与 `undone_at_utc` 有一致性约束；具体状态值域和导入/撤销服务尚未实现。
+- 最近成功导入时间必须从 `imports` 查询，不在设置或运行状态表重复保存。
 
-- `id`、`import_id`
-- 原始文件名、内容 BLOB、SHA-256 哈希、保存时间
+### `import_workbooks`
 
-只保留最近两次成功导入对应的两行。工作簿与导入业务数据在同一 SQLite 事务写入，导出前重新校验哈希。
+字段：`id`、`import_id`、`original_file_name`、`content`、`sha256`、`saved_at_utc`。
 
-### import_issues
+- 每条导入记录最多一个非空工作簿 BLOB；SHA-256 格式受约束，外键 `NO ACTION`。
+- “只保留最近两份成功导入工作簿”是后续事务服务职责，当前 schema 不自动裁剪。
 
-- `id`、`import_id`、行号、问题类型、字段与安全摘要
+### `import_issues`
 
-### backups
+字段：`id`、`import_id`、`row_number`、`issue_type`、`field_name`、`safe_summary`。
 
-- `id`、类型（auto/manual/pre_import/pre_restore/pre_upgrade）
-- 路径、哈希、创建时间、验证结果
+- 行号可空；非空时必须为正数。问题类型和安全摘要 Trim 后非空。
 
-### settings / app_state
+## 备份、设置与运行状态
 
-- 提醒时间（默认 10:00）
-- 开机自启动（默认开启）
-- 最近成功导入时间
-- `last_reminder_date`
-- `last_normal_run_date`
-- 软件版本与数据目录只读信息
+### `backups`
 
-## 事务边界
+字段：`id`、`backup_type`、`file_path`、`sha256`、`created_at_utc`、`verification_status`。
 
-- 一次确认导入：单事务，失败整次回滚。
-- 一次商品排查提交：任务、排查主表/明细、批次状态、草稿状态单事务。
-- 一次历史修改：修订历史与必要的当前状态重算单事务。
-- 商品归零：商品、全部批次、开放任务、草稿、生命周期事件单事务。
+- 类型仅允许 `auto`、`manual`、`pre_import`、`pre_restore`、`pre_upgrade`。
+- 当前仅有元数据；文件创建、哈希计算、验证、恢复和自动保留 7 份均未实现。
+
+### `settings`
+
+字段：`id`、`reminder_minute_of_day`、`auto_start_enabled`。
+
+- 单例约束 `id = 1`；默认提醒时间为 600 分钟，即 10:00；自启动偏好默认开启。
+
+### `app_state`
+
+字段：`id`、`last_reminder_date`、`last_normal_run_date`。
+
+- 单例约束 `id = 1`；两个运行日期允许为空。
+- 软件版本和数据目录运行时读取，不落重复字段。
+
+## 不可混淆的业务规则（尚待后续实现）
+
+- Excel 是局部增量数据；未出现的商品或批次不得因此改变任何状态。
+- 商品唯一主体只认 `商品编码`；名称和条码变化只更新当前展示值，历史快照不改。
+- 批次一旦按唯一键出现过就是旧批次，停止跟踪后也不得删除或冒充新批次。
+- 正式排查某批次为 0 件，只停止该批次；商品明确库存为 0 则结束该商品全部批次，后者优先级更高。
+- 真正新到货只发生在当前累计到货首次大于历史最高值；下降或回升到旧最高值均不算。
+- 仅因批次 0 件停止、商品从未归零且当前库存大于 0 时，突破历史最高累计到货才允许恢复同批次；商品曾归零后旧批次永久不得恢复。
