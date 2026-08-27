@@ -234,22 +234,22 @@ public sealed class ImportUndoEligibilityService
                 backup.Id);
         }
 
-        if (!_snapshotService.ValidateSavedSnapshot(snapshotPath, backup.Sha256))
+        if (!TryGetSqliteDatabasePath(context, out var databasePath))
         {
             return ImportUndoEligibilityResult.Failure(
-                ImportUndoEligibilityCodes.SnapshotInvalid,
-                "最近一次导入的原始导入前快照未通过独立验证。",
+                ImportUndoEligibilityCodes.BusinessStateUnverifiable,
+                "当前业务数据库无法可靠读取，暂不可撤销。",
                 candidate,
                 snapshotPath,
                 backup.Sha256,
                 backup.Id);
         }
 
-        if (!TryGetSqliteDatabasePath(context, out var databasePath))
+        if (!_snapshotService.ValidateSavedSnapshot(snapshotPath, backup.Sha256, databasePath))
         {
             return ImportUndoEligibilityResult.Failure(
-                ImportUndoEligibilityCodes.BusinessStateUnverifiable,
-                "当前业务数据库无法可靠读取，暂不可撤销。",
+                ImportUndoEligibilityCodes.SnapshotInvalid,
+                "最近一次导入的原始导入前快照未通过独立验证。",
                 candidate,
                 snapshotPath,
                 backup.Sha256,

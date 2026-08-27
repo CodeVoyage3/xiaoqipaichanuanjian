@@ -318,6 +318,48 @@ public sealed class PreImportSnapshotService
         }
     }
 
+    public bool ValidateSavedSnapshot(string snapshotPath, string sha256, string sourceDatabasePath)
+    {
+        if (string.IsNullOrWhiteSpace(snapshotPath) ||
+            string.IsNullOrWhiteSpace(sha256) ||
+            string.IsNullOrWhiteSpace(sourceDatabasePath))
+        {
+            return false;
+        }
+
+        try
+        {
+            var sourcePath = Path.GetFullPath(sourceDatabasePath);
+            var fullPath = Path.GetFullPath(snapshotPath);
+            var fileSize = new FileInfo(fullPath).Length;
+            if (fileSize <= 0)
+            {
+                return false;
+            }
+
+            var metadata = new PreImportSnapshotMetadata(
+                sourcePath,
+                fullPath,
+                sha256,
+                DateTime.UtcNow,
+                fileSize,
+                RequiredMigrationIds);
+            if (!ValidateSnapshot(metadata))
+            {
+                return false;
+            }
+
+            using var source = OpenReadOnly(sourcePath);
+            var sourceSchema = ReadSchema(source);
+            using var snapshot = OpenReadOnly(fullPath);
+            return IsVerified(sourceSchema, ReadSchema(snapshot));
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     private static SqliteConnection OpenReadOnly(string path)
     {
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder

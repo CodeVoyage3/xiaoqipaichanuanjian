@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Imports;
@@ -19,6 +21,27 @@ public sealed class ImportUndoEligibilityTests
 {
     private static readonly DateTime ConfirmationTime =
         new(2026, 8, 27, 10, 0, 0, DateTimeKind.Utc);
+
+    private static readonly string[] BusinessTables =
+    {
+        "products",
+        "batches",
+        "tasks",
+        "task_items",
+        "drafts",
+        "draft_items",
+        "inspections",
+        "inspection_items",
+        "inspection_item_revisions",
+        "inventory_adjustments",
+        "imports",
+        "import_workbooks",
+        "import_issues",
+        "backups",
+        "settings",
+        "app_state",
+        "lifecycle_events"
+    };
 
     [Fact]
     public void NoImportReturnsNoCandidateWithoutThrowing()
@@ -56,6 +79,39 @@ public sealed class ImportUndoEligibilityTests
             typeof(ImportUndoEligibilityService).GetMethods(),
             method => method.Name is "Check" or "Evaluate" &&
                       method.GetParameters().Any(parameter => parameter.ParameterType == typeof(long)));
+    }
+
+    [Fact]
+    public void CandidateFilterIgnoresUndoneAndUndoneStatusEvenWhenTheyAreNewest()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var eligible = CreateCandidate(database, ConfirmationTime.AddHours(-2));
+        CreateCandidate(database, ConfirmationTime.AddHours(-1), status: ImportStatuses.Undone);
+        CreateCandidate(database, ConfirmationTime, isUndone: true);
+
+        using (var context = database.Open())
+        {
+            var result = new ImportUndoEligibilityService().Check(context);
+
+            Assert.True(result.CanUndo);
+            Assert.Equal(ImportUndoEligibilityCodes.Eligible, result.Code);
+            Assert.Equal(eligible.ImportId, result.CandidateImportId);
+        }
+
+        using (var context = database.Open())
+        {
+            var import = context.Imports.Single(item => item.Id == eligible.ImportId);
+            import.IsUndone = true;
+            import.UndoneAtUtc = ConfirmationTime.AddMinutes(1);
+            context.SaveChanges();
+        }
+
+        using var verify = database.Open();
+        var noCandidate = new ImportUndoEligibilityService().Check(verify);
+
+        Assert.False(noCandidate.CanUndo);
+        Assert.Equal(ImportUndoEligibilityCodes.NoCandidate, noCandidate.Code);
+        Assert.Null(noCandidate.CandidateImportId);
     }
 
     [Fact]
@@ -174,6 +230,29 @@ public sealed class ImportUndoEligibilityTests
 
         Assert.False(result.CanUndo);
         Assert.Equal(ImportUndoEligibilityCodes.SnapshotInvalid, result.Code);
+    }
+
+    [Theory]
+    [InlineData("alter_table")]
+    [InlineData("migration_history")]
+    public void OpenableSnapshotWithAlteredRequiredSchemaOrMigrationsIsRejectedAfterShaUpdate(string mode)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var candidate = CreateCandidate(database, ConfirmationTime);
+        var sql = mode == "alter_table"
+            ? "ALTER TABLE \"tasks\" RENAME COLUMN \"updated_at_utc\" TO \"updated_at_corrupted\";"
+            : "DELETE FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '20260826170403_AddLifecycleEvents';";
+
+        var updatedSha = MutateSnapshotAndSyncBackupSha(database, candidate, sql);
+        Assert.NotEqual(candidate.Sha256, updatedSha);
+        Assert.Equal(1L, ReadScalarFromSnapshot(candidate.SnapshotPath, "SELECT 1;"));
+
+        using var verify = database.Open();
+        var result = new ImportUndoEligibilityService().Check(verify);
+
+        Assert.False(result.CanUndo);
+        Assert.Equal(ImportUndoEligibilityCodes.SnapshotInvalid, result.Code);
+        Assert.Equal(updatedSha, result.SnapshotSha256);
     }
 
     [Fact]
@@ -376,7 +455,90 @@ public sealed class ImportUndoEligibilityTests
     }
 
     [Fact]
-    public void UnreadableFixedTableReturnsBusinessStateUnverifiable()
+    public void PostSnapshotImportInfrastructureAndCroppedOldWorkbookDoNotBlock()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var old = CreateCandidate(database, ConfirmationTime.AddHours(-2));
+        var latest = CreateCandidate(database, ConfirmationTime);
+        var workbookContent = new byte[] { 1, 2, 3, 4 };
+
+        using (var context = database.Open())
+        {
+            var oldWorkbook = new ImportWorkbook
+            {
+                ImportId = old.ImportId,
+                OriginalFileName = "old.xlsx",
+                Content = workbookContent,
+                Sha256 = Sha256(workbookContent),
+                SavedAtUtc = ConfirmationTime.AddHours(-1)
+            };
+            context.ImportWorkbooks.Add(oldWorkbook);
+            context.SaveChanges();
+            context.ImportWorkbooks.Remove(oldWorkbook);
+
+            context.ImportWorkbooks.Add(new ImportWorkbook
+            {
+                ImportId = latest.ImportId,
+                OriginalFileName = "latest.xlsx",
+                Content = workbookContent,
+                Sha256 = Sha256(workbookContent),
+                SavedAtUtc = ConfirmationTime.AddMinutes(1)
+            });
+            context.ImportIssues.Add(new ImportIssue
+            {
+                ImportId = latest.ImportId,
+                RowNumber = 2,
+                IssueType = "unsupported_category",
+                FieldName = "category",
+                SafeSummary = "category is not supported"
+            });
+            context.BackupRecords.Add(new BackupRecord
+            {
+                BackupType = "manual",
+                FilePath = Path.Combine(database.Directory, "manual.db"),
+                Sha256 = new string('c', 64),
+                CreatedAtUtc = ConfirmationTime.AddMinutes(2),
+                VerificationStatus = "verified"
+            });
+            context.SaveChanges();
+        }
+
+        using var verify = database.Open();
+        var result = new ImportUndoEligibilityService().Check(verify);
+
+        Assert.True(result.CanUndo);
+        Assert.Equal(ImportUndoEligibilityCodes.Eligible, result.Code);
+        Assert.Equal(latest.ImportId, result.CandidateImportId);
+        Assert.Empty(verify.ImportWorkbooks.Where(workbook => workbook.ImportId == old.ImportId));
+        Assert.Single(verify.ImportWorkbooks.Where(workbook => workbook.ImportId == latest.ImportId));
+        Assert.Single(verify.ImportIssues.Where(issue => issue.ImportId == latest.ImportId));
+        Assert.Contains(verify.BackupRecords, backup => backup.BackupType == "manual");
+    }
+
+    [Fact]
+    public void QualificationPreservesAllSeventeenBusinessTableFingerprintsAndSnapshot()
+    {
+        using var database = SqliteTestDatabase.Create();
+        SeedBusinessGraph(database, ConfirmationTime);
+        var candidate = CreateCandidate(database, ConfirmationTime);
+        var before = ReadTableFingerprints(database.Path);
+        var beforeSnapshotSha = Sha256(candidate.SnapshotPath);
+
+        using var context = database.Open();
+        var result = new ImportUndoEligibilityService().Check(context);
+        var after = ReadTableFingerprints(database.Path);
+
+        Assert.True(result.CanUndo);
+        Assert.Equal(17, before.Count);
+        Assert.Equal(before, after);
+        Assert.Equal(beforeSnapshotSha, Sha256(candidate.SnapshotPath));
+        Assert.DoesNotContain(
+            context.ChangeTracker.Entries(),
+            entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted);
+    }
+
+    [Fact]
+    public void CurrentSchemaMismatchReturnsSnapshotInvalid()
     {
         using var database = SqliteTestDatabase.Create();
         CreateCandidate(database, ConfirmationTime);
@@ -392,13 +554,15 @@ public sealed class ImportUndoEligibilityTests
         var result = new ImportUndoEligibilityService().Check(verify);
 
         Assert.False(result.CanUndo);
-        Assert.Equal(ImportUndoEligibilityCodes.BusinessStateUnverifiable, result.Code);
+        Assert.Equal(ImportUndoEligibilityCodes.SnapshotInvalid, result.Code);
     }
 
     private static ImportCandidate CreateCandidate(
         SqliteTestDatabase database,
         DateTime confirmedAtUtc,
-        string? snapshotPath = "default")
+        string? snapshotPath = "default",
+        string status = ImportStatuses.Succeeded,
+        bool isUndone = false)
     {
         var snapshotDirectory = Path.Combine(database.Directory, "snapshots");
         Directory.CreateDirectory(snapshotDirectory);
@@ -424,9 +588,10 @@ public sealed class ImportUndoEligibilityTests
             SourceFileSha256 = new string('a', 64),
             ParsedAtUtc = confirmedAtUtc.AddHours(-1),
             ConfirmedAtUtc = confirmedAtUtc,
-            Status = ImportStatuses.Succeeded,
+            Status = status,
             PreImportSnapshotPath = actualSnapshotPath,
-            IsUndone = false
+            IsUndone = isUndone,
+            UndoneAtUtc = isUndone ? confirmedAtUtc.AddMinutes(1) : null
         };
         context.Imports.Add(import);
         context.SaveChanges();
@@ -728,6 +893,127 @@ public sealed class ImportUndoEligibilityTests
 
         return counts;
     }
+
+    private static Dictionary<string, string> ReadTableFingerprints(string databasePath)
+    {
+        using var connection = OpenReadOnly(databasePath);
+        var fingerprints = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var table in BusinessTables)
+        {
+            var columns = ReadColumnNames(connection, table);
+            var builder = new StringBuilder(table);
+            foreach (var column in columns)
+            {
+                builder.Append('|').Append(column.Ordinal).Append(':').Append(column.Name);
+            }
+
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT {string.Join(", ", columns.Select(column => QuoteIdentifier(column.Name)))} " +
+                                  $"FROM {QuoteIdentifier(table)} ORDER BY {QuoteIdentifier("id")};";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                builder.Append("|row");
+                for (var index = 0; index < reader.FieldCount; index++)
+                {
+                    AppendValue(builder, reader.GetValue(index));
+                }
+            }
+
+            fingerprints[table] = Sha256Text(builder.ToString());
+        }
+
+        return fingerprints;
+    }
+
+    private static List<(int Ordinal, string Name)> ReadColumnNames(SqliteConnection connection, string table)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({QuoteIdentifier(table)});";
+        using var reader = command.ExecuteReader();
+        var columns = new List<(int Ordinal, string Name)>();
+        while (reader.Read())
+        {
+            columns.Add((reader.GetInt32(0), reader.GetString(1)));
+        }
+
+        return columns;
+    }
+
+    private static string MutateSnapshotAndSyncBackupSha(
+        SqliteTestDatabase database,
+        ImportCandidate candidate,
+        string sql)
+    {
+        using (var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = candidate.SnapshotPath,
+            Mode = SqliteOpenMode.ReadWrite,
+            Pooling = false
+        }.ToString()))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.ExecuteNonQuery();
+        }
+
+        var sha256 = Sha256(candidate.SnapshotPath);
+        using var context = database.Open();
+        var backup = context.BackupRecords.Single(record => record.Id == candidate.BackupId);
+        backup.Sha256 = sha256;
+        context.SaveChanges();
+        return sha256;
+    }
+
+    private static long ReadScalarFromSnapshot(string path, string sql)
+    {
+        using var connection = OpenReadOnly(path);
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
+    }
+
+    private static SqliteConnection OpenReadOnly(string path)
+    {
+        var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = path,
+            Mode = SqliteOpenMode.ReadOnly,
+            Cache = SqliteCacheMode.Private,
+            ForeignKeys = true,
+            Pooling = false
+        }.ToString());
+        connection.Open();
+        return connection;
+    }
+
+    private static void AppendValue(StringBuilder builder, object value)
+    {
+        if (value is DBNull)
+        {
+            builder.Append("null;");
+            return;
+        }
+
+        if (value is byte[] bytes)
+        {
+            builder.Append("blob:").Append(bytes.Length).Append(':').Append(Convert.ToHexString(bytes)).Append(';');
+            return;
+        }
+
+        var text = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+        builder.Append(value.GetType().FullName).Append(':').Append(text.Length).Append(':').Append(text).Append(';');
+    }
+
+    private static string QuoteIdentifier(string value) =>
+        $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+
+    private static string Sha256Text(string value) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
+    private static string Sha256(byte[] content) =>
+        Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
 
     private static string Sha256(string path)
     {
