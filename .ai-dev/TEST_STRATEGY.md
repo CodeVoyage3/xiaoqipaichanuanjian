@@ -71,6 +71,15 @@ Stage 1 证据只证明数据底座与日志基础设施，不证明 Excel 导�
 - 最终两条 Workbook 的 ImportId、文件名、冻结字节、SHA 和 SavedAtUtc 与确认契约逐项一致；旧 Workbook 删除后全部 Import、BackupRecord 和 ImportIssue 仍存在。
 - 源文件变化、完全无变化和解析失败均不改变原两份；已有两份时的早期 Product 写事务失败及 `BEFORE DELETE ON import_workbooks` 裁剪故障都整体回滚，原 Import/Workbook/Backup/Issue/Product/Batch 逐字段不变且快照保留。
 - 生产改动仅在既有事务内增加固定裁剪：新 Workbook SaveChanges 后、Commit 前按 `Succeeded`、`ConfirmedAtUtc DESC`、`Id DESC`、`Skip(2)` 删除旧 Workbook；无公共清理入口、Repository、策略框架或 Undone 逻辑。
+
+## S2-T08 与 Stage 2 整体证据
+
+- 撤销资格专项 42/42：无候选、Succeeded/Undone 过滤、确认时间与 ID 排序、唯一 BackupRecord、缺失/损坏/关联错误、可打开 SQLite 的 schema/migration 篡改、九张业务/草稿表增改删、Product/Batch 更新时间补充门禁、基础设施排除和只读不变均覆盖。
+- Stage 2 八组件组合回归 120/120；Release 全量 178/178。修复测试 helper 的全局连接池清理竞态后，Luna 连续 3 轮、Sol 连续 2 轮全量均为 178/178。
+- 数据库与 migration 专项 49/49；七段历史升级保留独立 7/7；EF 仍为 8 条 migration，模型无漂移。
+- 局部增量红线同时由规划层和正式事务层证明：数据库预存 A/B/C、本次仅包含 A 时，B/C 及其批次逐字段、`last_seen_import_id`、任务/草稿/排查/修正/生命周期表均不发生动作。
+- 真实样表保持 397,308 字节与固定 SHA-256；解析画像仍为 3,712 数据行、3,709 批次键、3 组/6 行批次冲突。
+- Release build 0 警告/0 错误；官方 NuGet 源审计应用与测试项目均无已知漏洞；工作区无数据库或临时残留。
 - Release build 在单独屏蔽网络审计告警 `NU1900` 后为 0 警告/0 错误；官方 NuGet 漏洞查询重试成功且无已知漏洞。EF 模型无漂移，仍为 8 条 migration，无新依赖或临时数据库残留。
 
 ## 分层原则

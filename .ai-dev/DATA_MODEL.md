@@ -1,6 +1,6 @@
 # 当前数据模型
 
-> 更新于 2026-08-27。以下为 Stage 1 数据底座及 S2-T01 至 S2-T07 导入能力验收后的代码与 SQLite schema 事实；Stage 3 业务状态转换尚未实现。权威结构以 8 条 migration 和 `StoreDbContextModelSnapshot` 为准。
+> 更新于 2026-08-27。以下为 Stage 1 数据底座及 Stage 2 整体验收后的代码与 SQLite schema 事实；Stage 3 业务状态转换尚未实现。权威结构以 8 条 migration 和 `StoreDbContextModelSnapshot` 为准。
 
 ## 总览
 
@@ -109,13 +109,14 @@
 - `is_undone` 与 `undone_at_utc` 有一致性约束；Stage 2 批准的正式状态只有 `Succeeded`、`Undone`，解析、预览、失败、取消和无变化不写正式记录。
 - `new_task_product_count` 当前为非空字段；Stage 2 不实现任务引擎并固定暂写 `0`，该值在 Stage 3 前不具备新增任务数量的业务含义，且不得在 Stage 2 预览展示。
 - 最近成功导入时间必须从 `imports` 查询，不在设置或运行状态表重复保存。
+- S2-T08 只读候选固定为最新 `Succeeded && !is_undone` 且有确认时间的 Import，以 `confirmed_at_utc DESC, id DESC` 排序；当前没有 BackupRecord FK，故通过唯一规范化快照路径、类型、验证状态、时间和 SHA 建立关联。真正恢复和 Undone 写入未实现。
 
 ### `import_workbooks`
 
 字段：`id`、`import_id`、`original_file_name`、`content`、`sha256`、`saved_at_utc`。
 
 - 每条导入记录最多一个非空工作簿 BLOB；SHA-256 格式受约束，外键 `NO ACTION`。
-  - S2-T06 在成功导入事务中保存确认契约冻结的原始工作簿；S2-T07 已在同一事务内按 Succeeded Import 的确认时间和 ID 只保留最近两条 Workbook，旧 Import 记录不删除。Undone 语义仍留给 S2-T08。
+  - S2-T06 在成功导入事务中保存确认契约冻结的原始工作簿；S2-T07 已在同一事务内按 Succeeded Import 的确认时间和 ID 只保留最近两条 Workbook，旧 Import 记录不删除。S2-T08 不改变工作簿，Undone 的最终工作簿语义仍未定义。
 
 ### `import_issues`
 

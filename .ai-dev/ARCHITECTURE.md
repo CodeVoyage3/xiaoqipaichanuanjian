@@ -2,13 +2,13 @@
 
 > 更新于 2026-08-27。本文区分“当前代码事实”和“后续批准方向”；未落地能力不得按已完成理解。
 
-## 当前代码事实（S2-T07 已通过）
+## 当前代码事实（Stage 2 整体通过）
 
 ```text
 StoreExpiryInspector.slnx
 ├─ src/StoreExpiryInspector                 单一 .NET 10 WPF 应用项目
 │  ├─ Domain                               17 个数据实体；当前无业务状态转换方法
-│  ├─ Application/Imports                  只读差异规划、文件身份守卫、确认契约与原子导入执行器
+│  ├─ Application/Imports                  只读差异规划、文件身份守卫、原子导入执行与撤销资格判断
 │  ├─ Infrastructure
 │  │  ├─ Configurations                    17 个独立 EF Core 实体配置
 │  │  ├─ StoreDbContext                    17 个 DbSet 与显式配置注册
@@ -18,17 +18,18 @@ StoreExpiryInspector.slnx
 │  │  └─ Excel                             固定 `.xlsx` 只读解析、纯内存校验分类、普通 DTO 与 SHA-256
 │  ├─ Migrations                           8 条 EF Core migration
 │  └─ UI                                   仅有占位主窗口
-└─ tests/StoreExpiryInspector.Tests         136 项测试
+└─ tests/StoreExpiryInspector.Tests         178 项测试
 ```
 
 - 技术栈：`net10.0-windows`、WPF、EF Core SQLite、Open XML SDK 3.5.1；除此之外未增加 Excel 依赖。
 - 数据库默认路径已实现为 `%LOCALAPPDATA%/StoreExpiryInspector/data/app.db`；连接启用外键，`DatabaseInitializer.Initialize` 可执行 migration 并切换 WAL。
 - `App.xaml.cs` 当前为空，尚未把数据库初始化、日志或业务用例接入真实启动流程。
-- `Application/Imports/ExcelImportPlanner` 只查询本次涉及的商品与其批次并使用 `AsNoTracking`，不调用 SaveChanges；当前不存在持久化导入服务、状态机、提醒、托盘、自启动、备份文件服务或完整业务 UI。
+- `Application/Imports/ExcelImportPlanner` 只查询本次涉及的商品与其批次并使用 `AsNoTracking`，不调用 SaveChanges；持久化只由独立 `ConfirmedImportExecutor` 执行，当前不存在 Stage 3 状态机、提醒、托盘、自启动、完整恢复服务或业务 UI。
 - `ImportConfirmationGuard` 在无数据库依赖下绑定预览 SHA，确认前重读并冻结已验证字节；文件变化、缺失、不可用或计划无变化均不会产生可确认契约。
 - `PreImportSnapshotService` 以 SQLite 在线备份从只读源连接创建临时快照，核对完整性、外键、表、migration、SHA 和大小后原子发布；结果和追溯元数据只留在内存，不写业务库。
 - `ConfirmedImportExecutor` 消费已冻结确认契约与既有计划，再次复核文件、创建快照、拒绝陈旧计划，并在单一 SQLite 事务内写 Import、BackupRecord、Product/Batch 增量、Issue 与原始 Workbook；不调用前序解析/分类/规划器。
 - 同一确认事务在新 Workbook 保存后，按 Succeeded Import 的 `ConfirmedAtUtc DESC, Id DESC` 保留最近两条并删除更旧 Workbook 子记录；Import 及其他历史不裁剪，失败时新写入和旧删除一起回滚。
+- `ImportUndoEligibilityService` 只选择最新 `Succeeded && !IsUndone` Import，复用快照服务验证唯一 BackupRecord、SHA、完整 schema 和 migration；再将九张正式业务/草稿表与导入前快照逐字段比较。它不执行恢复、不写 Undone，也不允许指定历史 Import。
 - 本地日志器已实现 UTF-8 无 BOM JSON Lines、按本地自然日滚动、仅保留最近 14 个合法命名日志文件；尚未接入具体业务日志。
 - 单实例运行是已批准架构方向，但当前尚未实现进程互斥。
 
@@ -40,13 +41,13 @@ StoreExpiryInspector.slnx
 - 商品/批次的确认导入、导入记录/工作簿/异常与导入前备份元数据已由 S2-T06 完成事务编排；任务/草稿、正式排查/修改历史、库存修正、设置/运行状态和生命周期事件仍只有持久化底座，Stage 3+ 业务编排尚未实现。
 - 生命周期事件不是通用事件总线，只保存五类已批准事件事实；事件创建条件与状态转换不得下沉到 EF 配置。
 
-## Stage 2 批准方向（S2-T01 至 S2-T07 已完成）
+## Stage 2 已完成边界（S2-T01 至 S2-T08）
 
 后续 Excel 增量导入仍应保持三段式：
 
 1. `解析`：S2-T01 已实现只读打开固定模板首工作表、表头 Trim、必要列/重名拒绝、普通 DTO 与文件哈希；尚不做业务分类。
 2. `规划`：S2-T02 已完成文件内分类；S2-T03 已只读查询相关 Product / Batch 并生成新增、更新、无变化和问题预览，不修改数据库实体。
-3. `确认应用`：S2-T04 已实现确认前文件哈希复核和内存契约；S2-T05 已实现导入前安全快照；S2-T06 已实现单个 SQLite 写事务及原始工作簿保存；S2-T07 已实现最近两份成功工作簿裁剪。撤销仍未实现。Stage 2 不顺带执行 Stage 3 状态机。
+3. `确认与导入基础`：S2-T04 已实现确认前文件哈希复核和内存契约；S2-T05 已实现导入前安全快照；S2-T06 已实现单个 SQLite 写事务及原始工作簿保存；S2-T07 已实现最近两份成功工作簿裁剪；S2-T08 已实现最新 Import 的只读撤销资格与快照关联。真正恢复和 Undone 写入仍未实现，Stage 2 未顺带执行 Stage 3 状态机。
 
 最高优先级边界：Excel 是局部增量数据，不是全量快照。未出现在本次文件中的商品或批次不得进入变更集，不得被删除、停止跟踪、关闭任务、修改库存或改变历史。
 
@@ -66,7 +67,7 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 - 一次商品排查提交：任务、正式排查、明细、批次状态、草稿与事件同事务。
 - 一次历史修改：修订记录与允许发生的当前状态重算同事务。
 - 商品库存归零：商品、相关批次、开放任务、草稿和事件同事务。
-- 导入撤销及完整备份恢复尚未实现；当前备份文件能力仅限 S2-T05 导入前安全快照，Undone 的工作簿语义留给 S2-T08。
+- 导入撤销执行及完整备份恢复尚未实现；S2-T08 只提供只读资格判断，真正恢复前必须在排他/原子边界内重新判断、先备份当前库，再决定 Undone 与工作簿语义。
 
 ## 已知技术边界
 
@@ -74,3 +75,10 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 - `LocalFileLogger` 使用进程级全局锁，只保证同一进程内写入完整；符合当前单实例方向，未来出现多实例或明显吞吐瓶颈时再调整。
 - Windows 10 具体门店版本未知，必须实机验收；V1 未签名 EXE 的 SmartScreen“未知发布者”是已接受限制。
 - 真实样表 round-trip、安装运行、托盘/自启动/休眠恢复和 10 万批次 + 30 万历史记录性能均尚未验收。
+
+## Stage 2 架构债检查
+
+- 无阻断级债务：解析、分类、规划、确认、快照、事务写入、工作簿裁剪和撤销资格仍由不同组件承担；没有 Repository/UnitOfWork、单实现接口、反射扫描、通用事件总线、文件版本框架或第二个 Excel 依赖。
+- `ConfirmedImportExecutor.cs` 为 1,150 行，是当前最大生产文件；其中包含结果 DTO、计划形状/陈旧性白名单校验、明确字段应用和单事务编排。职责仍限于持久化阶段，暂不为拆文件引入新抽象，但 Stage 3 状态机严禁继续加入该类；若后续再次修改其规则，应先按现有私有职责拆成少量具体协作者。
+- `ExcelImportPlanner.cs`、`PreImportSnapshotService.cs` 和 `ImportUndoEligibilityService.cs` 也因 DTO/固定 schema 比较而偏长，但边界单一、测试充分。少量路径、SHA 与 SQLite 引用辅助代码存在重复；当前直接代码比通用文件/SQLite 框架风险更低，出现第三个真实业务调用方或实际缺陷时再提取。
+- 测试基础设施曾因全局 `ClearAllPools` 产生并行竞态；已收窄为当前临时数据库连接池，连续全量回归未再复现。

@@ -14,7 +14,7 @@
 
 - 状态：已批准；Stage 1 已落实。
 - 决策：一个 WPF 应用项目和一个测试项目；按 `Domain`、后续 `Application`、`Infrastructure`、`UI` 分层。
-- 当前事实：已有 Domain、Infrastructure、UI；Application 尚不存在。17 个实体各自使用一个 EF 配置，`StoreDbContext` 只做 DbSet 与显式注册。
+- 当前事实：已有 Domain、Application/Imports、Infrastructure、UI；17 个实体各自使用一个 EF 配置，`StoreDbContext` 只做 DbSet 与显式注册。UI 仍为占位页。
 - 边界：不创建单实现接口、Repository、UnitOfWork、通用事件总线或反射扫描；第二个真实实现出现前不抽象。
 
 ## D-003｜数据库与迁移
@@ -27,13 +27,14 @@
 
 ## D-004｜Excel 局部增量、隔离与格式保真
 
-- 状态：技术栈、业务原则与 Stage 2 八卡拆分已批准；S2-T01 至 S2-T07 已验收通过，撤销尚未实现。
+- 状态：Stage 2 八卡与整体验收已通过；真正撤销执行和 Stage 3 状态机尚未实现。
 - 最高原则：Excel 是局部增量数据，不是全量快照；未出现的历史商品/批次不得因此删除、停止跟踪、关闭任务、改变库存或修改历史。
 - 识别：表头先 Trim 等规范化；规范化后重复表头按文件级异常拒绝。食品判定字段为 `商品大类`，规范化后的值必须为 `食品`。
 - 架构：Excel I/O 集中于 `Infrastructure/Excel`，向上只交付普通 DTO；解析、变更规划、事务应用分离。
 - 规划事实：`Application/Imports/ExcelImportPlanner` 只按本次商品编码与相关 Product ID 执行两类 `AsNoTracking` 查询，输出普通 DTO；未出现的历史数据不进入计划，预览不写库。
 - 确认事实：`ImportConfirmationGuard` 以预览 SHA 重读验证同一路径文件，成功契约保存隔离的已验证字节；无变化、文件变化、缺失或不可用均不创建正式记录。
 - 写入事实：`ConfirmedImportExecutor` 再次复核文件并先创建安全快照，只应用既有计划白名单；Import、BackupRecord、Product/Batch、Issue、Workbook 在单一事务提交，失败全部回滚且快照文件保留。
+- 撤销资格事实：`ImportUndoEligibilityService` 只能选择最新成功且未撤销 Import，验证唯一快照关联和完整 SQLite schema/migration，并比较九张正式业务/草稿表；它不恢复数据库、不写 Undone、不接受历史 Import Id。
 - 库选择：`.xlsx` 使用 Open XML SDK 3.5.1；S2-T01 已最小引入，S2-T02 未增加依赖。
 - 格式保真：导出阶段原位回填最新原始工作簿最后三列，不重建工作簿；该能力不属于 Stage 2。
 - 样表：仓库固定基线 `test-data/食品效期排查表.xlsx` 已完成真实只读解析和文件内分类回归；round-trip 不属于 Stage 2，尚未验证。
@@ -58,9 +59,9 @@
 
 ## D-008｜工作簿与数据库备份
 
-- 状态：数据表、导入前快照文件服务、成功导入工作簿保存及最近两份保留已实现；恢复策略尚未实现。
+- 状态：数据表、导入前快照文件服务、成功导入工作簿保存、最近两份保留及最近 Import 撤销资格判断已实现；恢复执行策略尚未实现。
 - 决策：正式导入、恢复、版本升级前创建安全快照；自动备份保留最近 7 份；最近 2 份成功导入原始 Excel 以 BLOB 和 SHA-256 保存于 SQLite。
-- 当前事实：已有 `backups`、`import_workbooks` 和相关约束；S2-T05 已实现 SQLite 在线快照，S2-T06 在成功导入事务中保存 BackupRecord 与原始工作簿，S2-T07 在同一事务内只保留最近两条 Succeeded Workbook。恢复及 Undone 工作簿语义仍未实现。
+- 当前事实：已有 `backups`、`import_workbooks` 和相关约束；S2-T05 已实现 SQLite 在线快照，S2-T06 在成功导入事务中保存 BackupRecord 与原始工作簿，S2-T07 在同一事务内只保留最近两条 Succeeded Workbook，S2-T08 验证最新 Import 的原始快照和后续业务阻断。恢复及 Undone 工作簿语义仍未实现。
 - 原则：快照先写临时文件、验证后原子改名；恢复前先备份当前状态。
 
 ## D-009｜商品与批次唯一身份
@@ -80,9 +81,9 @@
 
 ## D-011｜阶段门禁
 
-- 状态：Stage 1 已通过；Stage 2 已获批准并开始逐卡推进。
+- 状态：Stage 1、Stage 2 均已整体验收通过；当前暂停在 Stage 2 → Stage 3 门禁。
 - 决策：Stage 2 固定拆为 S2-T01 至 S2-T08；每次只创建并派发当前最小任务卡。
-- 流程：具体编码由 GPT-5.6 Luna（max）执行，GPT-5.6 Sol 独立验收；当前卡未通过前不得创建下一卡，不得一次性开发整个阶段。
+- 流程：Stage 2 具体编码由 GPT-5.6 Luna（max）执行，GPT-5.6 Sol 独立验收；八卡均已完成。Stage 3 未获开工确认，不得预创建任务。
 
 ## D-012｜Stage 2 正式导入状态与任务计数占位
 
