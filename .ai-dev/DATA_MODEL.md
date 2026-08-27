@@ -106,7 +106,8 @@
 字段：`id`、`source_file_name`、`source_file_sha256`、`parsed_at_utc`、`confirmed_at_utc`、`status`、`product_count`、`batch_count`、`new_product_count`、`new_batch_count`、`updated_batch_count`、`issue_count`、`unsupported_category_count`、`new_task_product_count`、`pre_import_snapshot_path`、`is_undone`、`undone_at_utc`。
 
 - 文件名、64 位小写十六进制 SHA-256、状态必填；计数均非负。
-- `is_undone` 与 `undone_at_utc` 有一致性约束；具体状态值域和导入/撤销服务尚未实现。
+- `is_undone` 与 `undone_at_utc` 有一致性约束；Stage 2 批准的正式状态只有 `Succeeded`、`Undone`，解析、预览、失败、取消和无变化不写正式记录。
+- `new_task_product_count` 当前为非空字段；Stage 2 不实现任务引擎并固定暂写 `0`，该值在 Stage 3 前不具备新增任务数量的业务含义，且不得在 Stage 2 预览展示。
 - 最近成功导入时间必须从 `imports` 查询，不在设置或运行状态表重复保存。
 
 ### `import_workbooks`

@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 1 已完成｜Stage 1 → Stage 2 交接边界
-- 状态：Stage 0、S1-T01 至 S1-T10、Stage 1 整体回归均已通过；按用户指令暂停，不进入 Stage 2
+- 当前阶段：Stage 2｜Excel 增量导入
+- 状态：Stage 0、Stage 1 整体通过；Stage 2 接任核验与八卡拆分已获批准，当前只推进 S2-T01 固定模板只读解析
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在交接提交；具体 SHA 以 `git rev-parse HEAD` 为准，避免文档自引用提交哈希失真）
 - Stage 1 实现 HEAD：`a9ae0b3632bfa1eb1b5035799ab979f311aad9c2`
@@ -49,6 +49,6 @@ Excel 是局部增量数据，不是全量快照。本次未出现的商品或�
 
 ## 下一步门禁
 
-- 当前不创建、不派发 Stage 2 任务。
-- 下一任 GPT-5.6 Sol 应先阅读 `.ai-dev/STAGES/STAGE-2-HANDOFF.md` 并重新核对仓库事实。
-- 只有用户明确批准进入 Stage 2 后，才形成 Stage 2 计划并逐张创建最小任务卡；不得直接开发完整导入链路。
+- S2-T01 由 GPT-5.6 Luna（max）实现，GPT-5.6 Sol 独立验收。
+- S2-T01 未通过前不得创建或派发 S2-T02；不得直接开发完整导入链路。
+- Stage 2 只处理 Excel 增量导入，不提前实现 Stage 3 的效期、任务或生命周期状态机。
