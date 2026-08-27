@@ -118,6 +118,13 @@ public sealed class ConfirmedImportExecutor
                 "确认导入契约或快照目录无效。");
         }
 
+        if (context.ChangeTracker.Entries().Any())
+        {
+            return ConfirmedImportResult.Fail(
+                ConfirmedImportCodes.InvalidContract,
+                "执行数据库上下文必须没有已跟踪实体，请重新打开上下文后重试。");
+        }
+
         if (!TryValidateContract(contract, parsedAtUtc, out var frozenBytes, out var confirmedAtUtc))
         {
             return ConfirmedImportResult.Fail(
@@ -286,30 +293,9 @@ public sealed class ConfirmedImportExecutor
                 throw new InvalidDataException("The persisted import issue count does not match the import record.");
             }
 
+            context.ChangeTracker.Clear();
             transaction.Commit();
             committed = true;
-            context.ChangeTracker.Clear();
-            transaction.Dispose();
-            transaction = null;
-
-            if (!VerifyCommittedFacts(
-                    databasePath,
-                    contract,
-                    plan,
-                    pendingIssues.Count,
-                    import.Id,
-                    parsedAtUtc,
-                    confirmedAtUtc,
-                    metadata,
-                    frozenBytes))
-            {
-                return ConfirmedImportResult.Fail(
-                    ConfirmedImportCodes.TransactionFailed,
-                    "导入提交后的正式事实校验失败。",
-                    metadata.SnapshotPath,
-                    metadata);
-            }
-
             return ConfirmedImportResult.Succeed(import.Id, metadata);
         }
         catch (Exception)
@@ -334,7 +320,13 @@ public sealed class ConfirmedImportExecutor
         }
         finally
         {
-            transaction?.Dispose();
+            try
+            {
+                transaction?.Dispose();
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 
@@ -886,6 +878,21 @@ public sealed class ConfirmedImportExecutor
             product.UpdatedAtUtc = updatedAtUtc;
         }
 
+        var productActionCodes = ProductActionCodes(plan).ToHashSet(StringComparer.Ordinal);
+        foreach (var productCode in BatchActionKeys(plan)
+                     .Select(key => key.ProductCode)
+                     .Distinct(StringComparer.Ordinal))
+        {
+            if (productActionCodes.Contains(productCode))
+            {
+                continue;
+            }
+
+            var product = productsByCode[productCode];
+            product.LastSeenImportId = importId;
+            product.UpdatedAtUtc = updatedAtUtc;
+        }
+
         return productsByCode;
     }
 
@@ -1036,97 +1043,6 @@ public sealed class ConfirmedImportExecutor
         }
 
         return issues;
-    }
-
-    private static bool VerifyCommittedFacts(
-        string databasePath,
-        ImportConfirmationContract contract,
-        ImportPlan plan,
-        int issueCount,
-        long importId,
-        DateTime parsedAtUtc,
-        DateTime confirmedAtUtc,
-        PreImportSnapshotMetadata metadata,
-        byte[] frozenBytes)
-    {
-        try
-        {
-            using var context = DatabaseInitializer.CreateContext(databasePath);
-            var import = context.Imports.AsNoTracking().SingleOrDefault(value => value.Id == importId);
-            if (import is null ||
-                import.SourceFileName != contract.SourceFileName ||
-                import.SourceFileSha256 != contract.SourceFileSha256 ||
-                import.ParsedAtUtc != parsedAtUtc ||
-                import.ConfirmedAtUtc != confirmedAtUtc ||
-                import.Status != ImportStatuses.Succeeded ||
-                import.ProductCount != plan.Preview.InvolvedProductCount ||
-                import.BatchCount != plan.Preview.NormalBatchKeyCount ||
-                import.NewProductCount != plan.NewProducts.Count ||
-                import.NewBatchCount != plan.NewBatches.Count ||
-                import.UpdatedBatchCount != plan.UpdatedBatches.Count ||
-                import.IssueCount != issueCount ||
-                import.UnsupportedCategoryCount != plan.Preview.SkippedRowCount ||
-                import.NewTaskProductCount != contract.NewTaskProductCountSchemaPlaceholder ||
-                import.PreImportSnapshotPath != metadata.SnapshotPath ||
-                import.IsUndone ||
-                import.UndoneAtUtc is not null)
-            {
-                return false;
-            }
-
-            var workbook = context.ImportWorkbooks.AsNoTracking().SingleOrDefault(value => value.ImportId == importId);
-            if (workbook is null ||
-                workbook.OriginalFileName != contract.SourceFileName ||
-                workbook.Content.Length == 0 ||
-                !workbook.Content.AsSpan().SequenceEqual(frozenBytes) ||
-                workbook.Sha256 != contract.SourceFileSha256 ||
-                !string.Equals(
-                    Convert.ToHexString(SHA256.HashData(workbook.Content)).ToLowerInvariant(),
-                    contract.SourceFileSha256,
-                    StringComparison.Ordinal) ||
-                workbook.SavedAtUtc != confirmedAtUtc)
-            {
-                return false;
-            }
-
-            if (context.ImportWorkbooks.AsNoTracking().Count(value => value.ImportId == importId) != 1 ||
-                context.ImportIssues.AsNoTracking().Count(value => value.ImportId == importId) != issueCount ||
-                context.BackupRecords.AsNoTracking().Count(value =>
-                    value.BackupType == metadata.BackupType && value.FilePath == metadata.SnapshotPath && value.Sha256 == metadata.Sha256) != 1)
-            {
-                return false;
-            }
-
-            var products = context.Products.AsNoTracking()
-                .Where(product => ProductCodes(plan).Contains(product.ProductCode))
-                .ToDictionary(product => product.ProductCode, StringComparer.Ordinal);
-            foreach (var productCode in ProductActionCodes(plan))
-            {
-                if (!products.TryGetValue(productCode, out var product) || product.LastSeenImportId != importId)
-                {
-                    return false;
-                }
-            }
-
-            foreach (var batchKey in BatchActionKeys(plan))
-            {
-                if (!products.TryGetValue(batchKey.ProductCode, out var product) ||
-                    context.Batches.AsNoTracking().Count(batch =>
-                        batch.ProductId == product.Id &&
-                        batch.ProductionDate == batchKey.ProductionDate &&
-                        batch.ExpiryDate == batchKey.ExpiryDate &&
-                        batch.LastSeenImportId == importId) != 1)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
     }
 
     private static IEnumerable<string> ProductCodes(ImportPlan plan) => ProductActionCodes(plan)

@@ -1,8 +1,11 @@
 using System.IO.Compression;
+using System.Data.Common;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure.Excel;
@@ -287,6 +290,66 @@ public sealed class ConfirmedImportExecutorTests
     }
 
     [Fact]
+    public void RejectsDirtyExecutionContextWithoutChangingPendingCallerState()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var source = CreateSource(database.Directory, [
+            ["食品", "P", "B", "新商品", "2026-01-01", "2026-12-31", "12", "M", "否", "1", "2"]
+        ]);
+        using (var seed = database.Open())
+        {
+            seed.Products.Add(new Product
+            {
+                ProductCode = "P",
+                CurrentName = "旧商品",
+                CurrentBarcode = "旧条码",
+                ExcelStockQty = 1,
+                EffectiveStockQty = 1,
+                EffectiveStockSource = "excel"
+            });
+            seed.SaveChanges();
+        }
+
+        ImportConfirmationContract contract;
+        using (var preview = database.Open())
+        {
+            var workbook = new ExcelTemplateReader().Read(source.Path);
+            var plan = new ExcelImportPlanner().Plan(
+                preview,
+                new ExcelFileClassifier().Classify(workbook));
+            contract = Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(
+                new ImportConfirmationGuard().BindPreview(source.Path, workbook, plan)).Contract);
+        }
+
+        var snapshotDirectory = Path.Combine(database.Directory, "snapshots");
+        using (var execute = database.Open())
+        {
+            var tracked = execute.Products.Single(product => product.ProductCode == "P");
+            tracked.CurrentName = "调用方未提交的修改";
+            Assert.Equal(EntityState.Modified, execute.Entry(tracked).State);
+
+            var result = new ConfirmedImportExecutor().Execute(
+                contract,
+                execute,
+                snapshotDirectory,
+                new DateTime(2020, 8, 27, 9, 0, 0, DateTimeKind.Utc));
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(ConfirmedImportCodes.InvalidContract, result.Code);
+            Assert.Null(result.SnapshotPath);
+            Assert.Equal("调用方未提交的修改", tracked.CurrentName);
+            Assert.Equal(EntityState.Modified, execute.Entry(tracked).State);
+            Assert.Single(execute.ChangeTracker.Entries());
+            Assert.Empty(execute.Imports.AsNoTracking());
+        }
+
+        Assert.False(Directory.Exists(snapshotDirectory));
+        using var verify = database.Open();
+        Assert.Equal("旧商品", verify.Products.AsNoTracking().Single().CurrentName);
+        Assert.Empty(verify.Imports.AsNoTracking());
+    }
+
+    [Fact]
     public void StockConflictKeepsInventoryUnchosenAndLeavesAbsentProductsUntouched()
     {
         using var database = SqliteTestDatabase.Create();
@@ -378,6 +441,132 @@ public sealed class ConfirmedImportExecutorTests
         }
     }
 
+    [Fact]
+    public void BatchOnlyPlanMarksExistingProductSeenWithoutTouchingAbsentProducts()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var source = CreateSource(database.Directory, [
+            ["食品", "A", "条码-A", "名称-A", "2026-01-01", "2026-12-31", "12", "M", "否", "3", "0"],
+            ["食品", "A", "条码-B", "名称-B", "2026-01-01", "2027-12-31", "12", "M", "否", "4", "2"]
+        ]);
+        using (var seed = database.Open())
+        {
+            var productA = new Product
+            {
+                ProductCode = "A",
+                CurrentName = null,
+                CurrentBarcode = null,
+                ExcelStockQty = 5,
+                EffectiveStockQty = 5,
+                EffectiveStockSource = "manual"
+            };
+            seed.Products.Add(productA);
+            seed.SaveChanges();
+            seed.Batches.Add(new Batch
+            {
+                ProductId = productA.Id,
+                ProductionDate = new DateOnly(2026, 1, 1),
+                ExpiryDate = new DateOnly(2026, 12, 31),
+                ShelfLifeValue = 6,
+                ShelfLifeUnit = "M",
+                CurrentArrivalQty = 1,
+                MaxArrivalQty = 1,
+                SourceDiscountReference = "否"
+            });
+
+            foreach (var code in new[] { "B", "C" })
+            {
+                var product = new Product
+                {
+                    ProductCode = code,
+                    CurrentName = "商品-" + code,
+                    CurrentBarcode = "条码-" + code,
+                    ExcelStockQty = 5,
+                    EffectiveStockQty = 5,
+                    EffectiveStockSource = "manual"
+                };
+                seed.Products.Add(product);
+                seed.SaveChanges();
+                seed.Batches.Add(new Batch
+                {
+                    ProductId = product.Id,
+                    ProductionDate = new DateOnly(2026, 1, 1),
+                    ExpiryDate = new DateOnly(2028, 12, 31),
+                    ShelfLifeValue = 12,
+                    ShelfLifeUnit = "M",
+                    CurrentArrivalQty = 3,
+                    MaxArrivalQty = 3,
+                    SourceDiscountReference = "否"
+                });
+                seed.SaveChanges();
+            }
+
+            seed.SaveChanges();
+        }
+
+        ProductState beforeA;
+        ProductState beforeB;
+        ProductState beforeC;
+        BatchState beforeBatchB;
+        BatchState beforeBatchC;
+        ImportConfirmationContract contract;
+        using (var preview = database.Open())
+        {
+            beforeA = ReadProduct(preview, "A");
+            beforeB = ReadProduct(preview, "B");
+            beforeC = ReadProduct(preview, "C");
+            beforeBatchB = ReadBatch(preview, "B");
+            beforeBatchC = ReadBatch(preview, "C");
+            var workbook = new ExcelTemplateReader().Read(source.Path);
+            var plan = new ExcelImportPlanner().Plan(
+                preview,
+                new ExcelFileClassifier().Classify(workbook));
+            Assert.Single(plan.Preview.StockConflicts);
+            Assert.Empty(plan.UpdatedProducts);
+            Assert.Empty(plan.UnchangedProducts);
+            Assert.Single(plan.UpdatedBatches);
+            Assert.Single(plan.NewBatches);
+            contract = Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(
+                new ImportConfirmationGuard().BindPreview(source.Path, workbook, plan)).Contract);
+        }
+
+        var confirmedAtUtc = new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc);
+        using (var execute = database.Open())
+        {
+            var result = new ConfirmedImportExecutor(utcNow: () => confirmedAtUtc)
+                .Execute(
+                    contract,
+                    execute,
+                    Path.Combine(database.Directory, "snapshots"),
+                    new DateTime(2020, 8, 27, 9, 0, 0, DateTimeKind.Utc));
+            Assert.True(result.Succeeded);
+            Assert.Equal(4, execute.ImportIssues.AsNoTracking().Count());
+        }
+
+        using var verify = database.Open();
+        var import = Assert.Single(verify.Imports.AsNoTracking());
+        var productAAfter = verify.Products.AsNoTracking().Single(product => product.ProductCode == "A");
+        Assert.Equal(beforeA with { LastSeenImportId = import.Id, UpdatedAtUtc = confirmedAtUtc }, ReadProduct(verify, "A"));
+        Assert.Equal(5, productAAfter.ExcelStockQty);
+        Assert.Equal("manual", productAAfter.EffectiveStockSource);
+        Assert.Equal(beforeB, ReadProduct(verify, "B"));
+        Assert.Equal(beforeC, ReadProduct(verify, "C"));
+        Assert.Equal(beforeBatchB, ReadBatch(verify, "B"));
+        Assert.Equal(beforeBatchC, ReadBatch(verify, "C"));
+
+        var batchesA = verify.Batches.AsNoTracking()
+            .Where(batch => batch.ProductId == productAAfter.Id)
+            .ToArray();
+        Assert.Equal(2, batchesA.Length);
+        var updatedBatch = Assert.Single(batchesA, batch => batch.ExpiryDate == new DateOnly(2026, 12, 31));
+        Assert.Equal(12, updatedBatch.ShelfLifeValue);
+        Assert.Equal(3, updatedBatch.CurrentArrivalQty);
+        Assert.Equal(3, updatedBatch.MaxArrivalQty);
+        Assert.Equal(import.Id, updatedBatch.LastSeenImportId);
+        var newBatch = Assert.Single(batchesA, batch => batch.ExpiryDate == new DateOnly(2027, 12, 31));
+        Assert.Equal(import.Id, newBatch.LastSeenImportId);
+    }
+
     [Theory]
     [InlineData("imports")]
     [InlineData("products")]
@@ -385,6 +574,7 @@ public sealed class ConfirmedImportExecutorTests
     [InlineData("import_issues")]
     [InlineData("import_workbooks")]
     [InlineData("backups")]
+    [InlineData("commit")]
     public void SQLiteFailureAtEachWriteBoundaryRollsBackAndRetainsSnapshot(string table)
     {
         using var database = SqliteTestDatabase.Create();
@@ -429,7 +619,10 @@ public sealed class ConfirmedImportExecutorTests
                 new ImportConfirmationGuard().BindPreview(source.Path, workbook, plan)).Contract);
         }
 
-        using var execute = database.Open();
+        var commitInterceptor = table == "commit" ? new ThrowOnCommitInterceptor() : null;
+        using var execute = commitInterceptor is null
+            ? database.Open()
+            : OpenWithInterceptor(database.Path, commitInterceptor);
         var triggerSql = table switch
         {
             "imports" => "CREATE TRIGGER fail_imports AFTER INSERT ON imports BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
@@ -438,9 +631,13 @@ public sealed class ConfirmedImportExecutorTests
             "import_issues" => "CREATE TRIGGER fail_import_issues AFTER INSERT ON import_issues BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
             "import_workbooks" => "CREATE TRIGGER fail_import_workbooks AFTER INSERT ON import_workbooks BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
             "backups" => "CREATE TRIGGER fail_backups AFTER INSERT ON backups BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
+            "commit" => null,
             _ => throw new ArgumentOutOfRangeException(nameof(table), table, null)
         };
-        execute.Database.ExecuteSqlRaw(triggerSql);
+        if (triggerSql is not null)
+        {
+            execute.Database.ExecuteSqlRaw(triggerSql);
+        }
         var result = new ConfirmedImportExecutor().Execute(
             contract,
             execute,
@@ -450,6 +647,10 @@ public sealed class ConfirmedImportExecutorTests
         Assert.False(result.Succeeded);
         Assert.Equal(ConfirmedImportCodes.TransactionFailed, result.Code);
         Assert.Null(result.ImportId);
+        if (table == "commit")
+        {
+            Assert.True(commitInterceptor!.Called);
+        }
         var snapshotPath = Assert.IsType<string>(result.SnapshotPath);
         Assert.True(File.Exists(snapshotPath));
         Assert.Equal(Sha256(snapshotPath), result.SnapshotMetadata is null
@@ -596,6 +797,35 @@ public sealed class ConfirmedImportExecutorTests
         long? LastSeenImportId,
         DateTime CreatedAtUtc,
         DateTime UpdatedAtUtc);
+
+    private static StoreExpiryInspector.Infrastructure.StoreDbContext OpenWithInterceptor(
+        string databasePath,
+        DbTransactionInterceptor interceptor)
+    {
+        var options = new DbContextOptionsBuilder<StoreExpiryInspector.Infrastructure.StoreDbContext>()
+            .UseSqlite(new SqliteConnectionStringBuilder
+            {
+                DataSource = databasePath,
+                ForeignKeys = true
+            }.ToString())
+            .AddInterceptors(interceptor)
+            .Options;
+        return new StoreExpiryInspector.Infrastructure.StoreDbContext(options);
+    }
+
+    private sealed class ThrowOnCommitInterceptor : DbTransactionInterceptor
+    {
+        public bool Called { get; private set; }
+
+        public override InterceptionResult TransactionCommitting(
+            DbTransaction transaction,
+            TransactionEventData eventData,
+            InterceptionResult result)
+        {
+            Called = true;
+            throw new InvalidOperationException("forced commit failure");
+        }
+    }
 
     private sealed class SourceFixture : IDisposable
     {
