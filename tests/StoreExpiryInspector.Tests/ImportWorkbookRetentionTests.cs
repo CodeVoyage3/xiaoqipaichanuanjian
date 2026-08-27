@@ -91,6 +91,67 @@ public sealed class ImportWorkbookRetentionTests
     }
 
     [Fact]
+    public void NoChangesAndParseFailureLeaveRetentionHistoryUnchanged()
+    {
+        using var database = SqliteTestDatabase.Create();
+        SeedDatabase(database);
+        using (var source = CreateSource(database.Directory, 1))
+        {
+            ExecuteSuccessfulImport(database, source.Path, new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc));
+        }
+
+        using (var source = CreateSource(database.Directory, 2))
+        {
+            ExecuteSuccessfulImport(database, source.Path, new DateTime(2026, 8, 27, 9, 2, 0, DateTimeKind.Utc));
+        }
+
+        ImportSnapshot[] beforeImports;
+        WorkbookSnapshot[] beforeWorkbooks;
+        BackupSnapshot[] beforeBackups;
+        ProductSnapshot[] beforeProducts;
+        BatchSnapshot[] beforeBatches;
+        IssueSnapshot[] beforeIssues;
+        using (var before = database.Open())
+        {
+            beforeImports = ReadImports(before);
+            beforeWorkbooks = ReadAllWorkbooks(before);
+            beforeBackups = ReadBackups(before);
+            beforeProducts = ReadProducts(before);
+            beforeBatches = ReadBatches(before);
+            beforeIssues = ReadIssues(before);
+        }
+
+        using (var unchangedSource = CreateSource(database.Directory, 2))
+        using (var preview = database.Open())
+        {
+            var workbook = new ExcelTemplateReader().Read(unchangedSource.Path);
+            var plan = new ExcelImportPlanner().Plan(preview, new ExcelFileClassifier().Classify(workbook));
+            Assert.False(plan.HasChanges);
+            var confirmation = new ImportConfirmationGuard().Confirm(
+                new ImportConfirmationGuard().BindPreview(unchangedSource.Path, workbook, plan));
+            Assert.False(confirmation.CanConfirm);
+            Assert.Equal(ImportConfirmationCodes.NoChanges, confirmation.Code);
+            Assert.Null(confirmation.Contract);
+        }
+
+        using (var corruptSource = CreateSource(database.Directory, 3))
+        {
+            File.WriteAllBytes(corruptSource.Path, [1, 2, 3]);
+            Assert.Throws<InvalidDataException>(() => new ExcelTemplateReader().Read(corruptSource.Path));
+        }
+
+        using var after = database.Open();
+        Assert.Equal(beforeImports, ReadImports(after));
+        AssertSameWorkbooks(beforeWorkbooks, ReadAllWorkbooks(after));
+        Assert.Equal(beforeBackups, ReadBackups(after));
+        Assert.Equal(beforeProducts, ReadProducts(after));
+        Assert.Equal(beforeBatches, ReadBatches(after));
+        Assert.Equal(beforeIssues, ReadIssues(after));
+        Assert.Equal(2, after.Imports.AsNoTracking().Count());
+        Assert.Equal(2, after.ImportWorkbooks.AsNoTracking().Count());
+    }
+
+    [Fact]
     public void ChangedSourceDoesNotChangeExistingRetainedWorkbooks()
     {
         using var database = SqliteTestDatabase.Create();
@@ -223,6 +284,79 @@ public sealed class ImportWorkbookRetentionTests
         Assert.Equal(new[] { retry.ImportId, beforeImports[1].Id }, ReadRetainedWorkbooks(finalVerify).Select(item => item.ImportId));
         Assert.Equal(3, finalVerify.Imports.AsNoTracking().Count());
         Assert.Equal(2, finalVerify.ImportWorkbooks.AsNoTracking().Count());
+    }
+
+    [Fact]
+    public void EarlyFormalTransactionFailureRollsBackBeforeWorkbookWrite()
+    {
+        using var database = SqliteTestDatabase.Create();
+        SeedDatabase(database);
+        using (var source = CreateSource(database.Directory, 1))
+        {
+            ExecuteSuccessfulImport(database, source.Path, new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc));
+        }
+
+        using (var source = CreateSource(database.Directory, 2))
+        {
+            ExecuteSuccessfulImport(database, source.Path, new DateTime(2026, 8, 27, 9, 2, 0, DateTimeKind.Utc));
+        }
+
+        ImportSnapshot[] beforeImports;
+        WorkbookSnapshot[] beforeWorkbooks;
+        BackupSnapshot[] beforeBackups;
+        ProductSnapshot[] beforeProducts;
+        BatchSnapshot[] beforeBatches;
+        IssueSnapshot[] beforeIssues;
+        using (var before = database.Open())
+        {
+            beforeImports = ReadImports(before);
+            beforeWorkbooks = ReadAllWorkbooks(before);
+            beforeBackups = ReadBackups(before);
+            beforeProducts = ReadProducts(before);
+            beforeBatches = ReadBatches(before);
+            beforeIssues = ReadIssues(before);
+        }
+
+        using var source3 = CreateSource(database.Directory, 3);
+        var contract = ReadContract(database, source3.Path);
+        using (var trigger = database.Open())
+        {
+            trigger.Database.ExecuteSqlRaw(
+                "CREATE TRIGGER fail_products_update BEFORE UPDATE ON products " +
+                "BEGIN SELECT RAISE(ABORT, 'forced early failure'); END;");
+        }
+
+        ConfirmedImportResult failed;
+        using (var execute = database.Open())
+        {
+            failed = new ConfirmedImportExecutor(utcNow: () => new DateTime(2026, 8, 27, 9, 3, 0, DateTimeKind.Utc))
+                .Execute(
+                    contract,
+                    execute,
+                    Path.Combine(database.Directory, "snapshots"),
+                    new DateTime(2026, 8, 27, 8, 0, 0, DateTimeKind.Utc));
+
+            Assert.False(failed.Succeeded);
+            Assert.Equal(ConfirmedImportCodes.TransactionFailed, failed.Code);
+            Assert.Null(failed.ImportId);
+            Assert.Empty(execute.ChangeTracker.Entries());
+            execute.SaveChanges();
+        }
+
+        var snapshotPath = Assert.IsType<string>(failed.SnapshotPath);
+        Assert.True(File.Exists(snapshotPath));
+        Assert.Equal(failed.SnapshotMetadata!.Sha256, Sha256(snapshotPath));
+        Assert.True(new PreImportSnapshotService().ValidateSnapshot(failed.SnapshotMetadata));
+
+        using var after = database.Open();
+        Assert.Equal(beforeImports, ReadImports(after));
+        AssertSameWorkbooks(beforeWorkbooks, ReadAllWorkbooks(after));
+        Assert.Equal(beforeBackups, ReadBackups(after));
+        Assert.Equal(beforeProducts, ReadProducts(after));
+        Assert.Equal(beforeBatches, ReadBatches(after));
+        Assert.Equal(beforeIssues, ReadIssues(after));
+        Assert.Equal(2, after.Imports.AsNoTracking().Count());
+        Assert.Equal(2, after.ImportWorkbooks.AsNoTracking().Count());
     }
 
     private static void SeedDatabase(SqliteTestDatabase database)
@@ -423,6 +557,18 @@ public sealed class ImportWorkbookRetentionTests
                 issue.SafeSummary))
             .ToArray();
 
+    private static BackupSnapshot[] ReadBackups(StoreDbContext context) =>
+        context.BackupRecords.AsNoTracking()
+            .OrderBy(backup => backup.Id)
+            .Select(backup => new BackupSnapshot(
+                backup.Id,
+                backup.BackupType,
+                backup.FilePath,
+                backup.Sha256,
+                backup.CreatedAtUtc,
+                backup.VerificationStatus))
+            .ToArray();
+
     private static void AssertSameWorkbooks(
         IReadOnlyList<WorkbookSnapshot> expected,
         IReadOnlyList<WorkbookSnapshot> actual)
@@ -578,6 +724,14 @@ public sealed class ImportWorkbookRetentionTests
         string IssueType,
         string? FieldName,
         string SafeSummary);
+
+    private sealed record BackupSnapshot(
+        long Id,
+        string BackupType,
+        string FilePath,
+        string Sha256,
+        DateTime CreatedAtUtc,
+        string VerificationStatus);
 
     private sealed class SourceFixture : IDisposable
     {
