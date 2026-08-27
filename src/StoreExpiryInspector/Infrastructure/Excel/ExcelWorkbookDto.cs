@@ -2,7 +2,7 @@ namespace StoreExpiryInspector.Infrastructure.Excel;
 
 public sealed class ExcelWorkbookDto
 {
-    internal ExcelWorkbookDto(
+    public ExcelWorkbookDto(
         string sourceFileName,
         string sourceFileSha256,
         string worksheetName,
@@ -29,7 +29,7 @@ public sealed class ExcelWorkbookDto
 
 public sealed class ExcelRowDto
 {
-    internal ExcelRowDto(
+    public ExcelRowDto(
         int excelRowNumber,
         string? productCategory,
         string? productCode,
