@@ -637,6 +637,76 @@ public sealed class ManualInventoryAdjustmentUseCaseTests
     }
 
     [Fact]
+    public void PostImportS3T05StartsOnlyARealNewBatchInTheCurrentGenerationAfterManualRestore()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long importId;
+        long productId;
+        long oldBatchId;
+        using (var seed = database.Open())
+        {
+            importId = AddImport(seed).Id;
+            var product = AddProduct(seed, "P-RESTORE-S3T05", 10, 10);
+            product.LastSeenImportId = importId;
+            seed.SaveChanges();
+            var oldBatch = AddBatch(seed, product.Id);
+            oldBatch.LastSeenImportId = importId;
+            seed.SaveChanges();
+            productId = product.Id;
+            oldBatchId = oldBatch.Id;
+        }
+
+        using (var context = database.Open())
+        {
+            Execute(context, productId, 0);
+            Execute(context, productId, 5, AdjustedAtUtc.AddHours(1));
+        }
+
+        long newBatchId;
+        using (var stage2Facts = database.Open())
+        {
+            // This is the already-persisted Stage 2 new-batch fact; S3-T05 starts it below.
+            var newBatch = AddUnprocessedNewBatch(stage2Facts, productId, importId);
+            newBatchId = newBatch.Id;
+        }
+
+        using (var context = database.Open())
+        {
+            var result = new PostImportLifecycleUseCase().Execute(
+                context,
+                new PostImportLifecycleRequest(
+                    importId,
+                    BusinessDate,
+                    AdjustedAtUtc.AddHours(2),
+                    [new PostImportProductGroup(
+                        productId,
+                        [new PostImportBatchFact(
+                            newBatchId,
+                            PostImportBatchFactKinds.New,
+                            PreviousMaxArrivalQty: 0,
+                            CurrentArrivalQty: 2)])]));
+            Assert.Equal(1, result.StartedBatchCount);
+        }
+
+        using var verify = database.Open();
+        var productAfter = verify.Products.AsNoTracking().Single(item => item.Id == productId);
+        var oldBatchAfter = verify.Batches.AsNoTracking().Single(item => item.Id == oldBatchId);
+        var newBatchAfter = verify.Batches.AsNoTracking().Single(item => item.Id == newBatchId);
+        Assert.Equal(1, productAfter.LifecycleGeneration);
+        Assert.True(productAfter.IsStockZeroTerminated);
+        Assert.Equal(5, productAfter.EffectiveStockQty);
+        Assert.Equal("stopped", oldBatchAfter.TrackingStatus);
+        Assert.Equal("product_stock_zero", oldBatchAfter.StopReason);
+        Assert.Equal(0, oldBatchAfter.LifecycleGeneration);
+        Assert.Equal(1, newBatchAfter.LifecycleGeneration);
+        Assert.Equal("active", newBatchAfter.TrackingStatus);
+        Assert.Null(newBatchAfter.StopReason);
+        Assert.NotEqual(ExpiryStageCalculator.None, newBatchAfter.CurrentStage);
+        Assert.Single(verify.TaskItems.AsNoTracking());
+        Assert.Equal(newBatchId, verify.TaskItems.AsNoTracking().Single().BatchId);
+    }
+
+    [Fact]
     public void PositiveAdjustmentChangesOnlyApprovedProductFieldsAndAddsOneAdjustment()
     {
         using var database = SqliteTestDatabase.Create();
@@ -970,6 +1040,55 @@ public sealed class ManualInventoryAdjustmentUseCaseTests
         context.Products.Add(product);
         context.SaveChanges();
         return product;
+    }
+
+    private static ImportRecord AddImport(StoreDbContext context)
+    {
+        var import = new ImportRecord
+        {
+            SourceFileName = "stage2.xlsx",
+            SourceFileSha256 = new string('a', 64),
+            ParsedAtUtc = SeedUtc,
+            ConfirmedAtUtc = SeedUtc,
+            Status = ImportStatuses.Succeeded,
+            IsUndone = false,
+            ProductCount = 1,
+            BatchCount = 1
+        };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        return import;
+    }
+
+    private static Batch AddUnprocessedNewBatch(
+        StoreDbContext context,
+        long productId,
+        long importId)
+    {
+        var batchIndex = context.Batches.Count(batch => batch.ProductId == productId);
+        var batch = new Batch
+        {
+            ProductId = productId,
+            ProductionDate = new DateOnly(2026, 2, 1).AddDays(batchIndex),
+            ExpiryDate = new DateOnly(2026, 9, 25),
+            ShelfLifeValue = 12,
+            ShelfLifeUnit = "M",
+            CurrentArrivalQty = 2,
+            MaxArrivalQty = 2,
+            SourceDiscountReference = "stage2",
+            LifecycleGeneration = 0,
+            TrackingStatus = "active",
+            CurrentStage = ExpiryStageCalculator.None,
+            NextTriggerDate = null,
+            AttentionVersion = 0,
+            HandledAttentionVersion = 0,
+            LastSeenImportId = importId,
+            CreatedAtUtc = SeedUtc,
+            UpdatedAtUtc = SeedUtc
+        };
+        context.Batches.Add(batch);
+        context.SaveChanges();
+        return batch;
     }
 
     private static Batch AddBatch(
