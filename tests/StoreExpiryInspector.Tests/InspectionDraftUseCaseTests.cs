@@ -41,6 +41,43 @@ public sealed class InspectionDraftUseCaseTests
     }
 
     [Fact]
+    public void SaveDraftCreatesExplicitNullWithObservedVersionButNotOmittedItem()
+    {
+        using var database = CreateScenario(itemCount: 2);
+        using var context = database.Open();
+        var ids = ReadIds(context);
+        foreach (var item in context.TaskItems)
+        {
+            item.AttentionVersion = 2;
+        }
+
+        foreach (var batch in context.Batches)
+        {
+            batch.AttentionVersion = 2;
+        }
+
+        context.SaveChanges();
+        var result = new InspectionDraftUseCase().SaveDraft(
+            context,
+            new(
+                ids.TaskId,
+                ids.ProductId,
+                BusinessDate,
+                SavedAtUtc,
+                Items: new[]
+                {
+                    new SaveDraftItemRequest(ids.TaskItemIds[0], ids.BatchIds[0], 1, null)
+                }));
+
+        Assert.True(result.Changed);
+        var draftItem = context.DraftItems.Single();
+        Assert.Equal(ids.TaskItemIds[0], draftItem.TaskItemId);
+        Assert.Null(draftItem.CheckedQty);
+        Assert.Equal(1, draftItem.ConfirmedAttentionVersion);
+        Assert.DoesNotContain(context.DraftItems, item => item.TaskItemId == ids.TaskItemIds[1]);
+    }
+
+    [Fact]
     public void SaveDraftUpsertsAndPreservesNullZeroAndMissingItems()
     {
         using var database = CreateScenario(itemCount: 2);
@@ -454,6 +491,8 @@ public sealed class InspectionDraftUseCaseTests
             }
 
             context.SaveChanges();
+            var unfilledDraftItem = context.DraftItems.Single(item => item.TaskItemId == ids.TaskItemIds[0]);
+            Assert.Null(unfilledDraftItem.CheckedQty);
             Assert.Throws<InvalidOperationException>(() => new InspectionDraftUseCase().ReconfirmItem(
                 context,
                 new(ids.TaskId, ids.ProductId, ids.TaskItemIds[0], ids.BatchIds[0], 0, SavedAtUtc.AddHours(1))));
@@ -835,6 +874,55 @@ public sealed class InspectionDraftUseCaseTests
         Assert.Equal(1, verify.DraftItems.Single().CheckedQty);
     }
 
+    [Fact]
+    public void SaveDraftLeavesUnrelatedBusinessGraphUnchanged()
+    {
+        using var database = CreateBusinessGraphScenario(out var ids);
+        using var context = database.Open();
+        var before = BusinessGraphSnapshot.Capture(context);
+
+        Save(context, ids, checkedQty: 3);
+
+        AssertBusinessGraphUnchanged(context, before);
+    }
+
+    [Fact]
+    public void ReconfirmItemLeavesUnrelatedBusinessGraphUnchanged()
+    {
+        using var database = CreateBusinessGraphScenario(out var ids);
+        using (var seed = database.Open())
+        {
+            Save(seed, ids, checkedQty: 3);
+            SetReconfirmation(seed, ids, true);
+        }
+
+        using var context = database.Open();
+        var before = BusinessGraphSnapshot.Capture(context);
+
+        new InspectionDraftUseCase().ReconfirmItem(
+            context,
+            new(ids.TaskId, ids.ProductId, ids.TaskItemIds[0], ids.BatchIds[0], 0, SavedAtUtc.AddHours(1)));
+
+        AssertBusinessGraphUnchanged(context, before);
+    }
+
+    [Fact]
+    public void ClearDraftLeavesUnrelatedBusinessGraphUnchanged()
+    {
+        using var database = CreateBusinessGraphScenario(out var ids);
+        using (var seed = database.Open())
+        {
+            Save(seed, ids, checkedQty: 3);
+        }
+
+        using var context = database.Open();
+        var before = BusinessGraphSnapshot.Capture(context);
+
+        new InspectionDraftUseCase().ClearDraft(context, new(ids.TaskId, ids.ProductId));
+
+        AssertBusinessGraphUnchanged(context, before);
+    }
+
     private static SaveDraftResult Save(
         StoreDbContext context,
         ScenarioIds ids,
@@ -872,6 +960,280 @@ public sealed class InspectionDraftUseCaseTests
             context.TaskItems.Where(item => item.TaskId == task.Id).OrderBy(item => item.Id).Select(item => item.Id).ToArray(),
             context.TaskItems.Where(item => item.TaskId == task.Id).OrderBy(item => item.Id).Select(item => item.BatchId).ToArray());
     }
+
+    private static SqliteTestDatabase CreateBusinessGraphScenario(out ScenarioIds ids)
+    {
+        var database = CreateScenario();
+        using var context = database.Open();
+        var scenarioIds = ReadIds(context);
+        ids = scenarioIds;
+        var product = context.Products.Single(product => product.Id == scenarioIds.ProductId);
+        var batch = context.Batches.Single(batch => batch.Id == scenarioIds.BatchIds[0]);
+        product.CurrentName = "图谱商品";
+        product.CurrentBarcode = "6900000000001";
+        product.CategoryCode = "food";
+        product.PolicyCode = "food_v1";
+        product.ExcelStockQty = 21;
+        product.EffectiveStockQty = 19;
+        product.EffectiveStockSource = "fixture";
+        product.LifecycleGeneration = 3;
+        product.IsStockZeroTerminated = false;
+        product.LastSeenImportId = null;
+        product.CreatedAtUtc = SavedAtUtc.AddDays(-3);
+        product.UpdatedAtUtc = SavedAtUtc.AddDays(-1);
+        batch.ProductionDate = BusinessDate.AddDays(-10);
+        batch.ExpiryDate = BusinessDate.AddDays(30);
+        batch.ShelfLifeValue = 12;
+        batch.ShelfLifeUnit = "M";
+        batch.CurrentArrivalQty = 10;
+        batch.MaxArrivalQty = 12;
+        batch.SourceDiscountReference = "fixture-discount";
+        batch.LifecycleGeneration = 2;
+        batch.TrackingStatus = "active";
+        batch.StopReason = null;
+        batch.StoppedAtUtc = null;
+        batch.CurrentStage = ExpiryStageCalculator.Discount50;
+        batch.NextTriggerDate = BusinessDate.AddDays(1);
+        batch.AttentionVersion = 0;
+        batch.HandledAttentionVersion = 0;
+        batch.LastSeenImportId = null;
+        batch.CreatedAtUtc = SavedAtUtc.AddDays(-3);
+        batch.UpdatedAtUtc = SavedAtUtc.AddDays(-1);
+
+        var inspection = new Inspection
+        {
+            TaskId = scenarioIds.TaskId,
+            ProductId = scenarioIds.ProductId,
+            ProductCodeSnapshot = product.ProductCode,
+            ProductNameSnapshot = product.CurrentName,
+            BarcodeSnapshot = product.CurrentBarcode,
+            StageSnapshot = ExpiryStageCalculator.Discount50,
+            StockQtySnapshot = 19,
+            InspectorName = "历史检查人",
+            CheckDate = BusinessDate.AddDays(-1),
+            SubmittedAtUtc = SavedAtUtc.AddDays(-1)
+        };
+        var adjustment = new InventoryAdjustment
+        {
+            ProductId = scenarioIds.ProductId,
+            ExcelStockQtySnapshot = 21,
+            AdjustedStockQty = 19,
+            AdjustedAtUtc = SavedAtUtc.AddDays(-1)
+        };
+        context.Inspections.Add(inspection);
+        context.InventoryAdjustments.Add(adjustment);
+        context.SaveChanges();
+
+        var inspectionItem = new InspectionItem
+        {
+            InspectionId = inspection.Id,
+            ProductId = scenarioIds.ProductId,
+            BatchId = batch.Id,
+            ProductionDateSnapshot = batch.ProductionDate,
+            ExpiryDateSnapshot = batch.ExpiryDate,
+            StageSnapshot = ExpiryStageCalculator.Discount50,
+            ArrivalQtySnapshot = batch.CurrentArrivalQty,
+            CheckedQty = 8,
+            UpdatedAtUtc = SavedAtUtc.AddDays(-1)
+        };
+        context.InspectionItems.Add(inspectionItem);
+        context.LifecycleEvents.Add(new LifecycleEvent
+        {
+            ProductId = ids.ProductId,
+            BatchId = batch.Id,
+            EventType = "batch_tracking_resumed",
+            Reason = "fixture event",
+            OccurredAtUtc = SavedAtUtc.AddDays(-1),
+            SourceInspectionId = inspection.Id,
+            SourceAdjustmentId = null,
+            SourceImportId = null
+        });
+        context.SaveChanges();
+        return database;
+    }
+
+    private static void AssertBusinessGraphUnchanged(
+        StoreDbContext context,
+        BusinessGraphSnapshot before)
+    {
+        var after = BusinessGraphSnapshot.Capture(context);
+        Assert.Equal(before.Products, after.Products);
+        Assert.Equal(before.Batches, after.Batches);
+        Assert.Equal(before.Inspections, after.Inspections);
+        Assert.Equal(before.InspectionItems, after.InspectionItems);
+        Assert.Equal(before.InventoryAdjustments, after.InventoryAdjustments);
+        Assert.Equal(before.LifecycleEvents, after.LifecycleEvents);
+    }
+
+    private sealed record BusinessGraphSnapshot(
+        ProductSnapshot[] Products,
+        BatchSnapshot[] Batches,
+        InspectionSnapshot[] Inspections,
+        InspectionItemSnapshot[] InspectionItems,
+        InventoryAdjustmentSnapshot[] InventoryAdjustments,
+        LifecycleEventSnapshot[] LifecycleEvents)
+    {
+        public static BusinessGraphSnapshot Capture(StoreDbContext context)
+        {
+            return new(
+                context.Products.AsNoTracking().OrderBy(product => product.Id).Select(product => new ProductSnapshot(
+                    product.Id,
+                    product.ProductCode,
+                    product.CurrentName,
+                    product.CurrentBarcode,
+                    product.CategoryCode,
+                    product.PolicyCode,
+                    product.ExcelStockQty,
+                    product.EffectiveStockQty,
+                    product.EffectiveStockSource,
+                    product.LifecycleGeneration,
+                    product.IsStockZeroTerminated,
+                    product.LastSeenImportId,
+                    product.CreatedAtUtc,
+                    product.UpdatedAtUtc)).ToArray(),
+                context.Batches.AsNoTracking().OrderBy(batch => batch.Id).Select(batch => new BatchSnapshot(
+                    batch.Id,
+                    batch.ProductId,
+                    batch.ProductionDate,
+                    batch.ExpiryDate,
+                    batch.ShelfLifeValue,
+                    batch.ShelfLifeUnit,
+                    batch.CurrentArrivalQty,
+                    batch.MaxArrivalQty,
+                    batch.SourceDiscountReference,
+                    batch.LifecycleGeneration,
+                    batch.TrackingStatus,
+                    batch.StopReason,
+                    batch.StoppedAtUtc,
+                    batch.CurrentStage,
+                    batch.NextTriggerDate,
+                    batch.AttentionVersion,
+                    batch.HandledAttentionVersion,
+                    batch.LastSeenImportId,
+                    batch.CreatedAtUtc,
+                    batch.UpdatedAtUtc)).ToArray(),
+                context.Inspections.AsNoTracking().OrderBy(inspection => inspection.Id).Select(inspection => new InspectionSnapshot(
+                    inspection.Id,
+                    inspection.TaskId,
+                    inspection.ProductId,
+                    inspection.ProductCodeSnapshot,
+                    inspection.ProductNameSnapshot,
+                    inspection.BarcodeSnapshot,
+                    inspection.StageSnapshot,
+                    inspection.StockQtySnapshot,
+                    inspection.InspectorName,
+                    inspection.CheckDate,
+                    inspection.SubmittedAtUtc)).ToArray(),
+                context.InspectionItems.AsNoTracking().OrderBy(item => item.Id).Select(item => new InspectionItemSnapshot(
+                    item.Id,
+                    item.InspectionId,
+                    item.ProductId,
+                    item.BatchId,
+                    item.ProductionDateSnapshot,
+                    item.ExpiryDateSnapshot,
+                    item.StageSnapshot,
+                    item.ArrivalQtySnapshot,
+                    item.CheckedQty,
+                    item.UpdatedAtUtc)).ToArray(),
+                context.InventoryAdjustments.AsNoTracking().OrderBy(adjustment => adjustment.Id).Select(adjustment => new InventoryAdjustmentSnapshot(
+                    adjustment.Id,
+                    adjustment.ProductId,
+                    adjustment.ExcelStockQtySnapshot,
+                    adjustment.AdjustedStockQty,
+                    adjustment.AdjustedAtUtc)).ToArray(),
+                context.LifecycleEvents.AsNoTracking().OrderBy(lifecycleEvent => lifecycleEvent.Id).Select(lifecycleEvent => new LifecycleEventSnapshot(
+                    lifecycleEvent.Id,
+                    lifecycleEvent.ProductId,
+                    lifecycleEvent.BatchId,
+                    lifecycleEvent.EventType,
+                    lifecycleEvent.Reason,
+                    lifecycleEvent.OccurredAtUtc,
+                    lifecycleEvent.SourceImportId,
+                    lifecycleEvent.SourceInspectionId,
+                    lifecycleEvent.SourceAdjustmentId)).ToArray());
+        }
+    }
+
+    private sealed record ProductSnapshot(
+        long Id,
+        string ProductCode,
+        string? CurrentName,
+        string? CurrentBarcode,
+        string CategoryCode,
+        string PolicyCode,
+        int ExcelStockQty,
+        int EffectiveStockQty,
+        string? EffectiveStockSource,
+        int LifecycleGeneration,
+        bool IsStockZeroTerminated,
+        long? LastSeenImportId,
+        DateTime CreatedAtUtc,
+        DateTime UpdatedAtUtc);
+
+    private sealed record BatchSnapshot(
+        long Id,
+        long ProductId,
+        DateOnly? ProductionDate,
+        DateOnly ExpiryDate,
+        int ShelfLifeValue,
+        string ShelfLifeUnit,
+        int CurrentArrivalQty,
+        int MaxArrivalQty,
+        string? SourceDiscountReference,
+        int LifecycleGeneration,
+        string TrackingStatus,
+        string? StopReason,
+        DateTime? StoppedAtUtc,
+        string CurrentStage,
+        DateOnly? NextTriggerDate,
+        int AttentionVersion,
+        int HandledAttentionVersion,
+        long? LastSeenImportId,
+        DateTime CreatedAtUtc,
+        DateTime UpdatedAtUtc);
+
+    private sealed record InspectionSnapshot(
+        long Id,
+        long TaskId,
+        long ProductId,
+        string ProductCodeSnapshot,
+        string? ProductNameSnapshot,
+        string? BarcodeSnapshot,
+        string StageSnapshot,
+        int StockQtySnapshot,
+        string InspectorName,
+        DateOnly CheckDate,
+        DateTime SubmittedAtUtc);
+
+    private sealed record InspectionItemSnapshot(
+        long Id,
+        long InspectionId,
+        long ProductId,
+        long BatchId,
+        DateOnly? ProductionDateSnapshot,
+        DateOnly ExpiryDateSnapshot,
+        string StageSnapshot,
+        int ArrivalQtySnapshot,
+        int CheckedQty,
+        DateTime UpdatedAtUtc);
+
+    private sealed record InventoryAdjustmentSnapshot(
+        long Id,
+        long ProductId,
+        int ExcelStockQtySnapshot,
+        int AdjustedStockQty,
+        DateTime AdjustedAtUtc);
+
+    private sealed record LifecycleEventSnapshot(
+        long Id,
+        long ProductId,
+        long? BatchId,
+        string EventType,
+        string Reason,
+        DateTime OccurredAtUtc,
+        long? SourceImportId,
+        long? SourceInspectionId,
+        long? SourceAdjustmentId);
 
     private static Batch AddBatch(StoreDbContext context, long productId)
     {

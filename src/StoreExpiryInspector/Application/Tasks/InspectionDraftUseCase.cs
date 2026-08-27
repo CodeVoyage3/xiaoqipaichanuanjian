@@ -166,11 +166,6 @@ public sealed class InspectionDraftUseCase
                 var taskItem = taskItemsById[input.TaskItemId];
                 if (!draftItemsByTaskItemId.TryGetValue(input.TaskItemId, out var draftItem))
                 {
-                    if (input.CheckedQty is null)
-                    {
-                        continue;
-                    }
-
                     draftItem = new InspectionDraftItem
                     {
                         Draft = draft,
