@@ -1,6 +1,6 @@
 # 当前数据模型
 
-> 更新于 2026-08-27。以下为 Stage 1 验收通过后的代码与 SQLite schema 事实；业务状态转换尚未实现。权威结构以 8 条 migration 和 `StoreDbContextModelSnapshot` 为准。
+> 更新于 2026-08-27。以下为 Stage 1 数据底座及 S2-T01 至 S2-T06 导入能力验收后的代码与 SQLite schema 事实；Stage 3 业务状态转换尚未实现。权威结构以 8 条 migration 和 `StoreDbContextModelSnapshot` 为准。
 
 ## 总览
 
@@ -115,7 +115,7 @@
 字段：`id`、`import_id`、`original_file_name`、`content`、`sha256`、`saved_at_utc`。
 
 - 每条导入记录最多一个非空工作簿 BLOB；SHA-256 格式受约束，外键 `NO ACTION`。
-- “只保留最近两份成功导入工作簿”是后续事务服务职责，当前 schema 不自动裁剪。
+  - S2-T06 已在成功导入事务中保存确认契约冻结的原始工作簿；“只保留最近两份成功导入工作簿”仍由 S2-T07 负责，当前不自动裁剪。
 
 ### `import_issues`
 
@@ -130,7 +130,7 @@
 字段：`id`、`backup_type`、`file_path`、`sha256`、`created_at_utc`、`verification_status`。
 
 - 类型仅允许 `auto`、`manual`、`pre_import`、`pre_restore`、`pre_upgrade`。
-- 当前仅有元数据；文件创建、哈希计算、验证、恢复和自动保留 7 份均未实现。
+  - S2-T05 已实现导入前快照文件创建、哈希和验证；S2-T06 已在成功导入事务中保存 `pre_import` / `verified` 元数据。恢复和自动保留 7 份仍未实现。
 
 ### `settings`
 

@@ -54,6 +54,16 @@ Stage 1 证据只证明数据底座与日志基础设施，不证明 Excel 导�
 - 源缺失、锁定、损坏、目标不可用、缺 schema、连续创建及最终文件篡改均阻断或被识别，临时文件精确清理且预存文件不变。
 - Release 编译在单独屏蔽网络审计告警 `NU1900` 后为 0 警告/0 错误；官方 NuGet 漏洞查询另行成功且无已知漏洞。EF 模型无漂移，无新依赖或生成数据库残留。
 
+## S2-T06 当前证据
+
+- 确认导入事务专项 16/16；S2-T01 至 S2-T05 回归 115/115；Release 全量 131/131，0 失败、0 跳过。
+- 真实 `.xlsx` 经 Reader、Classifier、Planner、Guard 形成冻结契约，执行器再次复核文件、创建在线快照，再以单一 SQLite 事务写入 Import、BackupRecord、Product、Batch、ImportIssue 和 ImportWorkbook。
+- A/B/C 局部增量只导入 A；B、C 及全部批次包含 last_seen、库存、累计到货、状态、生命周期和时间戳在内逐字段不变，且无任务、草稿、排查、库存修正或生命周期事件。
+- 库存冲突含 0 时不选择库存值；合法 0 只保存事实；MaxArrivalQty 只升不降。正常 batch-only 商品仍更新 Product last_seen，冲突/未出现批次不更新。
+- Import、Product、Batch、ImportIssue、ImportWorkbook、BackupRecord 及真实 TransactionCommitting 七个故障点均证明整事务回滚、Import ID 为空、ChangeTracker 清理且快照保留。
+- 文件变化、删除、独占锁定、快照目标失败、非干净 context 和陈旧计划均在正式写入前阻断；提交成功后不存在会把已提交结果报告为失败的生产后置校验。
+- Release build 在单独屏蔽网络审计告警 `NU1900` 后为 0 警告/0 错误；官方 NuGet 漏洞查询无已知漏洞。EF 模型无漂移，仍为 8 条 migration，无新依赖或临时数据库残留。
+
 ## 分层原则
 
 1. Domain：纯计算与状态转换，不启动 WPF、不访问文件或数据库。
