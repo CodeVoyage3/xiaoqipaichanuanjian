@@ -64,6 +64,15 @@ Stage 1 证据只证明数据底座与日志基础设施，不证明 Excel 导�
 - 文件变化、删除、独占锁定、快照目标失败、非干净 context 和陈旧计划均在正式写入前阻断；提交成功后不存在会把已提交结果报告为失败的生产后置校验。
 - Release build 在单独屏蔽网络审计告警 `NU1900` 后为 0 警告/0 错误；官方 NuGet 漏洞查询无已知漏洞。EF 模型无漂移，仍为 8 条 migration，无新依赖或临时数据库残留。
 
+## S2-T07 当前证据
+
+- 最近两份工作簿保留专项 5/5；S2-T01 至 S2-T06 回归 131/131；Release 全量 136/136，0 失败、0 跳过。
+- 真实链路连续执行 5 次成功导入：Workbook 数量依次为 1、2、2、2、2，Import 数量累积为 1 至 5；相同 ConfirmedAtUtc 时以更大 Import ID 稳定保留。
+- 最终两条 Workbook 的 ImportId、文件名、冻结字节、SHA 和 SavedAtUtc 与确认契约逐项一致；旧 Workbook 删除后全部 Import、BackupRecord 和 ImportIssue 仍存在。
+- 源文件变化、完全无变化和解析失败均不改变原两份；已有两份时的早期 Product 写事务失败及 `BEFORE DELETE ON import_workbooks` 裁剪故障都整体回滚，原 Import/Workbook/Backup/Issue/Product/Batch 逐字段不变且快照保留。
+- 生产改动仅在既有事务内增加固定裁剪：新 Workbook SaveChanges 后、Commit 前按 `Succeeded`、`ConfirmedAtUtc DESC`、`Id DESC`、`Skip(2)` 删除旧 Workbook；无公共清理入口、Repository、策略框架或 Undone 逻辑。
+- Release build 在单独屏蔽网络审计告警 `NU1900` 后为 0 警告/0 错误；官方 NuGet 漏洞查询重试成功且无已知漏洞。EF 模型无漂移，仍为 8 条 migration，无新依赖或临时数据库残留。
+
 ## 分层原则
 
 1. Domain：纯计算与状态转换，不启动 WPF、不访问文件或数据库。
