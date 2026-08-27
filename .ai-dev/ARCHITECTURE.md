@@ -2,12 +2,13 @@
 
 > 更新于 2026-08-27。本文区分“当前代码事实”和“后续批准方向”；未落地能力不得按已完成理解。
 
-## 当前代码事实（S2-T02 已通过）
+## 当前代码事实（S2-T03 已通过）
 
 ```text
 StoreExpiryInspector.slnx
 ├─ src/StoreExpiryInspector                 单一 .NET 10 WPF 应用项目
 │  ├─ Domain                               17 个数据实体；当前无业务状态转换方法
+│  ├─ Application/Imports                  只读 SQLite 差异规划与普通 ImportPlan / Preview DTO
 │  ├─ Infrastructure
 │  │  ├─ Configurations                    17 个独立 EF Core 实体配置
 │  │  ├─ StoreDbContext                    17 个 DbSet 与显式配置注册
@@ -16,13 +17,13 @@ StoreExpiryInspector.slnx
 │  │  └─ Excel                             固定 `.xlsx` 只读解析、纯内存校验分类、普通 DTO 与 SHA-256
 │  ├─ Migrations                           8 条 EF Core migration
 │  └─ UI                                   仅有占位主窗口
-└─ tests/StoreExpiryInspector.Tests         76 项测试
+└─ tests/StoreExpiryInspector.Tests         102 项测试
 ```
 
 - 技术栈：`net10.0-windows`、WPF、EF Core SQLite、Open XML SDK 3.5.1；除此之外未增加 Excel 依赖。
 - 数据库默认路径已实现为 `%LOCALAPPDATA%/StoreExpiryInspector/data/app.db`；连接启用外键，`DatabaseInitializer.Initialize` 可执行 migration 并切换 WAL。
 - `App.xaml.cs` 当前为空，尚未把数据库初始化、日志或业务用例接入真实启动流程。
-- 当前不存在 `Application` 目录、Excel 数据库 diff/持久化导入服务、状态机、提醒、托盘、自启动、备份文件服务或完整业务 UI。
+- `Application/Imports/ExcelImportPlanner` 只查询本次涉及的商品与其批次并使用 `AsNoTracking`，不调用 SaveChanges；当前不存在持久化导入服务、状态机、提醒、托盘、自启动、备份文件服务或完整业务 UI。
 - 本地日志器已实现 UTF-8 无 BOM JSON Lines、按本地自然日滚动、仅保留最近 14 个合法命名日志文件；尚未接入具体业务日志。
 - 单实例运行是已批准架构方向，但当前尚未实现进程互斥。
 
@@ -34,12 +35,12 @@ StoreExpiryInspector.slnx
 - 商品/批次、任务/草稿、正式排查/修改历史、库存修正、导入记录/工作簿/异常、备份元数据、设置/运行状态、生命周期事件都仅完成持久化底座；业务编排尚未实现。
 - 生命周期事件不是通用事件总线，只保存五类已批准事件事实；事件创建条件与状态转换不得下沉到 EF 配置。
 
-## Stage 2 批准方向（S2-T01、S2-T02 已完成）
+## Stage 2 批准方向（S2-T01 至 S2-T03 已完成）
 
 后续 Excel 增量导入仍应保持三段式：
 
 1. `解析`：S2-T01 已实现只读打开固定模板首工作表、表头 Trim、必要列/重名拒绝、普通 DTO 与文件哈希；尚不做业务分类。
-2. `规划`：S2-T02 已纯内存分类为正常、完全重复、冲突、行级异常、非食品跳过；数据库差异与预览尚未实现。
+2. `规划`：S2-T02 已完成文件内分类；S2-T03 已只读查询相关 Product / Batch 并生成新增、更新、无变化和问题预览，不修改数据库实体。
 3. `确认应用`：重新校验文件哈希，先完成导入前快照，再以单个 SQLite 事务写入导入记录、商品/批次、异常与原始工作簿；Stage 2 不顺带执行 Stage 3 状态机。
 
 最高优先级边界：Excel 是局部增量数据，不是全量快照。未出现在本次文件中的商品或批次不得进入变更集，不得被删除、停止跟踪、关闭任务、修改库存或改变历史。
