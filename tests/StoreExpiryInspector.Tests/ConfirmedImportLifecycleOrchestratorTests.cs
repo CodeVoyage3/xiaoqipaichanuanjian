@@ -212,6 +212,35 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     public void PostImportConstraintFailureRollsBackStage2AndLifecycleTogether()
     {
         using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var seedProduct = new Product
+            {
+                ProductCode = "P-FAIL",
+                CurrentName = "导入前商品",
+                CurrentBarcode = "B-FAIL-OLD",
+                ExcelStockQty = 5,
+                EffectiveStockQty = 5,
+                EffectiveStockSource = "excel"
+            };
+            seed.Products.Add(seedProduct);
+            seed.SaveChanges();
+            seed.Batches.Add(new Batch
+            {
+                ProductId = seedProduct.Id,
+                ProductionDate = new DateOnly(2026, 1, 1),
+                ExpiryDate = new DateOnly(2026, 9, 20),
+                ShelfLifeValue = 12,
+                ShelfLifeUnit = "M",
+                CurrentArrivalQty = 1,
+                MaxArrivalQty = 1,
+                SourceDiscountReference = "是",
+                CurrentStage = ExpiryStageCalculator.None,
+                CreatedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc),
+                UpdatedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc)
+            });
+            seed.SaveChanges();
+        }
         using (var schema = database.Open())
         {
             schema.Database.ExecuteSqlRaw(
@@ -242,8 +271,17 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
 
         using var verify = database.Open();
         Assert.Empty(verify.Imports.AsNoTracking());
-        Assert.Empty(verify.Products.AsNoTracking());
-        Assert.Empty(verify.Batches.AsNoTracking());
+        var product = Assert.Single(verify.Products.AsNoTracking());
+        Assert.Equal("导入前商品", product.CurrentName);
+        Assert.Equal("B-FAIL-OLD", product.CurrentBarcode);
+        Assert.Equal(5, product.EffectiveStockQty);
+        Assert.Null(product.LastSeenImportId);
+        var batch = Assert.Single(verify.Batches.AsNoTracking());
+        Assert.Equal(1, batch.CurrentArrivalQty);
+        Assert.Equal(1, batch.MaxArrivalQty);
+        Assert.Equal(ExpiryStageCalculator.None, batch.CurrentStage);
+        Assert.Null(batch.NextTriggerDate);
+        Assert.Null(batch.LastSeenImportId);
         Assert.Empty(verify.Tasks.AsNoTracking());
         Assert.Empty(verify.LifecycleEvents.AsNoTracking());
     }
@@ -252,9 +290,38 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     public void ReplayingTheSameConfirmationIsRejectedWithoutASecondImport()
     {
         using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var product = new Product
+            {
+                ProductCode = "P-REPLAY",
+                CurrentName = "重放商品",
+                CurrentBarcode = "B-REPLAY",
+                ExcelStockQty = 5,
+                EffectiveStockQty = 5,
+                EffectiveStockSource = "excel"
+            };
+            seed.Products.Add(product);
+            seed.SaveChanges();
+            seed.Batches.Add(new Batch
+            {
+                ProductId = product.Id,
+                ProductionDate = new DateOnly(2026, 1, 1),
+                ExpiryDate = new DateOnly(2026, 9, 20),
+                ShelfLifeValue = 12,
+                ShelfLifeUnit = "M",
+                CurrentArrivalQty = 1,
+                MaxArrivalQty = 1,
+                TrackingStatus = "stopped",
+                StopReason = "batch_checked_zero",
+                StoppedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc),
+                SourceDiscountReference = "是"
+            });
+            seed.SaveChanges();
+        }
         var sourcePath = Path.Combine(database.Directory, "replay.xlsx");
         WriteWorkbook(sourcePath, [
-            "食品", "P-REPLAY", "B-REPLAY", "重放商品", "2026-01-01", "2026-09-20", "12", "M", "是", "3", "5"
+            "食品", "P-REPLAY", "B-REPLAY", "重放商品", "2026-01-01", "2026-09-20", "12", "M", "是", "2", "5"
         ]);
         var parsedAtUtc = new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc);
         var contract = ReadContract(database, sourcePath);
@@ -282,6 +349,12 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         Assert.Single(verify.Products.AsNoTracking());
         Assert.Single(verify.Batches.AsNoTracking());
         Assert.Single(verify.Tasks.AsNoTracking());
+        Assert.Single(verify.TaskItems.AsNoTracking());
+        var replayBatch = Assert.Single(verify.Batches.AsNoTracking());
+        Assert.Equal(1, replayBatch.AttentionVersion);
+        Assert.Equal("active", replayBatch.TrackingStatus);
+        Assert.Single(verify.LifecycleEvents.AsNoTracking()
+            .Where(item => item.EventType == "batch_tracking_resumed"));
     }
 
     private static void WriteWorkbook(string path, IReadOnlyList<string> values)

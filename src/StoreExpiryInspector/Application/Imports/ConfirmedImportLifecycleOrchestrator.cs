@@ -148,10 +148,6 @@ public sealed class ConfirmedImportLifecycleOrchestrator
     }
 
     public ConfirmedImportResult Execute(
-        ConfirmedImportLifecycleRequest request,
-        StoreDbContext context) => Execute(context, request);
-
-    public ConfirmedImportResult Execute(
         StoreDbContext context,
         ImportConfirmationContract contract,
         string snapshotDirectory,
@@ -165,20 +161,6 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 parsedAtUtc,
                 businessDate,
                 occurredAtUtc));
-
-    public ConfirmedImportResult Execute(
-        ImportConfirmationContract contract,
-        StoreDbContext context,
-        string snapshotDirectory,
-        DateTime parsedAtUtc,
-        DateOnly businessDate,
-        DateTime occurredAtUtc) => Execute(
-            context,
-            contract,
-            snapshotDirectory,
-            parsedAtUtc,
-            businessDate,
-            occurredAtUtc);
 
     private static void ValidateRequest(ConfirmedImportLifecycleRequest request)
     {
