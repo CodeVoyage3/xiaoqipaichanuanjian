@@ -288,6 +288,9 @@ public sealed class ConfirmedImportExecutor
             });
             context.SaveChanges();
 
+            RetainRecentImportWorkbooks(context);
+            context.SaveChanges();
+
             if (context.ImportIssues.Count(issue => issue.ImportId == import.Id) != pendingIssues.Count)
             {
                 throw new InvalidDataException("The persisted import issue count does not match the import record.");
@@ -335,6 +338,24 @@ public sealed class ConfirmedImportExecutor
         ImportConfirmationContract contract,
         string snapshotDirectory,
         DateTime parsedAtUtc) => Execute(contract, context, snapshotDirectory, parsedAtUtc);
+
+    private static void RetainRecentImportWorkbooks(StoreDbContext context)
+    {
+        var staleWorkbooks = context.ImportWorkbooks
+            .Join(
+                context.Imports,
+                workbook => workbook.ImportId,
+                import => import.Id,
+                (workbook, import) => new { Workbook = workbook, Import = import })
+            .Where(item => item.Import.Status == ImportStatuses.Succeeded)
+            .OrderByDescending(item => item.Import.ConfirmedAtUtc)
+            .ThenByDescending(item => item.Import.Id)
+            .Skip(2)
+            .Select(item => item.Workbook)
+            .ToArray();
+
+        context.ImportWorkbooks.RemoveRange(staleWorkbooks);
+    }
 
     private bool TryValidateContract(
         ImportConfirmationContract contract,
