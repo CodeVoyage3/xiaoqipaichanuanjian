@@ -266,9 +266,8 @@ public sealed class PreImportSnapshotService
 
         try
         {
-            var sourcePath = Path.GetFullPath(metadata.SourceDatabasePath);
             var snapshotPath = Path.GetFullPath(metadata.SnapshotPath);
-            if (!File.Exists(sourcePath) || !File.Exists(snapshotPath))
+            if (!File.Exists(snapshotPath))
             {
                 return false;
             }
@@ -280,9 +279,8 @@ public sealed class PreImportSnapshotService
                 return false;
             }
 
-            using var source = OpenReadOnly(sourcePath);
             using var snapshot = OpenReadOnly(snapshotPath);
-            return IsVerified(ReadSchema(source), ReadSchema(snapshot));
+            return IsSelfVerified(ReadSchema(snapshot), metadata.MigrationIds);
         }
         catch (Exception)
         {
@@ -454,6 +452,18 @@ public sealed class PreImportSnapshotService
                snapshot.TableNames.All(static name =>
                    name == EfMigrationsLockTable || RequiredTables.Contains(name, StringComparer.Ordinal)) &&
                RequiredMigrationIds.SequenceEqual(snapshot.MigrationIds, StringComparer.Ordinal);
+    }
+
+    private static bool IsSelfVerified(DatabaseSchema snapshot, IReadOnlyList<string> metadataMigrationIds)
+    {
+        return snapshot.QuickCheckOk &&
+               snapshot.ForeignKeyCheckEmpty &&
+               snapshot.PageCount > 0 &&
+               RequiredTables.All(snapshot.TableNames.Contains) &&
+               snapshot.TableNames.All(static name =>
+                   name == EfMigrationsLockTable || RequiredTables.Contains(name, StringComparer.Ordinal)) &&
+               RequiredMigrationIds.SequenceEqual(snapshot.MigrationIds, StringComparer.Ordinal) &&
+               metadataMigrationIds.SequenceEqual(snapshot.MigrationIds, StringComparer.Ordinal);
     }
 
     private static bool AreColumnsEqual(

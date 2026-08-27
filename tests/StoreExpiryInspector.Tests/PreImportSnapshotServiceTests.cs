@@ -47,10 +47,13 @@ public sealed class PreImportSnapshotServiceTests
     public void CreatesIndependentVerifiedWalSnapshotWithoutChangingSourceRows()
     {
         using var database = SqliteTestDatabase.Create();
-        SeedRepresentativeRows(database);
-        var before = ReadRows(database.Path);
         using var walConnection = Open(database.Path, SqliteOpenMode.ReadWrite);
         Assert.Equal("wal", ExecuteScalar(walConnection, "PRAGMA journal_mode;"));
+        SeedRepresentativeRows(database);
+        var before = ReadRows(database.Path);
+        var walPath = database.Path + "-wal";
+        Assert.True(File.Exists(walPath));
+        Assert.True(new FileInfo(walPath).Length > 0);
 
         var result = new PreImportSnapshotService().Create(
             database.Path,
@@ -88,6 +91,32 @@ public sealed class PreImportSnapshotServiceTests
         Assert.Equal("pre-existing", ReadSingleValue(snapshot, "SELECT verification_status FROM backups;"));
         Assert.Equal("open", ReadSingleValue(snapshot, "SELECT status FROM tasks;"));
         Assert.Equal("product_stock_zero", ReadSingleValue(snapshot, "SELECT event_type FROM lifecycle_events;"));
+    }
+
+    [Fact]
+    public void ValidatesSnapshotAfterSourceFilesAreRemoved()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var service = new PreImportSnapshotService();
+        PreImportSnapshotMetadata metadata;
+
+        using (var walConnection = Open(database.Path, SqliteOpenMode.ReadWrite))
+        {
+            Assert.Equal("wal", ExecuteScalar(walConnection, "PRAGMA journal_mode;"));
+            SeedRepresentativeRows(database);
+            metadata = Assert.IsType<PreImportSnapshotMetadata>(service.Create(
+                database.Path,
+                Path.Combine(database.Directory, "snapshots")).Metadata);
+        }
+
+        RemoveSourceFiles(database);
+
+        Assert.Equal(Path.GetFullPath(database.Path), metadata.SourceDatabasePath);
+        Assert.False(File.Exists(metadata.SourceDatabasePath));
+        Assert.True(service.ValidateSnapshot(metadata));
+        using var snapshot = Open(metadata.SnapshotPath, SqliteOpenMode.ReadOnly);
+        Assert.Equal("SKU-SNAPSHOT-1", ReadSingleValue(snapshot, "SELECT product_code FROM products;"));
+        Assert.Equal(ExpectedMigrations, ReadMigrationIds(snapshot));
     }
 
     [Fact]
@@ -196,6 +225,18 @@ public sealed class PreImportSnapshotServiceTests
 
         Assert.False(service.ValidateSnapshot(first));
         Assert.True(service.ValidateSnapshot(second));
+
+        RemoveSourceFiles(database);
+        Assert.False(File.Exists(second.SourceDatabasePath));
+        using (var stream = new FileStream(second.SnapshotPath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
+        {
+            stream.Position = stream.Length - 1;
+            var original = stream.ReadByte();
+            stream.Position = stream.Length - 1;
+            stream.WriteByte((byte)(original ^ 0xff));
+        }
+
+        Assert.False(service.ValidateSnapshot(second));
     }
 
     private static void SeedRepresentativeRows(SqliteTestDatabase database)
@@ -377,6 +418,18 @@ public sealed class PreImportSnapshotServiceTests
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream)).ToLowerInvariant();
+    }
+
+    private static void RemoveSourceFiles(SqliteTestDatabase database)
+    {
+        SqliteConnection.ClearAllPools();
+        foreach (var path in new[] { database.Path, database.Path + "-wal", database.Path + "-shm" })
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
     }
 
     private static void AssertFailure(PreImportSnapshotResult result, string code, string root)
