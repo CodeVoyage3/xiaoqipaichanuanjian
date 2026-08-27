@@ -1,8 +1,35 @@
 # 架构事实与阶段边界
 
-> 更新于 2026-08-27。本文区分“当前代码事实”和“后续批准方向”；未落地能力不得按已完成理解。
+> 更新于 2026-08-27。Stage 3 已整体验收通过；本文区分当前代码事实与后续阶段方向。
 
-## 当前代码事实（Stage 2 整体通过）
+## 当前代码事实（Stage 3 整体通过）
+
+```text
+StoreExpiryInspector.slnx
+├─ src/StoreExpiryInspector                 单一 .NET 10 WPF 应用项目
+│  ├─ Domain/ExpiryStageCalculator         纯效期阶段与下一触发日
+│  ├─ Application
+│  │  ├─ Imports                           Stage 2 导入 + Stage 3 原子后置编排
+│  │  ├─ Tasks/ProductTaskAggregator       商品唯一开放任务聚合
+│  │  ├─ StartupRecalculationUseCase       活动到期 Batch 启动补算
+│  │  ├─ ProductStockZeroLifecycleUseCase  商品归零生命周期
+│  │  ├─ PostImportLifecycleUseCase        新批次、新到货与恢复
+│  │  ├─ BatchCheckedZeroLifecycleUseCase  正式 0 件停止目标 Batch
+│  │  └─ ApplicationStartupCoordinator     补算、时钟回拨与运行日期
+│  ├─ Infrastructure                       SQLite/EF、日志、备份、Excel
+│  ├─ Migrations                           8 条 EF Core migration
+│  ├─ App.xaml.cs                          初始化、入口时钟、启动编排与日志
+│  └─ UI                                   仍为占位主窗口
+└─ tests/StoreExpiryInspector.Tests         348 项测试
+```
+
+- schema 仍为 17 张业务表、17 个实体/配置/DbSet 和 8 条 migration；Stage 3 未新增依赖或 schema。
+- canonical phase 为 `none / discount_50 / discount_20 / withdraw / expired`；阶段与下一触发日只由 Domain 计算器定义，优先级只由其权威映射定义。
+- `ConfirmedImportLifecycleOrchestrator` 在同一事务中组合 Stage 2 与 S3-T04/S3-T05；`ConfirmedImportExecutor` 没有 Stage 3 状态机。
+- WPF 启动已接入 DatabaseInitializer、ApplicationStartupCoordinator 与 LocalFileLogger；系统时钟只在 App 边界读取。
+- Stage 4 首页、任务列表、详情、草稿交互、库存修正和正式提交仍未实现。
+
+## Stage 2 历史基线
 
 ```text
 StoreExpiryInspector.slnx
@@ -61,10 +88,10 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 - EF 配置只表达字段、索引、值域、关系和删除行为，不实现导入决策、库存归零、排查 0 件或恢复规则。
 - 解析 DTO、变更计划和数据库实体必须分离；预览不得直接持有可写 DbContext。
 
-## 后续事务边界（已批准、未实现）
+## 后续事务边界
 
-- 一次确认导入：S2-T06 已将导入记录、快照元数据、正常行变更、异常和原始工作簿置于明确事务，失败整次回滚；Stage 3 生命周期留痕尚未参与。
-- 一次商品排查提交：任务、正式排查、明细、批次状态、草稿与事件同事务。
+- 一次确认导入：S3-T07 已用外层事务组合 Stage 2 导入事实与 S3-T04/S3-T05 后置生命周期，失败整次回滚；Stage 2 执行器本身不承载 Stage 3 规则。
+- 一次商品排查提交仍未实现：Stage 4 必须将任务、正式排查、明细、草稿与 S3-T06 批次状态/事件置于同一事务。
 - 一次历史修改：修订记录与允许发生的当前状态重算同事务。
 - 商品库存归零：商品、相关批次、开放任务、草稿和事件同事务。
 - 导入撤销执行及完整备份恢复尚未实现；S2-T08 只提供只读资格判断，真正恢复前必须在排他/原子边界内重新判断、先备份当前库，再决定 Undone 与工作簿语义。
@@ -82,3 +109,11 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 - `ConfirmedImportExecutor.cs` 为 1,150 行，是当前最大生产文件；其中包含结果 DTO、计划形状/陈旧性白名单校验、明确字段应用和单事务编排。职责仍限于持久化阶段，暂不为拆文件引入新抽象，但 Stage 3 状态机严禁继续加入该类；若后续再次修改其规则，应先按现有私有职责拆成少量具体协作者。
 - `ExcelImportPlanner.cs`、`PreImportSnapshotService.cs` 和 `ImportUndoEligibilityService.cs` 也因 DTO/固定 schema 比较而偏长，但边界单一、测试充分。少量路径、SHA 与 SQLite 引用辅助代码存在重复；当前直接代码比通用文件/SQLite 框架风险更低，出现第三个真实业务调用方或实际缺陷时再提取。
 - 测试基础设施曾因全局 `ClearAllPools` 产生并行竞态；已收窄为当前临时数据库连接池，连续全量回归未再复现。
+
+## Stage 3 架构债检查
+
+- S3-T01～T06 各自保持一个业务权威边界；S3-T07 只调用这些 UseCase，没有复制阶段、聚合、归零、新到货、恢复或停止规则。
+- `ConfirmedImportExecutor.cs` 当前 1,154 行，较 Stage 2 只增加 12 行事务所有权适配；禁止继续加入生命周期或 UI 规则。
+- `ConfirmedImportLifecycleOrchestrator.cs` 467 行，职责限于明确事实冻结/解析、两个已有 UseCase 的优先级调用与统一事务；偏长但没有第二职责或未来抽象，当前不拆。
+- `ApplicationStartupCoordinator.cs` 86 行，`App.xaml.cs` 46 行；入口没有业务查询或状态机。
+- 未发现 Repository/UnitOfWork、单实现接口、God Service、EventBus/Outbox、通用状态机/工作流、第二套效期算法或新依赖。无阻断级架构债。
