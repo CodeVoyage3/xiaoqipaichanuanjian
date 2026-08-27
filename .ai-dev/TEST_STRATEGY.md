@@ -37,6 +37,14 @@ Stage 1 证据只证明数据底座与日志基础设施，不证明 Excel 导�
 - 规划器只有相关 Product 与 Batch 的 `AsNoTracking` 投影查询，无 SaveChanges、SQL 写入或 tracked entity；计划 DTO 不持有 EF 类型或禁止动作。
 - EF 模型无漂移，仍为 8 条 migration；无新依赖，官方源无已知漏洞，真实样表哈希与大小未变。
 
+## S2-T04 当前证据
+
+- 确认前文件身份专项 7/7；S2-T01 至 S2-T03 回归 44/44；Release 全量 109/109，0 失败、0 跳过。
+- 实际 `ExcelTemplateReader` SHA 绑定、未变文件、修改、不同内容替换、相同字节替换、删除、目录缺失、文件独占、无变化和确认后路径再变化均有覆盖。
+- 成功契约内部保存独立字节；对外返回隔离副本。专项通过 `MemoryMarshal.TryGetArray` 篡改返回数组，后续契约内容及 SHA 仍保持不变。
+- 正式状态白名单精确为 `Succeeded` / `Undone`；其他流程结果不属于 imports.status。任务计数只以 `NewTaskProductCountSchemaPlaceholder = 0` 存在于确认契约，未进入预览。
+- 实现不引用 DbContext、ImportRecord 或业务实体，不调用 SaveChanges/事务，不保存 BLOB、快照、裁剪或撤销；EF 无漂移、无新依赖、官方源无已知漏洞。
+
 ## 分层原则
 
 1. Domain：纯计算与状态转换，不启动 WPF、不访问文件或数据库。
