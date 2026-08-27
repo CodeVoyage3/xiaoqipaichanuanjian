@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 3｜效期计算与任务引擎（整体验收通过，暂停在 Stage 3 → Stage 4 门禁）
-- 状态：Stage 0～Stage 3 整体通过；S3-T01 至 S3-T07 均已独立验收；未创建 Stage 4 任务
+- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T01 已创建，待实现）
+- 状态：Stage 0～Stage 3 整体通过；Stage 4 接任核验和 S4-T01～S4-T07 总体拆分已获批准；当前只创建 S4-T01
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -17,6 +17,7 @@
 - canonical phase：`none / discount_50 / discount_20 / withdraw / expired`。
 - Release 全量 348/348；Stage 3 精确证据 170/170；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。
 - Release EXE 已实际启动验收：主窗口正常；新空库完成 migration、写入 `last_normal_run_date` 与启动完成日志。
+- S4-T01 任务卡已建立，只授权 Application 层 Dashboard、开放任务列表和排查详情的只读查询 DTO；尚无 Stage 4 生产实现。
 
 ## 冻结业务红线
 
@@ -34,6 +35,8 @@
 - 当前 WPF 主窗仍是占位内容；Stage 4 需要查询、草稿和提交用例后再接 UI，不得把业务放进 ViewModel/code-behind。
 - migration 前完整可恢复流程、安装、完整备份恢复、Windows 门店实机和 10 万批次/30 万历史性能仍待后续阶段。
 - S3-T06 的多轮历史修订时序属于 Stage 5，不得在 Stage 4 顺带实现历史编辑。
+- `HandledAttentionVersion` 的正式处理语义与正式提交后的 Draft 处置尚未冻结；必须在 S4-T04 创建前完成专项核验，不得提前写死。
+- S4-T05 前必须先完成 UI/UX Pro Max 独立设计治理；规范只控制 WPF 视觉与交互，不得改写 Application 或业务规则。
 
 ## 阶段归档
 
@@ -43,6 +46,7 @@
 
 ## 下一步门禁
 
-- 不创建 S3-T08，不创建或派发任何 Stage 4 任务。
-- 等待用户决定是否更换下一任 GPT-5.6 Sol 进入 Stage 4。
-- 获准接任后，先重新核验仓库、Stage 3 归档、Inspection/Draft/Task schema，并提交 Stage 4 最小拆卡方案；用户批准后才只创建第一张任务卡。
+- 只允许 GPT-5.6 Luna（max）实现 `.ai-dev/TASKS/S4-T01.md` 授权范围。
+- S4-T01 完成后只提交 GPT-5.6 Sol 独立验收；未正式通过前不得创建 S4-T02。
+- 当前不得实现 WPF、草稿写入、库存修正或正式提交。
+- S4-T01～S4-T04 完成后、创建 S4-T05 前，必须先形成经产品治理的 Stage 4 UI/UX Pro Max 基线。
