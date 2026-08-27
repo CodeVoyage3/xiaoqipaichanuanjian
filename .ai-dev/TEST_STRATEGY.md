@@ -45,6 +45,15 @@ Stage 1 证据只证明数据底座与日志基础设施，不证明 Excel 导�
 - 正式状态白名单精确为 `Succeeded` / `Undone`；其他流程结果不属于 imports.status。任务计数只以 `NewTaskProductCountSchemaPlaceholder = 0` 存在于确认契约，未进入预览。
 - 实现不引用 DbContext、ImportRecord 或业务实体，不调用 SaveChanges/事务，不保存 BLOB、快照、裁剪或撤销；EF 无漂移、无新依赖、官方源无已知漏洞。
 
+## S2-T05 当前证据
+
+- 导入前 SQLite 快照专项 6/6；S2-T01 至 S2-T04 回归 51/51；Release 全量 115/115 连续两次通过，0 失败、0 跳过。
+- 真实 WAL 场景在保持连接开放且 `-wal` 非空时写入代表数据；在线快照包含这些已提交内容，删除源 `.db`、`-wal`、`-shm` 后仍可独立验证和查询。
+- 快照使用只读源连接与 SQLite `BackupDatabase`，临时文件通过 `quick_check`、外键、17 张业务表、migration history、8 条 migration、schema、page count、SHA 和大小检查后才原子发布。
+- 快照前后源库所有表行数及 Product、Batch、Import、Backup、Task、Lifecycle 代表记录逐字段不变；没有新增 BackupRecord / ImportRecord。
+- 源缺失、锁定、损坏、目标不可用、缺 schema、连续创建及最终文件篡改均阻断或被识别，临时文件精确清理且预存文件不变。
+- Release 编译在单独屏蔽网络审计告警 `NU1900` 后为 0 警告/0 错误；官方 NuGet 漏洞查询另行成功且无已知漏洞。EF 模型无漂移，无新依赖或生成数据库残留。
+
 ## 分层原则
 
 1. Domain：纯计算与状态转换，不启动 WPF、不访问文件或数据库。
