@@ -40,7 +40,7 @@ public sealed class ExcelImportPlannerTests
         var updatedProduct = Assert.Single(plan.UpdatedProducts);
         Assert.Equal("P-OLD", updatedProduct.ProductCode);
         Assert.Equal(
-            ["CurrentName", "CurrentBarcode", "ExcelStockQty", "EffectiveStockQty", "EffectiveStockSource"],
+            ["CurrentName", "CurrentBarcode", "ExcelStockQty", "EffectiveStockQty"],
             updatedProduct.FieldChanges.Select(change => change.FieldName));
         Assert.Equal(4, updatedProduct.FieldChanges.Single(change => change.FieldName == "ExcelStockQty").Before);
         Assert.Equal(7, updatedProduct.FieldChanges.Single(change => change.FieldName == "ExcelStockQty").After);
@@ -235,6 +235,131 @@ public sealed class ExcelImportPlannerTests
         Assert.Equal(1, plan.Preview.StockConflictCount);
         Assert.Equal(2, plan.NewBatches.Count);
         Assert.True(plan.HasChanges);
+    }
+
+    [Fact]
+    public void LegalZeroStockListsOnlyTheProductFieldsThatActuallyDiffer()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var product = AddProduct(seed, "P", "商品", "B", 0, 7, "manual");
+            seed.Batches.Add(NewBatch(
+                product.Id,
+                new DateOnly(2026, 1, 1),
+                new DateOnly(2026, 12, 31),
+                shelfLife: 12,
+                unit: "M",
+                currentArrival: 1,
+                maxArrival: 1,
+                discount: "否"));
+            seed.SaveChanges();
+        }
+
+        using var context = database.Open();
+        var plan = new ExcelImportPlanner().Plan(
+            context,
+            Classify(Row(2, code: "P", stock: "0", cumulativeArrival: "1")));
+
+        var update = Assert.Single(plan.UpdatedProducts);
+        Assert.Equal(["EffectiveStockQty", "EffectiveStockSource"], update.FieldChanges.Select(change => change.FieldName));
+        Assert.Equal(7, update.FieldChanges[0].Before);
+        Assert.Equal(0, update.FieldChanges[0].After);
+        Assert.Equal("manual", update.FieldChanges[1].Before);
+        Assert.Equal("excel", update.FieldChanges[1].After);
+        Assert.DoesNotContain(update.FieldChanges, change => change.FieldName == "ExcelStockQty");
+        Assert.DoesNotContain(plan.Preview.PlanningIssues, issue => issue.Code.Contains("zero", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            typeof(ImportPlan).GetProperties(),
+            property => property.Name.Contains("Task", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Lifecycle", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Stop", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ExistingBatchUpdatesAllApprovedFieldsButNeverLowersMaximumArrival()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var product = AddProduct(seed, "P", "商品", "B", 5, 5, "excel");
+            seed.Batches.Add(NewBatch(
+                product.Id,
+                new DateOnly(2026, 1, 1),
+                new DateOnly(2026, 12, 31),
+                shelfLife: 12,
+                unit: "M",
+                currentArrival: 10,
+                maxArrival: 20,
+                discount: "否"));
+            seed.SaveChanges();
+        }
+
+        using var context = database.Open();
+        var plan = new ExcelImportPlanner().Plan(
+            context,
+            Classify(Row(
+                2,
+                code: "P",
+                shelfLife: "24",
+                shelfLifeUnit: "D",
+                cumulativeArrival: "5",
+                discount: "是",
+                stock: "5")));
+
+        var update = Assert.Single(plan.UpdatedBatches);
+        Assert.Equal(
+            ["ShelfLifeValue", "ShelfLifeUnit", "CurrentArrivalQty", "SourceDiscountReference"],
+            update.FieldChanges.Select(change => change.FieldName));
+        Assert.Equal(12, update.FieldChanges[0].Before);
+        Assert.Equal(24, update.FieldChanges[0].After);
+        Assert.Equal("M", update.FieldChanges[1].Before);
+        Assert.Equal("D", update.FieldChanges[1].After);
+        Assert.Equal(10, update.FieldChanges[2].Before);
+        Assert.Equal(5, update.FieldChanges[2].After);
+        Assert.Equal("否", update.FieldChanges[3].Before);
+        Assert.Equal("是", update.FieldChanges[3].After);
+        Assert.DoesNotContain(update.FieldChanges, change => change.FieldName == "MaxArrivalQty");
+        Assert.Empty(plan.NewBatches);
+    }
+
+    [Fact]
+    public void DifferentProductCodesWithSameNameAndBarcodeRemainSeparatePlans()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var plan = new ExcelImportPlanner().Plan(
+            context,
+            Classify(
+                Row(2, code: "P1", name: "相同商品", barcode: "相同条码", stock: "1"),
+                Row(3, code: "P2", name: "相同商品", barcode: "相同条码", stock: "1")));
+
+        Assert.Equal(["P1", "P2"], plan.NewProducts.Select(product => product.ProductCode));
+        Assert.Equal(["P1", "P2"], plan.NewBatches.Select(batch => batch.BatchKey.ProductCode));
+        Assert.Equal(2, plan.Preview.InvolvedProductCount);
+        Assert.Empty(plan.Preview.PlanningIssues);
+    }
+
+    [Fact]
+    public void EmptyClassificationReturnsEmptyPlanWithoutTrackingOrChanges()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+
+        var plan = new ExcelImportPlanner().Plan(context, Classify());
+
+        Assert.Empty(plan.NewProducts);
+        Assert.Empty(plan.UpdatedProducts);
+        Assert.Empty(plan.UnchangedProducts);
+        Assert.Empty(plan.NewBatches);
+        Assert.Empty(plan.UpdatedBatches);
+        Assert.Empty(plan.UnchangedBatches);
+        Assert.Equal(0, plan.Preview.InvolvedProductCount);
+        Assert.Equal(0, plan.Preview.NormalBatchKeyCount);
+        Assert.False(plan.HasChanges);
+        Assert.False(plan.Preview.HasChanges);
+        Assert.False(context.ChangeTracker.HasChanges());
+        Assert.Empty(context.ChangeTracker.Entries());
     }
 
     [Theory]

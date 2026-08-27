@@ -273,13 +273,18 @@ public sealed class ExcelImportPlanner
             changes.Add(new ImportFieldChange("CurrentBarcode", existing.CurrentBarcode, values.Barcode));
         }
 
-        if (stock.IsValid
-            && (existing.ExcelStockQty != stock.Quantity
-                || existing.EffectiveStockQty != stock.Quantity
-                || !string.Equals(existing.EffectiveStockSource, "excel", StringComparison.Ordinal)))
+        if (stock.IsValid && existing.ExcelStockQty != stock.Quantity)
         {
             changes.Add(new ImportFieldChange("ExcelStockQty", existing.ExcelStockQty, stock.Quantity));
+        }
+
+        if (stock.IsValid && existing.EffectiveStockQty != stock.Quantity)
+        {
             changes.Add(new ImportFieldChange("EffectiveStockQty", existing.EffectiveStockQty, stock.Quantity));
+        }
+
+        if (stock.IsValid && !string.Equals(existing.EffectiveStockSource, "excel", StringComparison.Ordinal))
+        {
             changes.Add(new ImportFieldChange("EffectiveStockSource", existing.EffectiveStockSource, "excel"));
         }
 
