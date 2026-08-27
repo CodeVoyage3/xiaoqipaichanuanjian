@@ -29,7 +29,7 @@ public sealed class PostImportLifecycleUseCaseTests
                 productId,
                 importId,
                 BusinessDate.AddDays(100),
-                3,
+                0,
                 currentArrivalQty: 4,
                 maxArrivalQty: 4);
         }
@@ -680,6 +680,119 @@ public sealed class PostImportLifecycleUseCaseTests
         Assert.Equal(firstUpdatedAt, verify.Batches.Single().UpdatedAtUtc);
         Assert.Equal(taskId, verify.Tasks.Single().Id);
         Assert.Single(verify.TaskItems);
+    }
+
+    [Fact]
+    public void NewFactReplayAfterStartupAdvancesStageDoesNotDowngradeBatchOrTask()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long importId;
+        long productId;
+        long batchId;
+        using (var seed = database.Open())
+        {
+            importId = AddImport(seed).Id;
+            productId = AddProduct(seed, importId).Id;
+            batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(100), 0);
+        }
+
+        var request = Request(importId, Group(productId, New(batchId, 0, 2)));
+        using (var context = database.Open())
+        {
+            Execute(context, request);
+        }
+
+        var laterUpdatedAt = OccurredAtUtc.AddHours(1);
+        using (var context = database.Open())
+        {
+            var result = new StartupRecalculationUseCase().Execute(
+                context,
+                new StartupRecalculationRequest(BusinessDate.AddDays(10), laterUpdatedAt));
+
+            Assert.Equal(1, result.MatchedBatchCount);
+            Assert.Equal(1, result.ChangedBatchCount);
+            Assert.Equal(1, result.AggregatedProductCount);
+        }
+
+        long taskId;
+        using (var beforeReplay = database.Open())
+        {
+            var batch = beforeReplay.Batches.Single();
+            Assert.Equal(ExpiryStageCalculator.Discount50, batch.CurrentStage);
+            Assert.Equal(BusinessDate.AddDays(40), batch.NextTriggerDate);
+            Assert.Equal(laterUpdatedAt, batch.UpdatedAtUtc);
+            taskId = beforeReplay.Tasks.Single().Id;
+            Assert.Equal(ExpiryStageCalculator.Discount50, beforeReplay.TaskItems.Single().Stage);
+        }
+
+        using (var context = database.Open())
+        {
+            var result = Execute(context, request);
+
+            Assert.Equal(0, result.ChangedBatchCount);
+            Assert.Equal(0, result.AggregatedProductCount);
+        }
+
+        using var verify = database.Open();
+        var replayedBatch = verify.Batches.Single();
+        Assert.Equal(ExpiryStageCalculator.Discount50, replayedBatch.CurrentStage);
+        Assert.Equal(BusinessDate.AddDays(40), replayedBatch.NextTriggerDate);
+        Assert.Equal(laterUpdatedAt, replayedBatch.UpdatedAtUtc);
+        Assert.Equal(taskId, verify.Tasks.Single().Id);
+        Assert.Equal(ExpiryStageCalculator.Discount50, verify.TaskItems.Single().Stage);
+    }
+
+    [Fact]
+    public void NewFactReplayAfterFormalBatchStopDoesNotResumeBatch()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long importId;
+        long productId;
+        long batchId;
+        using (var seed = database.Open())
+        {
+            importId = AddImport(seed).Id;
+            productId = AddProduct(seed, importId).Id;
+            batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(100), 0);
+        }
+
+        var request = Request(importId, Group(productId, New(batchId, 0, 2)));
+        using (var context = database.Open())
+        {
+            Execute(context, request);
+        }
+
+        var stoppedAt = OccurredAtUtc.AddHours(2);
+        using (var context = database.Open())
+        {
+            var batch = context.Batches.Single();
+            batch.TrackingStatus = "stopped";
+            batch.StopReason = "batch_checked_zero";
+            batch.StoppedAtUtc = stoppedAt;
+            batch.NextTriggerDate = null;
+            batch.UpdatedAtUtc = stoppedAt;
+            context.SaveChanges();
+        }
+
+        using (var context = database.Open())
+        {
+            var result = Execute(context, request);
+
+            Assert.Equal(0, result.ChangedBatchCount);
+            Assert.Equal(0, result.ResumedBatchCount);
+            Assert.Equal(0, result.AggregatedProductCount);
+        }
+
+        using var verify = database.Open();
+        var replayedBatch = verify.Batches.Single();
+        Assert.Equal("stopped", replayedBatch.TrackingStatus);
+        Assert.Equal("batch_checked_zero", replayedBatch.StopReason);
+        Assert.Equal(stoppedAt, replayedBatch.StoppedAtUtc);
+        Assert.Equal(ExpiryStageCalculator.None, replayedBatch.CurrentStage);
+        Assert.Null(replayedBatch.NextTriggerDate);
+        Assert.Equal(stoppedAt, replayedBatch.UpdatedAtUtc);
+        Assert.Empty(verify.Tasks);
+        Assert.Empty(verify.LifecycleEvents);
     }
 
     [Fact]

@@ -164,7 +164,7 @@ public sealed class PostImportLifecycleUseCase
                 var stage = item.Stage!;
                 if (item.Action == PreparedAction.New)
                 {
-                    if (AlreadyStarted(item.Product, batch, stage, request.OccurredAtUtc))
+                    if (!IsUnprocessedNewBatch(batch))
                     {
                         continue;
                     }
@@ -532,18 +532,15 @@ public sealed class PostImportLifecycleUseCase
         return prepared;
     }
 
-    private static bool AlreadyStarted(
-        Product product,
-        Batch batch,
-        ExpiryStageResult stage,
-        DateTime occurredAtUtc) =>
-        batch.LifecycleGeneration == product.LifecycleGeneration &&
+    private static bool IsUnprocessedNewBatch(Batch batch) =>
+        batch.LifecycleGeneration == 0 &&
         batch.TrackingStatus == "active" &&
         batch.StopReason is null &&
         batch.StoppedAtUtc is null &&
-        batch.CurrentStage == stage.CurrentStage &&
-        batch.NextTriggerDate == stage.NextTriggerDate &&
-        batch.UpdatedAtUtc == occurredAtUtc;
+        batch.CurrentStage == ExpiryStageCalculator.None &&
+        batch.NextTriggerDate is null &&
+        batch.AttentionVersion == 0 &&
+        batch.HandledAttentionVersion == 0;
 
     private static void ApplyAttentionCompareAndSet(
         StoreDbContext context,
