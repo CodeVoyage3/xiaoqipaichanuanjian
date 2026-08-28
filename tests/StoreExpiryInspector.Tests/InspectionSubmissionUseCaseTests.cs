@@ -82,7 +82,7 @@ public sealed class InspectionSubmissionUseCaseTests
         Assert.Equal(SeedUtc, batches[2].UpdatedAtUtc);
         Assert.Equal("completed", task.Status);
         Assert.Equal(SubmittedAtUtc, task.ClosedAtUtc);
-        Assert.Equal("submitted", task.CloseReason);
+        Assert.Null(task.CloseReason);
         Assert.Equal(SubmittedAtUtc, task.UpdatedAtUtc);
         Assert.Empty(verify.Drafts);
         Assert.Empty(verify.DraftItems);
@@ -641,8 +641,7 @@ public sealed class InspectionSubmissionUseCaseTests
                 HighestStage = ExpiryStageCalculator.Discount50,
                 CreatedAtUtc = SeedUtc,
                 UpdatedAtUtc = SeedUtc,
-                ClosedAtUtc = SeedUtc,
-                CloseReason = "submitted"
+                ClosedAtUtc = SeedUtc
             };
             context.Tasks.Add(oldTask);
             context.SaveChanges();
@@ -809,6 +808,72 @@ public sealed class InspectionSubmissionUseCaseTests
             };
             context.Products.AddRange(otherProduct, thirdProduct);
             context.SaveChanges();
+            var otherBatch = new Batch
+            {
+                ProductId = otherProduct.Id,
+                ProductionDate = BusinessDate.AddDays(-20),
+                ExpiryDate = BusinessDate.AddDays(20),
+                ShelfLifeValue = 12,
+                ShelfLifeUnit = "M",
+                CurrentArrivalQty = 8,
+                MaxArrivalQty = 9,
+                SourceDiscountReference = "other-reference",
+                LifecycleGeneration = 7,
+                TrackingStatus = "active",
+                CurrentStage = ExpiryStageCalculator.Discount50,
+                NextTriggerDate = BusinessDate.AddDays(3),
+                AttentionVersion = 3,
+                HandledAttentionVersion = 2,
+                CreatedAtUtc = SeedUtc,
+                UpdatedAtUtc = SeedUtc
+            };
+            context.Batches.Add(otherBatch);
+            context.SaveChanges();
+
+            var otherTask = new ProductTask
+            {
+                ProductId = otherProduct.Id,
+                Status = "open",
+                HighestStage = ExpiryStageCalculator.Discount50,
+                CreatedAtUtc = SeedUtc,
+                UpdatedAtUtc = SeedUtc
+            };
+            context.Tasks.Add(otherTask);
+            context.SaveChanges();
+
+            var otherTaskItem = new ProductTaskItem
+            {
+                TaskId = otherTask.Id,
+                BatchId = otherBatch.Id,
+                ProductId = otherProduct.Id,
+                Stage = ExpiryStageCalculator.Discount50,
+                AttentionVersion = 3,
+                RequiresReconfirmation = false,
+                CreatedAtUtc = SeedUtc,
+                UpdatedAtUtc = SeedUtc
+            };
+            context.TaskItems.Add(otherTaskItem);
+            context.SaveChanges();
+
+            var otherDraft = new InspectionDraft
+            {
+                TaskId = otherTask.Id,
+                InspectorName = "Other Inspector",
+                CheckDate = BusinessDate,
+                CreatedAtUtc = SeedUtc,
+                UpdatedAtUtc = SeedUtc
+            };
+            context.Drafts.Add(otherDraft);
+            context.SaveChanges();
+            context.DraftItems.Add(new InspectionDraftItem
+            {
+                DraftId = otherDraft.Id,
+                TaskItemId = otherTaskItem.Id,
+                TaskId = otherTask.Id,
+                CheckedQty = 4,
+                ConfirmedAttentionVersion = 3
+            });
+            context.SaveChanges();
             otherProductId = otherProduct.Id;
         }
 
@@ -837,6 +902,7 @@ public sealed class InspectionSubmissionUseCaseTests
                 product.CreatedAtUtc,
                 product.UpdatedAtUtc
             }).ToArray();
+        var beforeOtherBusinessGraph = SnapshotProductGraph(verify, otherProductId);
         var result = Submit(verify, database);
         Assert.True(result.Submitted);
         var afterOtherProducts = verify.Products.AsNoTracking()
@@ -860,6 +926,7 @@ public sealed class InspectionSubmissionUseCaseTests
                 product.UpdatedAtUtc
             }).ToArray();
         Assert.Equal(beforeOtherProducts, afterOtherProducts);
+        Assert.Equal(beforeOtherBusinessGraph, SnapshotProductGraph(verify, otherProductId));
     }
 
     [Fact]
@@ -1162,11 +1229,29 @@ public sealed class InspectionSubmissionUseCaseTests
         return new(database, product.Id, task.Id, taskItemIds.ToArray(), batchIds.ToArray());
     }
 
-    private static string SnapshotGraph(StoreDbContext context)
+    private static string SnapshotProductGraph(StoreDbContext context, long productId) =>
+        SnapshotGraph(context, productId);
+
+    private static string SnapshotGraph(StoreDbContext context, long? productId = null)
     {
+        var taskIds = context.Tasks.AsNoTracking()
+            .Where(item => productId == null || item.ProductId == productId)
+            .Select(item => item.Id)
+            .ToArray();
+        var inspectionIds = context.Inspections.AsNoTracking()
+            .Where(item => productId == null || item.ProductId == productId)
+            .Select(item => item.Id)
+            .ToArray();
+        var inspectionItemIds = context.InspectionItems.AsNoTracking()
+            .Where(item => productId == null || item.ProductId == productId)
+            .Select(item => item.Id)
+            .ToArray();
+
         return JsonSerializer.Serialize(new
         {
-            Products = context.Products.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            Products = context.Products.AsNoTracking()
+                .Where(item => productId == null || item.Id == productId)
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.ProductCode,
@@ -1183,7 +1268,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CreatedAtUtc,
                 item.UpdatedAtUtc
             }),
-            Batches = context.Batches.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            Batches = context.Batches.AsNoTracking()
+                .Where(item => productId == null || item.ProductId == productId)
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.ProductId,
@@ -1206,7 +1293,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CreatedAtUtc,
                 item.UpdatedAtUtc
             }),
-            Tasks = context.Tasks.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            Tasks = context.Tasks.AsNoTracking()
+                .Where(item => taskIds.Contains(item.Id))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.ProductId,
@@ -1217,7 +1306,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.ClosedAtUtc,
                 item.CloseReason
             }),
-            TaskItems = context.TaskItems.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            TaskItems = context.TaskItems.AsNoTracking()
+                .Where(item => taskIds.Contains(item.TaskId))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.TaskId,
@@ -1229,7 +1320,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CreatedAtUtc,
                 item.UpdatedAtUtc
             }),
-            Drafts = context.Drafts.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            Drafts = context.Drafts.AsNoTracking()
+                .Where(item => taskIds.Contains(item.TaskId))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.TaskId,
@@ -1241,7 +1334,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CreatedAtUtc,
                 item.UpdatedAtUtc
             }),
-            DraftItems = context.DraftItems.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            DraftItems = context.DraftItems.AsNoTracking()
+                .Where(item => taskIds.Contains(item.TaskId))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.DraftId,
@@ -1250,7 +1345,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CheckedQty,
                 item.ConfirmedAttentionVersion
             }),
-            Inspections = context.Inspections.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            Inspections = context.Inspections.AsNoTracking()
+                .Where(item => inspectionIds.Contains(item.Id))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.TaskId,
@@ -1264,7 +1361,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CheckDate,
                 item.SubmittedAtUtc
             }),
-            InspectionItems = context.InspectionItems.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            InspectionItems = context.InspectionItems.AsNoTracking()
+                .Where(item => inspectionItemIds.Contains(item.Id))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.InspectionId,
@@ -1277,7 +1376,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.CheckedQty,
                 item.UpdatedAtUtc
             }),
-            Revisions = context.InspectionItemRevisions.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            Revisions = context.InspectionItemRevisions.AsNoTracking()
+                .Where(item => inspectionItemIds.Contains(item.InspectionItemId))
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.InspectionItemId,
@@ -1285,7 +1386,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.NewCheckedQty,
                 item.ChangedAtUtc
             }),
-            InventoryAdjustments = context.InventoryAdjustments.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            InventoryAdjustments = context.InventoryAdjustments.AsNoTracking()
+                .Where(item => productId == null || item.ProductId == productId)
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.ProductId,
@@ -1293,7 +1396,9 @@ public sealed class InspectionSubmissionUseCaseTests
                 item.AdjustedStockQty,
                 item.AdjustedAtUtc
             }),
-            LifecycleEvents = context.LifecycleEvents.AsNoTracking().OrderBy(item => item.Id).Select(item => new
+            LifecycleEvents = context.LifecycleEvents.AsNoTracking()
+                .Where(item => productId == null || item.ProductId == productId)
+                .OrderBy(item => item.Id).Select(item => new
             {
                 item.Id,
                 item.ProductId,

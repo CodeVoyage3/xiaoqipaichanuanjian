@@ -200,7 +200,6 @@ public sealed class InspectionSubmissionUseCase
 
             task.Status = "completed";
             task.ClosedAtUtc = request.SubmittedAtUtc;
-            task.CloseReason = "submitted";
             task.UpdatedAtUtc = request.SubmittedAtUtc;
 
             context.DraftItems.RemoveRange(task.Draft!.Items.ToArray());
