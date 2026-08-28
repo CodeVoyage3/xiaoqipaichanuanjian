@@ -124,8 +124,9 @@
 
 ## D-016｜Stage 4 正式提交前待核验语义
 
-- `HandledAttentionVersion`：当前不定义为正式提交时保持不变，也不定义为必须更新。S4-T04 创建前必须重新核对 Stage 1 数据模型、DATA_MODEL、DECISIONS、相关验收和 Stage 3 实际使用，明确它是否承担“当前 AttentionVersion 已被正式处理”的持久化语义；未核验前不得创造或放弃该语义。
-- 正式提交后的 Draft：只冻结业务结果——提交成功后不得继续作为有效草稿恢复或编辑。物理删除 Draft/DraftItem，还是利用现有状态字段失效，留到 S4-T04 创建前按当前 schema 与追踪要求决定；当前不得写死全局删除规则。
+- 状态：S4-T04 创建前专项核验已完成并获用户批准。
+- `HandledAttentionVersion`：canonical 语义固定为 Batch 最近已通过正式排查处理完成的 AttentionVersion 水位；S4-T04 只在正式 Inspection/Item 同一事务内以数据库当前值执行 `HandledAttentionVersion = AttentionVersion`。Draft、重新确认、自然阶段、S3-T05、S3-T06 不得提前更新；版本相等不单独证明已提交，幂等仍以 Task 状态、Inspection 和唯一约束为权威。
+- 正式提交后的 Draft：正常成功提交在同一事务内先删除当前有效 DraftItem 再删除有效 Draft；系统失效 Draft 永久保留。失败完整回滚，AlreadySubmitted 不做异常残留草稿的隐式清理。
 
 ## D-017｜S4-T02 草稿写入与用户主动清空
 
@@ -145,3 +146,12 @@
 - 恢复：曾归零商品修正为正数只改变当前库存事实，不清除商品历史、不恢复旧 Batch/Task/Draft；真正新批次仍只由 S3-T05 处理。
 - 导入：本卡不修改 ConfirmedImportExecutor；下一次合法 Excel 明确出现商品时仍由 Stage 2 覆盖当前库存/来源，历史 Adjustment 永久保留。
 - 边界：不接 WPF，不实现排查提交，不修改 schema/migration/依赖、S3-T04/S3-T05、HandledAttentionVersion 或正式提交后的 Draft 处置。
+
+## D-019｜S4-T04 正式排查提交事务
+
+- 状态：任务卡已获用户批准并创建，待 GPT-5.6 Luna（max）实现；未验收前不得创建 S4-T05。
+- 权威输入：每次 Submit 重读 Product、开放 Task/全部 Item、Batch版本、有效 Draft/Item、库存及既有 Inspection；S4-T01 DTO、S4-T02 readiness 和页面缓存均不是提交授权。
+- 提交：全部当前 Item 完整且版本三方一致、无需重新确认后，单事务创建 Inspection/全部 Item，真实调用 S3-T06 处理 0 件，更新 HandledAttentionVersion，完成 Task，并删除正常有效 DraftItem/Draft。
+- 超库存：首次只返回当前库存与合计且业务图零写入；确认必须精确绑定当前两值，任一变化使旧确认失效，不建设通用 token。
+- 幂等：completed + Inspection 返回 AlreadySubmitted；版本相等不是提交凭证。系统关闭、completed 无 Inspection 或异常残留有效 Draft 不伪装成功、不隐式修复。
+- 边界：只实现 Application，不接 WPF，不创建 Revision，不修改库存、AttentionVersion、Stage 3、schema/migration/依赖或 ConfirmedImportExecutor。

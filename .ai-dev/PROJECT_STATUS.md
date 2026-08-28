@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T03 已独立验收通过）
-- 状态：Stage 0～Stage 3 整体通过；S4-T01、S4-T02、S4-T03 已独立验收通过；尚未创建 S4-T04
+- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T04 已创建，待实现）
+- 状态：Stage 0～Stage 3 整体通过；S4-T01、S4-T02、S4-T03 已独立验收通过；S4-T04 已获批准并创建
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -37,7 +37,7 @@
 - 当前 WPF 主窗仍是占位内容；Stage 4 需要查询、草稿和提交用例后再接 UI，不得把业务放进 ViewModel/code-behind。
 - migration 前完整可恢复流程、安装、完整备份恢复、Windows 门店实机和 10 万批次/30 万历史性能仍待后续阶段。
 - S3-T06 的多轮历史修订时序属于 Stage 5，不得在 Stage 4 顺带实现历史编辑。
-- `HandledAttentionVersion` 的正式处理语义与正式提交后的 Draft 处置尚未冻结；必须在 S4-T04 创建前完成专项核验，不得提前写死。
+- `HandledAttentionVersion` 已冻结为正式排查处理水位，只能在正式提交事务更新；正常成功提交在同一事务删除有效 DraftItem/Draft，系统失效 Draft 永久保留。
 - S4-T05 前必须先完成 UI/UX Pro Max 独立设计治理；规范只控制 WPF 视觉与交互，不得改写 Application 或业务规则。
 
 ## 阶段归档
@@ -51,6 +51,6 @@
 
 ## 下一步门禁
 
-- S4-T03 已正式验收通过；当前不得自动创建 S4-T04，等待用户明确批准下一张任务卡。
-- 当前不得实现 WPF、库存修正或正式提交；不得定义 HandledAttentionVersion 或提交后 Draft 处置。
+- S4-T04 已创建并只允许 GPT-5.6 Luna（max）实现 Application 正式提交事务；未由 GPT-5.6 Sol 独立验收通过前不得创建 S4-T05。
+- 当前不得实现 WPF/ViewModel、历史编辑或其他后续阶段能力，不得修改已冻结的 HandledAttentionVersion、Draft 处置或 Stage 3 业务语义。
 - S4-T01～S4-T04 完成后、创建 S4-T05 前，必须先形成经产品治理的 Stage 4 UI/UX Pro Max 基线。
