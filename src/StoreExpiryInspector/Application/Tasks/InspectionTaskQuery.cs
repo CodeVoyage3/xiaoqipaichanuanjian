@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 
@@ -31,7 +32,8 @@ public sealed record InspectionDashboardResult(
     int WithdrawCount,
     int Discount20Count,
     int Discount50Count,
-    IReadOnlyList<InspectionTaskListItem> UrgentTasks);
+    IReadOnlyList<InspectionTaskListItem> UrgentTasks,
+    DateTime? LastSuccessfulImportAtUtc = null);
 
 public sealed record InspectionTaskSearchResult(
     IReadOnlyList<InspectionTaskListItem> Items,
@@ -107,13 +109,23 @@ public sealed class InspectionTaskQuery
 
         var tasks = QueryTaskList(context);
         var ordered = OrderTasks(tasks).ToArray();
+        var lastSuccessfulImportAtUtc = context.Imports
+            .AsNoTracking()
+            .Where(import => import.Status == ImportStatuses.Succeeded
+                && !import.IsUndone
+                && import.ConfirmedAtUtc.HasValue)
+            .OrderByDescending(import => import.ConfirmedAtUtc)
+            .ThenByDescending(import => import.Id)
+            .Select(import => import.ConfirmedAtUtc)
+            .FirstOrDefault();
         return new(
             ordered.Length,
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Expired),
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Withdraw),
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Discount20),
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Discount50),
-            Array.AsReadOnly(ordered.Take(20).ToArray()));
+            Array.AsReadOnly(ordered.Take(20).ToArray()),
+            lastSuccessfulImportAtUtc);
     }
 
     public InspectionTaskSearchResult SearchOpenTasks(

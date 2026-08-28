@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
@@ -25,6 +26,65 @@ public sealed class InspectionTaskQueryTests
         Assert.Equal(0, result.Discount20Count);
         Assert.Equal(0, result.Discount50Count);
         Assert.Empty(result.UrgentTasks);
+        Assert.Null(result.LastSuccessfulImportAtUtc);
+    }
+
+    [Fact]
+    public void DashboardReturnsConfirmedAtUtcForOneSuccessfulImport()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var confirmedAtUtc = new DateTime(2026, 8, 28, 1, 2, 3, DateTimeKind.Utc);
+        using (var seed = database.Open())
+        {
+            AddImport(seed, confirmedAtUtc);
+        }
+
+        using var context = database.Open();
+        var result = new InspectionTaskQuery().Dashboard(context);
+
+        Assert.Equal(confirmedAtUtc, result.LastSuccessfulImportAtUtc);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public void DashboardUsesNewestNonUndoneSuccessfulImportAndStableIdTieBreak()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var older = new DateTime(2026, 8, 27, 1, 2, 3, DateTimeKind.Utc);
+        var newest = new DateTime(2026, 8, 28, 1, 2, 3, DateTimeKind.Utc);
+        using (var seed = database.Open())
+        {
+            AddImport(seed, older);
+            AddImport(seed, newest, isUndone: true);
+            AddImport(seed, newest);
+        }
+
+        using var context = database.Open();
+        var result = new InspectionTaskQuery().Dashboard(context);
+
+        Assert.Equal(newest, result.LastSuccessfulImportAtUtc);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public void DashboardTimestampKeepsExistingCountsAndUrgentOrderReadOnly()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var confirmedAtUtc = new DateTime(2026, 8, 28, 1, 2, 3, DateTimeKind.Utc);
+        using (var seed = database.Open())
+        {
+            AddOpenTask(seed, "DASHBOARD-T05", ExpiryStageCalculator.Expired, new DateOnly(2026, 8, 28));
+            AddImport(seed, confirmedAtUtc);
+        }
+
+        using var context = database.Open();
+        var result = new InspectionTaskQuery().Dashboard(context);
+
+        Assert.Equal(1, result.OpenTaskCount);
+        Assert.Equal(1, result.ExpiredCount);
+        Assert.Equal("DASHBOARD-T05", Assert.Single(result.UrgentTasks).ProductCode);
+        Assert.Equal(confirmedAtUtc, result.LastSuccessfulImportAtUtc);
+        Assert.Empty(context.ChangeTracker.Entries());
     }
 
     [Fact]
@@ -592,6 +652,26 @@ public sealed class InspectionTaskQueryTests
         });
         context.SaveChanges();
         return inspection;
+    }
+
+    private static ImportRecord AddImport(
+        StoreDbContext context,
+        DateTime confirmedAtUtc,
+        bool isUndone = false)
+    {
+        var import = new ImportRecord
+        {
+            SourceFileName = $"import-{Guid.NewGuid():N}.xlsx",
+            SourceFileSha256 = new string('a', 64),
+            ParsedAtUtc = confirmedAtUtc.AddMinutes(-1),
+            ConfirmedAtUtc = confirmedAtUtc,
+            Status = ImportStatuses.Succeeded,
+            IsUndone = isUndone,
+            UndoneAtUtc = isUndone ? confirmedAtUtc.AddMinutes(1) : null
+        };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        return import;
     }
 
     private static DatabaseSnapshot CaptureSnapshot(StoreDbContext context) => new(
