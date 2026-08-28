@@ -942,11 +942,11 @@
                                 <TextBlock Margin="0,4,0,0"
                                            Foreground="{DynamicResource WarningTextBrush}">
                                     <Run Text="当前库存：" />
-                                    <Run Text="{Binding Detail.OverStockEffectiveStockQty}" />
+                                    <Run Text="{Binding Detail.OverStockEffectiveStockQty, Mode=OneWay}" />
                                     <Run Text="    排查合计：" />
-                                    <Run Text="{Binding Detail.OverStockTotalCheckedQty}" />
+                                    <Run Text="{Binding Detail.OverStockTotalCheckedQty, Mode=OneWay}" />
                                     <Run Text="    超出：" />
-                                    <Run Text="{Binding Detail.OverStockExcessQty}" />
+                                    <Run Text="{Binding Detail.OverStockExcessQty, Mode=OneWay}" />
                                 </TextBlock>
                             </StackPanel>
                             <WrapPanel Grid.Column="1"

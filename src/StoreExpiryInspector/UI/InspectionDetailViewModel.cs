@@ -343,6 +343,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
             _isLoading = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanSubmit));
             RetryLoadCommand.RaiseCanExecuteChanged();
             SubmitCommand.RaiseCanExecuteChanged();
             ConfirmOverStockCommand.RaiseCanExecuteChanged();
@@ -525,6 +527,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             OnPropertyChanged(nameof(SubmitButtonText));
             OnPropertyChanged(nameof(CanSubmit));
             SubmitCommand.RaiseCanExecuteChanged();
+            ConfirmOverStockCommand.RaiseCanExecuteChanged();
         }
     }
 

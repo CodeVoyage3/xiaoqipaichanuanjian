@@ -10,6 +10,34 @@ public sealed class S4T08InspectionSubmissionViewModelTests
     private static readonly DateOnly BusinessDate = new(2026, 8, 28);
     private static readonly DateTime UtcNow = new(2026, 8, 28, 8, 30, 0, DateTimeKind.Utc);
 
+    [Fact]
+    public void OverStockReadOnlyFactsUseOneWayBindingsSoTheReleaseWindowCanStart()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !Directory.Exists(Path.Combine(root.FullName, "src")))
+        {
+            root = root.Parent;
+        }
+
+        Assert.NotNull(root);
+        var xaml = File.ReadAllText(Path.Combine(
+            root.FullName,
+            "src",
+            "StoreExpiryInspector",
+            "UI",
+            "MainWindow.xaml"));
+
+        foreach (var property in new[]
+                 {
+                     "OverStockEffectiveStockQty",
+                     "OverStockTotalCheckedQty",
+                     "OverStockExcessQty"
+                 })
+        {
+            Assert.Contains($"{{Binding Detail.{property}, Mode=OneWay}}", xaml, StringComparison.Ordinal);
+        }
+    }
+
     [Theory]
     [InlineData("completed", InspectionDetailPageState.Completed)]
     [InlineData("system_closed", InspectionDetailPageState.SystemClosed)]
@@ -35,6 +63,21 @@ public sealed class S4T08InspectionSubmissionViewModelTests
         Assert.Equal(InspectionDetailPageState.Error, vm.State);
         Assert.False(vm.SubmitCommand.CanExecute(null));
         Assert.False(vm.CanSubmit);
+    }
+
+    [Fact]
+    public async Task InitialDetailLoadNotifiesEditingAndSubmissionWhenLoadingFinishes()
+    {
+        var vm = CreateVm(_ => OpenResult(42, checkedQty: null));
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+
+        await vm.LoadAsync(42);
+
+        Assert.True(vm.CanEdit);
+        Assert.True(vm.CanSubmit);
+        Assert.Contains(nameof(vm.CanEdit), changed);
+        Assert.Contains(nameof(vm.CanSubmit), changed);
     }
 
     [Fact]
@@ -293,6 +336,7 @@ public sealed class S4T08InspectionSubmissionViewModelTests
         Assert.Equal("排查件数超过当前库存", vm.OverStockMessage);
         Assert.False(vm.ShowSubmitFooter);
         Assert.False(vm.CanEdit);
+        Assert.True(vm.ConfirmOverStockCommand.CanExecute(null));
 
         await vm.ConfirmOverStockAsync();
 
@@ -303,6 +347,7 @@ public sealed class S4T08InspectionSubmissionViewModelTests
         Assert.Equal(13, vm.OverStockTotalCheckedQty);
         Assert.Equal(2, vm.OverStockExcessQty);
         Assert.Contains("库存或排查数量已变化，请重新确认", vm.OverStockMessage, StringComparison.Ordinal);
+        Assert.True(vm.ConfirmOverStockCommand.CanExecute(null));
 
         await vm.ConfirmOverStockAsync();
 
