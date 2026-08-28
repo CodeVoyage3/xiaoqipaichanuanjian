@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜核心排查 UI 与提交事务（UI/UX Pro Max 基线已形成，等待用户批准）
-- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T04 已独立验收通过；S4-T05 尚未创建、派发或实现
+- 当前阶段：Stage 4｜中途 PM 交接（停在 S4-T05 创建前）
+- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T04 已独立验收通过；UI/UX Pro Max 基线已归档；S4-T05 尚未创建、派发或实现
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -53,6 +53,6 @@
 
 ## 下一步门禁
 
-- S4-T04 已由 GPT-5.6 Sol 正式验收通过；当前不得创建 S4-T05。
-- 下一步只等待用户审查并批准 Stage 4 UI基线；批准后才允许创建S4-T05。
+- Stage 4 中途 PM 交接见 `.ai-dev/STAGES/STAGE-4-PM-HANDOFF-S4-T05.md`；当前 PM 完成交接提交后停止职责。
+- 新任 GPT-5.6 Sol 必须先重新核验仓库、S4-T01～S4-T04 验收与 UI 基线，再等待用户明确授权创建 S4-T05。
 - 当前不得实现 WPF/ViewModel、历史编辑或其他后续阶段能力，不得修改已冻结的提交事务、HandledAttentionVersion、Draft 处置或 Stage 3 业务语义。
