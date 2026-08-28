@@ -27,7 +27,7 @@ StoreExpiryInspector.slnx
 - canonical phase 为 `none / discount_50 / discount_20 / withdraw / expired`；阶段与下一触发日只由 Domain 计算器定义，优先级只由其权威映射定义。
 - `ConfirmedImportLifecycleOrchestrator` 在同一事务中组合 Stage 2 与 S3-T04/S3-T05；`ConfirmedImportExecutor` 没有 Stage 3 状态机。
 - WPF 启动已接入 DatabaseInitializer、ApplicationStartupCoordinator 与 LocalFileLogger；系统时钟只在 App 边界读取。
-- Stage 4 首页、任务列表、详情、草稿交互、库存修正和正式提交仍未实现。
+- S4-T05 已将 S4-T01 接入最小 WPF Shell、首页和待排查列表；详情、草稿交互、库存修正和正式提交 UI 仍未实现。
 
 ## Stage 2 历史基线
 
