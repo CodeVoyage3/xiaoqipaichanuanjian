@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T04 已独立验收通过，停在 UI 设计治理门禁）
-- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T04 已独立验收通过；S4-T05 尚未创建
+- 当前阶段：Stage 4｜核心排查 UI 与提交事务（UI/UX Pro Max 基线已形成，等待用户批准）
+- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T04 已独立验收通过；S4-T05 尚未创建、派发或实现
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -39,7 +39,7 @@
 - migration 前完整可恢复流程、安装、完整备份恢复、Windows 门店实机和 10 万批次/30 万历史性能仍待后续阶段。
 - S3-T06 的多轮历史修订时序属于 Stage 5，不得在 Stage 4 顺带实现历史编辑。
 - `HandledAttentionVersion` 已冻结为正式排查处理水位，只能在正式提交事务更新；正常成功提交在同一事务删除有效 DraftItem/Draft，系统失效 Draft 永久保留。
-- S4-T05 前必须先完成 UI/UX Pro Max 独立设计治理；规范只控制 WPF 视觉与交互，不得改写 Application 或业务规则。
+- Stage 4 UI/UX Pro Max 独立设计治理已形成 `.ai-dev/UI/STAGE-4-UI-BASELINE.md`，等待用户批准；规范只控制 WPF视觉与交互，不得改写Application或业务规则。
 
 ## 阶段归档
 
@@ -54,5 +54,5 @@
 ## 下一步门禁
 
 - S4-T04 已由 GPT-5.6 Sol 正式验收通过；当前不得创建 S4-T05。
-- 下一步必须先使用 UI/UX Pro Max 完成 Stage 4 UI 设计治理并形成统一基线；基线获得用户批准后才允许创建 S4-T05。
+- 下一步只等待用户审查并批准 Stage 4 UI基线；批准后才允许创建S4-T05。
 - 当前不得实现 WPF/ViewModel、历史编辑或其他后续阶段能力，不得修改已冻结的提交事务、HandledAttentionVersion、Draft 处置或 Stage 3 业务语义。
