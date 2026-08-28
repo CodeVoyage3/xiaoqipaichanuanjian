@@ -10,7 +10,14 @@
         Background="{DynamicResource CanvasBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        SnapsToDevicePixels="True"
+        SizeChanged="Window_SizeChanged">
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Find" Executed="Find_Executed" />
+    </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find" />
+    </Window.InputBindings>
     <Window.Resources>
         <ui:StageLabelConverter x:Key="StageLabelConverter" />
         <ui:DateOnlyDisplayConverter x:Key="DateOnlyDisplayConverter" />
@@ -62,7 +69,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="208" />
+            <ColumnDefinition x:Name="ShellColumn" Width="208" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
