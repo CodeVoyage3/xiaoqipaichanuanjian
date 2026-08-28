@@ -472,6 +472,9 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
             _isLoading = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasEmptyResult));
+            OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
         }
     }
 
@@ -489,6 +492,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasEmptyResult));
             OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
         }
     }
 
@@ -506,6 +510,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasEmptyResult));
             OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
         }
     }
 
@@ -539,6 +544,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsFilterActive));
             OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
         }
     }
 
@@ -561,6 +567,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanGoNext));
             OnPropertyChanged(nameof(IsFilterActive));
             OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
             _ = LoadAsync();
         }
     }
@@ -600,6 +607,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanGoNext));
             OnPropertyChanged(nameof(HasEmptyResult));
             OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
         }
     }
 
@@ -651,6 +659,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedStage));
         OnPropertyChanged(nameof(IsFilterActive));
         OnPropertyChanged(nameof(IsFilterEmpty));
+        OnPropertyChanged(nameof(IsDatabaseEmpty));
         if (changed || !HasLoadedResult)
         {
             await LoadAsync();

@@ -57,6 +57,7 @@ public sealed class InspectionTaskQueryTests
             AddImport(seed, older);
             AddImport(seed, newest, isUndone: true);
             AddImport(seed, newest);
+            AddImport(seed, newest);
         }
 
         using var context = database.Open();

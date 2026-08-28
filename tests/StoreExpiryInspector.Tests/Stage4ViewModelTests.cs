@@ -202,15 +202,21 @@ public sealed class Stage4ViewModelTests
     {
         var vm = new PendingTasksViewModel(request =>
             new InspectionTaskSearchResult(Array.Empty<InspectionTaskListItem>(), 0, request.Page, request.PageSize));
+        var changes = new List<string?>();
+        vm.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
 
         await vm.LoadAsync();
         Assert.True(vm.IsDatabaseEmpty);
         Assert.False(vm.IsFilterEmpty);
+        Assert.Contains(nameof(PendingTasksViewModel.IsDatabaseEmpty), changes);
 
+        changes.Clear();
         vm.SearchText = "没有这个商品";
         await vm.SearchAsync();
         Assert.False(vm.IsDatabaseEmpty);
         Assert.True(vm.IsFilterEmpty);
+        Assert.Contains(nameof(PendingTasksViewModel.IsDatabaseEmpty), changes);
+        Assert.Contains(nameof(PendingTasksViewModel.IsFilterEmpty), changes);
     }
 
     [Fact]
