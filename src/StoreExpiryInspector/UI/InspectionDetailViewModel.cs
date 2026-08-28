@@ -249,7 +249,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         _state = InspectionDetailPageState.Initial;
 
         RetryLoadCommand = new RelayCommand(
-            _ => { _ = LoadAsync(TaskId); },
+            _ => { _ = RetryLoadAsync(); },
             _ => State == InspectionDetailPageState.Error && !IsLoading);
         RetrySaveCommand = new RelayCommand(
             _ => { _ = RetrySaveAsync(); },
@@ -617,6 +617,10 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         }
     }
 
+    public Task RetryLoadAsync() => HasUnsavedChanges
+        ? ReloadAsync(preserveInput: true)
+        : LoadAsync(TaskId);
+
     public async Task RetrySaveAsync()
     {
         if (!IsOpen || !SaveFailed || IsSaving || IsActionBusy)
@@ -748,14 +752,15 @@ public sealed class InspectionDetailViewModel : ViewModelBase
                 correctedStockQty == 0,
                 AsUtc(_utcNow()))));
             _inventoryFeedback = result.NoChange ? "库存未变化" : "库存修正已保存";
+            _feedbackMessage = _inventoryFeedback;
+            NotifyMessages();
             IsInventoryEditorVisible = false;
             _inventoryText = string.Empty;
             OnPropertyChanged(nameof(InventoryText));
             await ReloadAsync(preserveInput: false);
             if (result.ProductTerminated || (correctedStockQty == 0 && result.Changed))
             {
-                await _refreshDashboard();
-                await _refreshPendingTasks();
+                await RefreshAfterTerminationAsync();
             }
         }
         catch (Exception exception)
@@ -769,6 +774,38 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         {
             IsActionBusy = false;
         }
+    }
+
+    private async Task RefreshAfterTerminationAsync()
+    {
+        var refreshFailed = false;
+        try
+        {
+            await _refreshDashboard();
+        }
+        catch (Exception exception)
+        {
+            refreshFailed = true;
+            _logException?.Invoke(exception);
+        }
+
+        try
+        {
+            await _refreshPendingTasks();
+        }
+        catch (Exception exception)
+        {
+            refreshFailed = true;
+            _logException?.Invoke(exception);
+        }
+
+        if (!refreshFailed)
+        {
+            return;
+        }
+
+        _actionErrorMessage = "库存已修正，但首页或任务列表刷新失败";
+        NotifyMessages();
     }
 
     private async Task ReloadAsync(bool preserveInput)

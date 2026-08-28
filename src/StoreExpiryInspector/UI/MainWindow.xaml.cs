@@ -20,14 +20,18 @@ public partial class MainWindow : Window
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e) =>
         ShellColumn.Width = new(e.NewSize.Width < 1280 ? 176 : 208);
 
-    private void Find_Executed(object sender, ExecutedRoutedEventArgs e)
+    private async void Find_Executed(object sender, ExecutedRoutedEventArgs e)
     {
         if (DataContext is ShellViewModel shell)
         {
-            shell.NavigateTo(ShellPage.PendingTasks);
+            await shell.NavigateToAsync(ShellPage.PendingTasks);
+            if (shell.CurrentPage != ShellPage.PendingTasks)
+            {
+                return;
+            }
         }
 
-        Dispatcher.BeginInvoke(() =>
+        await Dispatcher.BeginInvoke(() =>
         {
             TaskSearchBox.Focus();
             TaskSearchBox.SelectAll();

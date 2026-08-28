@@ -870,11 +870,13 @@ public sealed class ShellViewModel : ViewModelBase
         _ => "只读查询 · 数据以 Application 结果为准"
     };
 
-    public void NavigateTo(ShellPage page)
+    public void NavigateTo(ShellPage page) => _ = NavigateToAsync(page);
+
+    public async Task NavigateToAsync(ShellPage page)
     {
         if (CurrentPage == ShellPage.InspectionDetail && page != ShellPage.InspectionDetail)
         {
-            _ = NavigateAwayFromDetailAsync(page);
+            await NavigateAwayFromDetailAsync(page);
             return;
         }
 

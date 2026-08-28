@@ -274,6 +274,76 @@ public sealed class S4T07InspectionDetailViewModelTests
     }
 
     [Fact]
+    public async Task RetryLoadAfterSaveAndReloadFailurePreservesUnsavedInput()
+    {
+        var queryCount = 0;
+        var vm = CreateVm(
+            _ =>
+            {
+                queryCount++;
+                if (queryCount == 2)
+                {
+                    throw new IOException("reload unavailable");
+                }
+
+                return OpenResult(42, checkedQty: null);
+            },
+            saveDraft: _ => throw new IOException("save unavailable"));
+
+        await vm.LoadAsync(42);
+        vm.TaskItems.Single().CheckedQtyText = "5";
+        Assert.False(await vm.WaitForStableSaveAsync());
+        Assert.Equal(InspectionDetailPageState.Error, vm.State);
+        Assert.Equal("5", vm.TaskItems.Single().CheckedQtyText);
+
+        await vm.RetryLoadAsync();
+
+        Assert.Equal(InspectionDetailPageState.Open, vm.State);
+        Assert.Equal("5", vm.TaskItems.Single().CheckedQtyText);
+        Assert.True(vm.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task BackWaitsForTheCurrentSaveBeforeLeaving()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var left = false;
+        InspectionDetailViewModel? vm = null;
+        vm = new InspectionDetailViewModel(
+            loadDetail: _ => OpenResult(42, checkedQty: null),
+            saveDraft: _ =>
+            {
+                started.TrySetResult();
+                release.Task.GetAwaiter().GetResult();
+                return new SaveDraftResult(true, 9, new InspectionDraftReadiness(1, 1, 0, 0, false, true, true, false));
+            },
+            reconfirmItem: _ => throw new InvalidOperationException(),
+            clearDraft: _ => throw new InvalidOperationException(),
+            adjustInventory: _ => throw new InvalidOperationException(),
+            utcNow: () => UtcNow,
+            businessDate: () => BusinessDate,
+            goBack: async () =>
+            {
+                if (await vm!.WaitForStableSaveAsync())
+                {
+                    left = true;
+                }
+            });
+
+        await vm.LoadAsync(42);
+        vm.TaskItems.Single().CheckedQtyText = "2";
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        vm.BackCommand.Execute(null);
+        await Task.Delay(50);
+        Assert.False(left);
+
+        release.SetResult();
+        await WaitUntil(() => left);
+        Assert.False(vm.HasUnsavedChanges);
+    }
+
+    [Fact]
     public async Task ReconfirmKeepsFlagDuringEditAndReloadsAfterSuccess()
     {
         var reconfirmCount = 0;
@@ -392,6 +462,27 @@ public sealed class S4T07InspectionDetailViewModelTests
     }
 
     [Fact]
+    public async Task ClearDraftFailureKeepsTheLatestLocalInput()
+    {
+        var vm = CreateVm(
+            _ => OpenResult(
+                42,
+                checkedQty: 2,
+                draft: new InspectionDraftResult(9, "张三", BusinessDate, new[] { new InspectionDraftItemResult(101, 2) }, false),
+                quantities: new int?[] { 2 }),
+            clearDraft: _ => throw new IOException("clear failed"),
+            confirmClearDraft: () => true);
+
+        await vm.LoadAsync(42);
+        vm.TaskItems.Single().CheckedQtyText = "4";
+        await vm.ClearDraftAsync();
+
+        Assert.Equal("4", vm.TaskItems.Single().CheckedQtyText);
+        Assert.Equal("草稿清空失败，请重试", vm.ActionErrorMessage);
+        Assert.True(vm.HasRecoveredDraft);
+    }
+
+    [Fact]
     public async Task InventoryZeroNeedsSecondConfirmationAndRefreshesAfterTermination()
     {
         var adjustCount = 0;
@@ -463,7 +554,61 @@ public sealed class S4T07InspectionDetailViewModelTests
         Assert.Equal(1, adjustCount);
         Assert.Equal(2, queryCount);
         Assert.Equal("库存未变化", vm.InventoryFeedback);
+        Assert.Equal("库存未变化", vm.FeedbackMessage);
         Assert.True(vm.IsOpen);
+    }
+
+    [Fact]
+    public async Task ZeroInventoryRefreshFailureDoesNotMisreportOrRepeatTheAdjustment()
+    {
+        var adjustCount = 0;
+        var taskRefreshes = 0;
+        var current = OpenResult(42, checkedQty: null);
+        var vm = CreateVm(
+            _ => current,
+            adjustInventory: _ =>
+            {
+                adjustCount++;
+                current = new InspectionTaskDetailResult(42, "system_closed", 7, UtcNow, "product_stock_zero", null);
+                return new ManualInventoryAdjustmentResult(true, 13, 5, 0, true);
+            },
+            refreshDashboard: () => throw new IOException("dashboard refresh failed"),
+            refreshPendingTasks: () =>
+            {
+                taskRefreshes++;
+                return Task.CompletedTask;
+            },
+            confirmZeroInventory: () => true);
+
+        await vm.LoadAsync(42);
+        vm.OpenInventoryCommand.Execute(null);
+        vm.InventoryText = "0";
+        await vm.AdjustInventoryAsync();
+
+        Assert.Equal(1, adjustCount);
+        Assert.Equal(1, taskRefreshes);
+        Assert.Equal(InspectionDetailPageState.SystemClosed, vm.State);
+        Assert.Equal("库存已修正，但首页或任务列表刷新失败", vm.ActionErrorMessage);
+        Assert.DoesNotContain("库存修正失败", vm.ActionErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DetailPropertyChangesNotifySaveAndStateBindings()
+    {
+        var changed = new HashSet<string>(StringComparer.Ordinal);
+        var vm = CreateVm(_ => OpenResult(42, checkedQty: null));
+        vm.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
+
+        await vm.LoadAsync(42);
+        vm.InspectorName = "王五";
+        vm.TaskItems.Single().CheckedQtyText = "0";
+        await vm.WaitForStableSaveAsync();
+
+        Assert.Contains(nameof(InspectionDetailViewModel.State), changed);
+        Assert.Contains(nameof(InspectionDetailViewModel.IsLoading), changed);
+        Assert.Contains(nameof(InspectionDetailViewModel.HasUnsavedChanges), changed);
+        Assert.Contains(nameof(InspectionDetailViewModel.SaveStatusText), changed);
+        Assert.Contains(nameof(InspectionDetailViewModel.HasRecoveredDraft), changed);
     }
 
     [Fact]

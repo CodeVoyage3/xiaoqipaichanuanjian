@@ -718,6 +718,9 @@
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
                                                         <Style.Triggers>
+                                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                                <Setter Property="Background" Value="#EAF2FF" />
+                                                            </Trigger>
                                                             <DataTrigger Binding="{Binding RequiresReconfirmation}" Value="True">
                                                                 <Setter Property="Background" Value="#F4ECFB" />
                                                             </DataTrigger>
@@ -840,6 +843,12 @@
                                    Margin="0,8,0,16"
                                    HorizontalAlignment="Center"
                                    Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <TextBlock Text="{Binding Detail.ActionErrorMessage}"
+                                   Visibility="{Binding Detail.HasActionError, Converter={StaticResource BoolToVisibility}}"
+                                   Margin="0,0,0,12"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#A4262C"
+                                   TextWrapping="Wrap" />
                         <Button Content="返回"
                                 Command="{Binding Detail.BackCommand}"
                                 HorizontalAlignment="Center"
