@@ -839,10 +839,21 @@
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
                                    Foreground="{DynamicResource PrimaryTextBrush}" />
+                        <TextBlock Text="{Binding Detail.CloseReasonText}"
+                                   Visibility="{Binding Detail.HasCloseReason, Converter={StaticResource BoolToVisibility}}"
+                                   Margin="0,8,0,0"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource WarningTextBrush}"
+                                   TextWrapping="Wrap" />
                         <TextBlock Text="请返回来源页面继续操作。"
                                    Margin="0,8,0,16"
                                    HorizontalAlignment="Center"
                                    Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <TextBlock Text="{Binding Detail.SubmissionCompletedAtText}"
+                                   Visibility="{Binding Detail.HasSubmissionCompletedAt, Converter={StaticResource BoolToVisibility}}"
+                                   Margin="0,0,0,12"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#16794C" />
                         <TextBlock Text="{Binding Detail.ActionErrorMessage}"
                                    Visibility="{Binding Detail.HasActionError, Converter={StaticResource BoolToVisibility}}"
                                    Margin="0,0,0,12"
@@ -865,6 +876,12 @@
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
                                    Foreground="#A4262C" />
+                        <TextBlock Text="{Binding Detail.ActionErrorMessage}"
+                                   Visibility="{Binding Detail.HasActionError, Converter={StaticResource BoolToVisibility}}"
+                                   Margin="0,8,0,0"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#A4262C"
+                                   TextWrapping="Wrap" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
                             <Button Content="重试"
                                     Command="{Binding Detail.RetryLoadCommand}"
@@ -885,20 +902,71 @@
 
                     <Grid Grid.Row="3"
                           Margin="0,4,0,16"
-                          Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
+                          Visibility="{Binding Detail.ShowSubmitFooter, Converter={StaticResource BoolToVisibility}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="检查数量仅保存草稿；正式提交功能将在后续任务接入。"
+                        <TextBlock Text="{Binding Detail.SubmissionHintText}"
                                    VerticalAlignment="Center"
                                    FontSize="12"
                                    Foreground="{DynamicResource SecondaryTextBrush}" />
-                        <Button Grid.Column="1"
-                                Content="清空草稿"
-                                Command="{Binding Detail.ClearDraftCommand}"
-                                Margin="0" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="{Binding Detail.SubmitButtonText}"
+                                    Command="{Binding Detail.SubmitCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Margin="0,0,8,0" />
+                            <Button Content="清空草稿"
+                                    Command="{Binding Detail.ClearDraftCommand}"
+                                    Margin="0" />
+                        </StackPanel>
                     </Grid>
+
+                    <Border Grid.Row="3"
+                            Margin="0,4,0,16"
+                            Padding="12"
+                            Background="{DynamicResource WarningSurfaceBrush}"
+                            BorderBrush="#E5CE70"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Visibility="{Binding Detail.HasOverStockConfirmation, Converter={StaticResource BoolToVisibility}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Detail.OverStockMessage}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource WarningTextBrush}" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Foreground="{DynamicResource WarningTextBrush}">
+                                    <Run Text="当前库存：" />
+                                    <Run Text="{Binding Detail.OverStockEffectiveStockQty}" />
+                                    <Run Text="    排查合计：" />
+                                    <Run Text="{Binding Detail.OverStockTotalCheckedQty}" />
+                                    <Run Text="    超出：" />
+                                    <Run Text="{Binding Detail.OverStockExcessQty}" />
+                                </TextBlock>
+                            </StackPanel>
+                            <WrapPanel Grid.Column="1"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right">
+                                <Button x:Name="ReturnFromOverStockButton"
+                                        Content="返回修改排查件数"
+                                        Command="{Binding Detail.ReturnFromOverStockCommand}"
+                                        IsVisibleChanged="ReturnFromOverStockButton_IsVisibleChanged"
+                                        Margin="0,0,8,0" />
+                                <Button Content="修正库存"
+                                        Command="{Binding Detail.OpenInventoryCommand}"
+                                        Margin="0,0,8,0" />
+                                <Button Content="确认仍然提交"
+                                        Command="{Binding Detail.ConfirmOverStockCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Margin="0" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
 
                 <Grid Visibility="{Binding IsImportVisible, Converter={StaticResource BoolToVisibility}}">

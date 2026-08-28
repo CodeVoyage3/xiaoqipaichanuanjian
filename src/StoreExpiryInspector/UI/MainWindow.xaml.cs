@@ -58,6 +58,16 @@ public partial class MainWindow : Window
         shell.Import.TrySelectFile(dialog.FileName);
     }
 
+    private void ReturnFromOverStockButton_IsVisibleChanged(
+        object sender,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true)
+        {
+            Dispatcher.BeginInvoke(() => ReturnFromOverStockButton.Focus(), DispatcherPriority.Input);
+        }
+    }
+
     private bool ConfirmClearDraft() =>
         MessageBox.Show(
             this,

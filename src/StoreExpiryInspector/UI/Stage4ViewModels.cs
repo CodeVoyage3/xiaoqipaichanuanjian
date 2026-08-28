@@ -758,7 +758,8 @@ public sealed class ShellViewModel : ViewModelBase
         Func<DateTime>? utcNow = null,
         Func<long, InspectionTaskDetailResult>? detailLoader = null,
         Func<bool>? confirmClearDraft = null,
-        Func<bool>? confirmZeroInventory = null)
+        Func<bool>? confirmZeroInventory = null,
+        Func<InspectionSubmissionRequest, InspectionSubmissionResult>? submit = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -788,7 +789,8 @@ public sealed class ShellViewModel : ViewModelBase
             utcNow: utcNow,
             confirmClearDraft: confirmClearDraft,
             confirmZeroInventory: confirmZeroInventory,
-            goBack: ReturnFromDetailAsync);
+            goBack: ReturnFromDetailAsync,
+            submit: submit ?? SubmitInspection);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard));
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks));
         NavigateHistoryCommand = new RelayCommand(_ => { }, _ => false);
@@ -876,6 +878,12 @@ public sealed class ShellViewModel : ViewModelBase
     {
         if (CurrentPage == ShellPage.InspectionDetail && page != ShellPage.InspectionDetail)
         {
+            if (Detail.IsActionBusy)
+            {
+                return;
+            }
+
+            Detail.CancelPendingSubmissionConfirmation();
             await NavigateAwayFromDetailAsync(page);
             return;
         }
@@ -950,6 +958,12 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = DatabaseInitializer.CreateContext();
         return new ManualInventoryAdjustmentUseCase().Execute(context, request);
+    }
+
+    private static InspectionSubmissionResult SubmitInspection(InspectionSubmissionRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionSubmissionUseCase().Submit(context, request);
     }
 
     private void LogException(Exception exception) => _logger.TryWrite(

@@ -20,6 +20,8 @@ public sealed class InspectionDetailRowViewModel : ViewModelBase
 {
     private readonly Action<InspectionDetailRowViewModel> _onChanged;
     private readonly Action<InspectionDetailRowViewModel> _onReconfirm;
+    private readonly Func<bool>? _canEdit;
+    private readonly Func<bool>? _canChangeInput;
     private readonly InspectionTaskItemResult _item;
     private string _checkedQtyText;
     private string _inputError = string.Empty;
@@ -29,16 +31,20 @@ public sealed class InspectionDetailRowViewModel : ViewModelBase
     public InspectionDetailRowViewModel(
         InspectionTaskItemResult item,
         Action<InspectionDetailRowViewModel> onChanged,
-        Action<InspectionDetailRowViewModel> onReconfirm)
+        Action<InspectionDetailRowViewModel> onReconfirm,
+        Func<bool>? canEdit = null,
+        Func<bool>? canChangeInput = null)
     {
         ArgumentNullException.ThrowIfNull(item);
         _item = item;
         _onChanged = onChanged ?? throw new ArgumentNullException(nameof(onChanged));
         _onReconfirm = onReconfirm ?? throw new ArgumentNullException(nameof(onReconfirm));
+        _canEdit = canEdit;
+        _canChangeInput = canChangeInput ?? canEdit;
         _checkedQtyText = FormatCheckedQty(item.CheckedQty);
         ReconfirmCommand = new RelayCommand(
             _ => _onReconfirm(this),
-            _ => CanReconfirm);
+            _ => CanReconfirm && (_canEdit?.Invoke() ?? true));
     }
 
     public long TaskItemId => _item.TaskItemId;
@@ -65,7 +71,8 @@ public sealed class InspectionDetailRowViewModel : ViewModelBase
         set
         {
             value ??= string.Empty;
-            if (string.Equals(_checkedQtyText, value, StringComparison.Ordinal))
+            if ((_canChangeInput is not null && !_canChangeInput())
+                || string.Equals(_checkedQtyText, value, StringComparison.Ordinal))
             {
                 return;
             }
@@ -182,6 +189,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     private readonly Func<ReconfirmItemRequest, ReconfirmItemResult> _reconfirmItem;
     private readonly Func<ClearDraftRequest, ClearDraftResult> _clearDraft;
     private readonly Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult> _adjustInventory;
+    private readonly Func<InspectionSubmissionRequest, InspectionSubmissionResult> _submitInspection;
     private readonly Func<Task> _refreshDashboard;
     private readonly Func<Task> _refreshPendingTasks;
     private readonly Action<Exception>? _logException;
@@ -199,6 +207,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     private bool _isLoading;
     private bool _isActionBusy;
     private bool _isSaving;
+    private bool _isSubmitting;
     private bool _saveFailed;
     private bool _inspectorDirty;
     private bool _checkDateDirty;
@@ -215,6 +224,12 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     private string _inventoryText = string.Empty;
     private string _inventoryError = string.Empty;
     private string _inventoryFeedback = string.Empty;
+    private OverStockFacts? _overStockFacts;
+    private bool _overStockFactsChanged;
+    private bool _submissionIntegrityError;
+    private bool _completedFromSubmission;
+    private DateTime? _submissionCompletedAtUtc;
+    private string? _closeReason;
     private Task? _saveLoop;
     private bool _flushRequested;
 
@@ -231,13 +246,15 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         Func<DateOnly>? businessDate = null,
         Func<bool>? confirmClearDraft = null,
         Func<bool>? confirmZeroInventory = null,
-        Func<Task>? goBack = null)
+        Func<Task>? goBack = null,
+        Func<InspectionSubmissionRequest, InspectionSubmissionResult>? submit = null)
     {
         _loadDetail = loadDetail ?? (_ => throw new InvalidOperationException("Detail query is not configured."));
         _saveDraft = saveDraft ?? (_ => throw new InvalidOperationException("Draft save is not configured."));
         _reconfirmItem = reconfirmItem ?? (_ => throw new InvalidOperationException("Reconfirm is not configured."));
         _clearDraft = clearDraft ?? (_ => throw new InvalidOperationException("Draft clear is not configured."));
         _adjustInventory = adjustInventory ?? (_ => throw new InvalidOperationException("Inventory adjustment is not configured."));
+        _submitInspection = submit ?? (_ => throw new InvalidOperationException("Inspection submission is not configured."));
         _refreshDashboard = refreshDashboard ?? (() => Task.CompletedTask);
         _refreshPendingTasks = refreshPendingTasks ?? (() => Task.CompletedTask);
         _logException = logException;
@@ -250,25 +267,42 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
         RetryLoadCommand = new RelayCommand(
             _ => { _ = RetryLoadAsync(); },
-            _ => State == InspectionDetailPageState.Error && !IsLoading);
+            _ => State == InspectionDetailPageState.Error && !IsLoading && !IsActionBusy);
         RetrySaveCommand = new RelayCommand(
             _ => { _ = RetrySaveAsync(); },
             _ => IsOpen && SaveFailed && !IsSaving && !IsActionBusy);
         BackCommand = new RelayCommand(
-            _ => { _ = _goBack?.Invoke(); },
+            _ =>
+            {
+                ClearOverStockConfirmation();
+                _ = _goBack?.Invoke();
+            },
             _ => !IsActionBusy);
         ClearDraftCommand = new RelayCommand(
             _ => { _ = ClearDraftAsync(); },
             _ => CanEdit && HasRecoveredDraft);
         OpenInventoryCommand = new RelayCommand(
-            _ => IsInventoryEditorVisible = true,
-            _ => CanEdit && !IsInventoryEditorVisible);
+            _ =>
+            {
+                ClearOverStockConfirmation();
+                IsInventoryEditorVisible = true;
+            },
+            _ => IsOpen && !IsLoading && !IsActionBusy && !IsInventoryEditorVisible);
         CancelInventoryCommand = new RelayCommand(
             _ => CancelInventoryEdit(),
             _ => IsInventoryEditorVisible && !IsActionBusy);
         AdjustInventoryCommand = new RelayCommand(
             _ => { _ = AdjustInventoryAsync(); },
             _ => IsInventoryEditorVisible && CanEdit && !IsActionBusy);
+        SubmitCommand = new RelayCommand(
+            _ => { _ = SubmitAsync(); },
+            _ => CanSubmit);
+        ReturnFromOverStockCommand = new RelayCommand(
+            _ => ClearOverStockConfirmation(),
+            _ => HasOverStockConfirmation && !IsActionBusy);
+        ConfirmOverStockCommand = new RelayCommand(
+            _ => { _ = ConfirmOverStockAsync(); },
+            _ => CanConfirmOverStock);
     }
 
     public ObservableCollection<InspectionDetailRowViewModel> TaskItems { get; } = [];
@@ -289,6 +323,12 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     public RelayCommand AdjustInventoryCommand { get; }
 
+    public RelayCommand SubmitCommand { get; }
+
+    public RelayCommand ReturnFromOverStockCommand { get; }
+
+    public RelayCommand ConfirmOverStockCommand { get; }
+
     public InspectionDetailPageState State => _state;
 
     public bool IsLoading
@@ -304,6 +344,9 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             _isLoading = value;
             OnPropertyChanged();
             RetryLoadCommand.RaiseCanExecuteChanged();
+            SubmitCommand.RaiseCanExecuteChanged();
+            ConfirmOverStockCommand.RaiseCanExecuteChanged();
+            ReturnFromOverStockCommand.RaiseCanExecuteChanged();
             NotifyActionCommands();
         }
     }
@@ -349,7 +392,11 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     public string StatusMessage => State switch
     {
         InspectionDetailPageState.Loading => "正在加载排查详情…",
-        InspectionDetailPageState.Completed => "该任务已完成排查",
+        InspectionDetailPageState.Completed => _submissionIntegrityError
+            ? "任务状态异常，无法完成排查。"
+            : _completedFromSubmission
+                ? "排查已完成"
+                : "该任务已完成排查",
         InspectionDetailPageState.SystemClosed => "该任务已由系统结束",
         InspectionDetailPageState.NotFound => "任务不存在或已无法访问",
         InspectionDetailPageState.Error => "排查详情加载失败",
@@ -372,7 +419,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         set
         {
             value ??= string.Empty;
-            if (string.Equals(_inspectorName, value, StringComparison.Ordinal))
+            if (!CanEditInput || string.Equals(_inspectorName, value, StringComparison.Ordinal))
             {
                 return;
             }
@@ -393,7 +440,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         set
         {
             DateOnly? date = value.HasValue ? DateOnly.FromDateTime(value.Value) : null;
-            if (_checkDate == date)
+            if (!CanEditInput || _checkDate == date)
             {
                 return;
             }
@@ -406,7 +453,20 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         }
     }
 
-    public bool CanEdit => IsOpen && !IsLoading && !IsActionBusy;
+    public bool CanEdit => IsOpen
+        && !IsLoading
+        && !IsActionBusy
+        && !HasOverStockConfirmation;
+
+    private bool CanEditInput => IsOpen
+        && !IsLoading
+        && !IsActionBusy;
+
+    public bool CanSubmit => IsOpen
+        && !IsLoading
+        && !IsActionBusy
+        && !IsSubmitting
+        && !HasOverStockConfirmation;
 
     public bool IsActionBusy
     {
@@ -421,11 +481,12 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             _isActionBusy = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanSubmit));
             NotifyActionCommands();
-            foreach (var item in TaskItems)
-            {
-                item.ReconfirmCommand.RaiseCanExecuteChanged();
-            }
+            RetryLoadCommand.RaiseCanExecuteChanged();
+            SubmitCommand.RaiseCanExecuteChanged();
+            ConfirmOverStockCommand.RaiseCanExecuteChanged();
+            ReturnFromOverStockCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -442,8 +503,28 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             _isSaving = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanSubmit));
             OnPropertyChanged(nameof(SaveStatusText));
             RetrySaveCommand.RaiseCanExecuteChanged();
+            SubmitCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool IsSubmitting
+    {
+        get => _isSubmitting;
+        private set
+        {
+            if (_isSubmitting == value)
+            {
+                return;
+            }
+
+            _isSubmitting = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SubmitButtonText));
+            OnPropertyChanged(nameof(CanSubmit));
+            SubmitCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -519,7 +600,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         set
         {
             value ??= string.Empty;
-            if (string.Equals(_inventoryText, value, StringComparison.Ordinal))
+            if (!IsOpen || IsActionBusy || string.Equals(_inventoryText, value, StringComparison.Ordinal))
             {
                 return;
             }
@@ -535,6 +616,48 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     public string InventoryFeedback => _inventoryFeedback;
 
+    public bool HasOverStockConfirmation => _overStockFacts is not null;
+
+    public int OverStockEffectiveStockQty => _overStockFacts?.EffectiveStockQty ?? 0;
+
+    public int OverStockTotalCheckedQty => _overStockFacts?.TotalCheckedQty ?? 0;
+
+    public int OverStockExcessQty => Math.Max(
+        0,
+        OverStockTotalCheckedQty - OverStockEffectiveStockQty);
+
+    public string OverStockMessage => HasOverStockConfirmation
+        ? _overStockFactsChanged
+            ? "排查件数超过当前库存；库存或排查数量已变化，请重新确认"
+            : "排查件数超过当前库存"
+        : string.Empty;
+
+    public bool CanConfirmOverStock => IsOpen
+        && HasOverStockConfirmation
+        && !IsActionBusy
+        && !IsSubmitting;
+
+    public bool ShowSubmitFooter => IsOpen && !HasOverStockConfirmation;
+
+    public string SubmitButtonText => IsSubmitting ? "正在提交…" : "完成排查";
+
+    public string SubmissionHintText => IsOpen
+        ? "提交时将由 Application 重新读取当前任务、库存和草稿事实。"
+        : string.Empty;
+
+    public string CloseReasonText => IsSystemClosed
+        && string.Equals(_closeReason, "product_stock_zero", StringComparison.Ordinal)
+            ? "商品库存已归零，全部批次效期跟踪已结束"
+            : string.Empty;
+
+    public bool HasCloseReason => !string.IsNullOrEmpty(CloseReasonText);
+
+    public string SubmissionCompletedAtText => _submissionCompletedAtUtc.HasValue
+        ? $"提交时间：{_submissionCompletedAtUtc.Value.ToLocalTime():yyyy-MM-dd HH:mm}"
+        : string.Empty;
+
+    public bool HasSubmissionCompletedAt => _submissionCompletedAtUtc.HasValue;
+
     public async Task LoadAsync(long taskId)
     {
         if (taskId <= 0)
@@ -545,6 +668,12 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         _taskId = taskId;
         var version = Interlocked.Increment(ref _loadVersion);
         _lastSavedAtUtc = null;
+        _overStockFacts = null;
+        _overStockFactsChanged = false;
+        _submissionIntegrityError = false;
+        _completedFromSubmission = false;
+        _submissionCompletedAtUtc = null;
+        _closeReason = null;
         SaveFailed = false;
         _editVersion = 0;
         _inventoryText = string.Empty;
@@ -557,6 +686,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         _actionErrorMessage = string.Empty;
         _feedbackMessage = string.Empty;
         NotifyMessages();
+        NotifySubmissionProperties();
 
         try
         {
@@ -589,14 +719,253 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         }
     }
 
+    public async Task SubmitAsync()
+    {
+        await SubmitAsync(confirmedFacts: null);
+    }
+
+    public async Task ConfirmOverStockAsync()
+    {
+        var facts = _overStockFacts;
+        if (facts is null || !CanConfirmOverStock)
+        {
+            return;
+        }
+
+        await SubmitAsync(facts);
+    }
+
+    public void CancelPendingSubmissionConfirmation() => ClearOverStockConfirmation();
+
+    private async Task SubmitAsync(OverStockFacts? confirmedFacts)
+    {
+        if (!IsOpen || IsActionBusy || IsSubmitting)
+        {
+            return;
+        }
+
+        if (confirmedFacts is not null && !ReferenceEquals(_overStockFacts, confirmedFacts))
+        {
+            return;
+        }
+
+        var previousFacts = _overStockFacts;
+        InspectionSubmissionRequest? request = null;
+        IsSubmitting = true;
+        IsActionBusy = true;
+        _actionErrorMessage = string.Empty;
+        _feedbackMessage = string.Empty;
+        if (confirmedFacts is null)
+        {
+            ClearOverStockConfirmation();
+        }
+        NotifyMessages();
+        try
+        {
+            if (!await WaitForStableSaveAsync())
+            {
+                ClearOverStockConfirmation();
+                _actionErrorMessage = HasInputErrors
+                    ? "请先修正检查数量。"
+                    : "草稿尚未保存成功，请先重试保存。";
+                NotifyMessages();
+                return;
+            }
+
+            if (confirmedFacts is not null && !ReferenceEquals(_overStockFacts, confirmedFacts))
+            {
+                return;
+            }
+
+            if (confirmedFacts is not null)
+            {
+                ClearOverStockConfirmation();
+            }
+
+            request = new InspectionSubmissionRequest(
+                _taskId,
+                ProductId!.Value,
+                _businessDate(),
+                AsUtc(_utcNow()),
+                confirmedFacts?.EffectiveStockQty,
+                confirmedFacts?.TotalCheckedQty);
+            var result = await Task.Run(() => _submitInspection(request));
+            if (result.RequiresOverStockConfirmation)
+            {
+                _overStockFacts = new OverStockFacts(
+                    result.EffectiveStockQty,
+                    result.TotalCheckedQty);
+                _overStockFactsChanged = previousFacts is not null
+                    && (previousFacts.EffectiveStockQty != result.EffectiveStockQty
+                        || previousFacts.TotalCheckedQty != result.TotalCheckedQty);
+                NotifySubmissionProperties();
+                return;
+            }
+
+            if (result.Submitted || result.AlreadySubmitted)
+            {
+                _completedFromSubmission = result.Submitted;
+                _submissionCompletedAtUtc = result.Submitted ? request.SubmittedAtUtc : null;
+                NotifySubmissionProperties();
+                await CompleteAfterSubmissionAsync();
+                return;
+            }
+
+            throw new InvalidOperationException("Unknown inspection submission outcome.");
+        }
+        catch (Exception exception)
+        {
+            _logException?.Invoke(exception);
+            await HandleSubmissionFailureAsync(request);
+        }
+        finally
+        {
+            IsActionBusy = false;
+            IsSubmitting = false;
+        }
+    }
+
+    private async Task CompleteAfterSubmissionAsync()
+    {
+        await ReloadAsync(preserveInput: false);
+        if (State != InspectionDetailPageState.Completed)
+        {
+            // A successful Application result is authoritative; never reopen a form after it.
+            var refreshedState = State;
+            _errorMessage = string.Empty;
+            _closeReason = null;
+            _submissionIntegrityError = false;
+            ClearOpenDetail();
+            SetState(InspectionDetailPageState.Completed);
+            _actionErrorMessage = refreshedState == InspectionDetailPageState.Error
+                ? "排查已完成，但详情刷新失败"
+                : "排查已完成，但详情刷新状态异常";
+            NotifyMessages();
+        }
+
+        await RefreshAfterSubmissionAsync(submissionCompleted: true);
+    }
+
+    private async Task HandleSubmissionFailureAsync(InspectionSubmissionRequest? request)
+    {
+        await ReloadAsync(preserveInput: true);
+        switch (State)
+        {
+            case InspectionDetailPageState.Open when TaskItems.Any(item => item.RequiresReconfirmation):
+                _actionErrorMessage = "当前排查状态已变化，请重新确认";
+                break;
+            case InspectionDetailPageState.Open:
+            case InspectionDetailPageState.Error:
+                _actionErrorMessage = "排查提交失败，请重试。";
+                break;
+            case InspectionDetailPageState.Completed:
+                await VerifyCompletedAfterSubmissionFailureAsync(request);
+                break;
+            case InspectionDetailPageState.SystemClosed:
+            case InspectionDetailPageState.NotFound:
+                await RefreshAfterSubmissionAsync(submissionCompleted: false);
+                break;
+        }
+
+        NotifySubmissionProperties();
+        NotifyMessages();
+    }
+
+    private async Task VerifyCompletedAfterSubmissionFailureAsync(
+        InspectionSubmissionRequest? request)
+    {
+        if (request is null)
+        {
+            _submissionIntegrityError = true;
+            _actionErrorMessage = "任务状态异常，无法完成排查。";
+            return;
+        }
+
+        try
+        {
+            // GetDetail intentionally exposes no formal-history payload. A second Application
+            // call is the idempotent read of that fact: AlreadySubmitted proves a legal
+            // concurrent completion; a rejection keeps the integrity error visible.
+            var result = await Task.Run(() => _submitInspection(request));
+            if (result.AlreadySubmitted)
+            {
+                _submissionIntegrityError = false;
+                _completedFromSubmission = false;
+                _submissionCompletedAtUtc = null;
+                _actionErrorMessage = string.Empty;
+                await RefreshAfterSubmissionAsync(submissionCompleted: true);
+                return;
+            }
+
+            if (result.Submitted)
+            {
+                _submissionIntegrityError = false;
+                _completedFromSubmission = true;
+                _submissionCompletedAtUtc = request.SubmittedAtUtc;
+                _actionErrorMessage = string.Empty;
+                await RefreshAfterSubmissionAsync(submissionCompleted: true);
+                return;
+            }
+        }
+        catch
+        {
+            // The original exception is already logged. Keep this verification silent so one
+            // failed completion does not produce duplicate user-facing error records.
+        }
+
+        _submissionIntegrityError = true;
+        _actionErrorMessage = "任务状态异常，无法完成排查。";
+    }
+
+    private async Task RefreshAfterSubmissionAsync(bool submissionCompleted)
+    {
+        var refreshFailed = false;
+        try
+        {
+            await _refreshDashboard();
+        }
+        catch (Exception exception)
+        {
+            refreshFailed = true;
+            _logException?.Invoke(exception);
+        }
+
+        try
+        {
+            await _refreshPendingTasks();
+        }
+        catch (Exception exception)
+        {
+            refreshFailed = true;
+            _logException?.Invoke(exception);
+        }
+
+        if (!refreshFailed)
+        {
+            return;
+        }
+
+        _actionErrorMessage = string.IsNullOrEmpty(_actionErrorMessage)
+            ? submissionCompleted
+                ? $"{StatusMessage}，但首页或任务列表刷新失败"
+                : "排查状态已更新，但首页或任务列表刷新失败"
+            : $"{_actionErrorMessage} 首页或任务列表刷新失败";
+        NotifyMessages();
+    }
+
     public async Task<bool> WaitForStableSaveAsync()
     {
+        if (SaveFailed)
+        {
+            return false;
+        }
+
         if (!HasUnsavedChanges && !IsSaving)
         {
             return true;
         }
 
-        if (!IsOpen || HasInputErrors || SaveFailed)
+        if (!IsOpen || HasInputErrors)
         {
             return false;
         }
@@ -638,12 +1007,17 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     public async Task ReconfirmItemAsync(InspectionDetailRowViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
-        if (!IsOpen || !row.CanReconfirm || IsActionBusy)
+        if (!IsOpen || !row.CanReconfirm || IsActionBusy || HasOverStockConfirmation)
         {
             return;
         }
 
         if (!await WaitForStableSaveAsync())
+        {
+            return;
+        }
+
+        if (!IsOpen || !row.CanReconfirm || IsActionBusy || HasOverStockConfirmation)
         {
             return;
         }
@@ -684,6 +1058,11 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         }
 
         if (!await WaitForStableSaveAsync())
+        {
+            return;
+        }
+
+        if (!CanEdit || !HasRecoveredDraft || IsActionBusy)
         {
             return;
         }
@@ -731,6 +1110,11 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         }
 
         if (!await WaitForStableSaveAsync())
+        {
+            return;
+        }
+
+        if (!CanEdit || !IsInventoryEditorVisible || IsActionBusy)
         {
             return;
         }
@@ -861,22 +1245,30 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         switch (result.Status)
         {
             case "open" when result.Detail is not null:
+                _closeReason = null;
+                _submissionIntegrityError = false;
                 ApplyOpenDetail(result.Detail, preserveInput, input);
                 return;
             case "completed":
                 _errorMessage = string.Empty;
+                _closeReason = null;
                 ClearOpenDetail();
                 SetState(InspectionDetailPageState.Completed);
+                NotifySubmissionProperties();
                 return;
             case "system_closed":
                 _errorMessage = string.Empty;
+                _closeReason = result.CloseReason;
                 ClearOpenDetail();
                 SetState(InspectionDetailPageState.SystemClosed);
+                NotifySubmissionProperties();
                 return;
             case "not_found":
                 _errorMessage = string.Empty;
+                _closeReason = null;
                 ClearOpenDetail();
                 SetState(InspectionDetailPageState.NotFound);
+                NotifySubmissionProperties();
                 return;
             default:
                 _errorMessage = "排查详情加载失败";
@@ -893,6 +1285,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     {
         _detail = detail;
         _errorMessage = string.Empty;
+        _closeReason = null;
+        _submissionIntegrityError = false;
         var draft = detail.Draft;
         _inspectorName = draft?.InspectorName?.Trim() ?? string.Empty;
         _checkDate = draft?.CheckDate
@@ -904,7 +1298,12 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         TaskItems.Clear();
         foreach (var taskItem in detail.TaskItems)
         {
-            var row = new InspectionDetailRowViewModel(taskItem, OnRowChanged, BeginReconfirm);
+            var row = new InspectionDetailRowViewModel(
+                taskItem,
+                OnRowChanged,
+                BeginReconfirm,
+                () => CanEdit,
+                () => CanEditInput);
             if (preserveInput && input?.Rows.TryGetValue(taskItem.TaskItemId, out var rowInput) == true)
             {
                 row.RestoreInput(rowInput);
@@ -941,6 +1340,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     private void ClearOpenDetail()
     {
+        _overStockFacts = null;
+        _overStockFactsChanged = false;
         _detail = null;
         TaskItems.Clear();
         NormalBatches.Clear();
@@ -958,8 +1359,10 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     private void OnRowChanged(InspectionDetailRowViewModel row)
     {
+        InvalidateOverStockConfirmation();
         OnPropertyChanged(nameof(HasUnsavedChanges));
         OnPropertyChanged(nameof(HasInputErrors));
+        OnPropertyChanged(nameof(SubmissionHintText));
         OnPropertyChanged(nameof(SaveStatusText));
         _actionErrorMessage = string.Empty;
         NotifyMessages();
@@ -971,9 +1374,11 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     private void NotifyInputChanged()
     {
+        InvalidateOverStockConfirmation();
         OnPropertyChanged(nameof(CheckDate));
         OnPropertyChanged(nameof(CheckDateValue));
         OnPropertyChanged(nameof(HasUnsavedChanges));
+        OnPropertyChanged(nameof(SubmissionHintText));
         OnPropertyChanged(nameof(SaveStatusText));
         _actionErrorMessage = string.Empty;
         NotifyMessages();
@@ -985,6 +1390,51 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         {
             EnsureSaveLoop(immediate: false);
         }
+    }
+
+    private void InvalidateOverStockConfirmation()
+    {
+        if (_overStockFacts is null)
+        {
+            return;
+        }
+
+        ClearOverStockConfirmation();
+    }
+
+    private void ClearOverStockConfirmation()
+    {
+        if (_overStockFacts is null)
+        {
+            return;
+        }
+
+        _overStockFacts = null;
+        _overStockFactsChanged = false;
+        NotifySubmissionProperties();
+    }
+
+    private void NotifySubmissionProperties()
+    {
+        OnPropertyChanged(nameof(StatusMessage));
+        OnPropertyChanged(nameof(CloseReasonText));
+        OnPropertyChanged(nameof(HasCloseReason));
+        OnPropertyChanged(nameof(SubmissionCompletedAtText));
+        OnPropertyChanged(nameof(HasSubmissionCompletedAt));
+        OnPropertyChanged(nameof(HasOverStockConfirmation));
+        OnPropertyChanged(nameof(OverStockEffectiveStockQty));
+        OnPropertyChanged(nameof(OverStockTotalCheckedQty));
+        OnPropertyChanged(nameof(OverStockExcessQty));
+        OnPropertyChanged(nameof(OverStockMessage));
+        OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(CanSubmit));
+        OnPropertyChanged(nameof(ShowSubmitFooter));
+        OnPropertyChanged(nameof(SubmissionHintText));
+        OnPropertyChanged(nameof(SubmitButtonText));
+        SubmitCommand.RaiseCanExecuteChanged();
+        ConfirmOverStockCommand.RaiseCanExecuteChanged();
+        ReturnFromOverStockCommand.RaiseCanExecuteChanged();
+        NotifyActionCommands();
     }
 
     private Task EnsureSaveLoop(bool immediate)
@@ -1177,6 +1627,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         if (state != InspectionDetailPageState.Open)
         {
             IsInventoryEditorVisible = false;
+            _overStockFacts = null;
+            _overStockFactsChanged = false;
         }
 
         _state = state;
@@ -1189,7 +1641,18 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsTerminal));
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(CanSubmit));
+        OnPropertyChanged(nameof(HasOverStockConfirmation));
+        OnPropertyChanged(nameof(OverStockEffectiveStockQty));
+        OnPropertyChanged(nameof(OverStockTotalCheckedQty));
+        OnPropertyChanged(nameof(OverStockExcessQty));
+        OnPropertyChanged(nameof(OverStockMessage));
+        OnPropertyChanged(nameof(ShowSubmitFooter));
+        OnPropertyChanged(nameof(SubmissionHintText));
         RetryLoadCommand.RaiseCanExecuteChanged();
+        SubmitCommand.RaiseCanExecuteChanged();
+        ConfirmOverStockCommand.RaiseCanExecuteChanged();
+        ReturnFromOverStockCommand.RaiseCanExecuteChanged();
         NotifyActionCommands();
     }
 
@@ -1218,8 +1681,24 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasActionError));
         OnPropertyChanged(nameof(FeedbackMessage));
         OnPropertyChanged(nameof(HasFeedback));
+        OnPropertyChanged(nameof(CloseReasonText));
+        OnPropertyChanged(nameof(HasCloseReason));
+        OnPropertyChanged(nameof(SubmissionCompletedAtText));
+        OnPropertyChanged(nameof(HasSubmissionCompletedAt));
+        OnPropertyChanged(nameof(HasOverStockConfirmation));
+        OnPropertyChanged(nameof(OverStockEffectiveStockQty));
+        OnPropertyChanged(nameof(OverStockTotalCheckedQty));
+        OnPropertyChanged(nameof(OverStockExcessQty));
+        OnPropertyChanged(nameof(OverStockMessage));
+        OnPropertyChanged(nameof(CanSubmit));
+        OnPropertyChanged(nameof(ShowSubmitFooter));
+        OnPropertyChanged(nameof(SubmissionHintText));
+        OnPropertyChanged(nameof(SubmitButtonText));
         ClearDraftCommand.RaiseCanExecuteChanged();
         RetrySaveCommand.RaiseCanExecuteChanged();
+        SubmitCommand.RaiseCanExecuteChanged();
+        ConfirmOverStockCommand.RaiseCanExecuteChanged();
+        ReturnFromOverStockCommand.RaiseCanExecuteChanged();
         NotifyActionCommands();
     }
 
@@ -1230,6 +1709,10 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OpenInventoryCommand.RaiseCanExecuteChanged();
         CancelInventoryCommand.RaiseCanExecuteChanged();
         AdjustInventoryCommand.RaiseCanExecuteChanged();
+        foreach (var item in TaskItems)
+        {
+            item.ReconfirmCommand.RaiseCanExecuteChanged();
+        }
     }
 
     private void NotifyMessages()
@@ -1260,6 +1743,10 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         IReadOnlyList<SaveItemSnapshot> Items,
         long InspectorEditVersion,
         long CheckDateEditVersion);
+
+    private sealed record OverStockFacts(
+        int EffectiveStockQty,
+        int TotalCheckedQty);
 
     private sealed record DetailInputSnapshot(
         string InspectorName,
