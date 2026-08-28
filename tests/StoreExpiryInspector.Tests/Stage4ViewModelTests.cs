@@ -282,13 +282,15 @@ public sealed class Stage4ViewModelTests
         Assert.True(shell.NavigateHomeCommand.CanExecute(null));
         Assert.True(shell.NavigateTasksCommand.CanExecute(null));
         Assert.False(shell.NavigateHistoryCommand.CanExecute(null));
-        Assert.False(shell.NavigateImportCommand.CanExecute(null));
+        Assert.True(shell.NavigateImportCommand.CanExecute(null));
         Assert.False(shell.NavigateSettingsCommand.CanExecute(null));
 
         shell.NavigateTasksCommand.Execute(null);
         Assert.Equal(ShellPage.PendingTasks, shell.CurrentPage);
         shell.NavigateHomeCommand.Execute(null);
         Assert.Equal(ShellPage.Dashboard, shell.CurrentPage);
+        shell.NavigateImportCommand.Execute(null);
+        Assert.Equal(ShellPage.Import, shell.CurrentPage);
 
         await Task.WhenAll(shell.Dashboard.LoadAsync(), shell.PendingTasks.LoadAsync());
     }

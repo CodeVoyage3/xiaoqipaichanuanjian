@@ -15,7 +15,8 @@ namespace StoreExpiryInspector.UI;
 public enum ShellPage
 {
     Dashboard,
-    PendingTasks
+    PendingTasks,
+    Import
 }
 
 public abstract class ViewModelBase : INotifyPropertyChanged
@@ -764,10 +765,15 @@ public sealed class ShellViewModel : ViewModelBase
             utcNow,
             () => NavigateTo(ShellPage.PendingTasks));
         PendingTasks = new PendingTasksViewModel(taskLoader ?? SearchTasks, logger);
+        Import = new ImportViewModel(
+            refreshDashboard: Dashboard.LoadAsync,
+            refreshPendingTasks: PendingTasks.LoadAsync,
+            logException: LogImportException,
+            utcNow: utcNow);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard));
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks));
         NavigateHistoryCommand = new RelayCommand(_ => { }, _ => false);
-        NavigateImportCommand = new RelayCommand(_ => { }, _ => false);
+        NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import));
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
         _ = Dashboard.LoadAsync();
         _ = PendingTasks.LoadAsync();
@@ -776,6 +782,8 @@ public sealed class ShellViewModel : ViewModelBase
     public DashboardViewModel Dashboard { get; }
 
     public PendingTasksViewModel PendingTasks { get; }
+
+    public ImportViewModel Import { get; }
 
     public RelayCommand NavigateHomeCommand { get; }
 
@@ -801,6 +809,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardVisible));
             OnPropertyChanged(nameof(IsPendingTasksVisible));
+            OnPropertyChanged(nameof(IsImportVisible));
             OnPropertyChanged(nameof(PageTitle));
         }
     }
@@ -809,7 +818,15 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsPendingTasksVisible => CurrentPage == ShellPage.PendingTasks;
 
-    public string PageTitle => CurrentPage == ShellPage.Dashboard ? "门店效期排查" : "待排查任务";
+    public bool IsImportVisible => CurrentPage == ShellPage.Import;
+
+    public string PageTitle => CurrentPage switch
+    {
+        ShellPage.Dashboard => "门店效期排查",
+        ShellPage.PendingTasks => "待排查任务",
+        ShellPage.Import => "数据导入",
+        _ => "门店效期排查"
+    };
 
     public void NavigateTo(ShellPage page) => CurrentPage = page;
 
@@ -829,5 +846,11 @@ public sealed class ShellViewModel : ViewModelBase
         "error",
         "ui_query_failed",
         "WPF 页面查询失败。",
+        exception.ToString());
+
+    private void LogImportException(Exception exception) => _logger.TryWrite(
+        "error",
+        "ui_import_failed",
+        "WPF 数据导入页面失败。",
         exception.ToString());
 }
