@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T04 已创建，待实现）
-- 状态：Stage 0～Stage 3 整体通过；S4-T01、S4-T02、S4-T03 已独立验收通过；S4-T04 已获批准并创建
+- 当前阶段：Stage 4｜核心排查 UI 与提交事务（S4-T04 已独立验收通过，停在 UI 设计治理门禁）
+- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T04 已独立验收通过；S4-T05 尚未创建
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -20,6 +20,7 @@
 - S4-T01 已交付 Application 层 Dashboard、开放任务列表和排查详情只读查询 DTO；真实 SQLite 专项 10/10，Release 全量 358/358，Stage 3 精确回归 170/170。
 - S4-T02 已交付 Application 层草稿 patch 保存、显式重新确认、readiness 与用户主动清空；真实 SQLite 专项 30/30，S4-T01 回归 10/10，Stage 3 精确回归 170/170。
 - S4-T03 已交付 Application 层手工库存修正、InventoryAdjustment 历史与复用 S3-T04 的 0 库存事务编排；真实 SQLite 专项 30/30，S4-T02 回归 30/30，S4-T01 回归 10/10，Stage 3 精确回归 170/170。
+- S4-T04 已交付 Application 层正式提交事务：数据库重读、完整草稿与重新确认门禁、超库存事实绑定、Inspection/Item 快照、HandledAttentionVersion、S3-T06 复用、Task completed 与有效 Draft 原子处置；专项 25/25、前置回归 70/70、Stage 3 精确回归 170/170、Release 全量 443/443。
 
 ## 冻结业务红线
 
@@ -48,9 +49,10 @@
 - S4-T01 验收：`.ai-dev/ACCEPTANCE/S4-T01.md`
 - S4-T02 验收：`.ai-dev/ACCEPTANCE/S4-T02.md`
 - S4-T03 验收：`.ai-dev/ACCEPTANCE/S4-T03.md`
+- S4-T04 验收：`.ai-dev/ACCEPTANCE/S4-T04.md`
 
 ## 下一步门禁
 
-- S4-T04 已创建并只允许 GPT-5.6 Luna（max）实现 Application 正式提交事务；未由 GPT-5.6 Sol 独立验收通过前不得创建 S4-T05。
-- 当前不得实现 WPF/ViewModel、历史编辑或其他后续阶段能力，不得修改已冻结的 HandledAttentionVersion、Draft 处置或 Stage 3 业务语义。
-- S4-T01～S4-T04 完成后、创建 S4-T05 前，必须先形成经产品治理的 Stage 4 UI/UX Pro Max 基线。
+- S4-T04 已由 GPT-5.6 Sol 正式验收通过；当前不得创建 S4-T05。
+- 下一步必须先使用 UI/UX Pro Max 完成 Stage 4 UI 设计治理并形成统一基线；基线获得用户批准后才允许创建 S4-T05。
+- 当前不得实现 WPF/ViewModel、历史编辑或其他后续阶段能力，不得修改已冻结的提交事务、HandledAttentionVersion、Draft 处置或 Stage 3 业务语义。

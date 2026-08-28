@@ -108,7 +108,7 @@
 
 ## D-014｜Stage 4 拆分与逐卡门禁
 
-- 状态：Stage 4 接任核验与 S4-T01～S4-T07 总体拆分已获用户批准；S4-T01 已由 GPT-5.6 Sol 独立验收通过，当前尚未创建 S4-T02。
+- 状态：Stage 4 接任核验与 S4-T01～S4-T07 总体拆分已获用户批准；S4-T01～S4-T04 已由 GPT-5.6 Sol 独立验收通过，当前停在 S4-T05 前 UI/UX Pro Max 设计治理门禁。
 - 顺序：S4-T01 查询、S4-T02 草稿、S4-T03 库存修正、S4-T04 正式提交、S4-T05 首页/任务列表、S4-T06 排查详情交互、S4-T07 提交 UI 与真实闭环。
 - 门禁：当前卡未经 GPT-5.6 Sol 独立验收不得创建下一卡；具体编码继续由 GPT-5.6 Luna（max）执行。
 - S4-T01：只建立 Application 只读查询 DTO，不接 WPF、不写库、不修改 Stage 3、实体、EF、migration 或依赖。
@@ -139,7 +139,7 @@
 
 ## D-018｜S4-T03 手工库存修正与商品归零编排
 
-- 状态：S4-T03 已由 GPT-5.6 Sol 独立验收通过；尚未创建 S4-T04，等待用户明确批准。
+- 状态：S4-T03 已由 GPT-5.6 Sol 独立验收通过；其后 S4-T04 已按 D-019 实现并验收。
 - 库存事实：每次真实修正新增 InventoryAdjustment，ExcelStockQtySnapshot 固定取 Product 当前 ExcelStockQty；Product 只更新 EffectiveStockQty、EffectiveStockSource=`manual` 与 UpdatedAtUtc。连续手工修正不得把上次 Effective 值伪装成 Excel 快照。
 - 同值：按重新读取的 EffectiveStockQty 判断；同值不写 Adjustment、不改时间、不触发生命周期。0 值确认门禁先于同值判断。
 - 归零：0 值必须显式确认；本卡先保存 Adjustment 与 Product=0，再在同一外层事务内只调用 S3-T04，并把本次 AdjustmentId 作为唯一来源。S4-T03 不复制归零状态机。
@@ -149,9 +149,10 @@
 
 ## D-019｜S4-T04 正式排查提交事务
 
-- 状态：任务卡已获用户批准并创建，待 GPT-5.6 Luna（max）实现；未验收前不得创建 S4-T05。
+- 状态：实现与 Sol 独立验收已通过；当前不得创建 S4-T05，必须先完成并批准 Stage 4 UI/UX Pro Max 设计治理基线。
 - 权威输入：每次 Submit 重读 Product、开放 Task/全部 Item、Batch版本、有效 Draft/Item、库存及既有 Inspection；S4-T01 DTO、S4-T02 readiness 和页面缓存均不是提交授权。
 - 提交：全部当前 Item 完整且版本三方一致、无需重新确认后，单事务创建 Inspection/全部 Item，真实调用 S3-T06 处理 0 件，更新 HandledAttentionVersion，完成 Task，并删除正常有效 DraftItem/Draft。
 - 超库存：首次只返回当前库存与合计且业务图零写入；确认必须精确绑定当前两值，任一变化使旧确认失效，不建设通用 token。
 - 幂等：completed + Inspection 返回 AlreadySubmitted；版本相等不是提交凭证。系统关闭、completed 无 Inspection 或异常残留有效 Draft 不伪装成功、不隐式修复。
+- 完成语义：正式完成只写 canonical `completed`、ClosedAtUtc 与 UpdatedAtUtc；CloseReason 保持空，不创造 `submitted` 原因码或混用 system_closed 语义。
 - 边界：只实现 Application，不接 WPF，不创建 Revision，不修改库存、AttentionVersion、Stage 3、schema/migration/依赖或 ConfirmedImportExecutor。
