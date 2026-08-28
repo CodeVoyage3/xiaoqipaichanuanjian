@@ -811,6 +811,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsPendingTasksVisible));
             OnPropertyChanged(nameof(IsImportVisible));
             OnPropertyChanged(nameof(PageTitle));
+            OnPropertyChanged(nameof(PageSubtitle));
         }
     }
 
@@ -827,6 +828,10 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.Import => "数据导入",
         _ => "门店效期排查"
     };
+
+    public string PageSubtitle => CurrentPage == ShellPage.Import
+        ? "先预览再确认 · 导入规则以 Application 结果为准"
+        : "只读查询 · 数据以 Application 结果为准";
 
     public void NavigateTo(ShellPage page) => CurrentPage = page;
 

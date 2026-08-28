@@ -121,7 +121,7 @@
                                FontSize="12"
                                Foreground="{DynamicResource SecondaryTextBrush}" />
                     <TextBlock Margin="0,4,0,0"
-                               Text="查询与任务列表"
+                               Text="查询与数据导入"
                                FontSize="12"
                                Foreground="{DynamicResource DisabledTextBrush}" />
                 </StackPanel>
@@ -141,7 +141,7 @@
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource PrimaryTextBrush}" />
                     <TextBlock Margin="0,2,0,0"
-                               Text="只读查询 · 数据以 Application 结果为准"
+                               Text="{Binding PageSubtitle}"
                                FontSize="12"
                                Foreground="{DynamicResource SecondaryTextBrush}" />
                 </StackPanel>
@@ -684,10 +684,49 @@
                                 <ItemsControl ItemsSource="{Binding Import.Preview.RowIssues}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Summary}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,3,0,3"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <StackPanel Margin="0,3,0,3">
+                                                <TextBlock Text="{Binding ExcelRowNumber, StringFormat=第 {0} 行}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding FieldName, StringFormat=字段：{0}}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding Summary}"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+                            <Expander Header="跳过行"
+                                      IsExpanded="False"
+                                      Visibility="{Binding Import.HasSkippedRows, Converter={StaticResource BoolToVisibility}}"
+                                      Margin="0,0,0,6">
+                                <ItemsControl ItemsSource="{Binding Import.Preview.SkippedRows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,3,0,3">
+                                                <TextBlock Text="{Binding ExcelRowNumber, StringFormat=第 {0} 行}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding OriginalProductCategory, StringFormat=商品大类：{0}}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+                            <Expander Header="重复行"
+                                      IsExpanded="False"
+                                      Visibility="{Binding Import.HasDuplicateRows, Converter={StaticResource BoolToVisibility}}"
+                                      Margin="0,0,0,6">
+                                <ItemsControl ItemsSource="{Binding Import.Preview.DuplicateRows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                <TextBlock Text="{Binding DuplicateRowNumber, StringFormat=第 {0} 行与第 }"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding RepresentativeRowNumber, StringFormat={}{0} 行重复}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -699,10 +738,17 @@
                                 <ItemsControl ItemsSource="{Binding Import.Preview.PlanningIssues}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding SafeSummary}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,3,0,3"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <StackPanel Margin="0,3,0,3">
+                                                <TextBlock Text="{Binding ProductCode, StringFormat=商品编码：{0}}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding ExcelRowNumber, StringFormat=行号：{0}}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding FieldName, StringFormat=字段：{0}}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding SafeSummary}"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -716,7 +762,14 @@
                                         <DataTemplate>
                                             <StackPanel Margin="0,3,0,3">
                                                 <TextBlock Text="{Binding BatchKey.ProductCode, StringFormat=商品编码：{0}}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                                <TextBlock Text="{Binding DifferingFields, StringFormat=差异字段：{0}}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <ItemsControl ItemsSource="{Binding DifferingFields}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding StringFormat=差异字段：{0}}"
+                                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -728,9 +781,31 @@
                                 <ItemsControl ItemsSource="{Binding Import.Preview.StockConflicts}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding ProductCode, StringFormat=商品编码：{0}}"
-                                                       Margin="0,3,0,3"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <StackPanel Margin="0,3,0,3">
+                                                <TextBlock Text="{Binding ProductCode, StringFormat=商品编码：{0}}"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <ItemsControl ItemsSource="{Binding Values}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding Value, StringFormat=库存值：{0}；行号：}"
+                                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                                <ItemsControl ItemsSource="{Binding RowNumbers}">
+                                                                    <ItemsControl.ItemsPanel>
+                                                                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                                                                    </ItemsControl.ItemsPanel>
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding StringFormat={}{0} }"
+                                                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

@@ -44,11 +44,68 @@ public sealed class S4T06ImportViewModelTests
     }
 
     [Fact]
+    public async Task CancellingSelectionKeepsTheCurrentPreviewWithoutParsingAgain()
+    {
+        using var fixture = TestFixture.Create();
+        var parseCount = 0;
+        var vm = new ImportViewModel(parsePreview: path =>
+        {
+            parseCount++;
+            return fixture.Coordinator.Parse(path);
+        });
+        await vm.SelectFileAsync(fixture.Path);
+        var identity = vm.PreviewIdentity;
+
+        Assert.False(vm.TrySelectFile(null));
+
+        Assert.Equal(1, parseCount);
+        Assert.Same(identity, vm.PreviewIdentity);
+        Assert.True(vm.CanConfirm);
+        Assert.Equal(ImportPageState.PreviewReady, vm.State);
+    }
+
+    [Fact]
+    public async Task AcceptingNewWorkbookInvalidatesOldIdentityBeforeTheNewReadCompletes()
+    {
+        using var fixture = TestFixture.Create();
+        var secondPath = fixture.CreateWorkbook("B.xlsx", includeRow: true, productCode: "P-B");
+        var secondReadStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSecondRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var vm = new ImportViewModel(parsePreview: path =>
+        {
+            if (string.Equals(path, Path.GetFullPath(secondPath), StringComparison.OrdinalIgnoreCase))
+            {
+                secondReadStarted.SetResult();
+                releaseSecondRead.Task.GetAwaiter().GetResult();
+            }
+
+            return fixture.Coordinator.Parse(path);
+        });
+        await vm.SelectFileAsync(fixture.Path);
+        Assert.True(vm.CanConfirm);
+
+        var secondTask = vm.SelectFileAsync(secondPath);
+        await secondReadStarted.Task;
+
+        Assert.Equal("B.xlsx", vm.SelectedFileName);
+        Assert.Equal(ImportPageState.Parsing, vm.State);
+        Assert.Null(vm.PreviewIdentity);
+        Assert.Null(vm.ConfirmationContract);
+        Assert.False(vm.CanConfirm);
+        Assert.False(vm.ConfirmCommand.CanExecute(null));
+
+        releaseSecondRead.SetResult();
+        await secondTask;
+        Assert.Equal(Path.GetFullPath(secondPath), vm.PreviewIdentity!.SourceFilePath);
+    }
+
+    [Fact]
     public async Task AcceptedNewWorkbookImmediatelyInvalidatesOldPreviewWhenNewReadFails()
     {
         using var fixture = TestFixture.Create();
         var firstPath = fixture.Path;
         var secondPath = fixture.CreateWorkbook("B.xlsx", includeRow: false);
+        var executeCount = 0;
         var vm = new ImportViewModel(
             parsePreview: path =>
             {
@@ -58,6 +115,11 @@ public sealed class S4T06ImportViewModelTests
                 }
 
                 return fixture.Coordinator.Parse(path);
+            },
+            executeImport: (_, _) =>
+            {
+                executeCount++;
+                throw new InvalidOperationException("must not execute");
             });
 
         await vm.SelectFileAsync(firstPath);
@@ -74,6 +136,35 @@ public sealed class S4T06ImportViewModelTests
         Assert.NotSame(firstIdentity, vm.PreviewIdentity);
         Assert.Contains("Excel 文件格式无效", vm.ErrorMessage);
         Assert.False(vm.ConfirmCommand.CanExecute(null));
+
+        await vm.ConfirmAsync();
+        Assert.Equal(0, executeCount);
+    }
+
+    [Fact]
+    public async Task SuccessfulSecondPreviewCanOnlyImportTheSecondWorkbook()
+    {
+        using var fixture = TestFixture.Create();
+        var secondPath = fixture.CreateWorkbook("B.xlsx", includeRow: true, productCode: "P-B");
+        var vm = new ImportViewModel(
+            parsePreview: fixture.Coordinator.Parse,
+            confirmPreview: fixture.Coordinator.Confirm,
+            executeImport: fixture.Coordinator.Execute,
+            utcNow: () => fixture.UtcNow);
+
+        await vm.SelectFileAsync(fixture.Path);
+        var firstIdentity = vm.PreviewIdentity;
+        await vm.SelectFileAsync(secondPath);
+
+        Assert.NotSame(firstIdentity, vm.PreviewIdentity);
+        Assert.Equal(Path.GetFullPath(secondPath), vm.PreviewIdentity!.SourceFilePath);
+        await vm.ConfirmAsync();
+
+        Assert.Equal(ImportPageState.Succeeded, vm.State);
+        using var context = fixture.Database.Open();
+        Assert.Equal("B.xlsx", context.Imports.AsNoTracking().Single().SourceFileName);
+        Assert.Equal("B.xlsx", context.ImportWorkbooks.AsNoTracking().Single().OriginalFileName);
+        Assert.Equal("P-B", context.Products.AsNoTracking().Single().ProductCode);
     }
 
     [Fact]
@@ -133,6 +224,140 @@ public sealed class S4T06ImportViewModelTests
         Assert.False(vm.CanConfirm);
         Assert.Null(vm.ConfirmationContract);
         Assert.Equal(0, executeCount);
+    }
+
+    [Fact]
+    public async Task WorkbookWithoutChangesShowsNoChangesAndCannotConfirm()
+    {
+        using var fixture = TestFixture.Create();
+        var emptyPath = fixture.CreateWorkbook("empty.xlsx", includeRow: false);
+        var vm = new ImportViewModel(parsePreview: fixture.Coordinator.Parse);
+
+        await vm.SelectFileAsync(emptyPath);
+
+        Assert.Equal(ImportPageState.NoChanges, vm.State);
+        Assert.True(vm.HasPreview);
+        Assert.False(vm.HasChanges);
+        Assert.False(vm.CanConfirm);
+        Assert.False(vm.ConfirmCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ParseFailureCanRetryAndBuildsANewPreview()
+    {
+        using var fixture = TestFixture.Create();
+        var parseCount = 0;
+        var vm = new ImportViewModel(parsePreview: path =>
+        {
+            parseCount++;
+            if (parseCount == 1)
+            {
+                throw new IOException("locked");
+            }
+
+            return fixture.Coordinator.Parse(path);
+        });
+
+        await vm.SelectFileAsync(fixture.Path);
+        Assert.Equal(ImportPageState.Failed, vm.State);
+        Assert.True(vm.CanRetry);
+        Assert.Null(vm.PreviewIdentity);
+
+        await vm.RetryAsync();
+
+        Assert.Equal(2, parseCount);
+        Assert.Equal(ImportPageState.PreviewReady, vm.State);
+        Assert.True(vm.CanConfirm);
+        Assert.NotNull(vm.PreviewIdentity);
+    }
+
+    [Fact]
+    public async Task ExecutionFailureRetriesThroughTheGuardAndThenSucceeds()
+    {
+        using var fixture = TestFixture.Create();
+        var confirmCount = 0;
+        var executeCount = 0;
+        var vm = new ImportViewModel(
+            parsePreview: fixture.Coordinator.Parse,
+            confirmPreview: identity =>
+            {
+                confirmCount++;
+                return fixture.Coordinator.Confirm(identity);
+            },
+            executeImport: (contract, parsedAtUtc) =>
+            {
+                executeCount++;
+                if (executeCount == 1)
+                {
+                    throw new IOException("temporary failure");
+                }
+
+                return fixture.Coordinator.Execute(contract, parsedAtUtc);
+            },
+            utcNow: () => fixture.UtcNow);
+
+        await vm.SelectFileAsync(fixture.Path);
+        await vm.ConfirmAsync();
+        Assert.Equal(ImportPageState.Failed, vm.State);
+        Assert.Equal("execution_failed", vm.LastCode);
+        Assert.True(vm.CanRetry);
+
+        await vm.RetryAsync();
+
+        Assert.Equal(2, confirmCount);
+        Assert.Equal(2, executeCount);
+        Assert.Equal(ImportPageState.Succeeded, vm.State);
+    }
+
+    [Fact]
+    public async Task CriticalStateChangesRaisePropertyChanged()
+    {
+        using var fixture = TestFixture.Create();
+        var changed = new HashSet<string>(StringComparer.Ordinal);
+        var vm = new ImportViewModel(parsePreview: fixture.Coordinator.Parse);
+        vm.PropertyChanged += (_, args) => changed.Add(args.PropertyName ?? string.Empty);
+
+        await vm.SelectFileAsync(fixture.Path);
+
+        Assert.Contains(nameof(ImportViewModel.State), changed);
+        Assert.Contains(nameof(ImportViewModel.IsLoading), changed);
+        Assert.Contains(nameof(ImportViewModel.CanConfirm), changed);
+        Assert.Contains(nameof(ImportViewModel.SelectedFileName), changed);
+        Assert.Contains(nameof(ImportViewModel.PreviewIdentity), changed);
+        Assert.Contains(nameof(ImportViewModel.HasPreview), changed);
+    }
+
+    [Fact]
+    public async Task ConcurrentConfirmAttemptsExecuteOnlyOnce()
+    {
+        using var fixture = TestFixture.Create();
+        var executeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseExecute = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var executeCount = 0;
+        var vm = new ImportViewModel(
+            parsePreview: fixture.Coordinator.Parse,
+            confirmPreview: fixture.Coordinator.Confirm,
+            executeImport: (contract, parsedAtUtc) =>
+            {
+                executeCount++;
+                executeStarted.SetResult();
+                releaseExecute.Task.GetAwaiter().GetResult();
+                return fixture.Coordinator.Execute(contract, parsedAtUtc);
+            },
+            utcNow: () => fixture.UtcNow);
+        await vm.SelectFileAsync(fixture.Path);
+
+        var firstConfirm = vm.ConfirmAsync();
+        await executeStarted.Task;
+        var secondConfirm = vm.ConfirmAsync();
+        await secondConfirm;
+        Assert.Equal(1, executeCount);
+        Assert.False(vm.CanConfirm);
+
+        releaseExecute.SetResult();
+        await firstConfirm;
+        Assert.Equal(1, executeCount);
+        Assert.Equal(ImportPageState.Succeeded, vm.State);
     }
 
     [Fact]

@@ -268,7 +268,8 @@ public sealed class ImportViewModel : ViewModelBase
 
     public string ChangeStatusText => HasChanges ? "有变化，可确认导入" : "无变化，无需确认导入";
 
-    public bool HasWarningDetails => RowIssueCount > 0
+    public bool HasWarningDetails => SkippedRowCount > 0
+        || RowIssueCount > 0
         || DuplicateRowCount > 0
         || BatchConflictCount > 0
         || StockConflictCount > 0
@@ -276,15 +277,19 @@ public sealed class ImportViewModel : ViewModelBase
 
     public bool HasRowIssues => RowIssueCount > 0;
 
+    public bool HasSkippedRows => SkippedRowCount > 0;
+
+    public bool HasDuplicateRows => DuplicateRowCount > 0;
+
     public bool HasPlanningIssues => PlanningIssueCount > 0;
 
     public bool HasBatchConflicts => BatchConflictCount > 0;
 
     public bool HasStockConflicts => StockConflictCount > 0;
 
-    public bool TrySelectFile(string sourceFilePath)
+    public bool TrySelectFile(string? sourceFilePath)
     {
-        if (!CanSelectFile)
+        if (!CanSelectFile || string.IsNullOrWhiteSpace(sourceFilePath))
         {
             return false;
         }
@@ -370,9 +375,11 @@ public sealed class ImportViewModel : ViewModelBase
         }
     }
 
-    public async Task ConfirmAsync()
+    public Task ConfirmAsync() => ConfirmAsync(isRetry: false);
+
+    private async Task ConfirmAsync(bool isRetry)
     {
-        if (!CanConfirm || IsLoading || _previewIdentity is null)
+        if ((!isRetry && !CanConfirm) || IsLoading || _previewIdentity is null)
         {
             return;
         }
@@ -494,7 +501,7 @@ public sealed class ImportViewModel : ViewModelBase
             return;
         }
 
-        await ConfirmAsync();
+        await ConfirmAsync(isRetry: true);
     }
 
     private async Task RefreshPagesAsync(int version)
@@ -640,6 +647,8 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasPreview));
         OnPropertyChanged(nameof(HasWarningDetails));
         OnPropertyChanged(nameof(HasRowIssues));
+        OnPropertyChanged(nameof(HasSkippedRows));
+        OnPropertyChanged(nameof(HasDuplicateRows));
         OnPropertyChanged(nameof(HasPlanningIssues));
         OnPropertyChanged(nameof(HasBatchConflicts));
         OnPropertyChanged(nameof(HasStockConflicts));
