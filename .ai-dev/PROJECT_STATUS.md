@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜S4-T05 已独立验收通过，停止并等待剩余任务重新拆分
-- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T05 已独立验收通过；UI/UX Pro Max 基线已批准并归档；未创建任何后续任务
+- 当前阶段：Stage 4｜S4-T06 已独立验收通过，停止等待下一步批准
+- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T06 已独立验收通过；未创建 S4-T07 或任何后续任务
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -15,13 +15,14 @@
 - Stage 2：固定模板只读解析、局部增量规划、确认守卫、安全快照、原子导入、Workbook 保留与最新 Import 撤销资格。
 - Stage 3：纯效期计算、商品任务聚合、启动补算、商品归零、新批次/新到货/恢复、正式 0 件停止、原子导入后置编排和真实 WPF 启动接入。
 - canonical phase：`none / discount_50 / discount_20 / withdraw / expired`。
-- 当前 Release 全量 458/458；Stage 3 精确证据 170/170；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。
+- 当前 Release 全量 474/474；Stage 3 精确证据 170/170；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。
 - Release EXE 已实际启动验收：主窗口正常；新空库完成 migration、写入 `last_normal_run_date` 与启动完成日志。
 - S4-T01 已交付 Application 层 Dashboard、开放任务列表和排查详情只读查询 DTO；真实 SQLite 专项 10/10，Release 全量 358/358，Stage 3 精确回归 170/170。
 - S4-T02 已交付 Application 层草稿 patch 保存、显式重新确认、readiness 与用户主动清空；真实 SQLite 专项 30/30，S4-T01 回归 10/10，Stage 3 精确回归 170/170。
 - S4-T03 已交付 Application 层手工库存修正、InventoryAdjustment 历史与复用 S3-T04 的 0 库存事务编排；真实 SQLite 专项 30/30，S4-T02 回归 30/30，S4-T01 回归 10/10，Stage 3 精确回归 170/170。
 - S4-T04 已交付 Application 层正式提交事务：数据库重读、完整草稿与重新确认门禁、超库存事实绑定、Inspection/Item 快照、HandledAttentionVersion、S3-T06 复用、Task completed 与有效 Draft 原子处置；专项 25/25、前置回归 70/70、Stage 3 精确回归 170/170、Release 全量 443/443。
 - S4-T05 已交付最小 WPF Shell、首页、待排查任务列表及最近成功导入时间只读契约；专项 25/25，S4-T01～T05 精确回归 110/110，Stage 3 精确回归 170/170，Release 全量 458/458。真实 Release WPF 已验证首页/列表/搜索/空状态/disabled导航/Ctrl+F/默认与最大化布局；当前 Windows 150% DPI 下可用。
+- S4-T06 已把既有 Excel 解析、校验、确认守卫与原子生命周期导入接入真实 WPF；专项 UI 回归 28/28，S4-T01～T06 精确回归 126/126，Stage 3 精确回归 170/170，Release 全量 474/474。真实 Release WPF 已验证选择/取消/P0 身份失效/错误/Loading/确认及 Dashboard、任务列表即时刷新。
 
 ## 冻结业务红线
 
@@ -36,7 +37,7 @@
 
 - `ConfirmedImportExecutor.cs` 为 1,154 行；职责仍限于 Stage 2 持久化及外层事务参与，禁止再加入 Stage 3/4 规则。
 - `ConfirmedImportLifecycleOrchestrator.cs` 为 467 行；当前只冻结/映射明确事实、调用 S3-T04/S3-T05 与拥有事务，无阻断级 God Service 债务。
-- 当前 WPF 主窗已具备 S4-T05 Shell、首页和待排查列表；排查详情、草稿、库存修正、数据导入与正式提交 UI 仍不存在，不得把相关业务放进 ViewModel/code-behind。
+- 当前 WPF 主窗已具备 Shell、首页、待排查列表和数据导入；排查详情、草稿、库存修正与正式提交 UI 仍不存在，不得把相关业务放进 ViewModel/code-behind。
 - migration 前完整可恢复流程、安装、完整备份恢复、Windows 门店实机和 10 万批次/30 万历史性能仍待后续阶段。
 - S3-T06 的多轮历史修订时序属于 Stage 5，不得在 Stage 4 顺带实现历史编辑。
 - `HandledAttentionVersion` 已冻结为正式排查处理水位，只能在正式提交事务更新；正常成功提交在同一事务删除有效 DraftItem/Draft，系统失效 Draft 永久保留。
@@ -51,9 +52,11 @@
 - S4-T02 验收：`.ai-dev/ACCEPTANCE/S4-T02.md`
 - S4-T03 验收：`.ai-dev/ACCEPTANCE/S4-T03.md`
 - S4-T04 验收：`.ai-dev/ACCEPTANCE/S4-T04.md`
+- S4-T05 验收：`.ai-dev/ACCEPTANCE/S4-T05.md`
+- S4-T06 验收：`.ai-dev/ACCEPTANCE/S4-T06.md`
 
 ## 下一步门禁
 
-- S4-T05 验收见 `.ai-dev/ACCEPTANCE/S4-T05.md`；本卡通过后按用户要求立即停止，不自动创建下一任务。
-- 下一轮先基于真实仓库重新拆分排查详情、数据导入 UI、正式提交 UI 与 Stage 4 Release 完整人工闭环；当前不创建、不编号、不派发。
+- S4-T06 验收见 `.ai-dev/ACCEPTANCE/S4-T06.md`；本卡通过后按用户要求立即停止，不自动创建 S4-T07。
+- 精确 1024×600 截图、恰好 125% 缩放与在线 NuGet 漏洞审计继续保留为 Stage 4 最终实机闭环项，不伪造完成。
 - 当前不得修改已冻结的 S4-T01～T04、HandledAttentionVersion、Draft处置、Stage 3业务语义，或提前进入 Stage 5+。
