@@ -65,6 +65,48 @@
                            VerticalAlignment="Center" />
             </Border>
         </DataTemplate>
+
+        <DataTemplate x:Key="DetailStageBadgeTemplate">
+            <Border Padding="6,2"
+                    Height="24"
+                    HorizontalAlignment="Left"
+                    CornerRadius="4"
+                    BorderThickness="1">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="#F1F5F9" />
+                        <Setter Property="BorderBrush" Value="#CBD5E1" />
+                        <Setter Property="TextElement.Foreground" Value="#475569" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Stage}" Value="expired">
+                                <Setter Property="Background" Value="#FDECEC" />
+                                <Setter Property="BorderBrush" Value="#E5A3A8" />
+                                <Setter Property="TextElement.Foreground" Value="#A4262C" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Stage}" Value="withdraw">
+                                <Setter Property="Background" Value="#FFF0E5" />
+                                <Setter Property="BorderBrush" Value="#F2B58B" />
+                                <Setter Property="TextElement.Foreground" Value="#9A3412" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Stage}" Value="discount_20">
+                                <Setter Property="Background" Value="#FFF8D6" />
+                                <Setter Property="BorderBrush" Value="#E5CE70" />
+                                <Setter Property="TextElement.Foreground" Value="#7A5900" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Stage}" Value="discount_50">
+                                <Setter Property="Background" Value="#EAF2FF" />
+                                <Setter Property="BorderBrush" Value="#9FC1F5" />
+                                <Setter Property="TextElement.Foreground" Value="#1D4ED8" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding Stage, Converter={StaticResource StageLabelConverter}}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+            </Border>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -313,6 +355,19 @@
                                     <DataGridTextColumn Header="最近有效日期"
                                                          Binding="{Binding NearestExpiryDate, Converter={StaticResource DateOnlyDisplayConverter}}"
                                                          Width="120" />
+                                    <DataGridTemplateColumn Header="操作" Width="88">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="去排查"
+                                                        Command="{Binding DataContext.OpenDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        Height="32"
+                                                        Padding="8,0"
+                                                        Margin="0" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </StackPanel>
@@ -433,6 +488,19 @@
                             <DataGridTextColumn Header="最近有效日期"
                                                  Binding="{Binding NearestExpiryDate, Converter={StaticResource DateOnlyDisplayConverter}}"
                                                  Width="120" />
+                            <DataGridTemplateColumn Header="操作" Width="88">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="去排查"
+                                                Command="{Binding DataContext.OpenDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Height="32"
+                                                Padding="8,0"
+                                                Margin="0" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -451,6 +519,376 @@
                                     IsEnabled="{Binding PendingTasks.CanGoNext}"
                                     Margin="0" />
                         </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <Grid Visibility="{Binding IsInspectionDetailVisible, Converter={StaticResource BoolToVisibility}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0"
+                          Margin="0,8,0,10"
+                          Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Content="返回"
+                                Command="{Binding Detail.BackCommand}"
+                                Margin="0,0,14,0" />
+                        <StackPanel Grid.Column="1">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Detail.ProductName}"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                                <ContentControl Content="{Binding Detail}"
+                                                ContentTemplate="{StaticResource DetailStageBadgeTemplate}"
+                                                Margin="12,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="{Binding Detail.ProductCode, StringFormat=商品编码：{0}}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="{Binding Detail.ProductBarcode, StringFormat=条码：{0}}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="有效库存"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <TextBlock Text="{Binding Detail.EffectiveStockQty}"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="待排查批次"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <TextBlock Text="{Binding Detail.PendingBatchCount}"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                            </StackPanel>
+                            <Button Content="修正库存"
+                                    Command="{Binding Detail.OpenInventoryCommand}"
+                                    Margin="0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1"
+                            Padding="12"
+                            Margin="0,0,0,10"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Visibility="{Binding Detail.IsInventoryEditorVisible, Converter={StaticResource BoolToVisibility}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="修正为"
+                                       VerticalAlignment="Center"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="0,0,8,0" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding Detail.InventoryText, UpdateSourceTrigger=PropertyChanged}"
+                                     HorizontalContentAlignment="Right"
+                                     ToolTip="请输入非负整数" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding Detail.InventoryError}"
+                                       Foreground="#A4262C"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0" />
+                            <Button Grid.Column="3"
+                                    Content="取消"
+                                    Command="{Binding Detail.CancelInventoryCommand}"
+                                    Margin="8,0,8,0" />
+                            <Button Grid.Column="4"
+                                    Content="保存修正"
+                                    Command="{Binding Detail.AdjustInventoryCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Margin="0" />
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="2"
+                          Margin="0,0,0,8"
+                          Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="检查人"
+                                       VerticalAlignment="Center"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="0,0,8,0" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding Detail.InspectorName, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding Detail.CanEdit}" />
+                            <TextBlock Grid.Column="2"
+                                       Text="检查日期"
+                                       VerticalAlignment="Center"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="16,0,8,0" />
+                            <DatePicker Grid.Column="3"
+                                        SelectedDate="{Binding Detail.CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        SelectedDateFormat="Short"
+                                        IsEnabled="{Binding Detail.CanEdit}" />
+                            <StackPanel Grid.Column="5"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Detail.DraftStatusText}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           Margin="0,0,12,0" />
+                                <TextBlock Text="{Binding Detail.SaveStatusText}"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           Margin="0,0,8,0" />
+                                <Button Content="重试"
+                                        Command="{Binding Detail.RetrySaveCommand}"
+                                        Visibility="{Binding Detail.SaveFailed, Converter={StaticResource BoolToVisibility}}"
+                                        Margin="0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Grid.Row="1"
+                              Background="{DynamicResource SurfaceSubtleBrush}"
+                              Margin="0,0,0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="92" />
+                                <ColumnDefinition Width="92" />
+                                <ColumnDefinition Width="76" />
+                                <ColumnDefinition Width="86" />
+                                <ColumnDefinition Width="126" />
+                                <ColumnDefinition Width="108" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="生产日期" Grid.Column="0" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="有效日期" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="阶段" Grid.Column="2" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="累计到货" Grid.Column="3" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="上次排查" Grid.Column="4" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="本次件数" Grid.Column="5" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="状态 / 动作" Grid.Column="6" Margin="8,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="2"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding Detail.TaskItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="0,6"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="0,0,0,1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding RequiresReconfirmation}" Value="True">
+                                                                <Setter Property="Background" Value="#F4ECFB" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding HasInputError}" Value="True">
+                                                                <Setter Property="Background" Value="#FDECEC" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid MinHeight="48">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="92" />
+                                                        <ColumnDefinition Width="92" />
+                                                        <ColumnDefinition Width="76" />
+                                                        <ColumnDefinition Width="86" />
+                                                        <ColumnDefinition Width="126" />
+                                                        <ColumnDefinition Width="108" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding ProductionDate, Converter={StaticResource DateOnlyDisplayConverter}}"
+                                                               Margin="8,0"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding ExpiryDate, Converter={StaticResource DateOnlyDisplayConverter}}"
+                                                               Margin="8,0"
+                                                               VerticalAlignment="Center" />
+                                                    <ContentControl Grid.Column="2"
+                                                                    Content="{Binding}"
+                                                                    ContentTemplate="{StaticResource DetailStageBadgeTemplate}"
+                                                                    VerticalAlignment="Center"
+                                                                    Margin="8,0" />
+                                                    <TextBlock Grid.Column="3"
+                                                               Text="{Binding CurrentArrivalQty}"
+                                                               Margin="8,0"
+                                                               VerticalAlignment="Center"
+                                                               TextAlignment="Right" />
+                                                    <TextBlock Grid.Column="4"
+                                                               Text="{Binding LastInspectionText}"
+                                                               Margin="8,0"
+                                                               VerticalAlignment="Center"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBox Grid.Column="5"
+                                                             Text="{Binding CheckedQtyText, UpdateSourceTrigger=PropertyChanged}"
+                                                             Margin="8,0"
+                                                             HorizontalContentAlignment="Right"
+                                                             IsEnabled="{Binding DataContext.Detail.CanEdit, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             ToolTip="空白=未检查；0=现场无该批次" />
+                                                    <StackPanel Grid.Column="6"
+                                                                Orientation="Horizontal"
+                                                                VerticalAlignment="Center"
+                                                                Margin="8,0">
+                                                        <TextBlock Text="{Binding CheckedQtyStateText}"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                                   Margin="0,0,8,0" />
+                                                        <TextBlock Text="效期阶段或到货情况已更新，请重新确认"
+                                                                   Visibility="{Binding RequiresReconfirmation, Converter={StaticResource BoolToVisibility}}"
+                                                                   Foreground="#6B3FA0"
+                                                                   TextWrapping="Wrap"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0" />
+                                                        <Button Content="重新确认"
+                                                                Command="{Binding ReconfirmCommand}"
+                                                                Visibility="{Binding RequiresReconfirmation, Converter={StaticResource BoolToVisibility}}"
+                                                                Margin="0" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Expander Header="{Binding Detail.NormalBatchCount, StringFormat=其他正常批次（{0}）}"
+                                          IsExpanded="False"
+                                          Visibility="{Binding Detail.HasNormalBatches, Converter={StaticResource BoolToVisibility}}"
+                                          Margin="0,10,0,0">
+                                    <ItemsControl ItemsSource="{Binding Detail.NormalBatches}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid MinHeight="36" Margin="0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="120" />
+                                                        <ColumnDefinition Width="120" />
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="120" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding ProductionDate, Converter={StaticResource DateOnlyDisplayConverter}}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding ExpiryDate, Converter={StaticResource DateOnlyDisplayConverter}}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding CurrentStage, Converter={StaticResource StageLabelConverter}}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding CurrentArrivalQty}" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Expander>
+                                <TextBlock Text="{Binding Detail.ActionErrorMessage}"
+                                           Visibility="{Binding Detail.HasActionError, Converter={StaticResource BoolToVisibility}}"
+                                           Foreground="#A4262C"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding Detail.FeedbackMessage}"
+                                           Visibility="{Binding Detail.HasFeedback, Converter={StaticResource BoolToVisibility}}"
+                                           Foreground="#16794C"
+                                           Margin="0,8,0,0" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding Detail.IsTerminal, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{Binding Detail.StatusMessage}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+                        <TextBlock Text="请返回来源页面继续操作。"
+                                   Margin="0,8,0,16"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <Button Content="返回"
+                                Command="{Binding Detail.BackCommand}"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Margin="0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding Detail.HasError, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{Binding Detail.ErrorMessage}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#A4262C" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                            <Button Content="重试"
+                                    Command="{Binding Detail.RetryLoadCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button Content="返回"
+                                    Command="{Binding Detail.BackCommand}"
+                                    Margin="8,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2"
+                               Text="正在加载…"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="16"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               Visibility="{Binding Detail.IsLoading, Converter={StaticResource BoolToVisibility}}" />
+
+                    <Grid Grid.Row="3"
+                          Margin="0,4,0,16"
+                          Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="检查数量仅保存草稿；正式提交功能将在后续任务接入。"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <Button Grid.Column="1"
+                                Content="清空草稿"
+                                Command="{Binding Detail.ClearDraftCommand}"
+                                Margin="0" />
                     </Grid>
                 </Grid>
 

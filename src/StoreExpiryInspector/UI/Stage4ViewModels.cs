@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
@@ -16,7 +17,8 @@ public enum ShellPage
 {
     Dashboard,
     PendingTasks,
-    Import
+    Import,
+    InspectionDetail
 }
 
 public abstract class ViewModelBase : INotifyPropertyChanged
@@ -747,12 +749,16 @@ public sealed class ShellViewModel : ViewModelBase
 {
     private readonly LocalFileLogger _logger;
     private ShellPage _currentPage;
+    private ShellPage _detailReturnPage = ShellPage.Dashboard;
 
     public ShellViewModel(
         Func<InspectionDashboardResult>? dashboardLoader = null,
         Func<InspectionTaskSearchRequest, InspectionTaskSearchResult>? taskLoader = null,
         Action<Exception>? logException = null,
-        Func<DateTime>? utcNow = null)
+        Func<DateTime>? utcNow = null,
+        Func<long, InspectionTaskDetailResult>? detailLoader = null,
+        Func<bool>? confirmClearDraft = null,
+        Func<bool>? confirmZeroInventory = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -770,11 +776,31 @@ public sealed class ShellViewModel : ViewModelBase
             refreshPendingTasks: PendingTasks.LoadAsync,
             logException: LogImportException,
             utcNow: utcNow);
+        Detail = new InspectionDetailViewModel(
+            loadDetail: detailLoader ?? LoadDetail,
+            saveDraft: SaveDraft,
+            reconfirmItem: ReconfirmItem,
+            clearDraft: ClearDraft,
+            adjustInventory: AdjustInventory,
+            refreshDashboard: Dashboard.LoadAsync,
+            refreshPendingTasks: PendingTasks.LoadAsync,
+            logException: logger,
+            utcNow: utcNow,
+            confirmClearDraft: confirmClearDraft,
+            confirmZeroInventory: confirmZeroInventory,
+            goBack: ReturnFromDetailAsync);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard));
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks));
         NavigateHistoryCommand = new RelayCommand(_ => { }, _ => false);
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import));
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
+        OpenDetailCommand = new RelayCommand(parameter =>
+        {
+            if (parameter is InspectionTaskListItem item)
+            {
+                OpenDetail(item.TaskId);
+            }
+        });
         _ = Dashboard.LoadAsync();
         _ = PendingTasks.LoadAsync();
     }
@@ -785,6 +811,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public ImportViewModel Import { get; }
 
+    public InspectionDetailViewModel Detail { get; }
+
     public RelayCommand NavigateHomeCommand { get; }
 
     public RelayCommand NavigateTasksCommand { get; }
@@ -794,6 +822,8 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand NavigateImportCommand { get; }
 
     public RelayCommand NavigateSettingsCommand { get; }
+
+    public RelayCommand OpenDetailCommand { get; }
 
     public ShellPage CurrentPage
     {
@@ -810,6 +840,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsDashboardVisible));
             OnPropertyChanged(nameof(IsPendingTasksVisible));
             OnPropertyChanged(nameof(IsImportVisible));
+            OnPropertyChanged(nameof(IsInspectionDetailVisible));
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(PageSubtitle));
         }
@@ -821,19 +852,61 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsImportVisible => CurrentPage == ShellPage.Import;
 
+    public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
+
     public string PageTitle => CurrentPage switch
     {
         ShellPage.Dashboard => "门店效期排查",
         ShellPage.PendingTasks => "待排查任务",
         ShellPage.Import => "数据导入",
+        ShellPage.InspectionDetail => "排查详情",
         _ => "门店效期排查"
     };
 
-    public string PageSubtitle => CurrentPage == ShellPage.Import
-        ? "先预览再确认 · 导入规则以 Application 结果为准"
-        : "只读查询 · 数据以 Application 结果为准";
+    public string PageSubtitle => CurrentPage switch
+    {
+        ShellPage.Import => "先预览再确认 · 导入规则以 Application 结果为准",
+        ShellPage.InspectionDetail => "检查信息自动保存 · 数据以 Application 结果为准",
+        _ => "只读查询 · 数据以 Application 结果为准"
+    };
 
-    public void NavigateTo(ShellPage page) => CurrentPage = page;
+    public void NavigateTo(ShellPage page)
+    {
+        if (CurrentPage == ShellPage.InspectionDetail && page != ShellPage.InspectionDetail)
+        {
+            _ = NavigateAwayFromDetailAsync(page);
+            return;
+        }
+
+        CurrentPage = page;
+    }
+
+    public void OpenDetail(long taskId)
+    {
+        if (taskId <= 0 || CurrentPage == ShellPage.InspectionDetail)
+        {
+            return;
+        }
+
+        _detailReturnPage = CurrentPage == ShellPage.PendingTasks
+            ? ShellPage.PendingTasks
+            : ShellPage.Dashboard;
+        CurrentPage = ShellPage.InspectionDetail;
+        _ = Detail.LoadAsync(taskId);
+    }
+
+    private async Task ReturnFromDetailAsync() =>
+        await NavigateAwayFromDetailAsync(_detailReturnPage);
+
+    private async Task NavigateAwayFromDetailAsync(ShellPage page)
+    {
+        if (!await Detail.WaitForStableSaveAsync())
+        {
+            return;
+        }
+
+        CurrentPage = page;
+    }
 
     private static InspectionDashboardResult LoadDashboard()
     {
@@ -845,6 +918,36 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = DatabaseInitializer.CreateContext();
         return new InspectionTaskQuery().SearchOpenTasks(context, request);
+    }
+
+    private static InspectionTaskDetailResult LoadDetail(long taskId)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionTaskQuery().GetDetail(context, taskId);
+    }
+
+    private static SaveDraftResult SaveDraft(SaveDraftRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionDraftUseCase().SaveDraft(context, request);
+    }
+
+    private static ReconfirmItemResult ReconfirmItem(ReconfirmItemRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionDraftUseCase().ReconfirmItem(context, request);
+    }
+
+    private static ClearDraftResult ClearDraft(ClearDraftRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionDraftUseCase().ClearDraft(context, request);
+    }
+
+    private static ManualInventoryAdjustmentResult AdjustInventory(ManualInventoryAdjustmentRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new ManualInventoryAdjustmentUseCase().Execute(context, request);
     }
 
     private void LogException(Exception exception) => _logger.TryWrite(
