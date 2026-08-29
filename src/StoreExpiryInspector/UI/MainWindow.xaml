@@ -113,7 +113,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="ShellColumn" Width="208" />
+            <ColumnDefinition x:Name="ShellColumn" Width="224" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -128,7 +128,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Margin="20,24,16,24" Orientation="Horizontal">
+                <StackPanel Margin="16,24,12,24" Orientation="Horizontal">
                     <Border Width="32"
                             Height="32"
                             Background="{DynamicResource PrimaryActionBrush}"
@@ -139,10 +139,11 @@
                               Stretch="Uniform"
                               Margin="7" />
                     </Border>
-                    <TextBlock Margin="12,0,0,0"
+                    <TextBlock Margin="8,0,0,0"
                                Text="门店效期排查软件"
-                               FontSize="17"
+                               FontSize="16"
                                FontWeight="SemiBold"
+                               TextWrapping="NoWrap"
                                VerticalAlignment="Center" />
                 </StackPanel>
 
@@ -571,6 +572,13 @@
                                   Margin="14,0,0,0"
                                    VerticalAlignment="Center"
                                    IsHitTestVisible="False" />
+                            <TextBlock Text="搜索商品名称 / 商品条码 / 商品编码"
+                                       IsHitTestVisible="False"
+                                       VerticalAlignment="Center"
+                                       Margin="42,0,36,0"
+                                       Foreground="#8995AA"
+                                       FontSize="14"
+                                       Visibility="{Binding PendingTasks.SearchText, Converter={StaticResource EmptyStringToVisibility}}" />
                             <Button Content="×"
                                     Command="{Binding PendingTasks.ClearFiltersCommand}"
                                     Style="{StaticResource LinkButtonStyle}"
@@ -780,14 +788,18 @@
                 <Grid Visibility="{Binding IsInspectionDetailVisible, Converter={StaticResource BoolToVisibility}}">
                     <Grid Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <Border Grid.Row="0"
+                        <ScrollViewer x:Name="DetailScrollViewer"
+                                      Grid.Row="0"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      CanContentScroll="True"
+                                      Margin="0,0,0,12">
+                            <StackPanel>
+                        <Border
                                 Padding="16,12"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
@@ -840,7 +852,7 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Row="1"
+                        <Border
                                 Padding="16,12"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
@@ -869,22 +881,14 @@
                                     <TextBlock Grid.Column="2" Text="排查日期" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="24,0,10,0" />
                                     <DatePicker Grid.Column="3"
                                                 SelectedDate="{Binding Detail.CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                DisplayDateEnd="{Binding Detail.CheckDateMaxValue}"
                                                 SelectedDateFormat="Short"
                                                 IsEnabled="{Binding Detail.CanEdit}" />
-                                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                                        <TextBlock Text="{Binding Detail.DraftStatusText}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,12,0" />
-                                        <TextBlock Text="{Binding Detail.SaveStatusText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <Button Content="重试"
-                                                Command="{Binding Detail.RetrySaveCommand}"
-                                                Visibility="{Binding Detail.SaveFailed, Converter={StaticResource BoolToVisibility}}"
-                                                Style="{StaticResource LinkButtonStyle}"
-                                                Margin="8,0,0,0" />
-                                    </StackPanel>
                                 </Grid>
                             </Grid>
                         </Border>
 
-                        <Border Grid.Row="2"
+                        <Border
                                 Padding="12"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
@@ -922,7 +926,7 @@
                             </Grid>
                         </Border>
 
-                        <Grid Grid.Row="3" Margin="0,0,0,12">
+                        <Grid Margin="0,0,0,12">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="42" />
                                 <RowDefinition Height="*" />
@@ -951,15 +955,12 @@
                                     <TextBlock Text="状态 / 操作" Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
                                 </Grid>
                             </Border>
-                            <Border Grid.Row="1"
+                            <Border
                                     Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1,0,1,1"
                                     CornerRadius="0,0,8,8">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Auto"
-                                              CanContentScroll="True">
-                                    <StackPanel MinWidth="900">
+                                <StackPanel MinWidth="900">
                                         <ItemsControl ItemsSource="{Binding Detail.TaskItems}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -1033,11 +1034,10 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
 
-                                        <Expander Header="{Binding Detail.NormalBatchCount, StringFormat=其他正常批次（{0}）}"
+                        <Expander Header="{Binding Detail.NormalBatchCount, StringFormat=其他正常批次（{0}）}"
                                                   IsExpanded="False"
-                                                  Visibility="{Binding Detail.HasNormalBatches, Converter={StaticResource BoolToVisibility}}"
-                                                  MaxHeight="192">
-                                            <Grid>
+                                                  Visibility="{Binding Detail.HasNormalBatches, Converter={StaticResource BoolToVisibility}}">
+                                            <Grid MinWidth="900">
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="34" />
                                                     <RowDefinition Height="*" />
@@ -1054,8 +1054,7 @@
                                                     <TextBlock Text="有效日期" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
                                                     <TextBlock Text="累计到货" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
                                                 </Grid>
-                                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                                    <ItemsControl ItemsSource="{Binding Detail.NormalBatches}">
+                                                <ItemsControl Grid.Row="1" ItemsSource="{Binding Detail.NormalBatches}">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <Grid MinHeight="32" Margin="0,1">
@@ -1072,8 +1071,7 @@
                                                                 </Grid>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </ScrollViewer>
+                                                </ItemsControl>
                                             </Grid>
                                         </Expander>
                                         <TextBlock Text="{Binding Detail.ActionErrorMessage}"
@@ -1086,11 +1084,13 @@
                                                    Foreground="{DynamicResource SuccessBrush}"
                                                    Margin="8,8,8,0" />
                                     </StackPanel>
-                                </ScrollViewer>
                             </Border>
                         </Grid>
 
-                        <Grid Grid.Row="4" Margin="0,0,0,0">
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <Grid Grid.Row="1" Margin="0,0,0,0">
                             <Border Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
@@ -1106,6 +1106,11 @@
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Width="10" Height="10" Fill="{DynamicResource SuccessBrush}" Margin="4,0,10,0" />
                                         <TextBlock Text="{Binding Detail.DraftFooterStatusText}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                        <Button Content="重试"
+                                                Command="{Binding Detail.RetrySaveCommand}"
+                                                Visibility="{Binding Detail.SaveFailed, Converter={StaticResource BoolToVisibility}}"
+                                                Style="{StaticResource LinkButtonStyle}"
+                                                Margin="8,0,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1"
                                             Content="清空草稿"

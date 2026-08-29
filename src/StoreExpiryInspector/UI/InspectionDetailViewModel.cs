@@ -436,6 +436,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     public DateOnly? CheckDate => _checkDate;
 
+    public DateTime CheckDateMaxValue => _businessDate().ToDateTime(TimeOnly.MinValue);
+
     public DateTime? CheckDateValue
     {
         get => _checkDate?.ToDateTime(TimeOnly.MinValue);
@@ -599,7 +601,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
             if (SaveFailed)
             {
-                return "保存失败，请重试";
+                return "草稿保存失败 · 重试";
             }
 
             if (HasUnsavedChanges)

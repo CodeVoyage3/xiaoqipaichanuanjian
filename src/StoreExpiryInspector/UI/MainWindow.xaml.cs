@@ -21,7 +21,7 @@ public partial class MainWindow : Window
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         var compact = e.NewSize.Width < 1280;
-        ShellColumn.Width = new(compact ? 176 : 208);
+        ShellColumn.Width = new(224);
         ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
     }
 

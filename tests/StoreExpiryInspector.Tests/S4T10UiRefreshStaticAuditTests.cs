@@ -46,6 +46,7 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         var codeBehind = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs"));
         var viewModels = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "Stage4ViewModels.cs"));
+        var app = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "App.xaml"));
 
         Assert.Contains("MinWidth=\"1024\"", window, StringComparison.Ordinal);
         Assert.Contains("MinHeight=\"600\"", window, StringComparison.Ordinal);
@@ -76,6 +77,43 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("Import.IssueRows", window, StringComparison.Ordinal);
         Assert.Contains("Header=\"问题类型\"", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmAvailabilityText", window, StringComparison.Ordinal);
+        Assert.Contains("Text=\"搜索商品名称 / 商品条码 / 商品编码\"", window, StringComparison.Ordinal);
+        Assert.Equal(2, Count(window, "Text=\"搜索商品名称 / 商品条码 / 商品编码\""));
+        Assert.Contains("ShellColumn\" Width=\"224\"", window, StringComparison.Ordinal);
+        Assert.Contains("ShellColumn.Width = new(224)", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("M 12,16 L 12,3", app, StringComparison.Ordinal);
+        Assert.Contains("x:Key=\"UploadIcon\"", app, StringComparison.Ordinal);
+        Assert.Contains("TargetType=\"DatePicker\"", app, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"PART_Button\"", app, StringComparison.Ordinal);
+        Assert.Contains("CalendarIcon", app, StringComparison.Ordinal);
+        Assert.Contains("DisplayDateEnd=\"{Binding Detail.CheckDateMaxValue}\"", window, StringComparison.Ordinal);
+
+        var detailStart = window.IndexOf("<!-- 排查详情", StringComparison.Ordinal);
+        var detailEnd = window.IndexOf("<!-- 数据导入", detailStart, StringComparison.Ordinal);
+        Assert.True(detailStart >= 0 && detailEnd > detailStart);
+        var detail = window.Substring(detailStart, detailEnd - detailStart);
+        Assert.Equal(1, Count(detail, "<ScrollViewer"));
+        Assert.Contains("x:Name=\"DetailScrollViewer\"", detail, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding Detail.TaskItems}\"", detail, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding Detail.NormalBatches}\"", detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("<DataGrid", detail, StringComparison.Ordinal);
+        var detailScrollEnd = detail.IndexOf("</ScrollViewer>", StringComparison.Ordinal);
+        var taskItems = detail.IndexOf("ItemsSource=\"{Binding Detail.TaskItems}\"", StringComparison.Ordinal);
+        var normalItems = detail.IndexOf("ItemsSource=\"{Binding Detail.NormalBatches}\"", StringComparison.Ordinal);
+        Assert.True(taskItems >= 0 && normalItems > taskItems && normalItems < detailScrollEnd);
+        var footer = detail.IndexOf("Grid Grid.Row=\"1\"", detailScrollEnd, StringComparison.Ordinal);
+        Assert.True(footer > detailScrollEnd, "固定底栏必须位于详情滚动区之外");
+        var expanderStart = detail.IndexOf("<Expander", StringComparison.Ordinal);
+        var expanderEnd = detail.IndexOf("</Expander>", expanderStart, StringComparison.Ordinal);
+        Assert.True(expanderStart >= 0 && expanderEnd > expanderStart);
+        var expander = detail.Substring(expanderStart, expanderEnd - expanderStart);
+        Assert.Contains("ItemsSource=\"{Binding Detail.NormalBatches}\"", expander, StringComparison.Ordinal);
+        Assert.DoesNotContain("ItemsSource=\"{Binding Detail.TaskItems}\"", expander, StringComparison.Ordinal);
+        Assert.DoesNotContain("<ScrollViewer", expander, StringComparison.Ordinal);
+        Assert.DoesNotContain("Detail.DraftStatusText", detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("Detail.SaveStatusText", detail, StringComparison.Ordinal);
+        Assert.Contains("Detail.DraftFooterStatusText", detail, StringComparison.Ordinal);
+        Assert.Contains("草稿保存失败 · 重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "InspectionDetailViewModel.cs")), StringComparison.Ordinal);
     }
 
     private static int Count(string value, string marker)
