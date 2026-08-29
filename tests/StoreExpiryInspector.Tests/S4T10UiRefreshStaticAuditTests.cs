@@ -61,8 +61,21 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("IsExpanded=\"False\"", window, StringComparison.Ordinal);
         Assert.Contains("ShowSubmitFooter", window, StringComparison.Ordinal);
         Assert.Contains("Content=\"{Binding Detail.SubmitButtonText}\"", window, StringComparison.Ordinal);
+        Assert.Contains("DraftFooterStatusText", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"正在导入，请稍候…\"", window, StringComparison.Ordinal);
         Assert.Contains("IsIndeterminate=\"True\"", window, StringComparison.Ordinal);
+        Assert.Contains("ItemTemplate", window, StringComparison.Ordinal);
+        Assert.Contains("new(\"全部阶段\", null)", viewModels, StringComparison.Ordinal);
+        Assert.Contains("Dashboard.ExpiredCount", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Content=\"搜索\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Text=\"（以当前 Application 结果为准）\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("SubmissionHintText", window, StringComparison.Ordinal);
+        Assert.Contains("Content=\"查看导入记录  →\"", window, StringComparison.Ordinal);
+        Assert.Contains("IsEnabled=\"False\"", window, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"导入记录功能暂未开放\"", window, StringComparison.Ordinal);
+        Assert.Contains("Import.IssueRows", window, StringComparison.Ordinal);
+        Assert.Contains("Header=\"问题类型\"", window, StringComparison.Ordinal);
+        Assert.Contains("ConfirmAvailabilityText", window, StringComparison.Ordinal);
     }
 
     private static int Count(string value, string marker)

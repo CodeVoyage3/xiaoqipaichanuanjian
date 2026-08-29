@@ -22,6 +22,12 @@ public sealed record ImportPreviewLoadResult(
     ImportPlan Plan,
     ImportPreviewIdentity Identity);
 
+public sealed record ImportIssueDisplayRow(
+    int? ExcelRowNumber,
+    string ProductCode,
+    string IssueType,
+    string Description);
+
 public sealed class DataImportCoordinator
 {
     private readonly Func<StoreDbContext> _createContext;
@@ -188,6 +194,7 @@ public sealed class ImportViewModel : ViewModelBase
 
             _canConfirm = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ConfirmAvailabilityText));
             ConfirmCommand.RaiseCanExecuteChanged();
         }
     }
@@ -238,8 +245,6 @@ public sealed class ImportViewModel : ViewModelBase
 
     public long? LastImportId => _lastImportId;
 
-    public string ImportIdText => LastImportId.HasValue ? $"ImportId：{LastImportId.Value}" : string.Empty;
-
     public int InvolvedProductCount => Preview?.InvolvedProductCount ?? 0;
 
     public int NormalBatchKeyCount => Preview?.NormalBatchKeyCount ?? 0;
@@ -267,6 +272,24 @@ public sealed class ImportViewModel : ViewModelBase
     public bool HasChanges => Plan?.HasChanges == true;
 
     public string ChangeStatusText => HasChanges ? "有变化，可确认导入" : "无变化，无需确认导入";
+
+    public string ConfirmAvailabilityText => IsParsing
+        ? "正在生成预览…"
+        : IsConfirming
+            ? "正在导入，请稍候…"
+            : IsSucceeded
+                ? "导入成功"
+                : IsNoChanges
+                    ? "当前文件没有变化，无需确认导入"
+                    : IsFailed
+                        ? "当前文件无法确认，请重试或重新选择"
+                        : !HasPreview
+                            ? "请选择文件并完成预览"
+                            : "当前预览无法确认，请重新选择文件";
+
+    public int WarningCount => IssueRows.Count;
+
+    public IReadOnlyList<ImportIssueDisplayRow> IssueRows => BuildIssueRows(Preview);
 
     public bool HasWarningDetails => SkippedRowCount > 0
         || RowIssueCount > 0
@@ -433,11 +456,6 @@ public sealed class ImportViewModel : ViewModelBase
             CanConfirm = false;
             CanRetry = false;
             var successMessage = "导入成功";
-            if (result.ImportId.HasValue)
-            {
-                successMessage += $" ImportId：{result.ImportId.Value}";
-            }
-
             SetState(ImportPageState.Succeeded, successMessage, string.Empty);
             await RefreshPagesAsync(version);
         }
@@ -612,7 +630,7 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsFailed));
         OnPropertyChanged(nameof(HasError));
         OnPropertyChanged(nameof(HasRefreshError));
-        OnPropertyChanged(nameof(ImportIdText));
+        OnPropertyChanged(nameof(ConfirmAvailabilityText));
         ConfirmCommand.RaiseCanExecuteChanged();
         RetryCommand.RaiseCanExecuteChanged();
     }
@@ -627,7 +645,6 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(ConfirmationContract));
         OnPropertyChanged(nameof(ParsedAtUtc));
         OnPropertyChanged(nameof(LastImportId));
-        OnPropertyChanged(nameof(ImportIdText));
         OnPropertyChanged(nameof(InvolvedProductCount));
         OnPropertyChanged(nameof(NormalBatchKeyCount));
         OnPropertyChanged(nameof(NewProductCount));
@@ -642,6 +659,9 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(PlanningIssueCount));
         OnPropertyChanged(nameof(HasChanges));
         OnPropertyChanged(nameof(ChangeStatusText));
+        OnPropertyChanged(nameof(ConfirmAvailabilityText));
+        OnPropertyChanged(nameof(WarningCount));
+        OnPropertyChanged(nameof(IssueRows));
         OnPropertyChanged(nameof(HasPreview));
         OnPropertyChanged(nameof(HasWarningDetails));
         OnPropertyChanged(nameof(HasRowIssues));
@@ -658,6 +678,72 @@ public sealed class ImportViewModel : ViewModelBase
     private bool IsCurrent(int version) => version == Volatile.Read(ref _operationVersion);
 
     private void LogException(Exception exception) => _logException?.Invoke(exception);
+
+    private static IReadOnlyList<ImportIssueDisplayRow> BuildIssueRows(ImportPreview? preview)
+    {
+        if (preview is null)
+        {
+            return Array.Empty<ImportIssueDisplayRow>();
+        }
+
+        var rows = new List<ImportIssueDisplayRow>();
+        rows.AddRange(preview.RowIssues.Select(issue => new ImportIssueDisplayRow(
+            issue.ExcelRowNumber,
+            "—",
+            "数据格式",
+            $"{ToFieldLabel(issue.FieldName)}：{issue.Summary}")));
+        rows.AddRange(preview.SkippedRows.Select(issue => new ImportIssueDisplayRow(
+            issue.ExcelRowNumber,
+            "—",
+            "未识别",
+            $"商品大类：{(string.IsNullOrWhiteSpace(issue.OriginalProductCategory) ? "未填写" : issue.OriginalProductCategory)}")));
+        rows.AddRange(preview.DuplicateRows.Select(issue => new ImportIssueDisplayRow(
+            issue.DuplicateRowNumber,
+            "—",
+            "重复数据",
+            $"与第 {issue.RepresentativeRowNumber} 行内容重复")));
+        rows.AddRange(preview.PlanningIssues.Select(issue => new ImportIssueDisplayRow(
+            issue.ExcelRowNumber,
+            string.IsNullOrWhiteSpace(issue.ProductCode) ? "—" : issue.ProductCode,
+            "数据校验",
+            $"{ToFieldLabel(issue.FieldName)}：{issue.SafeSummary}")));
+        rows.AddRange(preview.BatchConflicts.Select(issue => new ImportIssueDisplayRow(
+            issue.RowNumbers.FirstOrDefault(),
+            issue.BatchKey.ProductCode,
+            "批次冲突",
+            $"第 {FormatRowNumbers(issue.RowNumbers)} 行的{FormatFieldNames(issue.DifferingFields)}不一致")));
+        rows.AddRange(preview.StockConflicts.Select(issue => new ImportIssueDisplayRow(
+            issue.Values.SelectMany(value => value.RowNumbers).DefaultIfEmpty().Min(),
+            issue.ProductCode,
+            "库存冲突",
+            $"库存填写不一致：{string.Join("、", issue.Values.Select(value => string.IsNullOrWhiteSpace(value.Value) ? "空白" : value.Value))}")));
+
+        return rows
+            .OrderBy(row => row.ExcelRowNumber ?? int.MaxValue)
+            .ThenBy(row => row.ProductCode, StringComparer.Ordinal)
+            .ThenBy(row => row.IssueType, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static string FormatRowNumbers(IReadOnlyList<int> rowNumbers) =>
+        string.Join("、", rowNumbers.OrderBy(row => row));
+
+    private static string FormatFieldNames(IReadOnlyList<string> fieldNames) =>
+        string.Join("、", fieldNames.Select(ToFieldLabel));
+
+    private static string ToFieldLabel(string fieldName) => fieldName switch
+    {
+        "ProductCategory" => "商品大类",
+        "ProductName" => "商品名称",
+        "ProductBarcode" => "商品条码",
+        "ProductionDate" => "生产日期",
+        "ExpiryDate" => "有效日期",
+        "ShelfLife" => "保质期",
+        "ShelfLifeUnit" => "保质期单位",
+        "CumulativeArrivalQuantity" => "累计到货",
+        "StoreStockQuantity" => "门店库存",
+        _ => fieldName
+    };
 
     private static string GetFullPathOrOriginal(string sourceFilePath)
     {

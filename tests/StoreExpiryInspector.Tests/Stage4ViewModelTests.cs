@@ -120,6 +120,9 @@ public sealed class Stage4ViewModelTests
     [Fact]
     public void StageLabelsAreDisplayOnlyCanonicalMappings()
     {
+        Assert.Equal(
+            new[] { "全部阶段", "过期", "收仓", "2折", "5折" },
+            StageFilterOption.All.Select(option => option.Label));
         Assert.Equal("过期", StageLabels.ToDisplay("expired"));
         Assert.Equal("收仓", StageLabels.ToDisplay("withdraw"));
         Assert.Equal("2折", StageLabels.ToDisplay("discount_20"));
@@ -128,6 +131,15 @@ public sealed class Stage4ViewModelTests
         Assert.Equal(
             new[] { "expired", "withdraw", "discount_20", "discount_50" },
             StageFilterOption.All.Skip(1).Select(option => option.CanonicalStage));
+    }
+
+    [Fact]
+    public void ImportStartsWithAnActionableConfirmationReason()
+    {
+        var vm = new ImportViewModel();
+
+        Assert.False(vm.CanConfirm);
+        Assert.Equal("请选择文件并完成预览", vm.ConfirmAvailabilityText);
     }
 
     [Fact]

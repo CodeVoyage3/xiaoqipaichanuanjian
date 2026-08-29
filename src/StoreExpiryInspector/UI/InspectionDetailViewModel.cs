@@ -507,6 +507,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(CanSubmit));
             OnPropertyChanged(nameof(SaveStatusText));
+            OnPropertyChanged(nameof(DraftFooterStatusText));
             RetrySaveCommand.RaiseCanExecuteChanged();
             SubmitCommand.RaiseCanExecuteChanged();
         }
@@ -544,6 +545,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             _saveFailed = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SaveStatusText));
+            OnPropertyChanged(nameof(DraftFooterStatusText));
             RetrySaveCommand.RaiseCanExecuteChanged();
         }
     }
@@ -578,6 +580,36 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             return LastSavedAtUtc.HasValue
                 ? $"已保存 {LastSavedAtUtc.Value.ToLocalTime():HH:mm}"
                 : HasRecoveredDraft ? "已保存" : "未保存";
+        }
+    }
+
+    public string DraftFooterStatusText
+    {
+        get
+        {
+            if (!IsOpen)
+            {
+                return string.Empty;
+            }
+
+            if (IsSaving)
+            {
+                return "正在保存…";
+            }
+
+            if (SaveFailed)
+            {
+                return "保存失败，请重试";
+            }
+
+            if (HasUnsavedChanges)
+            {
+                return "草稿未保存";
+            }
+
+            return LastSavedAtUtc.HasValue
+                ? $"草稿已保存 · {LastSavedAtUtc.Value.ToLocalTime():HH:mm}"
+                : HasRecoveredDraft ? "草稿已保存" : "草稿未保存";
         }
     }
 
@@ -643,10 +675,6 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     public bool ShowSubmitFooter => IsOpen && !HasOverStockConfirmation;
 
     public string SubmitButtonText => IsSubmitting ? "正在提交…" : "完成排查";
-
-    public string SubmissionHintText => IsOpen
-        ? "提交时将由 Application 重新读取当前任务、库存和草稿事实。"
-        : string.Empty;
 
     public string CloseReasonText => IsSystemClosed
         && string.Equals(_closeReason, "product_stock_zero", StringComparison.Ordinal)
@@ -1365,8 +1393,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         InvalidateOverStockConfirmation();
         OnPropertyChanged(nameof(HasUnsavedChanges));
         OnPropertyChanged(nameof(HasInputErrors));
-        OnPropertyChanged(nameof(SubmissionHintText));
         OnPropertyChanged(nameof(SaveStatusText));
+        OnPropertyChanged(nameof(DraftFooterStatusText));
         _actionErrorMessage = string.Empty;
         NotifyMessages();
         if (row.IsValidForSave)
@@ -1381,8 +1409,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(CheckDate));
         OnPropertyChanged(nameof(CheckDateValue));
         OnPropertyChanged(nameof(HasUnsavedChanges));
-        OnPropertyChanged(nameof(SubmissionHintText));
         OnPropertyChanged(nameof(SaveStatusText));
+        OnPropertyChanged(nameof(DraftFooterStatusText));
         _actionErrorMessage = string.Empty;
         NotifyMessages();
     }
@@ -1432,7 +1460,6 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanEdit));
         OnPropertyChanged(nameof(CanSubmit));
         OnPropertyChanged(nameof(ShowSubmitFooter));
-        OnPropertyChanged(nameof(SubmissionHintText));
         OnPropertyChanged(nameof(SubmitButtonText));
         SubmitCommand.RaiseCanExecuteChanged();
         ConfirmOverStockCommand.RaiseCanExecuteChanged();
@@ -1483,6 +1510,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             IsSaving = true;
             SaveFailed = false;
             OnPropertyChanged(nameof(SaveStatusText));
+            OnPropertyChanged(nameof(DraftFooterStatusText));
             try
             {
                 var result = await Task.Run(() => _saveDraft(snapshot.Request));
@@ -1586,6 +1614,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(DraftStatusText));
         OnPropertyChanged(nameof(LastSavedAtUtc));
         OnPropertyChanged(nameof(SaveStatusText));
+        OnPropertyChanged(nameof(DraftFooterStatusText));
         ClearDraftCommand.RaiseCanExecuteChanged();
         _ = result;
     }
@@ -1651,7 +1680,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(OverStockExcessQty));
         OnPropertyChanged(nameof(OverStockMessage));
         OnPropertyChanged(nameof(ShowSubmitFooter));
-        OnPropertyChanged(nameof(SubmissionHintText));
+        OnPropertyChanged(nameof(DraftFooterStatusText));
         RetryLoadCommand.RaiseCanExecuteChanged();
         SubmitCommand.RaiseCanExecuteChanged();
         ConfirmOverStockCommand.RaiseCanExecuteChanged();
@@ -1680,6 +1709,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasUnsavedChanges));
         OnPropertyChanged(nameof(HasInputErrors));
         OnPropertyChanged(nameof(SaveStatusText));
+        OnPropertyChanged(nameof(DraftFooterStatusText));
         OnPropertyChanged(nameof(ActionErrorMessage));
         OnPropertyChanged(nameof(HasActionError));
         OnPropertyChanged(nameof(FeedbackMessage));
@@ -1695,7 +1725,6 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(OverStockMessage));
         OnPropertyChanged(nameof(CanSubmit));
         OnPropertyChanged(nameof(ShowSubmitFooter));
-        OnPropertyChanged(nameof(SubmissionHintText));
         OnPropertyChanged(nameof(SubmitButtonText));
         ClearDraftCommand.RaiseCanExecuteChanged();
         RetrySaveCommand.RaiseCanExecuteChanged();

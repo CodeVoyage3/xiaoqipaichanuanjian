@@ -54,7 +54,7 @@ public sealed record StageFilterOption(string Label, string? CanonicalStage)
 {
     public static IReadOnlyList<StageFilterOption> All { get; } = Array.AsReadOnly(new StageFilterOption[]
     {
-        new("全部", null),
+        new("全部阶段", null),
         new("过期", "expired"),
         new("收仓", "withdraw"),
         new("2折", "discount_20"),
@@ -916,8 +916,8 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.Dashboard => "今日需要处理的效期任务与数据状态",
         ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
         ShellPage.Import => "导入最新的食品效期 Excel，更新商品与批次数据",
-        ShellPage.InspectionDetail => "检查信息自动保存 · 数据以 Application 结果为准",
-        _ => "只读查询 · 数据以 Application 结果为准"
+        ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
+        _ => "查看当前数据状态"
     };
 
     public void NavigateTo(ShellPage page) => _ = NavigateToAsync(page);
