@@ -73,6 +73,11 @@ public sealed class S4T09UatStaticAuditTests
             "StoreExpiryInspector",
             "UI",
             "MainWindow.xaml.cs"));
+        var appXaml = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "StoreExpiryInspector",
+            "App.xaml"));
         var importViewModel = File.ReadAllText(Path.Combine(
             root,
             "src",
@@ -87,10 +92,18 @@ public sealed class S4T09UatStaticAuditTests
         Assert.Contains("SelectionUnit=\"Cell\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("ClipboardCopyMode=\"ExcludeHeader\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("Binding=\"{Binding ProductBarcode}\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("\u95E8", mainWindow, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u9580", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Language=\"zh-CN\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("FontFamily=\"Microsoft YaHei UI, Segoe UI\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Microsoft YaHei UI, Segoe UI", appXaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Value=\"Segoe UI\"", appXaml, StringComparison.Ordinal);
         Assert.Contains("Text=\"正在导入，请稍候…\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("IsIndeterminate=\"True\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("SetState(ImportPageState.Confirming, \"正在导入，请稍候…\"", importViewModel, StringComparison.Ordinal);
         Assert.Contains("var successMessage = \"导入成功\"", importViewModel, StringComparison.Ordinal);
+        Assert.Contains("FontFamily = new FontFamily(\"Microsoft YaHei UI, Segoe UI\")", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Language = XmlLanguage.GetLanguage(\"zh-CN\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("FindVisualChild<ScrollViewer>", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("Application.AddHandler", codeBehind, StringComparison.Ordinal);
     }

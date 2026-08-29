@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Markup;
 using System.Windows.Threading;
 using Microsoft.Win32;
 
@@ -133,6 +134,8 @@ public partial class MainWindow : Window
         {
             Owner = this,
             Title = "确认库存修正",
+            FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
+            Language = XmlLanguage.GetLanguage("zh-CN"),
             Width = 480,
             Height = 210,
             ResizeMode = ResizeMode.NoResize,

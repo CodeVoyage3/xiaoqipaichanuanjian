@@ -30,7 +30,7 @@
         </Style>
 
         <Style TargetType="Button">
-            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
@@ -100,7 +100,7 @@
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
@@ -112,7 +112,7 @@
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
@@ -124,7 +124,7 @@
         </Style>
 
         <Style TargetType="DataGrid">
-            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />

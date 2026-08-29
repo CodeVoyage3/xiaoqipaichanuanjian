@@ -8,7 +8,8 @@
         MinWidth="1024"
         MinHeight="600"
         Background="{DynamicResource CanvasBrush}"
-        FontFamily="Segoe UI"
+        FontFamily="Microsoft YaHei UI, Segoe UI"
+        Language="zh-CN"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         SizeChanged="Window_SizeChanged">
