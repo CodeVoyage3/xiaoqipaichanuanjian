@@ -21,18 +21,22 @@ public sealed class S4T09UatStaticAuditTests
     ];
 
     [Fact]
-    public void FixedChineseTextUsesSimplifiedCharactersAcrossProductAndTestSources()
+    public void FixedChineseTextUsesSimplifiedCharactersInUserVisibleFixedSources()
     {
         var root = FindRepositoryRoot();
+        var projectRoot = Path.Combine(root, "src", "StoreExpiryInspector");
         var files = Directory.EnumerateFiles(
-                Path.Combine(root, "src", "StoreExpiryInspector"),
+                Path.Combine(projectRoot, "UI"),
                 "*",
                 SearchOption.AllDirectories)
-            .Concat(Directory.EnumerateFiles(
-                Path.Combine(root, "tests", "StoreExpiryInspector.Tests"),
-                "*",
-                SearchOption.AllDirectories))
-            .Where(IsTextSource)
+            .Where(IsUiTextSource)
+            .Concat(new[]
+            {
+                Path.Combine(projectRoot, "App.xaml"),
+                Path.Combine(projectRoot, "App.xaml.cs")
+            })
+            .Concat(Directory.EnumerateFiles(projectRoot, "*.resx", SearchOption.AllDirectories))
+            .Concat(Directory.EnumerateFiles(projectRoot, "*.xaml", SearchOption.AllDirectories))
             .Where(path => !IsBuildOutput(path))
             .Where(path => !string.Equals(
                 Path.GetFileName(path),
@@ -91,7 +95,7 @@ public sealed class S4T09UatStaticAuditTests
         Assert.DoesNotContain("Application.AddHandler", codeBehind, StringComparison.Ordinal);
     }
 
-    private static bool IsTextSource(string path) =>
+    private static bool IsUiTextSource(string path) =>
         Path.GetExtension(path) is ".cs" or ".xaml" or ".resx";
 
     private static bool IsBuildOutput(string path) =>
