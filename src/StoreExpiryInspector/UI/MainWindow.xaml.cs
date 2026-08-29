@@ -18,8 +18,12 @@ public partial class MainWindow : Window
             confirmZeroInventory: ConfirmZeroInventory);
     }
 
-    private void Window_SizeChanged(object sender, SizeChangedEventArgs e) =>
-        ShellColumn.Width = new(e.NewSize.Width < 1280 ? 176 : 208);
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var compact = e.NewSize.Width < 1280;
+        ShellColumn.Width = new(compact ? 176 : 208);
+        ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
+    }
 
     private void DashboardDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -168,8 +172,7 @@ public partial class MainWindow : Window
         {
             Content = "确认修正为0",
             Width = 112,
-            Background = new SolidColorBrush(Color.FromRgb(180, 35, 24)),
-            Foreground = Brushes.White
+            Style = (Style)FindResource("DangerButtonStyle")
         };
         cancel.Click += (_, _) => dialog.DialogResult = false;
         confirm.Click += (_, _) => dialog.DialogResult = true;

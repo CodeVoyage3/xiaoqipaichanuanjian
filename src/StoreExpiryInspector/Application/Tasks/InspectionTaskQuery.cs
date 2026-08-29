@@ -33,7 +33,9 @@ public sealed record InspectionDashboardResult(
     int Discount20Count,
     int Discount50Count,
     IReadOnlyList<InspectionTaskListItem> UrgentTasks,
-    DateTime? LastSuccessfulImportAtUtc = null);
+    DateTime? LastSuccessfulImportAtUtc = null,
+    int ProductCount = 0,
+    int BatchCount = 0);
 
 public sealed record InspectionTaskSearchResult(
     IReadOnlyList<InspectionTaskListItem> Items,
@@ -118,6 +120,8 @@ public sealed class InspectionTaskQuery
             .ThenByDescending(import => import.Id)
             .Select(import => import.ConfirmedAtUtc)
             .FirstOrDefault();
+        var productCount = context.Products.AsNoTracking().Count();
+        var batchCount = context.Batches.AsNoTracking().Count();
         return new(
             ordered.Length,
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Expired),
@@ -125,7 +129,9 @@ public sealed class InspectionTaskQuery
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Discount20),
             ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Discount50),
             Array.AsReadOnly(ordered.Take(20).ToArray()),
-            lastSuccessfulImportAtUtc);
+            lastSuccessfulImportAtUtc,
+            productCount,
+            batchCount);
     }
 
     public InspectionTaskSearchResult SearchOpenTasks(

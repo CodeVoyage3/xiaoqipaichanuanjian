@@ -30,6 +30,33 @@ public sealed class InspectionTaskQueryTests
     }
 
     [Fact]
+    public void DashboardReturnsReadOnlyProductAndBatchTotals()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var first = AddOpenTask(
+                seed,
+                "DASHBOARD-PRODUCT-1",
+                ExpiryStageCalculator.Expired,
+                new DateOnly(2026, 8, 28));
+            AddBatch(seed, first.Product.Id, new DateOnly(2026, 9, 1), null, 4);
+            AddOpenTask(
+                seed,
+                "DASHBOARD-PRODUCT-2",
+                ExpiryStageCalculator.Withdraw,
+                new DateOnly(2026, 8, 29));
+        }
+
+        using var context = database.Open();
+        var result = new InspectionTaskQuery().Dashboard(context);
+
+        Assert.Equal(context.Products.Count(), result.ProductCount);
+        Assert.Equal(context.Batches.Count(), result.BatchCount);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
     public void DashboardReturnsConfirmedAtUtcForOneSuccessfulImport()
     {
         using var database = SqliteTestDatabase.Create();

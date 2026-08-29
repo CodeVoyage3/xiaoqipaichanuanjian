@@ -113,6 +113,15 @@ public sealed class Stage4InverseBooleanToVisibilityConverter : IValueConverter
         Binding.DoNothing;
 }
 
+public sealed class EmptyStringToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        string.IsNullOrEmpty(value as string) ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
 public sealed class DashboardViewModel : ViewModelBase
 {
     private static readonly TimeSpan StaleAfter = TimeSpan.FromDays(7);
@@ -131,6 +140,8 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _withdrawCount;
     private int _discount20Count;
     private int _discount50Count;
+    private int _productCount;
+    private int _batchCount;
     private DateTime? _lastSuccessfulImportAtUtc;
 
     public DashboardViewModel(
@@ -298,6 +309,36 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
+    public int ProductCount
+    {
+        get => _productCount;
+        private set
+        {
+            if (_productCount == value)
+            {
+                return;
+            }
+
+            _productCount = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int BatchCount
+    {
+        get => _batchCount;
+        private set
+        {
+            if (_batchCount == value)
+            {
+                return;
+            }
+
+            _batchCount = value;
+            OnPropertyChanged();
+        }
+    }
+
     public DateTime? LastSuccessfulImportAtUtc
     {
         get => _lastSuccessfulImportAtUtc;
@@ -358,6 +399,8 @@ public sealed class DashboardViewModel : ViewModelBase
             WithdrawCount = result.WithdrawCount;
             Discount20Count = result.Discount20Count;
             Discount50Count = result.Discount50Count;
+            ProductCount = result.ProductCount;
+            BatchCount = result.BatchCount;
             LastSuccessfulImportAtUtc = result.LastSuccessfulImportAtUtc;
             UrgentTasks.Clear();
             foreach (var task in result.UrgentTasks)
@@ -793,6 +836,7 @@ public sealed class ShellViewModel : ViewModelBase
             submit: submit ?? SubmitInspection);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard));
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks));
+        SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); });
         NavigateHistoryCommand = new RelayCommand(_ => { }, _ => false);
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import));
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
@@ -818,6 +862,8 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand NavigateHomeCommand { get; }
 
     public RelayCommand NavigateTasksCommand { get; }
+
+    public RelayCommand SearchTasksCommand { get; }
 
     public RelayCommand NavigateHistoryCommand { get; }
 
@@ -858,16 +904,18 @@ public sealed class ShellViewModel : ViewModelBase
 
     public string PageTitle => CurrentPage switch
     {
-        ShellPage.Dashboard => "门店效期排查",
+        ShellPage.Dashboard => "效期排查",
         ShellPage.PendingTasks => "待排查任务",
         ShellPage.Import => "数据导入",
         ShellPage.InspectionDetail => "排查详情",
-        _ => "门店效期排查"
+        _ => "效期排查"
     };
 
     public string PageSubtitle => CurrentPage switch
     {
-        ShellPage.Import => "先预览再确认 · 导入规则以 Application 结果为准",
+        ShellPage.Dashboard => "今日需要处理的效期任务与数据状态",
+        ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
+        ShellPage.Import => "导入最新的食品效期 Excel，更新商品与批次数据",
         ShellPage.InspectionDetail => "检查信息自动保存 · 数据以 Application 结果为准",
         _ => "只读查询 · 数据以 Application 结果为准"
     };
@@ -907,6 +955,12 @@ public sealed class ShellViewModel : ViewModelBase
 
     private async Task ReturnFromDetailAsync() =>
         await NavigateAwayFromDetailAsync(_detailReturnPage);
+
+    private async Task NavigateToPendingTasksAndSearchAsync()
+    {
+        await NavigateToAsync(ShellPage.PendingTasks);
+        await PendingTasks.SearchAsync();
+    }
 
     private async Task NavigateAwayFromDetailAsync(ShellPage page)
     {
