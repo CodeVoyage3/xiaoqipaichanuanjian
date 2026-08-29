@@ -47,6 +47,10 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var codeBehind = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs"));
         var viewModels = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "Stage4ViewModels.cs"));
         var app = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "App.xaml"));
+        var dataGridStyle = StyleBlock(app, "<Style TargetType=\"DataGrid\">");
+        var columnHeaderStyle = StyleBlock(app, "<Style TargetType=\"DataGridColumnHeader\">");
+        var cellStyle = StyleBlock(app, "<Style TargetType=\"DataGridCell\">");
+        var rowStyle = StyleBlock(app, "<Style TargetType=\"DataGridRow\">");
 
         Assert.Contains("MinWidth=\"1024\"", window, StringComparison.Ordinal);
         Assert.Contains("MinHeight=\"600\"", window, StringComparison.Ordinal);
@@ -56,6 +60,18 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.True(Count(window, "ClipboardCopyMode=\"ExcludeHeader\"") >= 2);
         Assert.Contains("Binding=\"{Binding ProductBarcode}\"", window, StringComparison.Ordinal);
         Assert.Contains("Binding=\"{Binding ProductCode}\"", window, StringComparison.Ordinal);
+        Assert.Contains("x:Key=\"TableDividerBrush\" Color=\"#E7EBF0\"", app, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"FontSize\" Value=\"13\" />", dataGridStyle, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"RowHeight\" Value=\"40\" />", dataGridStyle, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"ColumnHeaderHeight\" Value=\"40\" />", dataGridStyle, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"GridLinesVisibility\" Value=\"Horizontal\" />", dataGridStyle, StringComparison.Ordinal);
+        Assert.Contains("HorizontalGridLinesBrush\" Value=\"{DynamicResource TableDividerBrush}\"", dataGridStyle, StringComparison.Ordinal);
+        Assert.DoesNotContain("VerticalGridLinesBrush", dataGridStyle, StringComparison.Ordinal);
+        Assert.Contains("AlternatingRowBackground\" Value=\"{DynamicResource SurfaceBrush}\"", dataGridStyle, StringComparison.Ordinal);
+        Assert.Contains("VerticalContentAlignment\" Value=\"Center\"", columnHeaderStyle, StringComparison.Ordinal);
+        Assert.Contains("VerticalContentAlignment\" Value=\"Center\"", cellStyle, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"BorderThickness\" Value=\"0\" />", rowStyle, StringComparison.Ordinal);
+        Assert.DoesNotContain("0,0,0,1", rowStyle, StringComparison.Ordinal);
         Assert.Contains("FixedPageSize = 50", viewModels, StringComparison.Ordinal);
         Assert.Contains("Content=\"‹  上一页\"", window, StringComparison.Ordinal);
         Assert.Contains("Content=\"下一页  ›\"", window, StringComparison.Ordinal);
@@ -154,6 +170,14 @@ public sealed class S4T10UiRefreshStaticAuditTests
         }
 
         return count;
+    }
+
+    private static string StyleBlock(string source, string marker)
+    {
+        var start = source.IndexOf(marker, StringComparison.Ordinal);
+        var end = source.IndexOf("</Style>", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start, $"未找到样式块：{marker}");
+        return source[start..end];
     }
 
     private static string FindRepositoryRoot()
