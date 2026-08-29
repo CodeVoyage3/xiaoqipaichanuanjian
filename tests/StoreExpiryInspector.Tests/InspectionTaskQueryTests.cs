@@ -182,9 +182,10 @@ public sealed class InspectionTaskQueryTests
 
         using var context = database.Open();
         var query = new InspectionTaskQuery();
-        Assert.Equal("CODE-APPLE", Assert.Single(query.SearchOpenTasks(
-            context,
-            new InspectionTaskSearchRequest("富士")).Items).ProductCode);
+        var byName = query.SearchOpenTasks(context, new InspectionTaskSearchRequest("富士"));
+        var apple = Assert.Single(byName.Items);
+        Assert.Equal("CODE-APPLE", apple.ProductCode);
+        Assert.Equal("BAR-APPLE", apple.ProductBarcode);
         Assert.Equal("CODE-BANANA", Assert.Single(query.SearchOpenTasks(
             context,
             new InspectionTaskSearchRequest("CODE-BANANA")).Items).ProductCode);

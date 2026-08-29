@@ -191,7 +191,8 @@
 
             <Grid Grid.Row="1">
                 <Grid Visibility="{Binding IsDashboardVisible, Converter={StaticResource BoolToVisibility}}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="DashboardScrollViewer"
+                                  VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="0,8,0,24">
                             <Border Padding="12"
@@ -332,13 +333,16 @@
                                        FontSize="14"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        Margin="0,0,0,8" />
-                            <DataGrid ItemsSource="{Binding Dashboard.UrgentTasks}"
+                            <DataGrid x:Name="DashboardUrgentTasksDataGrid"
+                                      ItemsSource="{Binding Dashboard.UrgentTasks}"
                                       AutoGenerateColumns="False"
                                       Visibility="{Binding Dashboard.HasError, Converter={StaticResource InverseBoolToVisibility}}"
                                       IsTabStop="False"
-                                      Focusable="False"
+                                      Focusable="True"
                                       SelectionMode="Single"
-                                      SelectionUnit="FullRow">
+                                      SelectionUnit="Cell"
+                                      ClipboardCopyMode="ExcludeHeader"
+                                      PreviewMouseWheel="DashboardDataGrid_PreviewMouseWheel">
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="阶段" Width="88">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -350,6 +354,7 @@
                                     </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="商品名称" Binding="{Binding ProductName}" Width="*" />
                                     <DataGridTextColumn Header="商品编码" Binding="{Binding ProductCode}" Width="150" />
+                                    <DataGridTextColumn Header="商品条码" Binding="{Binding ProductBarcode}" Width="140" />
                                     <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="80" />
                                     <DataGridTextColumn Header="库存" Binding="{Binding EffectiveStockQty}" Width="80" />
                                     <DataGridTextColumn Header="最近有效日期"
@@ -1029,11 +1034,23 @@
                                                 Orientation="Horizontal"
                                                 VerticalAlignment="Center">
                                         <TextBlock Text="正在处理…"
-                                                   Visibility="{Binding Import.IsLoading, Converter={StaticResource BoolToVisibility}}"
+                                                   Visibility="{Binding Import.IsParsing, Converter={StaticResource BoolToVisibility}}"
                                                    VerticalAlignment="Center"
                                                    FontSize="13"
                                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                                    Margin="0,0,12,0" />
+                                        <TextBlock Text="正在导入，请稍候…"
+                                                   Visibility="{Binding Import.IsConfirming, Converter={StaticResource BoolToVisibility}}"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   Margin="0,0,12,0" />
+                                        <ProgressBar IsIndeterminate="True"
+                                                     Width="120"
+                                                     Height="8"
+                                                     Visibility="{Binding Import.IsConfirming, Converter={StaticResource BoolToVisibility}}"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,12,0" />
                                         <Button Content="重试"
                                                 Command="{Binding Import.RetryCommand}"
                                                 Visibility="{Binding Import.CanRetry, Converter={StaticResource BoolToVisibility}}"

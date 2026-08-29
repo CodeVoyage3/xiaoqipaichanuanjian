@@ -20,6 +20,56 @@ public partial class MainWindow : Window
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e) =>
         ShellColumn.Width = new(e.NewSize.Width < 1280 ? 176 : 208);
 
+    private void DashboardDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is not DataGrid dataGrid)
+        {
+            return;
+        }
+
+        var dataGridScrollViewer = FindVisualChild<ScrollViewer>(dataGrid);
+        var dataGridCanScroll = dataGridScrollViewer is not null
+            && dataGridScrollViewer.ScrollableHeight > 0;
+        if (dataGridCanScroll &&
+            ((e.Delta > 0 && dataGridScrollViewer!.VerticalOffset > 0) ||
+             (e.Delta < 0 && dataGridScrollViewer!.VerticalOffset < dataGridScrollViewer.ScrollableHeight)))
+        {
+            return;
+        }
+
+        if (DashboardScrollViewer.ScrollableHeight <= 0)
+        {
+            return;
+        }
+
+        DashboardScrollViewer.ScrollToVerticalOffset(Math.Clamp(
+            DashboardScrollViewer.VerticalOffset - e.Delta,
+            0,
+            DashboardScrollViewer.ScrollableHeight));
+        e.Handled = true;
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+
     private async void Find_Executed(object sender, ExecutedRoutedEventArgs e)
     {
         if (DataContext is ShellViewModel shell)

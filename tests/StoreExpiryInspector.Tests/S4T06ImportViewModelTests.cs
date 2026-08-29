@@ -353,6 +353,10 @@ public sealed class S4T06ImportViewModelTests
         await secondConfirm;
         Assert.Equal(1, executeCount);
         Assert.False(vm.CanConfirm);
+        Assert.True(vm.IsConfirming);
+        Assert.True(vm.IsLoading);
+        Assert.Equal("正在导入，请稍候…", vm.StatusMessage);
+        Assert.False(vm.ConfirmCommand.CanExecute(null));
 
         releaseExecute.SetResult();
         await firstConfirm;
@@ -378,6 +382,7 @@ public sealed class S4T06ImportViewModelTests
         await vm.ConfirmAsync();
 
         Assert.True(vm.State == ImportPageState.Succeeded, $"{vm.LastCode}: {vm.ErrorMessage} / {vm.StatusMessage}");
+        Assert.StartsWith("导入成功", vm.StatusMessage, StringComparison.Ordinal);
         Assert.False(vm.CanConfirm);
         Assert.Null(vm.ConfirmationContract);
         Assert.Equal(1, dashboardRefreshes);

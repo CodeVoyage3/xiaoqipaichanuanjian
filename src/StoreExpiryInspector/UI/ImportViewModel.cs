@@ -391,7 +391,7 @@ public sealed class ImportViewModel : ViewModelBase
         CanConfirm = false;
         CanRetry = false;
         _requiresReparse = false;
-        SetState(ImportPageState.Confirming, "正在确认并导入，请稍候。", string.Empty);
+        SetState(ImportPageState.Confirming, "正在导入，请稍候…", string.Empty);
         IsLoading = true;
 
         try
@@ -432,9 +432,7 @@ public sealed class ImportViewModel : ViewModelBase
             _refreshErrorMessage = string.Empty;
             CanConfirm = false;
             CanRetry = false;
-            var successMessage = string.IsNullOrWhiteSpace(result.SafeUserMessage)
-                ? "确认导入已成功提交。"
-                : result.SafeUserMessage;
+            var successMessage = "导入成功";
             if (result.ImportId.HasValue)
             {
                 successMessage += $" ImportId：{result.ImportId.Value}";
