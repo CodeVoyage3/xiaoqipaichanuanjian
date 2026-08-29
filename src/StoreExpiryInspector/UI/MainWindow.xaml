@@ -881,7 +881,7 @@
                                     <TextBlock Grid.Column="2" Text="排查日期" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="24,0,10,0" />
                                     <DatePicker Grid.Column="3"
                                                 SelectedDate="{Binding Detail.CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                DisplayDateEnd="{Binding Detail.CheckDateMaxValue}"
+                                                DisplayDateEnd="{Binding Detail.CheckDateMaxValue, Mode=OneWay}"
                                                 SelectedDateFormat="Short"
                                                 IsEnabled="{Binding Detail.CanEdit}" />
                                 </Grid>

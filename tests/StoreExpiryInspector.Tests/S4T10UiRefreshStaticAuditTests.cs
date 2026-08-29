@@ -86,7 +86,7 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("TargetType=\"DatePicker\"", app, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"PART_Button\"", app, StringComparison.Ordinal);
         Assert.Contains("CalendarIcon", app, StringComparison.Ordinal);
-        Assert.Contains("DisplayDateEnd=\"{Binding Detail.CheckDateMaxValue}\"", window, StringComparison.Ordinal);
+        Assert.Contains("DisplayDateEnd=\"{Binding Detail.CheckDateMaxValue, Mode=OneWay}\"", window, StringComparison.Ordinal);
 
         var detailStart = window.IndexOf("<!-- 排查详情", StringComparison.Ordinal);
         var detailEnd = window.IndexOf("<!-- 数据导入", detailStart, StringComparison.Ordinal);
