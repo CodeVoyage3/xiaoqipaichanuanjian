@@ -26,6 +26,25 @@
         <ui:Stage4InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <ui:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
 
+        <Style x:Key="DraftFooterStatusTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Detail.HasRecoveredDraft}" Value="True" />
+                        <Condition Binding="{Binding Detail.HasUnsavedChanges}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                </MultiDataTrigger>
+                <DataTrigger Binding="{Binding Detail.IsSaving}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Detail.SaveFailed}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <DataTemplate x:Key="StageBadgeTemplate">
             <Border Padding="8,2"
                     Height="26"
@@ -190,7 +209,7 @@
                             Tag="{Binding IsImportVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource UploadIcon}"
+                            <Path Data="{StaticResource ImportIcon}"
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
@@ -259,7 +278,7 @@
                     <Button.ContentTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource UploadIcon}"
+                                <Path Data="{StaticResource ImportIcon}"
                                       Width="18"
                                       Height="18"
                                       Stroke="White"
@@ -422,13 +441,6 @@
                                                    FontSize="13"
                                                    Foreground="{DynamicResource SecondaryTextBrush}" />
                                     </StackPanel>
-                                    <Button Grid.Column="1"
-                                            Content="查看导入记录  →"
-                                            IsEnabled="False"
-                                            ToolTip="导入记录功能暂未开放"
-                                            AutomationProperties.Name="查看导入记录（暂未开放）"
-                                            Style="{StaticResource LinkButtonStyle}"
-                                            Margin="12,0,0,0" />
                                 </Grid>
                             </Border>
 
@@ -633,7 +645,6 @@
 
                     <Grid Grid.Row="2" Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="16" Height="16" Fill="#EFF6FF" Stroke="{DynamicResource PrimaryActionBrush}" StrokeThickness="1" Margin="0,0,8,0" />
                             <TextBlock Text="默认按紧急程度和最近有效期排序"
                                        FontSize="13"
                                        Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -925,7 +936,7 @@
                                         <ColumnDefinition Width="88" />
                                         <ColumnDefinition Width="126" />
                                         <ColumnDefinition Width="108" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="300" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="阶段" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
                                     <TextBlock Text="生产日期" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -971,7 +982,7 @@
                                                                 <ColumnDefinition Width="88" />
                                                                 <ColumnDefinition Width="126" />
                                                                 <ColumnDefinition Width="108" />
-                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="300" />
                                                             </Grid.ColumnDefinitions>
                                                             <ContentControl Grid.Column="0" Content="{Binding}" ContentTemplate="{StaticResource DetailStageBadgeTemplate}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                             <TextBlock Grid.Column="1" Text="{Binding ProductionDate, Converter={StaticResource DateOnlyDisplayConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center" />
@@ -1016,9 +1027,31 @@
                             </Border>
                             </Grid>
 
-                        <Expander Header="{Binding Detail.NormalBatchCount, StringFormat=其他正常批次（{0}）}"
-                                                  IsExpanded="False"
-                                                  Visibility="{Binding Detail.HasNormalBatches, Converter={StaticResource BoolToVisibility}}">
+                        <Expander IsExpanded="False"
+                                  AutomationProperties.Name="其他正常批次"
+                                  Visibility="{Binding Detail.HasNormalBatches, Converter={StaticResource BoolToVisibility}}">
+                            <Expander.Header>
+                                <Grid MinHeight="34" Background="Transparent">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock AutomationProperties.Name="展开状态">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="▶" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                                    <Setter Property="Margin" Value="0,0,8,0" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExpanded, RelativeSource={RelativeSource AncestorType=Expander}}" Value="True">
+                                                            <Setter Property="Text" Value="▼" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Detail.NormalBatchCount, StringFormat=其他正常批次（{0}）}"
+                                                   FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Grid>
+                            </Expander.Header>
                                             <Grid MinWidth="900">
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="34" />
@@ -1084,8 +1117,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Ellipse Width="10" Height="10" Fill="{DynamicResource SuccessBrush}" Margin="4,0,10,0" />
-                                        <TextBlock Text="{Binding Detail.DraftFooterStatusText}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                        <Ellipse Width="10" Height="10" Fill="{Binding Foreground, ElementName=DraftFooterStatusText}" Margin="4,0,10,0" />
+                                        <TextBlock x:Name="DraftFooterStatusText"
+                                                   Text="{Binding Detail.DraftFooterStatusText}"
+                                                   Style="{StaticResource DraftFooterStatusTextStyle}"
+                                                   VerticalAlignment="Center" />
                                         <Button Content="重试"
                                                 Command="{Binding Detail.RetrySaveCommand}"
                                                 Visibility="{Binding Detail.SaveFailed, Converter={StaticResource BoolToVisibility}}"
@@ -1416,7 +1452,10 @@
                                            Foreground="{DynamicResource SecondaryTextBrush}"
                                            VerticalAlignment="Center"
                                            Visibility="{Binding Import.CanConfirm, Converter={StaticResource InverseBoolToVisibility}}" />
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right"
+                                            Visibility="{Binding Import.HasPreview, Converter={StaticResource BoolToVisibility}}">
                                     <Button Content="取消"
                                             Command="{Binding NavigateHomeCommand}"
                                             Width="92"

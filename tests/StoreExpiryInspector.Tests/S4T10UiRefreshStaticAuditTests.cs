@@ -87,9 +87,11 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.DoesNotContain("Content=\"搜索\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("Text=\"（以当前 Application 结果为准）\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("SubmissionHintText", window, StringComparison.Ordinal);
-        Assert.Contains("Content=\"查看导入记录  →\"", window, StringComparison.Ordinal);
-        Assert.Contains("IsEnabled=\"False\"", window, StringComparison.Ordinal);
-        Assert.Contains("ToolTip=\"导入记录功能暂未开放\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("查看导入记录", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("导入记录功能暂未开放", window, StringComparison.Ordinal);
+        Assert.Contains("Text=\"默认按紧急程度和最近有效期排序\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("<RadioButton", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Fill=\"#EFF6FF\" Stroke=\"{DynamicResource PrimaryActionBrush}\"", window, StringComparison.Ordinal);
         Assert.Contains("Import.IssueRows", window, StringComparison.Ordinal);
         Assert.Contains("Header=\"问题类型\"", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmAvailabilityText", window, StringComparison.Ordinal);
@@ -98,8 +100,9 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("ShellColumn\" Width=\"224\"", window, StringComparison.Ordinal);
         Assert.Contains("ShellColumn.Width = new(224)", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("M 12,16 L 12,3", app, StringComparison.Ordinal);
-        Assert.Contains("x:Key=\"UploadIcon\"", app, StringComparison.Ordinal);
-        Assert.Contains("M 12,3 L 12,14 M 7,9 L 12,14 L 17,9 M 4,16 L 4,21 L 20,21 L 20,16", app, StringComparison.Ordinal);
+        Assert.Contains("<PathGeometry x:Key=\"ImportIcon\"", app, StringComparison.Ordinal);
+        Assert.Contains("M 12,14 L 12,3 M 7,8 L 12,3 L 17,8 M 4,16 L 4,21 L 20,21 L 20,16", app, StringComparison.Ordinal);
+        Assert.DoesNotContain("UploadIcon", app, StringComparison.Ordinal);
         Assert.Contains("x:Key=\"NavIconPathStyle\"", app, StringComparison.Ordinal);
         Assert.Contains("StrokeStartLineCap", app, StringComparison.Ordinal);
         Assert.Contains("TargetType=\"DatePicker\"", app, StringComparison.Ordinal);
@@ -123,6 +126,7 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("x:Name=\"PART_Button\"", app, StringComparison.Ordinal);
         Assert.Contains("CalendarIcon", app, StringComparison.Ordinal);
         Assert.Contains("DisplayDateEnd=\"{Binding Detail.CheckDateMaxValue, Mode=OneWay}\"", window, StringComparison.Ordinal);
+        Assert.Contains("Visibility=\"{Binding Import.HasPreview, Converter={StaticResource BoolToVisibility}}\"", window, StringComparison.Ordinal);
 
         var detailStart = window.IndexOf("<!-- 排查详情", StringComparison.Ordinal);
         var detailEnd = window.IndexOf("<!-- 数据导入", detailStart, StringComparison.Ordinal);
@@ -150,12 +154,29 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var expanderEnd = detail.IndexOf("</Expander>", expanderStart, StringComparison.Ordinal);
         Assert.True(expanderStart >= 0 && expanderEnd > expanderStart);
         var expander = detail.Substring(expanderStart, expanderEnd - expanderStart);
+        Assert.Contains("AutomationProperties.Name=\"其他正常批次\"", expander, StringComparison.Ordinal);
+        Assert.Contains("Value=\"▶\"", expander, StringComparison.Ordinal);
+        Assert.Contains("Value=\"▼\"", expander, StringComparison.Ordinal);
+        Assert.Contains("RelativeSource AncestorType=Expander", expander, StringComparison.Ordinal);
+        Assert.Contains("StringFormat=其他正常批次（{0}）", expander, StringComparison.Ordinal);
         Assert.Contains("ItemsSource=\"{Binding Detail.NormalBatches}\"", expander, StringComparison.Ordinal);
         Assert.DoesNotContain("ItemsSource=\"{Binding Detail.TaskItems}\"", expander, StringComparison.Ordinal);
         Assert.DoesNotContain("<ScrollViewer", expander, StringComparison.Ordinal);
         Assert.DoesNotContain("Detail.DraftStatusText", detail, StringComparison.Ordinal);
         Assert.DoesNotContain("Detail.SaveStatusText", detail, StringComparison.Ordinal);
         Assert.Contains("Detail.DraftFooterStatusText", detail, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"DraftFooterStatusText\"", detail, StringComparison.Ordinal);
+        Assert.Contains("Style=\"{StaticResource DraftFooterStatusTextStyle}\"", detail, StringComparison.Ordinal);
+        Assert.Equal(2, Count(detail, "<ColumnDefinition Width=\"300\" />"));
+        Assert.Contains("x:Key=\"DraftFooterStatusTextStyle\"", window, StringComparison.Ordinal);
+        Assert.Contains("Condition Binding=\"{Binding Detail.HasRecoveredDraft}\" Value=\"True\"", window, StringComparison.Ordinal);
+        Assert.Contains("Condition Binding=\"{Binding Detail.HasUnsavedChanges}\" Value=\"False\"", window, StringComparison.Ordinal);
+        Assert.Contains("DataTrigger Binding=\"{Binding Detail.IsSaving}\" Value=\"True\"", window, StringComparison.Ordinal);
+        Assert.Contains("DataTrigger Binding=\"{Binding Detail.SaveFailed}\" Value=\"True\"", window, StringComparison.Ordinal);
+        Assert.Contains("DynamicResource DisabledTextBrush", window, StringComparison.Ordinal);
+        Assert.Contains("DynamicResource SecondaryTextBrush", window, StringComparison.Ordinal);
+        Assert.Contains("DynamicResource SuccessBrush", window, StringComparison.Ordinal);
+        Assert.Contains("DynamicResource DangerBrush", window, StringComparison.Ordinal);
         Assert.Contains("草稿保存失败 · 重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "InspectionDetailViewModel.cs")), StringComparison.Ordinal);
     }
 
