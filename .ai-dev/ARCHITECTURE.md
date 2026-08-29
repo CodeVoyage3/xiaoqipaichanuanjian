@@ -1,8 +1,8 @@
 # 架构事实与阶段边界
 
-> 更新于 2026-08-27。Stage 3 已整体验收通过；本文区分当前代码事实与后续阶段方向。
+> 更新于 2026-08-29。Stage 4 已整体验收并归档；本文区分当前代码事实与后续阶段方向。
 
-## 当前代码事实（Stage 3 整体通过）
+## 当前代码事实（Stage 4 整体通过）
 
 ```text
 StoreExpiryInspector.slnx
@@ -10,6 +10,10 @@ StoreExpiryInspector.slnx
 │  ├─ Domain/ExpiryStageCalculator         纯效期阶段与下一触发日
 │  ├─ Application
 │  │  ├─ Imports                           Stage 2 导入 + Stage 3 原子后置编排
+│  │  ├─ Tasks/InspectionTaskQuery         Stage 4 只读 Dashboard/任务/详情查询
+│  │  ├─ Tasks/InspectionDraftUseCase      Stage 4 草稿、重新确认与主动清空
+│  │  ├─ ManualInventoryAdjustmentUseCase  Stage 4 手工库存修正
+│  │  ├─ Tasks/InspectionSubmissionUseCase Stage 4 正式提交事务
 │  │  ├─ Tasks/ProductTaskAggregator       商品唯一开放任务聚合
 │  │  ├─ StartupRecalculationUseCase       活动到期 Batch 启动补算
 │  │  ├─ ProductStockZeroLifecycleUseCase  商品归零生命周期
@@ -19,15 +23,15 @@ StoreExpiryInspector.slnx
 │  ├─ Infrastructure                       SQLite/EF、日志、备份、Excel
 │  ├─ Migrations                           8 条 EF Core migration
 │  ├─ App.xaml.cs                          初始化、入口时钟、启动编排与日志
-│  └─ UI                                   仍为占位主窗口
-└─ tests/StoreExpiryInspector.Tests         348 项测试
+│  └─ UI                                   Shell、首页、列表、导入、详情、草稿、库存修正与提交
+└─ tests/StoreExpiryInspector.Tests         532 项 Release 测试
 ```
 
-- schema 仍为 17 张业务表、17 个实体/配置/DbSet 和 8 条 migration；Stage 3 未新增依赖或 schema。
+- schema 仍为 17 张业务表、17 个实体/配置/DbSet 和 8 条 migration；Stage 4 未新增依赖或 schema。
 - canonical phase 为 `none / discount_50 / discount_20 / withdraw / expired`；阶段与下一触发日只由 Domain 计算器定义，优先级只由其权威映射定义。
 - `ConfirmedImportLifecycleOrchestrator` 在同一事务中组合 Stage 2 与 S3-T04/S3-T05；`ConfirmedImportExecutor` 没有 Stage 3 状态机。
 - WPF 启动已接入 DatabaseInitializer、ApplicationStartupCoordinator 与 LocalFileLogger；系统时钟只在 App 边界读取。
-- S4-T05 已将 S4-T01 接入最小 WPF Shell、首页和待排查列表；详情、草稿交互、库存修正和正式提交 UI 仍未实现。
+- S4-T05～S4-T10 已完成 WPF Shell、首页、待排查列表、数据导入、详情、草稿、重新确认、库存修正、正式提交及最终 UI 定稿；UI 只调用既有 Application 权威。
 
 ## Stage 2 历史基线
 
@@ -91,7 +95,7 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 ## 后续事务边界
 
 - 一次确认导入：S3-T07 已用外层事务组合 Stage 2 导入事实与 S3-T04/S3-T05 后置生命周期，失败整次回滚；Stage 2 执行器本身不承载 Stage 3 规则。
-- 一次商品排查提交仍未实现：Stage 4 必须将任务、正式排查、明细、草稿与 S3-T06 批次状态/事件置于同一事务。
+- 一次商品排查提交已由 S4-T04 实现：任务、正式排查、明细、有效草稿处置与 S3-T06 批次状态/事件处于同一事务，WPF 只调用该入口。
 - 一次历史修改：修订记录与允许发生的当前状态重算同事务。
 - 商品库存归零：商品、相关批次、开放任务、草稿和事件同事务。
 - 导入撤销执行及完整备份恢复尚未实现；S2-T08 只提供只读资格判断，真正恢复前必须在排他/原子边界内重新判断、先备份当前库，再决定 Undone 与工作簿语义。

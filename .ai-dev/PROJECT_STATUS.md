@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜S4-T09 UAT 修复未正式验收；S4-T10 UI 定稿重构已完成第一轮治理
-- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T08 已独立验收；S4-T09 与 Stage 4 未归档；S4-T10 已实现并进入最终 GUI 收尾 / 用户验收阶段
+- 当前阶段：Stage 4 已整体验收并归档；暂停在 Stage 4 → Stage 5 门禁
+- 状态：Stage 0～Stage 4 整体通过；已生成 Stage 5 handoff，未创建或派发 S5-T01
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -15,7 +15,7 @@
 - Stage 2：固定模板只读解析、局部增量规划、确认守卫、安全快照、原子导入、Workbook 保留与最新 Import 撤销资格。
 - Stage 3：纯效期计算、商品任务聚合、启动补算、商品归零、新批次/新到货/恢复、正式 0 件停止、原子导入后置编排和真实 WPF 启动接入。
 - canonical phase：`none / discount_50 / discount_20 / withdraw / expired`。
-- 当前 Release 全量 525/525；S4-T01～S4-T08 精确回归 177/177；Stage 3 精确证据 170/170；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。
+- Stage 4 最终验证：受影响 UI/S4-T10 回归 84/84，Stage 4 八个权威测试类 179/179，Stage 3 十个权威测试类 184/184，Release 全量 532/532；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。
 - Release EXE 已实际启动验收：主窗口正常；新空库完成 migration、写入 `last_normal_run_date` 与启动完成日志。
 - S4-T01 已交付 Application 层 Dashboard、开放任务列表和排查详情只读查询 DTO；真实 SQLite 专项 10/10，Release 全量 358/358，Stage 3 精确回归 170/170。
 - S4-T02 已交付 Application 层草稿 patch 保存、显式重新确认、readiness 与用户主动清空；真实 SQLite 专项 30/30，S4-T01 回归 10/10，Stage 3 精确回归 170/170。
@@ -25,6 +25,8 @@
 - S4-T06 已把既有 Excel 解析、校验、确认守卫与原子生命周期导入接入真实 WPF；专项 UI 回归 28/28，S4-T01～T06 精确回归 126/126，Stage 3 精确回归 170/170，Release 全量 474/474。真实 Release WPF 已验证选择/取消/P0 身份失效/错误/Loading/确认及 Dashboard、任务列表即时刷新。
 - S4-T07 已把详情、草稿、逐项重新确认与库存修正接入真实 WPF；专项 24/24，S4-T01～T07 精确回归 150/150，Stage 3 精确回归 170/170，Release 全量 498/498。真实 Release WPF 已验证多批次详情、正常批次折叠、空白/0/正数、自动保存恢复、Reconfirm、ClearDraft、正库存/同值/0 库存与 Dashboard/列表刷新；原用户数据已恢复。
 - S4-T08 已把 S4-T04 正式提交接入真实 WPF，交付保存稳定门禁、提交互斥、超库存确认、完成/陈旧状态及三处刷新；专项 27/27，S4-T01～T08 精确回归 177/177，Stage 3 精确回归 170/170，Release 全量 525/525。真实 Release WPF 已验证正常提交落库、0 件停止、超库存二次确认、completed、列表移除、Dashboard 刷新与 RequiresReconfirmation 拒绝；原用户数据已恢复。
+- S4-T09 已完成最终 Release/UAT 缺陷修复；其人工验收门禁顺延到 S4-T10 最终 GUI 基线，由用户最终复测一并闭环。
+- S4-T10 已完成核心 UI 定稿与最终收尾；用户 10/10 GUI 验收通过、发现问题为 0。正式数据库已恢复为 299008 bytes，SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，隔离测试数据已清理且恢复后未再启动应用。
 
 ## 冻结业务红线
 
@@ -59,9 +61,13 @@
 - S4-T06 验收：`.ai-dev/ACCEPTANCE/S4-T06.md`
 - S4-T07 验收：`.ai-dev/ACCEPTANCE/S4-T07.md`
 - S4-T08 验收：`.ai-dev/ACCEPTANCE/S4-T08.md`
+- S4-T10 验收：`.ai-dev/ACCEPTANCE/S4-T10.md`
+- Stage 4 总验收：`.ai-dev/ACCEPTANCE/STAGE-4.md`
+- Stage 4 归档：`.ai-dev/STAGES/STAGE-4-CLOSEOUT.md`
+- Stage 5 接任说明：`.ai-dev/STAGES/STAGE-5-HANDOFF.md`
 
 ## 下一步门禁
 
-- S4-T08 验收见 `.ai-dev/ACCEPTANCE/S4-T08.md`；本卡通过后按用户要求立即停止，不自动创建、编号、派发或预实现 S4-T09。
-- 精确 1024×600 截图、恰好 125% 缩放与在线 NuGet 漏洞审计继续保留为 Stage 4 最终实机闭环项，不伪造完成。
-- 当前不得修改已冻结的 S4-T01～T04、HandledAttentionVersion、Draft处置、Stage 3业务语义，或提前进入 Stage 5+。
+- Stage 4 已完成总验收与归档；1024×600、125% 缩放、鼠标滚轮、Tab 与窗口恢复已由用户最终 GUI 验收通过。
+- 在线 NuGet 漏洞审计因本机 SSL/TLS/凭据环境失败的风险已由用户在 S4-T09 接受；不得改写为在线审计成功。
+- 当前只允许阅读 `.ai-dev/STAGES/STAGE-5-HANDOFF.md` 做接任核验；未经用户单独批准，不得创建或派发 S5-T01，不得进入 Stage 5 开发。
