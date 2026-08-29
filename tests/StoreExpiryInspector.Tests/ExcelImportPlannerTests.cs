@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure.Excel;
+using StoreExpiryInspector.UI;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -557,6 +558,73 @@ public sealed class ExcelImportPlannerTests
         Assert.Equal(1, plan.Preview.StockConflictCount);
         Assert.DoesNotContain(plan.NewBatches, batch => batch.BatchKey.ProductCode == "CONFLICT");
         Assert.DoesNotContain(plan.UpdatedBatches, batch => batch.BatchKey.ProductCode == "CONFLICT");
+    }
+
+    [Fact]
+    public async Task ImportIssueRowsExposeSafeChineseRowsForClassifierAndPlannerIssues()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var sourceRows = new[]
+        {
+            Row(2, code: "P-ROW", expiry: "bad"),
+            Row(4, code: "P-DUP"),
+            Row(5, code: "P-DUP"),
+            Row(6, code: "P-CONFLICT", shelfLife: "12"),
+            Row(7, code: "P-CONFLICT", shelfLife: "24"),
+            Row(8, code: "P-PLAN", expiry: "2026-12-31", name: "商品一", barcode: "条码一"),
+            Row(9, code: "P-PLAN", expiry: "2027-12-31", name: "商品二", barcode: "条码二")
+        };
+        var workbook = Workbook(sourceRows);
+
+        ImportPlan plan;
+        using (var context = database.Open())
+        {
+            plan = new ExcelImportPlanner().Plan(
+                context,
+                new ExcelFileClassifier().Classify(workbook));
+        }
+
+        var path = Path.Combine(Path.GetTempPath(), "s4t10-issue-table", workbook.SourceFileName);
+        var identityWorkbook = new ExcelWorkbookDto(
+            workbook.SourceFileName,
+            new string('a', 64),
+            workbook.WorksheetName,
+            workbook.NormalizedHeaders,
+            workbook.Rows);
+        var identity = new ImportPreviewIdentity(path, identityWorkbook, plan);
+        var vm = new ImportViewModel(
+            parsePreview: _ => new ImportPreviewLoadResult(workbook, plan, identity));
+
+        await vm.SelectFileAsync(path);
+
+        Assert.Contains(vm.IssueRows, row =>
+            row.ExcelRowNumber == 2
+            && row.ProductCode == "—"
+            && row.IssueType == "数据格式"
+            && row.Description.Contains("有效日期", StringComparison.Ordinal));
+        Assert.Contains(vm.IssueRows, row =>
+            row.ExcelRowNumber == 5
+            && row.ProductCode == "—"
+            && row.IssueType == "重复数据"
+            && row.Description == "与第 4 行内容重复");
+        Assert.Contains(vm.IssueRows, row =>
+            row.ExcelRowNumber == 6
+            && row.ProductCode == "P-CONFLICT"
+            && row.IssueType == "批次冲突"
+            && row.Description.Contains("第 6、7 行的保质期不一致", StringComparison.Ordinal));
+        Assert.Contains(vm.IssueRows, row =>
+            row.ExcelRowNumber == 8
+            && row.ProductCode == "P-PLAN"
+            && row.IssueType == "数据校验"
+            && row.Description.Contains("商品名称", StringComparison.Ordinal));
+
+        var visibleText = vm.IssueRows
+            .SelectMany(row => new[] { row.ProductCode, row.IssueType, row.Description });
+        Assert.DoesNotContain(visibleText, text =>
+            text.Contains("invalid_", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("ambiguous_", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("CanonicalStage", StringComparison.Ordinal)
+            || text.Contains("Application", StringComparison.Ordinal));
     }
 
     [Fact]
