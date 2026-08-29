@@ -154,13 +154,9 @@
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource HomeIcon}"
-                                  Width="22"
-                                  Height="22"
-                                  Stretch="Uniform"
+                                  Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  StrokeThickness="1.7"
-                                  Fill="Transparent"
-                                  Margin="0,0,14,0" />
+                                  />
                             <TextBlock Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -170,13 +166,9 @@
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource ClipboardIcon}"
-                                  Width="22"
-                                  Height="22"
-                                  Stretch="Uniform"
+                                  Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  StrokeThickness="1.7"
-                                  Fill="Transparent"
-                                  Margin="0,0,14,0" />
+                                  />
                             <TextBlock Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -187,13 +179,9 @@
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource FileIcon}"
-                                  Width="22"
-                                  Height="22"
-                                  Stretch="Uniform"
+                                  Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{DynamicResource DisabledTextBrush}"
-                                  StrokeThickness="1.7"
-                                  Fill="Transparent"
-                                  Margin="0,0,14,0" />
+                                  />
                             <TextBlock Text="排查记录" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -203,13 +191,9 @@
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource UploadIcon}"
-                                  Width="22"
-                                  Height="22"
-                                  Stretch="Uniform"
+                                  Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  StrokeThickness="1.7"
-                                  Fill="Transparent"
-                                  Margin="0,0,14,0" />
+                                  />
                             <TextBlock Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -220,13 +204,9 @@
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource GearIcon}"
-                                  Width="22"
-                                  Height="22"
-                                  Stretch="Uniform"
+                                  Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{DynamicResource DisabledTextBrush}"
-                                  StrokeThickness="1.5"
-                                  Fill="Transparent"
-                                  Margin="0,0,14,0" />
+                                  />
                             <TextBlock Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -926,7 +906,8 @@
                             </Grid>
                         </Border>
 
-                        <Grid Margin="0,0,0,12">
+                        <StackPanel Margin="0,0,0,12" MinWidth="900">
+                            <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="42" />
                                 <RowDefinition Height="*" />
@@ -956,11 +937,10 @@
                                 </Grid>
                             </Border>
                             <Border Grid.Row="1"
-                                     Background="{DynamicResource SurfaceBrush}"
+                                    Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1,0,1,1"
                                     CornerRadius="0,0,8,8">
-                                <StackPanel MinWidth="900">
                                         <ItemsControl ItemsSource="{Binding Detail.TaskItems}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -1033,6 +1013,8 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
+                            </Border>
+                            </Grid>
 
                         <Expander Header="{Binding Detail.NormalBatchCount, StringFormat=其他正常批次（{0}）}"
                                                   IsExpanded="False"
@@ -1084,8 +1066,6 @@
                                                    Foreground="{DynamicResource SuccessBrush}"
                                                    Margin="8,8,8,0" />
                                     </StackPanel>
-                            </Border>
-                        </Grid>
 
                             </StackPanel>
                         </ScrollViewer>
