@@ -101,6 +101,9 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var taskItems = detail.IndexOf("ItemsSource=\"{Binding Detail.TaskItems}\"", StringComparison.Ordinal);
         var normalItems = detail.IndexOf("ItemsSource=\"{Binding Detail.NormalBatches}\"", StringComparison.Ordinal);
         Assert.True(taskItems >= 0 && normalItems > taskItems && normalItems < detailScrollEnd);
+        var taskItemsContainer = detail.LastIndexOf("<Border", taskItems, StringComparison.Ordinal);
+        Assert.True(taskItemsContainer >= 0);
+        Assert.Contains("Grid.Row=\"1\"", detail[taskItemsContainer..taskItems], StringComparison.Ordinal);
         var footer = detail.IndexOf("Grid Grid.Row=\"1\"", detailScrollEnd, StringComparison.Ordinal);
         Assert.True(footer > detailScrollEnd, "固定底栏必须位于详情滚动区之外");
         var expanderStart = detail.IndexOf("<Expander", StringComparison.Ordinal);

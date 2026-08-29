@@ -955,8 +955,8 @@
                                     <TextBlock Text="状态 / 操作" Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" />
                                 </Grid>
                             </Border>
-                            <Border
-                                    Background="{DynamicResource SurfaceBrush}"
+                            <Border Grid.Row="1"
+                                     Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1,0,1,1"
                                     CornerRadius="0,0,8,8">
