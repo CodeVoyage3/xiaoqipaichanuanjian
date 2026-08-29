@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 4｜S4-T08 已独立验收通过，停止等待下一步批准
-- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T08 已独立验收通过；未创建 S4-T09
+- 当前阶段：Stage 4｜S4-T09 UAT 修复未正式验收；S4-T10 UI 定稿重构已完成第一轮治理
+- 状态：Stage 0～Stage 3 整体通过；S4-T01～S4-T08 已独立验收；S4-T09 与 Stage 4 未归档；S4-T10 尚未派发实现
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -44,6 +44,7 @@
 - S3-T06 的多轮历史修订时序属于 Stage 5，不得在 Stage 4 顺带实现历史编辑。
 - `HandledAttentionVersion` 已冻结为正式排查处理水位，只能在正式提交事务更新；正常成功提交在同一事务删除有效 DraftItem/Draft，系统失效 Draft 永久保留。
 - Stage 4 UI/UX Pro Max 基线 `.ai-dev/UI/STAGE-4-UI-BASELINE.md` 已批准并用于 S4-T05 验收；规范只控制 WPF视觉与交互，不得改写Application或业务规则。
+- S4-T10 定稿刷新基线 `.ai-dev/UI/STAGE-4-UI-REFRESH-BASELINE.md` 已建立，5 张用户定稿图已按实际页面内容校正文件名并登记哈希；它只覆盖纯表现，不覆盖既有业务/Application 权威。
 
 ## 阶段归档
 

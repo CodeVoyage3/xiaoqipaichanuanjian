@@ -1,5 +1,7 @@
 # Stage 4｜UI/UX Pro Max 设计基线
 
+> 2026-08-29：本文保留 S4-T05～S4-T09 的历史设计与业务交互基线。S4-T10 的视觉、布局和定稿图以 `.ai-dev/UI/STAGE-4-UI-REFRESH-BASELINE.md` 为准；若两者冲突，业务/Application 边界仍以本文及已验收任务为准，纯表现以刷新基线为准。
+
 - 状态：已批准并归档；S4-T05 已按本基线独立验收通过
 - 适用阶段：S4-T05、S4-T06、S4-T07
 - 技术栈：.NET 10 WPF，Windows 10 / 11
