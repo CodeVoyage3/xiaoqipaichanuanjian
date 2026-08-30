@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 5；S5-T04 技术实现与独立验收完成，等待用户 GUI 验收
-- 状态：Stage 0～Stage 4 整体通过；S5-T01 / S5-T02 / S5-T03 已验收；S5-T04 技术通过、尚未正式归档
+- 当前阶段：Stage 5；S5-T04 已完成并正式归档，停止等待下一步批准
+- 状态：Stage 0～Stage 4 整体通过；S5-T01 / S5-T02 / S5-T03 / S5-T04 均已验收
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -30,7 +30,7 @@
 - S5-T01 已交付正式 `Inspection` 历史列表与单条详情 Application 只读查询；专项 9/9、Stage 4 179/179、Stage 3 实际十类 170/170、Release 541/541、build 0/0、EF 无漂移、migration 8，未实现 WPF、Revision 或 S5-T02。
 - S5-T02 已交付正式明细数量修订、原子 Revision 留痕及当前值/修订链只读查询；实现 `33424ef6cddbd109b2e9c59941a7e182324270e7`。专项 16/16、S5-T01 9/9、Stage 4 179/179、Stage 3 170/170、Release 557/557、build 0/0、EF 无漂移、migration 8；无生命周期联动、WPF 或 S5-T03。
 - S5-T03 已完成排查历史只读入口、列表、正式详情与 Revision 展示；初始实现 `3f44388193fc03cfde82ee169912f868ba32e219`，最终显示修复 `e4c3d4d8d6b18c3fc9e1f9773815d6fde11430ae`。Sol 独立专项 10/10、S5-T02 16/16、S5-T01 9/9、Stage 4 179/179、Stage 3 170/170、Release 567/567、build 0/0、EF 无漂移、migration 8、无依赖变更；没有历史编辑 UI 或 S5-T04。用户 GUI 通过，本机恢复回执确认正式库为 299008 bytes / 指定 SHA-256、进程 0；共享临时目录已清理，正式归档。
-- S5-T04 已把既有 S5-T02 单条正式明细数量修订接入历史详情 UI；实现 `5818379d751c1aa479489d5febcad6208dd92e9b`。专项 16/16、S5-T03/T02/T01 合计 35/35、Stage 4 179/179、Stage 3 170/170、Release 583/583、build 0/0、EF 无漂移、migration 8、无依赖变更及范围越界。技术验收通过；正式库未写、WPF 未启动，等待用户隔离环境 GUI 验收，未正式归档。
+- S5-T04 已把既有 S5-T02 单条正式明细数量修订接入历史详情 UI；实现 `5818379d751c1aa479489d5febcad6208dd92e9b`。专项 16/16、S5-T03/T02/T01 合计 35/35、Stage 4 179/179、Stage 3 170/170、Release 583/583、build 0/0、EF 无漂移、migration 8、无依赖变更及范围越界。用户本人隔离 GUI 验收通过，确认数量 4→7 与 Revision；恢复回执为 `RESTORE_PASS`，正式库 299008 bytes / 指定 SHA-256、进程 0、隔离与暂存已移除，恢复后未再次启动应用。S5-T04 正式归档。
 
 ## 冻结业务红线
 
@@ -76,7 +76,7 @@
 
 ## 下一步门禁
 
-- S5-T04 技术实现与 Sol 独立验收已完成；实现提交 `5818379d751c1aa479489d5febcad6208dd92e9b`，详见 `.ai-dev/ACCEPTANCE/S5-T04.md`。用户本人执行最终 GUI；正式数据库不得用于测试。S5-T03 隔离环境已清理，只有另获批准后才准备 S5-T04 隔离环境。用户明确 GUI 通过前不正式归档；不创建、派发或实施 S5-T05 / Stage 6。
+- S5-T04 技术、用户 GUI、正式环境恢复与隔离清理均已通过并正式归档；实现提交 `5818379d751c1aa479489d5febcad6208dd92e9b`，详见 `.ai-dev/ACCEPTANCE/S5-T04.md` 与 `.ai-dev/ACCEPTANCE/S5-T04-RESTORE-RESULT.json`。停止；不创建、派发或实施 S5-T05 / Stage 6，等待用户下一步明确批准。
 - 最新结论（2026-08-30）：用户 GUI 通过，并提供本机 `RESTORE_PASS` 截图及一致的共享回执；正式库大小 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，进程 0，隔离运行目录和恢复暂存目录已删除。Sol 已清理共享 `obj/S5T03GuiAcceptance`，恢复后未启动应用。S5-T03 正式归档，停止。
 - Stage 4 已完成总验收与归档；1024×600、125% 缩放、鼠标滚轮、Tab 与窗口恢复已由用户最终 GUI 验收通过。
 - 在线 NuGet 漏洞审计因本机 SSL/TLS/凭据环境失败的风险已由用户在 S4-T09 接受；不得改写为在线审计成功。
