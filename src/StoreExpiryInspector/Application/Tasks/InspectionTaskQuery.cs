@@ -43,6 +43,13 @@ public sealed record InspectionTaskSearchResult(
     int Page,
     int PageSize);
 
+public sealed record ReminderCandidate(
+    long ProductId,
+    string? ProductName,
+    string? ProductBarcode,
+    string ProductCode,
+    string HighestStage);
+
 public sealed record InspectionLatestInspectionResult(
     long InspectionId,
     long InspectionItemId,
@@ -105,6 +112,20 @@ public sealed record InspectionTaskDetailResult(
 
 public sealed class InspectionTaskQuery
 {
+    public IReadOnlyList<ReminderCandidate> GetReminderCandidates(StoreDbContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return Array.AsReadOnly(OrderTasks(QueryTaskList(context))
+            .Select(task => new ReminderCandidate(
+                task.ProductId,
+                task.ProductName,
+                task.ProductBarcode,
+                task.ProductCode,
+                task.HighestStage))
+            .ToArray());
+    }
+
     public InspectionDashboardResult Dashboard(StoreDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
