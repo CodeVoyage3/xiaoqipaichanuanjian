@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Markup;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using StoreExpiryInspector.Application.Tasks;
 
 namespace StoreExpiryInspector.UI;
 
@@ -15,7 +16,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
-            confirmZeroInventory: ConfirmZeroInventory);
+            confirmZeroInventory: ConfirmZeroInventory,
+            confirmHistoryEdit: ConfirmHistoryEdit);
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -182,4 +184,13 @@ public partial class MainWindow : Window
         dialog.Loaded += (_, _) => cancel.Focus();
         return dialog.ShowDialog() == true;
     }
+
+    private bool ConfirmHistoryEdit(InspectionHistoryEditRequest request) =>
+        MessageBox.Show(
+            this,
+            $"将明细 {request.InspectionItemId} 的正式排查数量修改为 {request.NewCheckedQty}。\n确认写入并保留修改记录吗？",
+            "确认修改正式数量",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
 }

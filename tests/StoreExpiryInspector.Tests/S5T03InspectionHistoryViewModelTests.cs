@@ -471,23 +471,28 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Contains("ProductBarcode", history, StringComparison.Ordinal);
         Assert.Contains("ProductCode", history, StringComparison.Ordinal);
         var historyTextBoxes = Regex.Matches(history, @"<TextBox\b[\s\S]*?/>");
-        Assert.Equal(2, historyTextBoxes.Count);
-        foreach (Match textBox in historyTextBoxes)
+        Assert.Equal(3, historyTextBoxes.Count);
+        var snapshotTextBoxes = historyTextBoxes
+            .Where(textBox => textBox.Value.Contains("IsReadOnly=\"True\"", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(2, snapshotTextBoxes.Length);
+        foreach (Match textBox in snapshotTextBoxes)
         {
-            Assert.Contains("IsReadOnly=\"True\"", textBox.Value, StringComparison.Ordinal);
             Assert.Contains("Mode=OneWay", textBox.Value, StringComparison.Ordinal);
             Assert.DoesNotContain("CheckedQty", textBox.Value, StringComparison.Ordinal);
         }
+        var editTextBox = Assert.Single(historyTextBoxes, textBox => textBox.Value.Contains(
+            "History.EditCheckedQtyText",
+            StringComparison.Ordinal));
+        Assert.Contains("Mode=TwoWay", editTextBox.Value, StringComparison.Ordinal);
         Assert.DoesNotContain("TextBox Text=\"{Binding History.DetailItems", history, StringComparison.Ordinal);
-        Assert.DoesNotContain("UpdateSourceTrigger=", history, StringComparison.Ordinal);
-        Assert.DoesNotContain("InspectionHistoryEditUseCase", history, StringComparison.Ordinal);
+        Assert.DoesNotContain("UpdateSourceTrigger=", string.Join(Environment.NewLine, snapshotTextBoxes), StringComparison.Ordinal);
         Assert.DoesNotContain("ExpiryStageCalculator", history, StringComparison.Ordinal);
         Assert.DoesNotContain("InspectionDraftUseCase", history, StringComparison.Ordinal);
-        Assert.DoesNotContain("保存修改", history, StringComparison.Ordinal);
         Assert.DoesNotContain("回滚", history, StringComparison.Ordinal);
 
         var viewModel = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "InspectionHistoryViewModel.cs"));
-        Assert.DoesNotContain("InspectionHistoryEditUseCase", viewModel, StringComparison.Ordinal);
+        Assert.DoesNotContain("new InspectionHistoryEditUseCase", viewModel, StringComparison.Ordinal);
         Assert.DoesNotContain("ExpiryStageCalculator", viewModel, StringComparison.Ordinal);
         Assert.DoesNotContain("InspectionDraftUseCase", viewModel, StringComparison.Ordinal);
         Assert.DoesNotContain("StoreDbContext", viewModel, StringComparison.Ordinal);
@@ -496,6 +501,7 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Contains("new InspectionHistoryQuery().List(context)", shell, StringComparison.Ordinal);
         Assert.Contains("new InspectionHistoryQuery().GetDetail(context, inspectionId)", shell, StringComparison.Ordinal);
         Assert.Contains("new InspectionHistoryQuery().GetItemRevisions(context, inspectionId, inspectionItemId)", shell, StringComparison.Ordinal);
+        Assert.Contains("new InspectionHistoryEditUseCase().Execute(context, request)", shell, StringComparison.Ordinal);
         Assert.Contains("WaitForStableSaveAsync", shell, StringComparison.Ordinal);
         Assert.Contains("if (page == ShellPage.History && CurrentPage == ShellPage.History)", shell, StringComparison.Ordinal);
     }

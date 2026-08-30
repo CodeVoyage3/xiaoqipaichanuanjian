@@ -818,7 +818,9 @@ public sealed class ShellViewModel : ViewModelBase
         Func<InspectionSubmissionRequest, InspectionSubmissionResult>? submit = null,
         Func<IReadOnlyList<InspectionHistoryListItem>>? historyListLoader = null,
         Func<long, InspectionHistoryDetailResult>? historyDetailLoader = null,
-        Func<long, long, InspectionItemRevisionHistoryResult>? historyRevisionLoader = null)
+        Func<long, long, InspectionItemRevisionHistoryResult>? historyRevisionLoader = null,
+        Func<InspectionHistoryEditRequest, InspectionHistoryEditResult>? historyEdit = null,
+        Func<InspectionHistoryEditRequest, bool>? confirmHistoryEdit = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -835,7 +837,10 @@ public sealed class ShellViewModel : ViewModelBase
             historyListLoader ?? LoadHistory,
             historyDetailLoader ?? LoadHistoryDetail,
             historyRevisionLoader ?? LoadHistoryRevisions,
-            logger);
+            logger,
+            historyEdit ?? EditHistory,
+            confirmHistoryEdit,
+            utcNow);
         Import = new ImportViewModel(
             refreshDashboard: Dashboard.LoadAsync,
             refreshPendingTasks: PendingTasks.LoadAsync,
@@ -855,11 +860,11 @@ public sealed class ShellViewModel : ViewModelBase
             confirmZeroInventory: confirmZeroInventory,
             goBack: ReturnFromDetailAsync,
             submit: submit ?? SubmitInspection);
-        NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard));
-        NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks));
-        SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); });
-        NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History));
-        NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import));
+        NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => !History.IsEditBusy);
+        NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => !History.IsEditBusy);
+        SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); }, _ => !History.IsEditBusy);
+        NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => !History.IsEditBusy);
+        NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => !History.IsEditBusy);
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
         OpenDetailCommand = new RelayCommand(parameter =>
         {
@@ -867,7 +872,19 @@ public sealed class ShellViewModel : ViewModelBase
             {
                 OpenDetail(item.TaskId);
             }
-        });
+        }, _ => !History.IsEditBusy);
+        History.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(History.IsEditBusy))
+            {
+                NavigateHomeCommand.RaiseCanExecuteChanged();
+                NavigateTasksCommand.RaiseCanExecuteChanged();
+                SearchTasksCommand.RaiseCanExecuteChanged();
+                NavigateHistoryCommand.RaiseCanExecuteChanged();
+                NavigateImportCommand.RaiseCanExecuteChanged();
+                OpenDetailCommand.RaiseCanExecuteChanged();
+            }
+        };
         _ = Dashboard.LoadAsync();
         _ = PendingTasks.LoadAsync();
     }
@@ -952,6 +969,11 @@ public sealed class ShellViewModel : ViewModelBase
 
     public async Task NavigateToAsync(ShellPage page)
     {
+        if (History.IsEditBusy)
+        {
+            return;
+        }
+
         if (CurrentPage == ShellPage.InspectionDetail && page != ShellPage.InspectionDetail)
         {
             if (Detail.IsActionBusy)
@@ -979,7 +1001,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     public void OpenDetail(long taskId)
     {
-        if (taskId <= 0 || CurrentPage == ShellPage.InspectionDetail)
+        if (taskId <= 0 || CurrentPage == ShellPage.InspectionDetail || History.IsEditBusy)
         {
             return;
         }
@@ -1040,6 +1062,12 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = DatabaseInitializer.CreateContext();
         return new InspectionHistoryQuery().GetItemRevisions(context, inspectionId, inspectionItemId);
+    }
+
+    private static InspectionHistoryEditResult EditHistory(InspectionHistoryEditRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionHistoryEditUseCase().Execute(context, request);
     }
 
     private static InspectionTaskDetailResult LoadDetail(long taskId)

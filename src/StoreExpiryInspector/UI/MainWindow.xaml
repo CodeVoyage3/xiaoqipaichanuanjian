@@ -989,16 +989,38 @@
                         </Grid.RowDefinitions>
 
                         <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
                             <Button Content="←  返回排查历史"
                                     Command="{Binding History.BackCommand}"
                                     Style="{StaticResource LinkButtonStyle}"
                                     HorizontalAlignment="Left"
                                     AutomationProperties.Name="返回排查历史列表" />
-                            <TextBlock Text="正式排查详情"
-                                       HorizontalAlignment="Right"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        MaxWidth="360">
+                                <TextBlock Text="正式排查详情"
+                                           HorizontalAlignment="Right"
+                                           FontSize="16"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="正在保存…"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Right"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           Visibility="{Binding History.IsEditSubmitting, Converter={StaticResource BoolToVisibility}}" />
+                                <TextBlock Text="{Binding History.EditErrorMessage}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Right"
+                                           Foreground="{DynamicResource DangerBrush}"
+                                           Visibility="{Binding History.HasEditError, Converter={StaticResource BoolToVisibility}}" />
+                                <TextBlock Text="{Binding History.EditFeedbackMessage}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Right"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Visibility="{Binding History.HasEditFeedback, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
                         </Grid>
 
                         <Border Grid.Row="1"
@@ -1092,6 +1114,7 @@
                                     Visibility="{Binding History.HasDetail, Converter={StaticResource BoolToVisibility}}">
                                 <DataGrid ItemsSource="{Binding History.DetailItems}"
                                           SelectedItem="{Binding History.SelectedDetailItem, Mode=TwoWay}"
+                                          IsEnabled="{Binding History.CanChangeHistorySelection}"
                                           AutoGenerateColumns="False"
                                           ColumnWidth="Auto"
                                           ColumnHeaderStyle="{StaticResource HistoryColumnHeaderStyle}"
@@ -1192,21 +1215,88 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="修改历史" FontSize="16" FontWeight="SemiBold" />
                                         <TextBlock Text="选择明细后查看前值 → 后值 → 时间"
                                                    FontSize="12"
-                                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                                   Margin="12,3,0,0" />
+                                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                                    Margin="12,3,0,0" />
                                     </StackPanel>
-                                    <TextBlock Text="{Binding History.SelectedDetailItem.InspectionItemId, StringFormat=明细 {0}}"
-                                               HorizontalAlignment="Right"
-                                               Foreground="{DynamicResource SecondaryTextBrush}"
-                                               Visibility="{Binding History.HasSelectedDetailItem, Converter={StaticResource BoolToVisibility}}" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding History.SelectedDetailItem.InspectionItemId, StringFormat=明细 {0}}"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   Visibility="{Binding History.HasSelectedDetailItem, Converter={StaticResource BoolToVisibility}}" />
+                                        <Button Content="修改数量"
+                                                Command="{Binding History.BeginEditCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Height="32"
+                                                Margin="12,0,0,0"
+                                                AutomationProperties.Name="修改选中明细数量" />
+                                    </StackPanel>
                                 </Grid>
-                                <Grid Grid.Row="1" MinHeight="44">
+                                <Border Grid.Row="1"
+                                        Margin="0,0,0,8"
+                                        Padding="10"
+                                        Background="{DynamicResource SurfaceSubtleBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Visibility="{Binding History.IsEditing, Converter={StaticResource BoolToVisibility}}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="修改正式排查数量"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="仅修改数量，商品身份与其他历史快照保持不变"
+                                                       Margin="0,4,0,0"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <TextBlock Text="{Binding History.EditValidationMessage}"
+                                                       Margin="0,4,0,0"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource DangerBrush}"
+                                                       Visibility="{Binding History.HasEditInputError, Converter={StaticResource BoolToVisibility}}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                             <TextBlock Text="正式数量"
+                                                        TextWrapping="Wrap"
+                                                        VerticalAlignment="Center"
+                                                       Margin="0,0,8,0"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <TextBox Text="{Binding History.EditCheckedQtyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Width="96"
+                                                     Height="36"
+                                                     Padding="8,0"
+                                                     VerticalContentAlignment="Center"
+                                                     HorizontalContentAlignment="Right"
+                                                     FontFamily="Segoe UI"
+                                                     IsReadOnly="{Binding History.IsEditSubmitting}"
+                                                     AutomationProperties.Name="新的正式排查数量" />
+                                            <Button Content="保存修改"
+                                                    Command="{Binding History.SaveEditCommand}"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Height="36"
+                                                    Margin="8,0,0,0"
+                                                    AutomationProperties.Name="确认保存数量修改" />
+                                            <Button Content="取消"
+                                                    Command="{Binding History.CancelEditCommand}"
+                                                    Style="{StaticResource LinkButtonStyle}"
+                                                    Height="36"
+                                                    Margin="8,0,0,0"
+                                                    AutomationProperties.Name="取消数量修改" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Grid Grid.Row="2" MinHeight="44">
                                     <DataGrid ItemsSource="{Binding History.Revisions}"
                                               AutoGenerateColumns="False"
                                               ColumnWidth="Auto"
