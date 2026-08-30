@@ -1,6 +1,7 @@
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.UI;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -394,9 +395,75 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.True(listGridStart >= 0 && detailGridStart > listGridStart);
         var listGrid = history[listGridStart..detailGridStart];
 
-        Assert.True(Count(history, "<DataGrid") >= 3);
-        Assert.True(Count(history, "SelectionUnit=\"Cell\"") >= 2);
-        Assert.Contains("SelectionUnit=\"FullRow\"", history, StringComparison.Ordinal);
+        var xaml = XDocument.Parse(window);
+        XNamespace wpf = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var historyGrids = xaml
+            .Descendants(wpf + "DataGrid")
+            .Where(grid => ((string?)grid.Attribute("ItemsSource"))?.Contains("History.", StringComparison.Ordinal) == true)
+            .ToArray();
+        Assert.Equal(3, historyGrids.Length);
+
+        var listDataGrid = HistoryGrid(historyGrids, "{Binding History.Items}");
+        var detailDataGrid = HistoryGrid(historyGrids, "{Binding History.DetailItems}");
+        var revisionDataGrid = HistoryGrid(historyGrids, "{Binding History.Revisions}");
+        foreach (var dataGrid in historyGrids)
+        {
+            Assert.Equal("Auto", (string?)dataGrid.Attribute("ColumnWidth"));
+            Assert.Equal("{StaticResource HistoryColumnHeaderStyle}", (string?)dataGrid.Attribute("ColumnHeaderStyle"));
+            Assert.Equal("Auto", (string?)dataGrid.Attribute("ScrollViewer.HorizontalScrollBarVisibility"));
+            Assert.Equal("ExcludeHeader", (string?)dataGrid.Attribute("ClipboardCopyMode"));
+        }
+
+        Assert.Equal("Cell", (string?)listDataGrid.Attribute("SelectionUnit"));
+        Assert.Null(listDataGrid.Attribute("SelectedItem"));
+        Assert.Equal("FullRow", (string?)detailDataGrid.Attribute("SelectionUnit"));
+        Assert.Equal("{Binding History.SelectedDetailItem, Mode=TwoWay}", (string?)detailDataGrid.Attribute("SelectedItem"));
+        Assert.Equal("Cell", (string?)revisionDataGrid.Attribute("SelectionUnit"));
+        Assert.Equal(6, listDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
+        Assert.Equal(8, detailDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
+        Assert.Equal(3, revisionDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
+        AssertHistoryColumn(listDataGrid, "商品名称", "*", "140", "{StaticResource HistoryCellTextStyle}");
+        AssertHistoryColumn(listDataGrid, "商品条码", "Auto", "138", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(listDataGrid, "商品编码", "Auto", "126", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(listDataGrid, "正式排查时间（UTC）", "Auto", "155", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(listDataGrid, "明细数量", "Auto", "78", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(listDataGrid, "操作", "Auto", "96", null);
+        AssertHistoryColumn(detailDataGrid, "明细编号", "Auto", "76", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(detailDataGrid, "批次编号", "Auto", "76", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(detailDataGrid, "生产日期", "Auto", "84", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(detailDataGrid, "有效日期", "Auto", "84", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(detailDataGrid, "阶段", "Auto", "72", null);
+        AssertHistoryColumn(detailDataGrid, "累计到货", "Auto", "80", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(detailDataGrid, "正式排查数量", "Auto", "102", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(detailDataGrid, "更新时间（UTC）", "Auto", "155", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(revisionDataGrid, "修改前数量", "*", "108", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(revisionDataGrid, "修改后数量", "*", "108", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(revisionDataGrid, "修改时间（UTC）", "2*", "196", "{StaticResource HistoryNumberTextStyle}");
+
+        var historyCellTextStyle = Assert.Single(xaml.Descendants(wpf + "Style"), style =>
+            string.Equals((string?)style.Attribute(x + "Key"), "HistoryCellTextStyle", StringComparison.Ordinal));
+        Assert.Equal("12,0", (string?)historyCellTextStyle.Elements(wpf + "Setter")
+            .Single(setter => string.Equals((string?)setter.Attribute("Property"), "Margin", StringComparison.Ordinal))
+            .Attribute("Value"));
+        Assert.Equal("Center", (string?)historyCellTextStyle.Elements(wpf + "Setter")
+            .Single(setter => string.Equals((string?)setter.Attribute("Property"), "VerticalAlignment", StringComparison.Ordinal))
+            .Attribute("Value"));
+
+        var detailStageContentControl = Assert.Single(detailDataGrid.Descendants(wpf + "ContentControl"));
+        Assert.Equal("12,0", (string?)detailStageContentControl.Attribute("Margin"));
+        Assert.Equal("Center", (string?)detailStageContentControl.Attribute("VerticalAlignment"));
+        var operationButton = Assert.Single(listDataGrid.Descendants(wpf + "Button"));
+        Assert.Equal("12,0", (string?)operationButton.Attribute("Margin"));
+
+        Assert.Contains("x:Key=\"HistoryColumnHeaderStyle\"", history, StringComparison.Ordinal);
+        Assert.Contains("TextWrapping=\"Wrap\"", history, StringComparison.Ordinal);
+        Assert.Contains("HorizontalContentAlignment\" Value=\"Left\"", history, StringComparison.Ordinal);
+        Assert.Contains("Padding\" Value=\"12,0\"", history, StringComparison.Ordinal);
+        Assert.Contains("TextAlignment=\"Left\"", history, StringComparison.Ordinal);
+        Assert.Contains("MinWidth=\"102\"", history, StringComparison.Ordinal);
+        Assert.Contains("MinWidth=\"155\"", history, StringComparison.Ordinal);
+        Assert.Contains("MinWidth=\"196\"", history, StringComparison.Ordinal);
         Assert.Contains("SelectionUnit=\"Cell\"", listGrid, StringComparison.Ordinal);
         Assert.DoesNotContain("SelectedItem=", listGrid, StringComparison.Ordinal);
         Assert.DoesNotContain("History.SelectedRecord", listGrid, StringComparison.Ordinal);
@@ -431,6 +498,30 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Contains("new InspectionHistoryQuery().GetItemRevisions(context, inspectionId, inspectionItemId)", shell, StringComparison.Ordinal);
         Assert.Contains("WaitForStableSaveAsync", shell, StringComparison.Ordinal);
         Assert.Contains("if (page == ShellPage.History && CurrentPage == ShellPage.History)", shell, StringComparison.Ordinal);
+    }
+
+    private static XElement HistoryGrid(IEnumerable<XElement> grids, string itemSource) =>
+        Assert.Single(grids, grid => string.Equals(
+            (string?)grid.Attribute("ItemsSource"),
+            itemSource,
+            StringComparison.Ordinal));
+
+    private static void AssertHistoryColumn(
+        XElement grid,
+        string header,
+        string width,
+        string minWidth,
+        string? elementStyle)
+    {
+        XNamespace wpf = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        var columns = grid.Elements(wpf + "DataGrid.Columns").Single().Elements();
+        var column = Assert.Single(columns, candidate => string.Equals(
+            (string?)candidate.Attribute("Header"),
+            header,
+            StringComparison.Ordinal));
+        Assert.Equal(width, (string?)column.Attribute("Width"));
+        Assert.Equal(minWidth, (string?)column.Attribute("MinWidth"));
+        Assert.Equal(elementStyle, (string?)column.Attribute("ElementStyle"));
     }
 
     private static InspectionHistoryViewModel CreateVm(

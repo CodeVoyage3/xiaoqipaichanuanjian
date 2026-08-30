@@ -180,6 +180,9 @@
         <Style x:Key="HistoryCellTextStyle" TargetType="TextBlock">
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Text}" />
+            <Setter Property="Margin" Value="12,0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
     </Window.Resources>
 
@@ -835,6 +838,23 @@
                                BasedOn="{StaticResource HistoryCellTextStyle}">
                             <Setter Property="FontFamily" Value="Segoe UI" />
                         </Style>
+                        <Style x:Key="HistoryColumnHeaderStyle"
+                               TargetType="DataGridColumnHeader"
+                               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                            <Setter Property="Padding" Value="12,0" />
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   TextWrapping="Wrap"
+                                                   TextAlignment="Left"
+                                                   ToolTip="{Binding}" />
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
                     </Grid.Resources>
                     <Grid Visibility="{Binding History.IsDetailVisible, Converter={StaticResource InverseBoolToVisibility}}">
                         <Grid.RowDefinitions>
@@ -867,9 +887,12 @@
                                     Visibility="{Binding History.HasError, Converter={StaticResource InverseBoolToVisibility}}">
                                 <DataGrid ItemsSource="{Binding History.Items}"
                                           AutoGenerateColumns="False"
+                                          ColumnWidth="Auto"
+                                          ColumnHeaderStyle="{StaticResource HistoryColumnHeaderStyle}"
                                           SelectionMode="Single"
                                           SelectionUnit="Cell"
                                           ClipboardCopyMode="ExcludeHeader"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                           IsTabStop="True"
                                           Focusable="True"
                                           BorderThickness="0">
@@ -877,25 +900,29 @@
                                         <DataGridTextColumn Header="商品名称"
                                                              Binding="{Binding ProductName, TargetNullValue=—}"
                                                              Width="*"
-                                                             MinWidth="132"
+                                                             MinWidth="140"
                                                              ElementStyle="{StaticResource HistoryCellTextStyle}" />
                                         <DataGridTextColumn Header="商品条码"
                                                              Binding="{Binding ProductBarcode, TargetNullValue=—}"
-                                                             Width="138"
+                                                             Width="Auto"
+                                                             MinWidth="138"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="商品编码"
                                                              Binding="{Binding ProductCode}"
-                                                             Width="126"
+                                                             Width="Auto"
+                                                             MinWidth="126"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="正式排查时间（UTC）"
                                                              Binding="{Binding SubmittedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
-                                                             Width="154"
+                                                             Width="Auto"
+                                                             MinWidth="155"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="明细数量"
                                                              Binding="{Binding ItemCount}"
-                                                             Width="78"
+                                                             Width="Auto"
+                                                             MinWidth="78"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTemplateColumn Header="操作" Width="96">
+                                        <DataGridTemplateColumn Header="操作" Width="Auto" MinWidth="96">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Button Content="查看详情"
@@ -904,7 +931,7 @@
                                                             Style="{StaticResource LinkButtonStyle}"
                                                             Height="32"
                                                             Padding="4,0"
-                                                            Margin="0"
+                                                            Margin="12,0"
                                                             AutomationProperties.Name="查看排查历史详情" />
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
@@ -1066,35 +1093,44 @@
                                 <DataGrid ItemsSource="{Binding History.DetailItems}"
                                           SelectedItem="{Binding History.SelectedDetailItem, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
+                                          ColumnWidth="Auto"
+                                          ColumnHeaderStyle="{StaticResource HistoryColumnHeaderStyle}"
                                           SelectionMode="Single"
                                           SelectionUnit="FullRow"
                                           ClipboardCopyMode="ExcludeHeader"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                           IsTabStop="True"
                                           Focusable="True"
                                           BorderThickness="0">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="明细编号" Binding="{Binding InspectionItemId}" Width="72" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="批次编号" Binding="{Binding BatchId}" Width="72" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                        <DataGridTextColumn Header="明细编号" Binding="{Binding InspectionItemId}" Width="Auto" MinWidth="76" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                        <DataGridTextColumn Header="批次编号" Binding="{Binding BatchId}" Width="Auto" MinWidth="76" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="生产日期"
                                                              Binding="{Binding ProductionDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
-                                                             Width="84"
+                                                             Width="Auto"
+                                                             MinWidth="84"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="有效日期"
                                                              Binding="{Binding ExpiryDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
-                                                             Width="84"
+                                                             Width="Auto"
+                                                             MinWidth="84"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTemplateColumn Header="阶段" Width="72">
+                                        <DataGridTemplateColumn Header="阶段" Width="Auto" MinWidth="72">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HistoryStageBadgeTemplate}" />
+                                                    <ContentControl Content="{Binding}"
+                                                                    ContentTemplate="{StaticResource HistoryStageBadgeTemplate}"
+                                                                    Margin="12,0"
+                                                                    VerticalAlignment="Center" />
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="累计到货" Binding="{Binding ArrivalQtySnapshot}" Width="72" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="正式排查数量" Binding="{Binding CheckedQty}" Width="96" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                        <DataGridTextColumn Header="累计到货" Binding="{Binding ArrivalQtySnapshot}" Width="Auto" MinWidth="80" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                        <DataGridTextColumn Header="正式排查数量" Binding="{Binding CheckedQty}" Width="Auto" MinWidth="102" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="更新时间（UTC）"
                                                              Binding="{Binding UpdatedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
-                                                             Width="138"
+                                                             Width="Auto"
+                                                             MinWidth="155"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -1173,18 +1209,22 @@
                                 <Grid Grid.Row="1" MinHeight="44">
                                     <DataGrid ItemsSource="{Binding History.Revisions}"
                                               AutoGenerateColumns="False"
+                                              ColumnWidth="Auto"
+                                              ColumnHeaderStyle="{StaticResource HistoryColumnHeaderStyle}"
                                               SelectionMode="Single"
                                               SelectionUnit="Cell"
                                               ClipboardCopyMode="ExcludeHeader"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                               Height="120"
                                               BorderThickness="0"
                                               Visibility="{Binding History.HasRevisionHistory, Converter={StaticResource BoolToVisibility}}">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="修改前数量" Binding="{Binding PreviousCheckedQty}" Width="*" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                            <DataGridTextColumn Header="修改后数量" Binding="{Binding NewCheckedQty}" Width="*" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                            <DataGridTextColumn Header="修改前数量" Binding="{Binding PreviousCheckedQty}" Width="*" MinWidth="108" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                            <DataGridTextColumn Header="修改后数量" Binding="{Binding NewCheckedQty}" Width="*" MinWidth="108" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                             <DataGridTextColumn Header="修改时间（UTC）"
                                                                  Binding="{Binding ChangedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
                                                                  Width="2*"
+                                                                 MinWidth="196"
                                                                  ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         </DataGrid.Columns>
                                     </DataGrid>
