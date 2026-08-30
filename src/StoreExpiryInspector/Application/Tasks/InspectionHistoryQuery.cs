@@ -44,6 +44,26 @@ public sealed record InspectionHistoryDetailResult(
     string Status,
     InspectionHistoryDetail? Detail);
 
+public sealed record InspectionItemRevisionDetail(
+    long RevisionId,
+    long InspectionItemId,
+    int PreviousCheckedQty,
+    int NewCheckedQty,
+    DateTime ChangedAtUtc);
+
+public sealed record InspectionItemRevisionHistory(
+    long InspectionId,
+    long InspectionItemId,
+    int CurrentCheckedQty,
+    DateTime UpdatedAtUtc,
+    IReadOnlyList<InspectionItemRevisionDetail> Revisions);
+
+public sealed record InspectionItemRevisionHistoryResult(
+    long InspectionId,
+    long InspectionItemId,
+    string Status,
+    InspectionItemRevisionHistory? History);
+
 public sealed class InspectionHistoryQuery
 {
     public IReadOnlyList<InspectionHistoryListItem> List(StoreDbContext context)
@@ -130,6 +150,58 @@ public sealed class InspectionHistoryQuery
                 inspection.CheckDate,
                 inspection.SubmittedAtUtc,
                 Array.AsReadOnly(items)));
+    }
+
+    public InspectionItemRevisionHistoryResult GetItemRevisions(
+        StoreDbContext context,
+        long inspectionId,
+        long inspectionItemId)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (inspectionId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(inspectionId));
+        }
+
+        if (inspectionItemId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(inspectionItemId));
+        }
+
+        var item = context.InspectionItems
+            .AsNoTracking()
+            .Include(candidate => candidate.Revisions)
+            .AsSingleQuery()
+            .Where(candidate =>
+                candidate.Id == inspectionItemId &&
+                candidate.InspectionId == inspectionId &&
+                candidate.Inspection.Task.Status == "completed")
+            .SingleOrDefault();
+        if (item is null)
+        {
+            return new(inspectionId, inspectionItemId, "not_found", null);
+        }
+
+        var revisions = item.Revisions
+            .OrderBy(revision => revision.ChangedAtUtc)
+            .ThenBy(revision => revision.Id)
+            .Select(revision => new InspectionItemRevisionDetail(
+                revision.Id,
+                revision.InspectionItemId,
+                revision.PreviousCheckedQty,
+                revision.NewCheckedQty,
+                revision.ChangedAtUtc))
+            .ToArray();
+        return new(
+            inspectionId,
+            inspectionItemId,
+            "found",
+            new(
+                inspectionId,
+                inspectionItemId,
+                item.CheckedQty,
+                item.UpdatedAtUtc,
+                Array.AsReadOnly(revisions)));
     }
 
     private sealed record InspectionHistoryHeader(
