@@ -866,7 +866,6 @@
                                     CornerRadius="8"
                                     Visibility="{Binding History.HasError, Converter={StaticResource InverseBoolToVisibility}}">
                                 <DataGrid ItemsSource="{Binding History.Items}"
-                                          SelectedItem="{Binding History.SelectedRecord, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           SelectionMode="Single"
                                           SelectionUnit="Cell"

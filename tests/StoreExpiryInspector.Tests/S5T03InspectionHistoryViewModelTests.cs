@@ -81,10 +81,9 @@ public sealed class S5T03InspectionHistoryViewModelTests
             _ => new(42, "found", detail));
 
         await vm.LoadAsync();
-        vm.SelectedRecord = record;
 
         Assert.False(vm.IsDetailVisible);
-        Assert.Same(record, vm.SelectedRecord);
+        Assert.Null(vm.SelectedRecord);
         Assert.Equal(record.InspectionId, vm.Items.Single().InspectionId);
         Assert.Equal(record.TaskId, vm.Items.Single().TaskId);
         Assert.Equal(record.ProductId, vm.Items.Single().ProductId);
@@ -120,6 +119,15 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Equal(new DateOnly(2026, 8, 2), vm.DetailItems[1].ProductionDateSnapshot);
         Assert.Equal("withdraw", vm.DetailItems[1].StageSnapshot);
         Assert.Equal(12, vm.DetailItems[1].ArrivalQtySnapshot);
+
+        vm.BackCommand.Execute(null);
+        Assert.False(vm.IsDetailVisible);
+        Assert.Null(vm.SelectedRecord);
+
+        vm.OpenDetailCommand.Execute(record);
+        await WaitUntil(() => vm.HasDetail);
+        Assert.True(vm.IsDetailVisible);
+        Assert.Same(record, vm.SelectedRecord);
     }
 
     [Fact]
@@ -381,10 +389,17 @@ public sealed class S5T03InspectionHistoryViewModelTests
         var end = window.IndexOf("<!-- 排查详情", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
         var history = window[start..end];
+        var listGridStart = history.IndexOf("ItemsSource=\"{Binding History.Items}\"", StringComparison.Ordinal);
+        var detailGridStart = history.IndexOf("ItemsSource=\"{Binding History.DetailItems}\"", StringComparison.Ordinal);
+        Assert.True(listGridStart >= 0 && detailGridStart > listGridStart);
+        var listGrid = history[listGridStart..detailGridStart];
 
         Assert.True(Count(history, "<DataGrid") >= 3);
         Assert.True(Count(history, "SelectionUnit=\"Cell\"") >= 2);
         Assert.Contains("SelectionUnit=\"FullRow\"", history, StringComparison.Ordinal);
+        Assert.Contains("SelectionUnit=\"Cell\"", listGrid, StringComparison.Ordinal);
+        Assert.DoesNotContain("SelectedItem=", listGrid, StringComparison.Ordinal);
+        Assert.DoesNotContain("History.SelectedRecord", listGrid, StringComparison.Ordinal);
         Assert.True(Count(history, "ClipboardCopyMode=\"ExcludeHeader\"") >= 3);
         Assert.Contains("ProductBarcode", history, StringComparison.Ordinal);
         Assert.Contains("ProductCode", history, StringComparison.Ordinal);
