@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 5 已获批准；S5-T01 已完成并停止
-- 状态：Stage 0～Stage 4 整体通过；S5-T01 正式排查历史只读查询基础已验收，未创建或派发 S5-T02
+- 当前阶段：Stage 5；S5-T02 已完成并停止
+- 状态：Stage 0～Stage 4 整体通过；S5-T01 / S5-T02 已验收，未创建或派发 S5-T03
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -28,6 +28,7 @@
 - S4-T09 已完成最终 Release/UAT 缺陷修复；其人工验收门禁顺延到 S4-T10 最终 GUI 基线，由用户最终复测一并闭环。
 - S4-T10 已完成核心 UI 定稿与最终收尾；用户 10/10 GUI 验收通过、发现问题为 0。正式数据库已恢复为 299008 bytes，SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，隔离测试数据已清理且恢复后未再启动应用。
 - S5-T01 已交付正式 `Inspection` 历史列表与单条详情 Application 只读查询；专项 9/9、Stage 4 179/179、Stage 3 实际十类 170/170、Release 541/541、build 0/0、EF 无漂移、migration 8，未实现 WPF、Revision 或 S5-T02。
+- S5-T02 已交付正式明细数量修订、原子 Revision 留痕及当前值/修订链只读查询；实现 `33424ef6cddbd109b2e9c59941a7e182324270e7`。专项 16/16、S5-T01 9/9、Stage 4 179/179、Stage 3 170/170、Release 557/557、build 0/0、EF 无漂移、migration 8；无生命周期联动、WPF 或 S5-T03。
 
 ## 冻结业务红线
 
@@ -66,9 +67,11 @@
 - Stage 4 总验收：`.ai-dev/ACCEPTANCE/STAGE-4.md`
 - Stage 4 归档：`.ai-dev/STAGES/STAGE-4-CLOSEOUT.md`
 - Stage 5 接任说明：`.ai-dev/STAGES/STAGE-5-HANDOFF.md`
+- S5-T01 验收：`.ai-dev/ACCEPTANCE/S5-T01.md`
+- S5-T02 验收：`.ai-dev/ACCEPTANCE/S5-T02.md`
 
 ## 下一步门禁
 
 - Stage 4 已完成总验收与归档；1024×600、125% 缩放、鼠标滚轮、Tab 与窗口恢复已由用户最终 GUI 验收通过。
 - 在线 NuGet 漏洞审计因本机 SSL/TLS/凭据环境失败的风险已由用户在 S4-T09 接受；不得改写为在线审计成功。
-- 当前只允许阅读 `.ai-dev/STAGES/STAGE-5-HANDOFF.md` 做接任核验；未经用户单独批准，不得创建或派发 S5-T01，不得进入 Stage 5 开发。
+- S5-T02 已完成并停止；未经用户单独批准，不得创建、编号、派发或实施 S5-T03。当前历史修订只改正式数量并留痕，不得顺带实现生命周期联动或历史 UI。
