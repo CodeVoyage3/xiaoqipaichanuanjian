@@ -17,6 +17,7 @@ public enum ShellPage
 {
     Dashboard,
     PendingTasks,
+    History,
     Import,
     InspectionDetail
 }
@@ -89,6 +90,18 @@ public sealed class DateOnlyDisplayConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
         value is DateOnly date
             ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : "—";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
+public sealed class UtcDateTimeDisplayConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is DateTime date
+            ? DateTime.SpecifyKind(date, DateTimeKind.Utc)
+                .ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)
             : "—";
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
@@ -802,7 +815,10 @@ public sealed class ShellViewModel : ViewModelBase
         Func<long, InspectionTaskDetailResult>? detailLoader = null,
         Func<bool>? confirmClearDraft = null,
         Func<bool>? confirmZeroInventory = null,
-        Func<InspectionSubmissionRequest, InspectionSubmissionResult>? submit = null)
+        Func<InspectionSubmissionRequest, InspectionSubmissionResult>? submit = null,
+        Func<IReadOnlyList<InspectionHistoryListItem>>? historyListLoader = null,
+        Func<long, InspectionHistoryDetailResult>? historyDetailLoader = null,
+        Func<long, long, InspectionItemRevisionHistoryResult>? historyRevisionLoader = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -815,6 +831,11 @@ public sealed class ShellViewModel : ViewModelBase
             utcNow,
             () => NavigateTo(ShellPage.PendingTasks));
         PendingTasks = new PendingTasksViewModel(taskLoader ?? SearchTasks, logger);
+        History = new InspectionHistoryViewModel(
+            historyListLoader ?? LoadHistory,
+            historyDetailLoader ?? LoadHistoryDetail,
+            historyRevisionLoader ?? LoadHistoryRevisions,
+            logger);
         Import = new ImportViewModel(
             refreshDashboard: Dashboard.LoadAsync,
             refreshPendingTasks: PendingTasks.LoadAsync,
@@ -837,7 +858,7 @@ public sealed class ShellViewModel : ViewModelBase
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard));
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks));
         SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); });
-        NavigateHistoryCommand = new RelayCommand(_ => { }, _ => false);
+        NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History));
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import));
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
         OpenDetailCommand = new RelayCommand(parameter =>
@@ -854,6 +875,8 @@ public sealed class ShellViewModel : ViewModelBase
     public DashboardViewModel Dashboard { get; }
 
     public PendingTasksViewModel PendingTasks { get; }
+
+    public InspectionHistoryViewModel History { get; }
 
     public ImportViewModel Import { get; }
 
@@ -887,6 +910,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsDashboardVisible));
             OnPropertyChanged(nameof(IsPendingTasksVisible));
+            OnPropertyChanged(nameof(IsHistoryVisible));
             OnPropertyChanged(nameof(IsImportVisible));
             OnPropertyChanged(nameof(IsInspectionDetailVisible));
             OnPropertyChanged(nameof(PageTitle));
@@ -898,6 +922,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsPendingTasksVisible => CurrentPage == ShellPage.PendingTasks;
 
+    public bool IsHistoryVisible => CurrentPage == ShellPage.History;
+
     public bool IsImportVisible => CurrentPage == ShellPage.Import;
 
     public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
@@ -906,6 +932,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         ShellPage.Dashboard => "效期排查",
         ShellPage.PendingTasks => "待排查任务",
+        ShellPage.History => "排查历史",
         ShellPage.Import => "数据导入",
         ShellPage.InspectionDetail => "排查详情",
         _ => "效期排查"
@@ -915,6 +942,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         ShellPage.Dashboard => "今日需要处理的效期任务与数据状态",
         ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
+        ShellPage.History => "查看已完成的正式排查记录及修改留痕",
         ShellPage.Import => "导入最新的食品效期 Excel，更新商品与批次数据",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
         _ => "查看当前数据状态"
@@ -933,10 +961,20 @@ public sealed class ShellViewModel : ViewModelBase
 
             Detail.CancelPendingSubmissionConfirmation();
             await NavigateAwayFromDetailAsync(page);
+            if (page == ShellPage.History && CurrentPage == ShellPage.History)
+            {
+                _ = History.LoadAsync();
+            }
+
             return;
         }
 
+        var enteredHistory = page == ShellPage.History && CurrentPage != ShellPage.History;
         CurrentPage = page;
+        if (enteredHistory)
+        {
+            _ = History.LoadAsync();
+        }
     }
 
     public void OpenDetail(long taskId)
@@ -982,6 +1020,26 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = DatabaseInitializer.CreateContext();
         return new InspectionTaskQuery().SearchOpenTasks(context, request);
+    }
+
+    private static IReadOnlyList<InspectionHistoryListItem> LoadHistory()
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionHistoryQuery().List(context);
+    }
+
+    private static InspectionHistoryDetailResult LoadHistoryDetail(long inspectionId)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionHistoryQuery().GetDetail(context, inspectionId);
+    }
+
+    private static InspectionItemRevisionHistoryResult LoadHistoryRevisions(
+        long inspectionId,
+        long inspectionItemId)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionHistoryQuery().GetItemRevisions(context, inspectionId, inspectionItemId);
     }
 
     private static InspectionTaskDetailResult LoadDetail(long taskId)

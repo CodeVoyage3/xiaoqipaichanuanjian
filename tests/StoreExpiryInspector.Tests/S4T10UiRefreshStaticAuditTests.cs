@@ -26,10 +26,10 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("FontFamily=\"Microsoft YaHei UI, Segoe UI\"", window, StringComparison.Ordinal);
         Assert.Contains("Language=\"zh-CN\"", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"门店效期排查软件\"", window, StringComparison.Ordinal);
-        Assert.Contains("Text=\"排查记录\"", window, StringComparison.Ordinal);
+        Assert.Contains("Text=\"排查历史\"", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"设置\"", window, StringComparison.Ordinal);
 
-        var pageOrder = new[] { "Text=\"首页\"", "Text=\"待排查任务\"", "Text=\"排查记录\"", "Text=\"数据导入\"", "Text=\"设置\"" };
+        var pageOrder = new[] { "Text=\"首页\"", "Text=\"待排查任务\"", "Text=\"排查历史\"", "Text=\"数据导入\"", "Text=\"设置\"" };
         var previous = -1;
         foreach (var marker in pageOrder)
         {

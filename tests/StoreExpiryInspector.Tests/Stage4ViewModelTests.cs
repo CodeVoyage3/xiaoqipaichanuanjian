@@ -293,7 +293,7 @@ public sealed class Stage4ViewModelTests
 
         Assert.True(shell.NavigateHomeCommand.CanExecute(null));
         Assert.True(shell.NavigateTasksCommand.CanExecute(null));
-        Assert.False(shell.NavigateHistoryCommand.CanExecute(null));
+        Assert.True(shell.NavigateHistoryCommand.CanExecute(null));
         Assert.True(shell.NavigateImportCommand.CanExecute(null));
         Assert.False(shell.NavigateSettingsCommand.CanExecute(null));
 
