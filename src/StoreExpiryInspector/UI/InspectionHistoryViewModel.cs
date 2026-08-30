@@ -383,4 +383,3 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         }
     }
 }
-
