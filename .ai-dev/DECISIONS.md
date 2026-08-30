@@ -1,6 +1,6 @@
 # 关键决策
 
-> 更新于 2026-08-27。状态中的“已批准”不等于代码已实现；每项另列当前事实。
+> 更新于 2026-08-30。状态中的“已批准”不等于代码已实现；每项另列当前事实。
 
 ## D-001｜桌面技术栈
 
@@ -14,7 +14,7 @@
 
 - 状态：已批准；Stage 1 已落实。
 - 决策：一个 WPF 应用项目和一个测试项目；按 `Domain`、后续 `Application`、`Infrastructure`、`UI` 分层。
-- 当前事实：已有 Domain 纯效期计算、Application 导入/任务/生命周期/启动/排查用例、Infrastructure 与完整 Stage 4 WPF UI；17 个实体各自使用一个 EF 配置。
+- 当前事实：已有 Domain 纯效期计算、Application 导入/任务/生命周期/启动/排查/历史用例、Infrastructure 与 Stage 4/5 WPF UI；17 个实体各自使用一个 EF 配置。
 - 边界：不创建单实现接口、Repository、UnitOfWork、通用事件总线或反射扫描；第二个真实实现出现前不抽象。
 
 ## D-003｜数据库与迁移
@@ -78,15 +78,15 @@
 - 生命周期代：首次商品级归零时 Product 的 `lifecycle_generation` checked 递增一次并永久保留 `is_stock_zero_terminated = true`；归零前已存在的 Batch 保留其历史代号，只停止跟踪并清空下一触发日。重复归零不再递增；库存重新大于 0 也不回退代号、不清除归零标记、不恢复历史 Batch。
 - 真正新到货：仅当当前累计到货首次大于历史最高值；下降或回升到旧最高值不触发。
 - 关注版本与幂等：真正新增到货使用现有 `Batch.attention_version` checked 加一；冻结请求以 expected/target compare-and-set 持久化区分首次应用、精确重放和冲突，不新增处理标记。真正新批次只允许从 Stage 2 新建后的原始默认 Batch 状态首次启动，离开该状态后的同一 new 事实重放不得降级阶段或恢复已停止 Batch。
-- 批次 0 事实幂等：`batch_checked_zero + ProductId + BatchId + SourceInspectionId` 的既有 LifecycleEvent 是当前批准的持久化处理锚点；同一正式 0 事实重复调用无副作用，S3-T05 合法恢复后重放旧 0 事实也不得重新停止。多轮历史修订时序留给 Stage 5 另行批准。
+- 批次 0 事实幂等：`batch_checked_zero + ProductId + BatchId + SourceInspectionId` 的既有 LifecycleEvent 是当前批准的持久化处理锚点；同一正式 0 事实重复调用无副作用，S3-T05 合法恢复后重放旧 0 事实也不得重新停止。Stage 5 已明确把历史数量 Revision 与 Lifecycle 隔离；未来如需联动必须另行批准，不得重放旧 0 事实。
 - 恢复例外：仅因批次 0 件停止、商品从未发生商品级归零、当前库存大于 0且累计到货突破历史最高值时，才恢复同批次并直接计算当前最高阶段。
 - 商品曾归零后：所有历史旧批次永久不得恢复；库存重新大于 0 时只允许数据库从未出现过的真正新批次进入新生命周期。
 
 ## D-011｜阶段门禁
 
-- 状态：Stage 0～Stage 4 均已整体验收通过；当前暂停在 Stage 4 → Stage 5 门禁。
-- 决策：Stage 4 已按 S4-T01 至 S4-T10 完成逐卡治理、实现、独立验收和用户最终 GUI 验收。
-- 流程：已生成 Stage 5 handoff，但未创建或派发 S5-T01；接任必须先复核事实，用户单独批准后才允许创建第一张最小任务卡。
+- 状态：Stage 0～Stage 5 均已整体验收通过；当前暂停在 Stage 5 → Stage 6 门禁。
+- 决策：Stage 5 已按 S5-T01 至 S5-T04 完成逐卡治理、实现、独立验收和必要用户 GUI 验收。
+- 流程：已生成 Stage 6 handoff，但未创建、编号或派发 S6-T01；接任必须先复核事实，用户单独批准后才允许创建第一张最小任务卡。
 
 ## D-012｜Stage 2 正式导入状态与任务计数占位
 
@@ -132,7 +132,7 @@
 
 ## D-017｜S4-T02 草稿写入与用户主动清空
 
-- 状态：S4-T02 已由 GPT-5.6 Sol 独立验收通过；尚未创建 S4-T03，等待用户明确批准。
+- 状态：S4-T02 已由 GPT-5.6 Sol 独立验收通过；其后 Stage 4 与 Stage 5 均已按独立任务门禁完成，本节只保留草稿契约。
 - 保存：草稿允许不完整；SaveDraft 是 patch，只保存请求明确包含的 Item，并严格保留 null/0/正数语义。普通保存不得清除 RequiresReconfirmation 或推进既有 ConfirmedAttentionVersion。
 - 陈旧页面：SaveDraft 允许保留观察版本落后于数据库当前版本的用户输入，但不得改变当前 AttentionVersion/RequiresReconfirmation；只有独立 ReconfirmItem 在请求版本同时匹配当前 Batch/TaskItem 时才可清除重新确认。
 - 系统失效：S3-T04 留下的 IsInvalid Draft 是必须保留的系统痕迹，S4-T02 不得复活、覆盖或删除。
@@ -151,10 +151,19 @@
 
 ## D-019｜S4-T04 正式排查提交事务
 
-- 状态：实现与 Sol 独立验收已通过；当前不得创建 S4-T05，必须先完成并批准 Stage 4 UI/UX Pro Max 设计治理基线。
+- 状态：实现与 Sol 独立验收已通过；其后的 Stage 4 UI 治理、S4-T05～S4-T10 与 Stage 5 均已另行批准并完成，本节只冻结提交事务。
 - 权威输入：每次 Submit 重读 Product、开放 Task/全部 Item、Batch版本、有效 Draft/Item、库存及既有 Inspection；S4-T01 DTO、S4-T02 readiness 和页面缓存均不是提交授权。
 - 提交：全部当前 Item 完整且版本三方一致、无需重新确认后，单事务创建 Inspection/全部 Item，真实调用 S3-T06 处理 0 件，更新 HandledAttentionVersion，完成 Task，并删除正常有效 DraftItem/Draft。
 - 超库存：首次只返回当前库存与合计且业务图零写入；确认必须精确绑定当前两值，任一变化使旧确认失效，不建设通用 token。
 - 幂等：completed + Inspection 返回 AlreadySubmitted；版本相等不是提交凭证。系统关闭、completed 无 Inspection 或异常残留有效 Draft 不伪装成功、不隐式修复。
 - 完成语义：正式完成只写 canonical `completed`、ClosedAtUtc 与 UpdatedAtUtc；CloseReason 保持空，不创造 `submitted` 原因码或混用 system_closed 语义。
 - 边界：只实现 Application，不接 WPF，不创建 Revision，不修改库存、AttentionVersion、Stage 3、schema/migration/依赖或 ConfirmedImportExecutor。
+
+## D-020｜Stage 5 正式历史与 Revision
+
+- 状态：S5-T01～S5-T04 已整体验收并归档。
+- 查询：只读列出 completed Task 下的正式 Inspection，读取快照详情、当前 InspectionItem 数量和按时间/ID 排序的 Revision；不从 Draft 或当前 Product/Batch 反推历史。
+- 修改：只允许明确目标、非负整数和合法 UTC 时间；真实变化在单一事务新增 previous/new/time Revision 并更新当前 Item，同值不写 Revision，失败回滚。
+- 权威隔离：历史修订不调用 Stage 3 Lifecycle，不更新 Batch/Task/Draft/AttentionVersion，不调用或重放 Stage 4 Submission。
+- UI：WPF 只调用上述查询/修改用例，确认与提交期间固定目标并防重入；提交后重读正式详情和 Revision，不伪造结果。
+- UI debt：纯视觉不满意延后到 Stage 7 完成后的全局 UI/UX 重构，不创建 S5-T05。
