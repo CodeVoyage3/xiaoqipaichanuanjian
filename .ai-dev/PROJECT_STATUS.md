@@ -1,7 +1,7 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 5；S5-T03 核心交互已获用户确认，多列表头局部修复已通过技术复验，停止等待用户 GUI 重验
+- 当前阶段：Stage 5；S5-T03 用户 GUI 验收通过，等待正式运行环境恢复及临时数据清理闭环
 - 状态：Stage 0～Stage 4 整体通过；S5-T01 / S5-T02 已验收；S5-T03 尚未正式完成或归档
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
@@ -70,10 +70,11 @@
 - Stage 5 接任说明：`.ai-dev/STAGES/STAGE-5-HANDOFF.md`
 - S5-T01 验收：`.ai-dev/ACCEPTANCE/S5-T01.md`
 - S5-T02 验收：`.ai-dev/ACCEPTANCE/S5-T02.md`
-- S5-T03 技术验收（GUI 待验收，未正式归档）：`.ai-dev/ACCEPTANCE/S5-T03.md`
+- S5-T03 验收（GUI 已通过，恢复待闭环，未正式归档）：`.ai-dev/ACCEPTANCE/S5-T03.md`
 
 ## 下一步门禁
 
+- 最新结论（2026-08-30）：用户明确“验收通过”，S5-T03 GUI 门禁已通过；下列等待重验描述保留为历史过程。工具侧应用进程为 0，正式源库/保护副本大小及指定 SHA-256 匹配，但本机运行环境恢复尚未证实。已准备用户执行的 `obj/S5T03GuiAcceptance/RESTORE-S5-T03.cmd`，隔离目录恢复/重复执行/未标记及错误标记拒绝自测通过；待实际恢复回执后清理共享临时数据，并单独核实工具侧失败 Junction。不得提前宣称归档完成，恢复后不再启动应用。
 - Stage 4 已完成总验收与归档；1024×600、125% 缩放、鼠标滚轮、Tab 与窗口恢复已由用户最终 GUI 验收通过。
 - 在线 NuGet 漏洞审计因本机 SSL/TLS/凭据环境失败的风险已由用户在 S4-T09 接受；不得改写为在线审计成功。
 - S5-T03 首轮 GUI “查看详情”闪退，原 Luna 已在 `4341c213dc0377a661992aecdde93ffead034b7d` 最小修复选择绑定冲突；Sol 复验 10/10、16/16、9/9、Stage 4 179/179、Stage 3 170/170、全量 567/567、Release build 0/0，EF 无漂移、migration=8、依赖未变。隔离 Release 已更新，等待用户 GUI 重验，不得正式完成或归档。
