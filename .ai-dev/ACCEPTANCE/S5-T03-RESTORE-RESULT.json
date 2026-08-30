@@ -1,0 +1,12 @@
+﻿{
+    "Status":  "RESTORE_PASS",
+    "Utc":  "2026-08-30T09:44:47.9630313Z",
+    "RuntimePath":  "C:\\Users\\39037\\AppData\\Local\\StoreExpiryInspector",
+    "DatabasePath":  "C:\\Users\\39037\\AppData\\Local\\StoreExpiryInspector\\data\\app.db",
+    "Bytes":  299008,
+    "SHA256":  "F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522",
+    "ProcessCount":  0,
+    "IsolatedRuntimeRemoved":  true,
+    "StagingRemoved":  true,
+    "ApplicationStartedByScript":  false
+}
