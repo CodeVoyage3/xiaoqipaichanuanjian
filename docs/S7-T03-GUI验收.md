@@ -1,6 +1,6 @@
 # S7-T03 用户隔离 GUI 验收
 
-状态：Sol 技术门禁已于 2026-08-31 通过，现由用户本人执行隔离 GUI 验收。脚本文件系统检查不代表 WPF 已通过，S7-T03 尚未正式归档。
+状态：2026-08-31 用户隔离 GUI、恢复 A 字节核验与正式环境恢复已通过，用户确认“通过，未再次启动软件”，S7-T03 已正式归档。本文件保留为已执行流程记录，当前不要再次运行 Prepare / Start。完整证据见 `.ai-dev/ACCEPTANCE/S7-T03.md`。
 
 ## 隔离规则
 
@@ -58,6 +58,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File 'D:\wendang\ChatGPT\门店�
 - `GUI_RESTORE_BYTES_PASS` 和 `RESTORE_PASS` 输出。
 - 原始回执保存在 `obj/S7T03GuiAcceptance/gui-restore-bytes-result.json` 与 `formal-restore-result.json`。
 
-本文件不宣称人工验收通过，不授权 S7-T04。
+人工验收结论以 `.ai-dev/ACCEPTANCE/S7-T03.md` 的用户确认与原始回执为准；本流程不授权 S7-T04。
 
 脚本的可运行安全检查为 `tests/S7T03GuiScriptCheck.ps1`：使用工作区临时假目录，并模拟注册表边界，不启动 WPF、不读写真实注册表。真实注册表恢复仍以用户本机 Finish 回执为准。

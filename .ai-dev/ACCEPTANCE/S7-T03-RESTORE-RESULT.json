@@ -1,0 +1,12 @@
+﻿{
+    "Result":  "RESTORE_PASS",
+    "TimeUtc":  "2026-08-31T07:09:38.4102733Z",
+    "Runtime":  "C:\\Users\\39037\\AppData\\Local\\StoreExpiryInspector",
+    "Length":  299008,
+    "SHA256":  "F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522",
+    "ProcessCount":  0,
+    "IsolatedRuntimeRemoved":  true,
+    "ProtectedStagingRemoved":  true,
+    "ApplicationStartedByScript":  false,
+    "AutoStartRestored":  true
+}
