@@ -27,7 +27,7 @@ public sealed class LocalDatabaseBackupUseCase
         string? sourceDatabasePath = null,
         string? backupDirectory = null)
     {
-        if (Interlocked.CompareExchange(ref backupInProgress, 1, 0) != 0)
+        if (!TryBeginDatabaseFileOperation())
         {
             return LocalDatabaseBackupResult.Failure(
                 LocalDatabaseBackupCodes.BackupInProgress,
@@ -36,15 +36,28 @@ public sealed class LocalDatabaseBackupUseCase
 
         try
         {
-            return CreateCore(sourceDatabasePath, backupDirectory);
+            return CreateCore(sourceDatabasePath, backupDirectory, "backup", "manual", persistRecord: true);
         }
         finally
         {
-            Volatile.Write(ref backupInProgress, 0);
+            EndDatabaseFileOperation();
         }
     }
 
-    private LocalDatabaseBackupResult CreateCore(string? sourceDatabasePath, string? backupDirectory)
+    internal LocalDatabaseBackupResult CreatePreRestore(string sourceDatabasePath, string backupDirectory) =>
+        CreateCore(sourceDatabasePath, backupDirectory, "pre-restore", "pre_restore", persistRecord: false);
+
+    internal static bool TryBeginDatabaseFileOperation() =>
+        Interlocked.CompareExchange(ref backupInProgress, 1, 0) == 0;
+
+    internal static void EndDatabaseFileOperation() => Volatile.Write(ref backupInProgress, 0);
+
+    private LocalDatabaseBackupResult CreateCore(
+        string? sourceDatabasePath,
+        string? backupDirectory,
+        string filePrefix,
+        string backupType,
+        bool persistRecord)
     {
         string sourcePath;
         string destinationPath;
@@ -90,7 +103,7 @@ public sealed class LocalDatabaseBackupUseCase
         var snapshot = snapshotService.CreateVerifiedSnapshot(
             sourcePath,
             destinationPath,
-            "backup",
+            filePrefix,
             expectedMigrationIds);
         if (!snapshot.CanProceed || snapshot.Metadata is null)
         {
@@ -125,12 +138,13 @@ public sealed class LocalDatabaseBackupUseCase
 
             File.Move(temporaryMetadataPath, metadataPath);
 
-            long recordId;
-            using (var context = DatabaseInitializer.CreateContext(sourcePath))
+            long? recordId = null;
+            if (persistRecord)
             {
+                using var context = DatabaseInitializer.CreateContext(sourcePath);
                 var record = new BackupRecord
                 {
-                    BackupType = "manual",
+                    BackupType = backupType,
                     FilePath = metadata.SnapshotPath,
                     Sha256 = metadata.Sha256,
                     CreatedAtUtc = metadata.CreatedAtUtc,
@@ -139,6 +153,10 @@ public sealed class LocalDatabaseBackupUseCase
                 context.BackupRecords.Add(record);
                 context.SaveChanges();
                 recordId = record.Id;
+                recordSaved = true;
+            }
+            else
+            {
                 recordSaved = true;
             }
 
@@ -229,7 +247,7 @@ public sealed record LocalDatabaseBackupResult(
     string? ValidationResult)
 {
     internal static LocalDatabaseBackupResult Success(
-        long backupRecordId,
+        long? backupRecordId,
         string backupId,
         string backupPath,
         string metadataPath,
