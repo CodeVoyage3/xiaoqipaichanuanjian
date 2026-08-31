@@ -276,6 +276,42 @@ public sealed class S7T02DatabaseRestoreTests
     }
 
     [Fact]
+    public void CleanupFailureAfterVerifiedReplaceIsCriticalInsteadOfRestored()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var backups = NewDirectory();
+        FileStream? heldQuarantine = null;
+        try
+        {
+            var target = CreateBackup(database, backups);
+            var restore = new DatabaseRestoreUseCase((point, _) =>
+            {
+                if (point == "staging_validated")
+                {
+                    File.WriteAllText(database.Path + "-wal", "old sidecar");
+                }
+                else if (point == "after_replace")
+                {
+                    var quarantine = Directory.GetFiles(
+                        database.Directory,
+                        Path.GetFileName(database.Path) + "-wal.restore-*").Single();
+                    heldQuarantine = new FileStream(quarantine, FileMode.Open, FileAccess.Read, FileShare.Read);
+                }
+            }).Restore(target.BackupPath!, true, database.Path, backups);
+
+            Assert.False(restore.Succeeded);
+            Assert.Equal(DatabaseRestoreCodes.CriticalRestoreFailure, restore.Code);
+            Assert.Equal(target.Sha256, Hash(database.Path));
+            Assert.NotNull(heldQuarantine);
+        }
+        finally
+        {
+            heldQuarantine?.Dispose();
+            DeleteDirectory(backups);
+        }
+    }
+
+    [Fact]
     public void RestoreExcludesSecondRestoreAndOrdinaryBackup()
     {
         using var database = SqliteTestDatabase.Create();

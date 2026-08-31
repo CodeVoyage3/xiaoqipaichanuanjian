@@ -192,6 +192,22 @@ public sealed class DatabaseRestoreUseCase
                 Delete(rollbackPath);
                 DeleteQuarantinedSidecars(quarantinedSidecars);
                 DeleteCurrentSidecars(targetPath);
+                DeleteCurrentSidecars(stagingPath);
+                DeleteCurrentSidecars(rollbackPath);
+                DeleteCurrentSidecars(failedPath);
+                if (!CleanupCompleted(
+                        targetPath,
+                        stagingPath,
+                        rollbackPath,
+                        failedPath,
+                        quarantinedSidecars))
+                {
+                    return Failure(
+                        DatabaseRestoreCodes.CriticalRestoreFailure,
+                        "数据库已恢复并验证，但恢复副文件清理失败；必须保持业务停止并人工处理。",
+                        protection);
+                }
+
                 return DatabaseRestoreResult.Success(sourceValidation.Metadata!, protection);
             }
 
@@ -400,6 +416,19 @@ public sealed class DatabaseRestoreUseCase
             Delete(databasePath + suffix);
         }
     }
+
+    private static bool CleanupCompleted(
+        string targetPath,
+        string stagingPath,
+        string rollbackPath,
+        string failedPath,
+        IEnumerable<(string Original, string Quarantine)> quarantinedSidecars) =>
+        !Path.Exists(stagingPath) &&
+        !Path.Exists(rollbackPath) &&
+        !Path.Exists(failedPath) &&
+        new[] { targetPath, stagingPath, rollbackPath, failedPath }
+            .All(path => SidecarSuffixes.All(suffix => !Path.Exists(path + suffix))) &&
+        quarantinedSidecars.All(sidecar => !Path.Exists(sidecar.Quarantine));
 
     private static void Delete(string path)
     {
