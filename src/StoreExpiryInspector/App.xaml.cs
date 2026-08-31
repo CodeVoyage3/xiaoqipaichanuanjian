@@ -1,7 +1,10 @@
 using System.IO;
+using System.Windows.Threading;
 using StoreExpiryInspector.Application;
+using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
+using StoreExpiryInspector.UI;
 
 namespace StoreExpiryInspector;
 
@@ -42,5 +45,29 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
+        Dispatcher.BeginInvoke(
+            () => RunDailyReminder(logger),
+            DispatcherPriority.ApplicationIdle);
+    }
+
+    private static void RunDailyReminder(LocalFileLogger logger)
+    {
+        try
+        {
+            using var context = DatabaseInitializer.CreateContext();
+            new DailyReminderRuntimeCoordinator(
+                new WindowsMessageBoxReminderChannel(),
+                logger).Run(
+                    context,
+                    TimeProvider.System.GetLocalNow().DateTime);
+        }
+        catch (Exception exception)
+        {
+            logger.TryWrite(
+                "error",
+                "daily_reminder_runtime_failed",
+                "每日集中提醒运行时初始化失败，主窗口继续运行。",
+                exception.ToString());
+        }
     }
 }
