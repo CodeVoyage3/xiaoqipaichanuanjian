@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 5 已整体验收并归档；Stage 6 handoff 已生成但尚未开始
-- 状态：Stage 0～Stage 5 整体通过；等待用户单独批准 Stage 6
+- 当前阶段：Stage 6 已整体验收并归档；Stage 7 handoff 已生成但尚未开始
+- 状态：Stage 0～Stage 6 整体通过；等待用户单独批准 Stage 7
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -32,6 +32,11 @@
 - S5-T03 已完成排查历史只读入口、列表、正式详情与 Revision 展示；初始实现 `3f44388193fc03cfde82ee169912f868ba32e219`，最终显示修复 `e4c3d4d8d6b18c3fc9e1f9773815d6fde11430ae`。Sol 独立专项 10/10、S5-T02 16/16、S5-T01 9/9、Stage 4 179/179、Stage 3 170/170、Release 567/567、build 0/0、EF 无漂移、migration 8、无依赖变更；没有历史编辑 UI 或 S5-T04。用户 GUI 通过，本机恢复回执确认正式库为 299008 bytes / 指定 SHA-256、进程 0；共享临时目录已清理，正式归档。
 - S5-T04 已把既有 S5-T02 单条正式明细数量修订接入历史详情 UI；实现 `5818379d751c1aa479489d5febcad6208dd92e9b`。专项 16/16、S5-T03/T02/T01 合计 35/35、Stage 4 179/179、Stage 3 170/170、Release 583/583、build 0/0、EF 无漂移、migration 8、无依赖变更及范围越界。用户本人隔离 GUI 验收通过，确认数量 4→7 与 Revision；恢复回执为 `RESTORE_PASS`，正式库 299008 bytes / 指定 SHA-256、进程 0、隔离与暂存已移除，恢复后未再次启动应用。S5-T04 正式归档。
 - Stage 5 最终总验收通过：S5-T01/T02/T03/T04 分别 9/9、16/16、10/10、16/16，Stage 4 179/179，Stage 3 170/170，Release 583/583，build 0/0；EF 无漂移，仓库/正式库 migration=8，依赖未变。正式数据与隔离清理门禁保持通过，无范围越界。
+- S6-T01 已交付每日提醒候选、到期判断、同日幂等与成功登记；实现 `5c0ab6a313813f28976ed4b9f4bc7e5c42aa4f3e`，专项 13/13。
+- S6-T02 已交付 Windows 集中提醒及应用启动运行时接入；实现 `673391ad2f6d0d940fa139680f7fc5635c4c0cb1`，专项 10/10，用户 Windows 验收通过。
+- S6-T03 已交付单实例、托盘常驻、主窗口恢复/退出与到点 scheduler；实现 `ea2ae19ab92ab7096c96e1b2745cd6132fc72c0d`，专项 12/12，用户托盘与到点提醒验收通过。
+- S6-T04 已交付提醒时间设置、运行中重新调度和当前用户级开机自启动；实现 `f6fdd2495e5b42200b046153b3b65a06790d60d6`，专项 17/17，用户自动启动启停、同日不重复提醒及数据恢复验收通过。
+- Stage 6 最终总验收通过：S6-T01/T02/T03/T04 分别 13/13、10/10、12/12、17/17，Stage 5 51/51、Stage 4 179/179、Stage 3 170/170、Release 635/635，build 0/0；EF 无漂移，migration=8，依赖未变。正式数据库恢复至 299008 bytes / 指定 SHA-256，进程 0，无范围越界。
 
 ## 冻结业务红线
 
@@ -78,13 +83,18 @@
 - Stage 5 总验收：`.ai-dev/ACCEPTANCE/STAGE-5.md`
 - Stage 5 归档：`.ai-dev/STAGES/STAGE-5-CLOSEOUT.md`
 - Stage 6 接任说明：`.ai-dev/STAGES/STAGE-6-HANDOFF.md`
+- S6-T01～S6-T04 验收：`.ai-dev/ACCEPTANCE/S6-T01.md`、`.ai-dev/ACCEPTANCE/S6-T02.md`、`.ai-dev/ACCEPTANCE/S6-T03.md`、`.ai-dev/ACCEPTANCE/S6-T04.md`
+- Stage 6 总验收：`.ai-dev/ACCEPTANCE/STAGE-6.md`
+- Stage 6 归档：`.ai-dev/STAGES/STAGE-6-CLOSEOUT.md`
+- Stage 7 接任说明：`.ai-dev/STAGES/STAGE-7-HANDOFF.md`
 
 ## 下一步门禁
 
-- Stage 5 技术、用户 GUI、正式环境恢复、隔离清理和最终总验收均已通过并正式归档；详见 `.ai-dev/ACCEPTANCE/STAGE-5.md` 与 `.ai-dev/STAGES/STAGE-5-CLOSEOUT.md`。
-- 最新结论（2026-08-30）：用户 GUI 通过，并提供本机 `RESTORE_PASS` 截图及一致的共享回执；正式库大小 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，进程 0，隔离运行目录和恢复暂存目录已删除。Sol 已清理共享 `obj/S5T03GuiAcceptance`，恢复后未启动应用。S5-T03 正式归档，停止。
+- Stage 6 技术、用户 Windows GUI、正式环境恢复、隔离清理和最终总验收均已通过并正式归档；详见 `.ai-dev/ACCEPTANCE/STAGE-6.md` 与 `.ai-dev/STAGES/STAGE-6-CLOSEOUT.md`。
+- 最新结论（2026-08-31）：Stage 6 四卡及总验收全部通过；Release 635/635、build 0/0、EF 无漂移、migration=8。用户本机 `RESTORE_PASS` 回执确认正式库 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`、进程 0，Stage 6 隔离目录已清理且恢复后未再启动应用。
+- 历史结论（2026-08-30）：S5-T03 用户 GUI 通过，并提供本机 `RESTORE_PASS` 截图及一致的共享回执；正式库大小 299008 bytes / 指定 SHA-256，进程 0，隔离运行目录和恢复暂存目录已删除。Sol 已清理共享 `obj/S5T03GuiAcceptance`，恢复后未启动应用。
 - Stage 4 已完成总验收与归档；1024×600、125% 缩放、鼠标滚轮、Tab 与窗口恢复已由用户最终 GUI 验收通过。
 - 在线 NuGet 漏洞审计因本机 SSL/TLS/凭据环境失败的风险已由用户在 S4-T09 接受；不得改写为在线审计成功。
 - S5-T03 闪退修复 `4341c213dc0377a661992aecdde93ffead034b7d`、多列表头修复 `e4c3d4d8d6b18c3fc9e1f9773815d6fde11430ae` 均由原 Luna 执行，Sol 独立复验，用户最终 GUI 通过；各轮失败/修复/复验过程保留在 S5-T03 验收记录。本轮归档不修改生产代码，不将历史测试计数冒充重新运行。
 - 工具侧默认 C 盘目录仍为旧异常 Junction，与用户本机正常恢复目录是不同视图。正式旁置原件及 S4-T09 历史备份保留；不宣称工具侧路径修复完成，未来通过工具启动前必须重新核实处理。此为独立环境限制，用户本机数据恢复已按回执闭环。Sol 不启动 WPF、不使用电脑操控验收。
-- 不得创建 S5-T05；不得创建、编号、派发或实施 S6-T01 / Stage 6。Stage 6 handoff 不是开发授权，等待用户下一步明确批准。
+- 不得创建 S6-T05；不得创建、编号、派发或实施 S7-T01 / Stage 7。Stage 7 handoff 不是开发授权，等待用户下一步明确批准。
