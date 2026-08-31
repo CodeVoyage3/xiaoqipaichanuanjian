@@ -15,6 +15,14 @@ public static class DatabaseInitializer
             "app.db");
     }
 
+    public static string GetDefaultBackupDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "StoreExpiryInspector",
+            "backups");
+    }
+
     public static StoreDbContext CreateContext(string? databasePath = null)
     {
         var path = string.IsNullOrWhiteSpace(databasePath)

@@ -62,7 +62,14 @@ public sealed class PreImportSnapshotService
 
     private const string EfMigrationsLockTable = "__EFMigrationsLock";
 
-    public PreImportSnapshotResult Create(string sourceDatabasePath, string destinationDirectory)
+    public PreImportSnapshotResult Create(string sourceDatabasePath, string destinationDirectory) =>
+        CreateVerifiedSnapshot(sourceDatabasePath, destinationDirectory, "pre-import", RequiredMigrationIds);
+
+    internal PreImportSnapshotResult CreateVerifiedSnapshot(
+        string sourceDatabasePath,
+        string destinationDirectory,
+        string filePrefix,
+        IReadOnlyList<string> expectedMigrationIds)
     {
         if (string.IsNullOrWhiteSpace(sourceDatabasePath))
         {
@@ -156,7 +163,7 @@ public sealed class PreImportSnapshotService
         string finalPath;
         try
         {
-            (temporaryPath, finalPath) = ReserveSnapshotPath(destinationPath, sourcePath);
+            (temporaryPath, finalPath) = ReserveSnapshotPath(destinationPath, sourcePath, filePrefix);
         }
         catch (Exception exception) when (IsFileSystemFailure(exception))
         {
@@ -187,7 +194,7 @@ public sealed class PreImportSnapshotService
             {
                 using var snapshot = OpenReadOnly(temporaryPath);
                 snapshotSchema = ReadSchema(snapshot);
-                if (!IsVerified(sourceSchema, snapshotSchema))
+                if (!IsVerified(sourceSchema, snapshotSchema, expectedMigrationIds))
                 {
                     return PreImportSnapshotResult.Failure(
                         PreImportSnapshotCodes.VerificationFailed,
@@ -360,12 +367,13 @@ public sealed class PreImportSnapshotService
 
     private static (string TemporaryPath, string FinalPath) ReserveSnapshotPath(
         string destinationDirectory,
-        string sourcePath)
+        string sourcePath,
+        string filePrefix)
     {
         for (var attempt = 0; attempt < 16; attempt++)
         {
             var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture);
-            var finalPath = Path.Combine(destinationDirectory, $"pre-import-{stamp}-{Guid.NewGuid():N}.db");
+            var finalPath = Path.Combine(destinationDirectory, $"{filePrefix}-{stamp}-{Guid.NewGuid():N}.db");
             var temporaryPath = finalPath + ".tmp";
             if (string.Equals(finalPath, sourcePath, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(temporaryPath, sourcePath, StringComparison.OrdinalIgnoreCase))
@@ -476,12 +484,15 @@ public sealed class PreImportSnapshotService
             entries.ToArray(),
             columns,
             migrationIds,
-            ReadQuickCheck(connection),
+            ReadIntegrityCheck(connection),
             ReadForeignKeyCheckIsEmpty(connection),
             ReadPageCount(connection));
     }
 
-    private static bool IsVerified(DatabaseSchema source, DatabaseSchema snapshot)
+    private static bool IsVerified(
+        DatabaseSchema source,
+        DatabaseSchema snapshot,
+        IReadOnlyList<string>? expectedMigrationIds = null)
     {
         return snapshot.QuickCheckOk &&
                snapshot.ForeignKeyCheckEmpty &&
@@ -493,7 +504,8 @@ public sealed class PreImportSnapshotService
                RequiredTables.All(snapshot.TableNames.Contains) &&
                snapshot.TableNames.All(static name =>
                    name == EfMigrationsLockTable || RequiredTables.Contains(name, StringComparer.Ordinal)) &&
-               RequiredMigrationIds.SequenceEqual(snapshot.MigrationIds, StringComparer.Ordinal);
+               (expectedMigrationIds ?? RequiredMigrationIds)
+                   .SequenceEqual(snapshot.MigrationIds, StringComparer.Ordinal);
     }
 
     private static bool IsSelfVerified(DatabaseSchema snapshot, IReadOnlyList<string> metadataMigrationIds)
@@ -529,10 +541,10 @@ public sealed class PreImportSnapshotService
         return true;
     }
 
-    private static bool ReadQuickCheck(SqliteConnection connection)
+    private static bool ReadIntegrityCheck(SqliteConnection connection)
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "PRAGMA quick_check;";
+        command.CommandText = "PRAGMA integrity_check;";
         using var reader = command.ExecuteReader();
         var rowCount = 0;
         var isOk = false;
