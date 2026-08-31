@@ -167,3 +167,12 @@
 - 权威隔离：历史修订不调用 Stage 3 Lifecycle，不更新 Batch/Task/Draft/AttentionVersion，不调用或重放 Stage 4 Submission。
 - UI：WPF 只调用上述查询/修改用例，确认与提交期间固定目标并防重入；提交后重读正式详情和 Revision，不伪造结果。
 - UI debt：纯视觉不满意延后到 Stage 7 完成后的全局 UI/UX 重构，不创建 S5-T05。
+
+## D-021｜Stage 7 最终范围与后续 UI/UX 门禁
+
+- 决策依据：2026-08-31 用户提交的 `Stage-7-最终收口执行单.md`。Stage 7 只以本地安全备份、安全恢复、WPF 备份/恢复闭环收口，S7-T01～S7-T03 及总验收均已完成。
+- 用户决定暂不实施“正式排查历史 / 结果 Excel 导出”，登记为 Deferred Feature，不是 Stage 7 缺陷或阻断项；后续任何阶段都必须取得重新批准才能实施。今日待排查任务、Draft、数据库原始表导出仍不做，不创建 S7-T04。
+- Stage 7 后先统一整体 UI/UX，再继续后续 Stage。本轮只生成总验收、closeout、UI/UX handoff 和必要治理更新，不创建新 Task / Luna，不修改生产代码。
+- UI/UX 仅允许在后续批准范围内调整视觉、布局、信息层级和必要交互表达；保持条码、1024×600 / Windows 125%、用户本人 GUI 验收；不得改写 Stage 3～7 权威、schema、migration 或借机新增业务。
+- Stage 8 原规划保持稳定性 / 性能，必须等 Stage 7 收口、UI/UX 完成和用户单独批准后再进入；不创建 S8-T01，不把 UI/UX 并入 Stage 8。
+- 本决策不改写 S7-T02 治理偏差、各卡历史计数和 GUI 复验过程；最终证据索引为 `.ai-dev/ACCEPTANCE/STAGE-7.md`。

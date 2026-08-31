@@ -1,8 +1,8 @@
 # 架构事实与阶段边界
 
-> 更新于 2026-08-30。Stage 5 已整体验收并归档；本文区分当前代码事实与后续阶段方向。
+> 更新于 2026-08-31。Stage 7 已总验收并收口；下方保留 Stage 5 架构图及早期债务记录，Stage 6～7 当前边界见本文末节。不得将历史开工缺口当作当前未交付功能。
 
-## 当前代码事实（Stage 5 整体通过）
+## Stage 5 整体通过时的代码结构
 
 ```text
 StoreExpiryInspector.slnx
@@ -101,14 +101,14 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 - 一次商品排查提交已由 S4-T04 实现：任务、正式排查、明细、有效草稿处置与 S3-T06 批次状态/事件处于同一事务，WPF 只调用该入口。
 - 一次历史修改：只在同一事务更新正式 InspectionItem 当前数量并新增 Revision；不做 Lifecycle、Batch/Task/Draft/AttentionVersion 或旧提交状态重算。
 - 商品库存归零：商品、相关批次、开放任务、草稿和事件同事务。
-- 导入撤销执行及完整备份恢复尚未实现；S2-T08 只提供只读资格判断，真正恢复前必须在排他/原子边界内重新判断、先备份当前库，再决定 Undone 与工作簿语义。
+- 导入撤销执行仍未实现，S2-T08 只提供只读资格判断；Stage 7 已另行完成本地整库安全备份/恢复，不等同于确认导入撤销，也不自行决定 Undone 与工作簿语义。
 
 ## 已知技术边界
 
 - SQLite 部分旧 migration 在重建表时会输出 `PRAGMA foreign_keys` 不能位于事务内的 EF 提示；空库逐级升级和七段旧数据保留测试均通过，但进程中断可能留下部分迁移状态，后续升级流程仍必须先做可恢复快照。
 - `LocalFileLogger` 使用进程级全局锁，只保证同一进程内写入完整；符合当前单实例方向，未来出现多实例或明显吞吐瓶颈时再调整。
 - Windows 10 具体门店版本未知，必须实机验收；V1 未签名 EXE 的 SmartScreen“未知发布者”是已接受限制。
-- 真实样表 round-trip、安装运行、托盘/自启动/休眠恢复和 10 万批次 + 30 万历史记录性能均尚未验收。
+- Stage 6 托盘、提醒与当前用户自启动已由用户 Windows 验收；真实样表 round-trip、安装运行、休眠恢复专项和 10 万批次 + 30 万历史记录性能仍未在本轮验证。
 
 ## Stage 2 架构债检查
 
@@ -124,3 +124,10 @@ Open XML SDK 3.5.1 已由 S2-T01 最小加入并通过官方源漏洞审计；�
 - `ConfirmedImportLifecycleOrchestrator.cs` 467 行，职责限于明确事实冻结/解析、两个已有 UseCase 的优先级调用与统一事务；偏长但没有第二职责或未来抽象，当前不拆。
 - `ApplicationStartupCoordinator.cs` 86 行，`App.xaml.cs` 46 行；入口没有业务查询或状态机。
 - 未发现 Repository/UnitOfWork、单实现接口、God Service、EventBus/Outbox、通用状态机/工作流、第二套效期算法或新依赖。无阻断级架构债。
+
+## Stage 6～7 收口后的当前边界
+
+- Stage 6 的 Application/Reminders、App 与原生 Windows Tray/设置负责提醒、同日幂等、单实例、scheduler 和 HKCU 自启动；详见 STAGE-6-CLOSEOUT。
+- Stage 7 的 Application/Backups 复用共享快照，提供安全备份、最小只读可恢复列表与安全恢复；UI/DatabaseRuntimeGate 和现有 Shell/App 只协调调用，等待保存与在途操作、停止 scheduler，成功/critical 后锁定并退出。
+- schema、8 条 migration 与包依赖相对 Stage 6 不变；工程仅增加已归档 T02 的测试可见性声明。Domain、既有业务事务及状态权威不得因视觉改版重写。
+- Stage 7 已正式完成；正式历史/结果 Excel 导出 deferred，未经用户重新批准不得补做。下一步只交接 UI/UX 统一重构，不创建实施 Task，不进入 Stage 8。当前契约见 `.ai-dev/STAGES/STAGE-7-CLOSEOUT.md`，交接见 `.ai-dev/STAGES/UI-UX-REFRESH-HANDOFF.md`。
