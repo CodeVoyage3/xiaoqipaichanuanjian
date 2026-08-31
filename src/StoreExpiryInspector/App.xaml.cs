@@ -20,6 +20,7 @@ public partial class App : System.Windows.Application
     private DailyReminderScheduler? _reminderScheduler;
     private WindowsTrayIcon? _trayIcon;
     private LocalFileLogger? _logger;
+    private IDisposable? _databaseMaintenanceLease;
     private bool _explicitExit;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
@@ -95,6 +96,16 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        if (mainWindow.DataContext is ShellViewModel shell)
+        {
+            shell.ConfigureDatabaseProtectionRuntime(
+                BeginDatabaseMaintenanceAsync,
+                EndDatabaseMaintenance,
+                ExitApplication);
+            mainWindow.Closing += MainWindow_Closing;
+            mainWindow.ReminderTimeChanged += ReminderTimeChanged;
+        }
+
         WindowsTrayIcon trayIcon;
         try
         {
@@ -113,11 +124,13 @@ public partial class App : System.Windows.Application
         try
         {
             int reminderMinuteOfDay;
-            using var context = DatabaseInitializer.CreateContext();
-            reminderMinuteOfDay = context.Settings
-                .AsNoTracking()
-                .Select(setting => setting.ReminderMinuteOfDay)
-                .Single();
+            using (var context = DatabaseInitializer.CreateContext())
+            {
+                reminderMinuteOfDay = context.Settings
+                    .AsNoTracking()
+                    .Select(setting => setting.ReminderMinuteOfDay)
+                    .Single();
+            }
             var coordinator = new DailyReminderRuntimeCoordinator(
                 new WindowsMessageBoxReminderChannel(
                     () => mainWindow.IsVisible ? mainWindow : null),
@@ -126,19 +139,37 @@ public partial class App : System.Windows.Application
                 reminderMinuteOfDay,
                 localNow =>
                 {
-                    using var reminderContext = DatabaseInitializer.CreateContext();
-                    return coordinator.Run(reminderContext, localNow);
+                    try
+                    {
+                        return DatabaseRuntimeGate.Run(() =>
+                        {
+                            using var reminderContext = DatabaseInitializer.CreateContext();
+                            return coordinator.Run(reminderContext, localNow);
+                        });
+                    }
+                    catch (DatabaseRuntimeStoppedException)
+                    {
+                        return new(
+                            "paused",
+                            NotificationAttempted: false,
+                            NotificationSucceeded: false,
+                            ReminderRecorded: false);
+                    }
                 },
                 _logger);
             _trayIcon = trayIcon;
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            mainWindow.Closing += MainWindow_Closing;
-            mainWindow.ReminderTimeChanged += ReminderTimeChanged;
             _reminderScheduler.Start();
         }
         catch (Exception exception)
         {
             trayIcon.Dispose();
+            _trayIcon = null;
+            _reminderScheduler?.Dispose();
+            _reminderScheduler = null;
+            // If scheduler startup failed after the tray path selected explicit
+            // shutdown, restore the ordinary close behavior before returning.
+            ShutdownMode = ShutdownMode.OnLastWindowClose;
             _logger.TryWrite(
                 "error",
                 "daily_reminder_runtime_failed",
@@ -150,6 +181,37 @@ public partial class App : System.Windows.Application
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (_explicitExit || MainWindow is null)
+        {
+            return;
+        }
+
+        if (MainWindow.DataContext is ShellViewModel shell && shell.IsDatabaseProtectionBusy)
+        {
+            e.Cancel = true;
+            MessageBox.Show(
+                MainWindow,
+                "数据备份或恢复正在进行，请等待操作完成后再关闭应用。",
+                "操作进行中",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        if (MainWindow.DataContext is ShellViewModel { IsDatabaseProtectionLocked: true })
+        {
+            e.Cancel = true;
+            MessageBox.Show(
+                MainWindow,
+                "当前数据保护操作已完成或遇到严重错误，请使用页面中的“退出应用”完成正常退出。",
+                "请退出应用",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        // If tray setup failed, preserve the original fallback: closing the
+        // window must be able to terminate the process.
+        if (_trayIcon is null)
         {
             return;
         }
@@ -176,6 +238,17 @@ public partial class App : System.Windows.Application
 
     private void ExitApplication()
     {
+        if (MainWindow?.DataContext is ShellViewModel { IsDatabaseProtectionBusy: true })
+        {
+            MessageBox.Show(
+                MainWindow,
+                "数据备份或恢复正在进行，请等待操作完成后再退出应用。",
+                "操作进行中",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
         _explicitExit = true;
         StopRuntime();
         MainWindow?.Close();
@@ -191,5 +264,68 @@ public partial class App : System.Windows.Application
         _reminderScheduler = null;
         _trayIcon?.Dispose();
         _trayIcon = null;
+    }
+
+    private async Task<bool> BeginDatabaseMaintenanceAsync()
+    {
+        if (_databaseMaintenanceLease is not null ||
+            MainWindow?.DataContext is not ShellViewModel shell ||
+            shell.Import.IsLoading ||
+            shell.History.IsEditBusy ||
+            shell.Detail.IsActionBusy)
+        {
+            return false;
+        }
+
+        // Draft autosave must settle before the gate starts rejecting database
+        // workers. This preserves the existing Stage 4 save contract.
+        if (!await shell.Detail.WaitForStableSaveAsync())
+        {
+            return false;
+        }
+
+        if (shell.Import.IsLoading || shell.History.IsEditBusy || shell.Detail.IsActionBusy)
+        {
+            return false;
+        }
+
+        var wasSchedulerRunning = _reminderScheduler?.IsRunning == true;
+        _reminderScheduler?.Stop();
+        try
+        {
+            var lease = await DatabaseRuntimeGate.EnterMaintenanceAsync();
+            if (lease is null)
+            {
+                if (wasSchedulerRunning && !_explicitExit)
+                {
+                    _reminderScheduler?.Start();
+                }
+
+                return false;
+            }
+
+            _databaseMaintenanceLease = lease;
+            return true;
+        }
+        catch
+        {
+            if (wasSchedulerRunning && !_explicitExit)
+            {
+                _reminderScheduler?.Start();
+            }
+
+            throw;
+        }
+    }
+
+    private void EndDatabaseMaintenance(bool resumeScheduler)
+    {
+        var lease = _databaseMaintenanceLease;
+        _databaseMaintenanceLease = null;
+        lease?.Dispose();
+        if (resumeScheduler && !_explicitExit)
+        {
+            _reminderScheduler?.Start();
+        }
     }
 }

@@ -333,7 +333,7 @@ public sealed class ImportViewModel : ViewModelBase
 
         try
         {
-            var loaded = await Task.Run(() => _parsePreview(path));
+            var loaded = await Task.Run(() => DatabaseRuntimeGate.Run(() => _parsePreview(path)));
             if (!IsCurrent(version))
             {
                 return;
@@ -419,7 +419,7 @@ public sealed class ImportViewModel : ViewModelBase
 
         try
         {
-            var confirmation = await Task.Run(() => _confirmPreview(identity));
+            var confirmation = await Task.Run(() => DatabaseRuntimeGate.Run(() => _confirmPreview(identity)));
             if (!IsCurrent(version))
             {
                 return;
@@ -434,7 +434,7 @@ public sealed class ImportViewModel : ViewModelBase
             var contract = confirmation.Contract;
             _confirmationContract = contract;
             NotifyPreviewProperties();
-            var result = await Task.Run(() => _executeImport(contract, parsedAtUtc));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _executeImport(contract, parsedAtUtc)));
             if (!IsCurrent(version))
             {
                 return;

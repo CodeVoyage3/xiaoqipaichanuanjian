@@ -37,6 +37,60 @@ public sealed class DatabaseRestoreUseCase
 
     internal DatabaseRestoreUseCase(Action<string, string?> checkpoint) => this.checkpoint = checkpoint;
 
+    internal LocalDatabaseBackupValidation ValidateForListing(
+        string backupPath,
+        string? formalDatabasePath = null)
+    {
+        string sourcePath;
+        string targetPath;
+        try
+        {
+            sourcePath = Path.GetFullPath(backupPath);
+            targetPath = Path.GetFullPath(
+                formalDatabasePath ?? DatabaseInitializer.GetDefaultDatabasePath());
+        }
+        catch
+        {
+            return LocalDatabaseBackupValidation.Failure(
+                DatabaseRestoreCodes.BackupInvalid,
+                "备份或正式数据库路径不可用。");
+        }
+
+        if (!File.Exists(sourcePath))
+        {
+            return LocalDatabaseBackupValidation.Failure(
+                DatabaseRestoreCodes.BackupNotFound,
+                "备份文件不存在。");
+        }
+
+        if (string.Equals(sourcePath, targetPath, StringComparison.OrdinalIgnoreCase) ||
+            sourcePath.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) ||
+            Path.GetFileName(sourcePath).Contains(".restore-", StringComparison.OrdinalIgnoreCase))
+        {
+            return LocalDatabaseBackupValidation.Failure(
+                DatabaseRestoreCodes.BackupInvalid,
+                "备份路径不是可发布的独立备份文件。");
+        }
+
+        // Listing is a read-only operation. Read the model migration baseline
+        // from the existing in-memory design-time context instead of creating
+        // the formal database directory as CreateContext(path) does.
+        var expectedMigrations = ReadExpectedMigrationsForListing();
+        if (expectedMigrations is null)
+        {
+            return LocalDatabaseBackupValidation.Failure(
+                DatabaseRestoreCodes.BackupInvalid,
+                "无法读取当前应用 migration 基线。");
+        }
+
+        var validation = Validate(sourcePath, expectedMigrations, requireMetadata: true);
+        return new(
+            validation.Succeeded,
+            validation.Code,
+            validation.Summary,
+            validation.Metadata);
+    }
+
     public DatabaseRestoreResult Restore(
         string backupPath,
         bool databaseRuntimeStopped,
@@ -358,6 +412,19 @@ public sealed class DatabaseRestoreUseCase
         }
     }
 
+    private static string[]? ReadExpectedMigrationsForListing()
+    {
+        try
+        {
+            using var context = new StoreDbContextFactory().CreateDbContext([]);
+            return context.Database.GetMigrations().ToArray();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static bool CanOpenExclusively(string path)
     {
         try
@@ -496,4 +563,14 @@ public sealed record DatabaseRestoreResult(
             null,
             Array.Empty<string>(),
             null);
+}
+
+internal sealed record LocalDatabaseBackupValidation(
+    bool Succeeded,
+    string Code,
+    string Summary,
+    LocalDatabaseBackupMetadata? Metadata)
+{
+    public static LocalDatabaseBackupValidation Failure(string code, string summary) =>
+        new(false, code, summary, null);
 }

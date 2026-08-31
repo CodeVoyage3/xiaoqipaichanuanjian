@@ -271,9 +271,22 @@
                             <TextBlock Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Button AutomationProperties.Name="数据备份与恢复"
+                            Command="{Binding NavigateBackupRestoreCommand}"
+                            Tag="{Binding IsBackupRestoreVisible}"
+                            Style="{StaticResource NavButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource ShieldIcon}"
+                                  Style="{StaticResource NavIconPathStyle}"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  />
+                            <TextBlock Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button AutomationProperties.Name="设置"
                             ToolTip="提醒时间与开机自启动"
                             Click="Settings_Click"
+                            IsEnabled="{Binding CanOpenSettings}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource GearIcon}"
@@ -1355,6 +1368,168 @@
                             </Grid>
                         </ScrollViewer>
                     </Grid>
+                </Grid>
+
+                <!-- 数据备份与恢复 -->
+                <Grid Visibility="{Binding IsBackupRestoreVisible, Converter={StaticResource BoolToVisibility}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0,0,0,24">
+                            <Border Padding="20"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="本地数据保护"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="仅显示当前应用管理目录中已验证的备份文件。恢复前会先创建保护备份。"
+                                                       Margin="0,4,0,0"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Content="刷新列表"
+                                                Command="{Binding BackupRestore.RefreshCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Width="96"
+                                                HorizontalAlignment="Right"
+                                                AutomationProperties.Name="刷新备份列表" />
+                                    </Grid>
+
+                                    <Grid Grid.Row="1" Margin="0,16,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Content="立即备份"
+                                                Command="{Binding BackupRestore.CreateBackupCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Width="112"
+                                                AutomationProperties.Name="立即创建并验证备份" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="备份完成后会自动刷新下方列表。"
+                                                   Margin="12,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <Button Grid.Column="2"
+                                                Content="恢复所选备份"
+                                                Command="{Binding BackupRestore.RestoreCommand}"
+                                                Style="{StaticResource DangerButtonStyle}"
+                                                Width="136"
+                                                AutomationProperties.Name="恢复所选备份" />
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding BackupRestore.StatusMessage}"
+                                               Margin="0,12,0,0"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Grid.Row="3"
+                                               Text="{Binding BackupRestore.ErrorMessage}"
+                                               Margin="0,4,0,0"
+                                               Foreground="{DynamicResource DangerBrush}"
+                                               TextWrapping="Wrap"
+                                               Visibility="{Binding BackupRestore.HasError, Converter={StaticResource BoolToVisibility}}" />
+
+                                    <Grid Grid.Row="4" MinHeight="230" Margin="0,16,0,0">
+                                        <Border Background="{DynamicResource CanvasBrush}"
+                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Visibility="{Binding BackupRestore.HasError, Converter={StaticResource InverseBoolToVisibility}}">
+                                            <DataGrid ItemsSource="{Binding BackupRestore.Backups}"
+                                                      SelectedItem="{Binding BackupRestore.SelectedBackup, Mode=TwoWay}"
+                                                      AutoGenerateColumns="False"
+                                                      CanUserAddRows="False"
+                                                      IsReadOnly="True"
+                                                      IsEnabled="{Binding BackupRestore.CanRefresh}"
+                                                      SelectionMode="Single"
+                                                      SelectionUnit="FullRow"
+                                                      HeadersVisibility="Column"
+                                                      GridLinesVisibility="Horizontal"
+                                                      BorderThickness="0"
+                                                      IsTabStop="True"
+                                                      Focusable="True">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="创建时间"
+                                                                         Binding="{Binding CreatedAtText}"
+                                                                         Width="170" />
+                                                    <DataGridTextColumn Header="备份文件 / 身份"
+                                                                         Binding="{Binding FileName}"
+                                                                         Width="*" />
+                                                    <DataGridTextColumn Header="文件大小"
+                                                                         Binding="{Binding FileSizeText}"
+                                                                         Width="120" />
+                                                    <DataGridTextColumn Header="验证状态"
+                                                                         Binding="{Binding VerificationStatusText}"
+                                                                         Width="150" />
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </Border>
+                                        <TextBlock Text="正在加载备份列表…"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   Visibility="{Binding BackupRestore.IsLoading, Converter={StaticResource BoolToVisibility}}" />
+                                        <StackPanel HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding BackupRestore.HasNoBackups, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="当前没有可恢复备份"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="15"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <TextBlock Text="创建并验证第一份备份后，它会显示在这里。"
+                                                       Margin="0,6,0,0"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Grid.Row="4"
+                                            Margin="0,16,0,0"
+                                            Padding="12"
+                                            Background="#FFF8E8"
+                                            BorderBrush="#F0D59A"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Visibility="{Binding BackupRestore.IsLocked, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding BackupRestore.StatusMessage}"
+                                                       Foreground="{DynamicResource DangerBrush}"
+                                                       TextWrapping="Wrap" />
+                                            <Button Content="退出应用"
+                                                    Command="{Binding BackupRestore.ExitApplicationCommand}"
+                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Width="104"
+                                                    HorizontalAlignment="Left"
+                                                    Margin="0,10,0,0"
+                                                    AutomationProperties.Name="退出应用" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
 
                 <!-- 排查详情 -->

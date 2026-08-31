@@ -723,7 +723,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
         try
         {
-            var result = await Task.Run(() => _loadDetail(taskId));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadDetail(taskId)));
             if (version != Volatile.Read(ref _loadVersion))
             {
                 return;
@@ -822,7 +822,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
                 AsUtc(_utcNow()),
                 confirmedFacts?.EffectiveStockQty,
                 confirmedFacts?.TotalCheckedQty);
-            var result = await Task.Run(() => _submitInspection(request));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _submitInspection(request)));
             if (result.RequiresOverStockConfirmation)
             {
                 _overStockFacts = new OverStockFacts(
@@ -919,7 +919,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             // GetDetail intentionally exposes no formal-history payload. A second Application
             // call is the idempotent read of that fact: AlreadySubmitted proves a legal
             // concurrent completion; a rejection keeps the integrity error visible.
-            var result = await Task.Run(() => _submitInspection(request));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _submitInspection(request)));
             if (result.AlreadySubmitted)
             {
                 _submissionIntegrityError = false;
@@ -1061,13 +1061,13 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         NotifyMessages();
         try
         {
-            await Task.Run(() => _reconfirmItem(new ReconfirmItemRequest(
+            await Task.Run(() => DatabaseRuntimeGate.Run(() => _reconfirmItem(new ReconfirmItemRequest(
                 _taskId,
                 ProductId!.Value,
                 row.TaskItemId,
                 row.BatchId,
                 row.AttentionVersion,
-                AsUtc(_utcNow()))));
+                AsUtc(_utcNow())))));
             await ReloadAsync(preserveInput: false);
         }
         catch (Exception exception)
@@ -1106,7 +1106,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         NotifyMessages();
         try
         {
-            await Task.Run(() => _clearDraft(new ClearDraftRequest(_taskId, ProductId!.Value)));
+            await Task.Run(() => DatabaseRuntimeGate.Run(() => _clearDraft(new ClearDraftRequest(_taskId, ProductId!.Value))));
             _feedbackMessage = "草稿已清空";
             await ReloadAsync(preserveInput: false);
         }
@@ -1163,11 +1163,11 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         NotifyMessages();
         try
         {
-            var result = await Task.Run(() => _adjustInventory(new ManualInventoryAdjustmentRequest(
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _adjustInventory(new ManualInventoryAdjustmentRequest(
                 ProductId!.Value,
                 correctedStockQty,
                 correctedStockQty == 0,
-                AsUtc(_utcNow()))));
+                AsUtc(_utcNow())))));
             _inventoryFeedback = result.NoChange ? "库存未变化" : "库存修正已保存";
             _feedbackMessage = _inventoryFeedback;
             NotifyMessages();
@@ -1232,7 +1232,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         IsLoading = true;
         try
         {
-            var result = await Task.Run(() => _loadDetail(_taskId));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadDetail(_taskId)));
             if (version != Volatile.Read(ref _loadVersion))
             {
                 return;
@@ -1515,7 +1515,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
             OnPropertyChanged(nameof(DraftFooterStatusText));
             try
             {
-                var result = await Task.Run(() => _saveDraft(snapshot.Request));
+                var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _saveDraft(snapshot.Request)));
                 ApplySaveResult(snapshot, result);
             }
             catch (Exception exception)

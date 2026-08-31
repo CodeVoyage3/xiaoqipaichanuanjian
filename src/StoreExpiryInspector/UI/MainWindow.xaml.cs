@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Markup;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using StoreExpiryInspector.Application.Backups;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Infrastructure;
@@ -21,7 +22,8 @@ public partial class MainWindow : Window
         DataContext = new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
-            confirmHistoryEdit: ConfirmHistoryEdit);
+            confirmHistoryEdit: ConfirmHistoryEdit,
+            confirmRestore: ConfirmRestore);
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -121,6 +123,19 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
+        if (DataContext is ShellViewModel shell && !shell.CanOpenSettings)
+        {
+            MessageBox.Show(
+                this,
+                shell.IsDatabaseProtectionBlocking
+                    ? "数据备份或恢复正在进行，请等待完成后再打开设置。"
+                    : "当前页面操作尚未完成，请等待保存或提交结束后再打开设置。",
+                "暂不可打开设置",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
         try
         {
             var settings = new ReminderSettingsUseCase();
@@ -372,6 +387,18 @@ public partial class MainWindow : Window
             this,
             $"将明细 {request.InspectionItemId} 的正式排查数量修改为 {request.NewCheckedQty}。\n确认写入并保留修改记录吗？",
             "确认修改正式数量",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+
+    private bool ConfirmRestore(LocalDatabaseBackupListItem backup) =>
+        MessageBox.Show(
+            this,
+            $"将用备份“{backup.FileName}”替换当前数据。\n"
+            + "系统会先创建恢复前保护备份。\n"
+            + "恢复完成后当前应用必须退出并重新启动，当前运行态不能无感撤销。\n"
+            + "确认继续恢复吗？",
+            "确认恢复当前数据",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;

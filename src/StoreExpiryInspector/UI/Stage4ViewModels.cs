@@ -7,6 +7,8 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using StoreExpiryInspector.Application;
+using StoreExpiryInspector.Application.Backups;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
@@ -19,6 +21,7 @@ public enum ShellPage
     PendingTasks,
     History,
     Import,
+    BackupRestore,
     InspectionDetail
 }
 
@@ -401,7 +404,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
         try
         {
-            var result = await Task.Run(_loadDashboard);
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(_loadDashboard));
             if (version != _loadVersion)
             {
                 return;
@@ -739,7 +742,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
         try
         {
-            var result = await Task.Run(() => _searchTasks(request));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _searchTasks(request)));
             if (version != _loadVersion)
             {
                 return;
@@ -820,7 +823,16 @@ public sealed class ShellViewModel : ViewModelBase
         Func<long, InspectionHistoryDetailResult>? historyDetailLoader = null,
         Func<long, long, InspectionItemRevisionHistoryResult>? historyRevisionLoader = null,
         Func<InspectionHistoryEditRequest, InspectionHistoryEditResult>? historyEdit = null,
-        Func<InspectionHistoryEditRequest, bool>? confirmHistoryEdit = null)
+        Func<InspectionHistoryEditRequest, bool>? confirmHistoryEdit = null,
+        Func<LocalDatabaseBackupListItem, bool>? confirmRestore = null,
+        Func<IReadOnlyList<LocalDatabaseBackupListItem>>? backupLoader = null,
+        Func<LocalDatabaseBackupResult>? backupCreator = null,
+        Func<string, DatabaseRestoreResult>? backupRestorer = null,
+        Func<string, ImportPreviewLoadResult>? importParser = null,
+        Func<SaveDraftRequest, SaveDraftResult>? saveDraft = null,
+        Func<ReconfirmItemRequest, ReconfirmItemResult>? reconfirmItem = null,
+        Func<ClearDraftRequest, ClearDraftResult>? clearDraft = null,
+        Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>? adjustInventory = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -842,16 +854,23 @@ public sealed class ShellViewModel : ViewModelBase
             confirmHistoryEdit,
             utcNow);
         Import = new ImportViewModel(
+            parsePreview: importParser,
             refreshDashboard: Dashboard.LoadAsync,
             refreshPendingTasks: PendingTasks.LoadAsync,
-            logException: LogImportException,
+            logException: logException ?? LogImportException,
             utcNow: utcNow);
+        BackupRestore = new DatabaseBackupRestoreViewModel(
+            loadBackups: backupLoader ?? LoadBackups,
+            createBackup: backupCreator ?? CreateBackup,
+            restore: backupRestorer ?? RestoreBackup,
+            confirmRestore: confirmRestore,
+            logException: logger);
         Detail = new InspectionDetailViewModel(
             loadDetail: detailLoader ?? LoadDetail,
-            saveDraft: SaveDraft,
-            reconfirmItem: ReconfirmItem,
-            clearDraft: ClearDraft,
-            adjustInventory: AdjustInventory,
+            saveDraft: saveDraft ?? SaveDraft,
+            reconfirmItem: reconfirmItem ?? ReconfirmItem,
+            clearDraft: clearDraft ?? ClearDraft,
+            adjustInventory: adjustInventory ?? AdjustInventory,
             refreshDashboard: Dashboard.LoadAsync,
             refreshPendingTasks: PendingTasks.LoadAsync,
             logException: logger,
@@ -860,11 +879,12 @@ public sealed class ShellViewModel : ViewModelBase
             confirmZeroInventory: confirmZeroInventory,
             goBack: ReturnFromDetailAsync,
             submit: submit ?? SubmitInspection);
-        NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => !History.IsEditBusy);
-        NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => !History.IsEditBusy);
-        SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); }, _ => !History.IsEditBusy);
-        NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => !History.IsEditBusy);
-        NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => !History.IsEditBusy);
+        NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
+        NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => CanNavigate);
+        SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); }, _ => CanNavigate);
+        NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => CanNavigate);
+        NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => CanNavigate);
+        NavigateBackupRestoreCommand = new RelayCommand(_ => NavigateTo(ShellPage.BackupRestore), _ => CanNavigate);
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
         OpenDetailCommand = new RelayCommand(parameter =>
         {
@@ -872,17 +892,36 @@ public sealed class ShellViewModel : ViewModelBase
             {
                 OpenDetail(item.TaskId);
             }
-        }, _ => !History.IsEditBusy);
+        }, _ => CanNavigate);
         History.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(History.IsEditBusy))
             {
-                NavigateHomeCommand.RaiseCanExecuteChanged();
-                NavigateTasksCommand.RaiseCanExecuteChanged();
-                SearchTasksCommand.RaiseCanExecuteChanged();
-                NavigateHistoryCommand.RaiseCanExecuteChanged();
-                NavigateImportCommand.RaiseCanExecuteChanged();
-                OpenDetailCommand.RaiseCanExecuteChanged();
+                NotifyNavigationState();
+            }
+        };
+        BackupRestore.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(DatabaseBackupRestoreViewModel.IsBusy)
+                or nameof(DatabaseBackupRestoreViewModel.IsLocked)
+                or nameof(DatabaseBackupRestoreViewModel.IsRestartRequired)
+                or nameof(DatabaseBackupRestoreViewModel.IsCriticalFailure))
+            {
+                NotifyDatabaseProtectionState();
+            }
+        };
+        Import.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(ImportViewModel.IsLoading))
+            {
+                NotifyNavigationState();
+            }
+        };
+        Detail.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(InspectionDetailViewModel.IsActionBusy))
+            {
+                NotifyNavigationState();
             }
         };
         _ = Dashboard.LoadAsync();
@@ -897,6 +936,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public ImportViewModel Import { get; }
 
+    public DatabaseBackupRestoreViewModel BackupRestore { get; }
+
     public InspectionDetailViewModel Detail { get; }
 
     public RelayCommand NavigateHomeCommand { get; }
@@ -908,6 +949,8 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand NavigateHistoryCommand { get; }
 
     public RelayCommand NavigateImportCommand { get; }
+
+    public RelayCommand NavigateBackupRestoreCommand { get; }
 
     public RelayCommand NavigateSettingsCommand { get; }
 
@@ -929,6 +972,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsPendingTasksVisible));
             OnPropertyChanged(nameof(IsHistoryVisible));
             OnPropertyChanged(nameof(IsImportVisible));
+            OnPropertyChanged(nameof(IsBackupRestoreVisible));
             OnPropertyChanged(nameof(IsInspectionDetailVisible));
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(PageSubtitle));
@@ -943,6 +987,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsImportVisible => CurrentPage == ShellPage.Import;
 
+    public bool IsBackupRestoreVisible => CurrentPage == ShellPage.BackupRestore;
+
     public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
 
     public string PageTitle => CurrentPage switch
@@ -951,6 +997,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.PendingTasks => "待排查任务",
         ShellPage.History => "排查历史",
         ShellPage.Import => "数据导入",
+        ShellPage.BackupRestore => "数据备份与恢复",
         ShellPage.InspectionDetail => "排查详情",
         _ => "效期排查"
     };
@@ -961,6 +1008,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
         ShellPage.History => "查看已完成的正式排查记录及修改留痕",
         ShellPage.Import => "导入最新的食品效期 Excel，更新商品与批次数据",
+        ShellPage.BackupRestore => "创建经过验证的本地备份，或从应用备份安全恢复",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
         _ => "查看当前数据状态"
     };
@@ -969,7 +1017,11 @@ public sealed class ShellViewModel : ViewModelBase
 
     public async Task NavigateToAsync(ShellPage page)
     {
-        if (History.IsEditBusy)
+        if (History.IsEditBusy ||
+            Import.IsLoading ||
+            Detail.IsActionBusy ||
+            (BackupRestore.IsLocked && page != ShellPage.BackupRestore) ||
+            (BackupRestore.IsBusy && page != ShellPage.BackupRestore))
         {
             return;
         }
@@ -987,21 +1039,30 @@ public sealed class ShellViewModel : ViewModelBase
             {
                 _ = History.LoadAsync();
             }
+            if (page == ShellPage.BackupRestore && CurrentPage == ShellPage.BackupRestore)
+            {
+                _ = BackupRestore.LoadAsync();
+            }
 
             return;
         }
 
         var enteredHistory = page == ShellPage.History && CurrentPage != ShellPage.History;
+        var enteredBackupRestore = page == ShellPage.BackupRestore && CurrentPage != ShellPage.BackupRestore;
         CurrentPage = page;
         if (enteredHistory)
         {
             _ = History.LoadAsync();
         }
+        if (enteredBackupRestore)
+        {
+            _ = BackupRestore.LoadAsync();
+        }
     }
 
     public void OpenDetail(long taskId)
     {
-        if (taskId <= 0 || CurrentPage == ShellPage.InspectionDetail || History.IsEditBusy)
+        if (taskId <= 0 || CurrentPage == ShellPage.InspectionDetail || !CanNavigate)
         {
             return;
         }
@@ -1024,7 +1085,17 @@ public sealed class ShellViewModel : ViewModelBase
 
     private async Task NavigateAwayFromDetailAsync(ShellPage page)
     {
+        if (IsDatabaseProtectionBlocking)
+        {
+            return;
+        }
+
         if (!await Detail.WaitForStableSaveAsync())
+        {
+            return;
+        }
+
+        if (IsDatabaseProtectionBlocking)
         {
             return;
         }
@@ -1104,6 +1175,57 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = DatabaseInitializer.CreateContext();
         return new InspectionSubmissionUseCase().Submit(context, request);
+    }
+
+    private static IReadOnlyList<LocalDatabaseBackupListItem> LoadBackups() =>
+        new LocalDatabaseBackupQuery().List();
+
+    private static LocalDatabaseBackupResult CreateBackup() =>
+        new LocalDatabaseBackupUseCase().Create();
+
+    private static DatabaseRestoreResult RestoreBackup(string backupPath) =>
+        new DatabaseRestoreUseCase().Restore(backupPath, databaseRuntimeStopped: true);
+
+    public bool IsDatabaseProtectionBusy => BackupRestore.IsBusy;
+
+    public bool IsDatabaseProtectionLocked => BackupRestore.IsLocked;
+
+    public bool IsDatabaseProtectionBlocking => IsDatabaseProtectionBusy || IsDatabaseProtectionLocked;
+
+    public bool CanNavigate => !History.IsEditBusy
+        && !Import.IsLoading
+        && !Detail.IsActionBusy
+        && !IsDatabaseProtectionBlocking;
+
+    public bool CanOpenSettings => CanNavigate;
+
+    public void ConfigureDatabaseProtectionRuntime(
+        Func<Task<bool>> enterMaintenance,
+        Action<bool> leaveMaintenance,
+        Action requestExit) => BackupRestore.ConfigureRuntime(
+            enterMaintenance,
+            leaveMaintenance,
+            requestExit);
+
+    private void NotifyDatabaseProtectionState()
+    {
+        OnPropertyChanged(nameof(IsDatabaseProtectionBusy));
+        OnPropertyChanged(nameof(IsDatabaseProtectionLocked));
+        OnPropertyChanged(nameof(IsDatabaseProtectionBlocking));
+        NotifyNavigationState();
+    }
+
+    private void NotifyNavigationState()
+    {
+        OnPropertyChanged(nameof(CanNavigate));
+        OnPropertyChanged(nameof(CanOpenSettings));
+        NavigateHomeCommand.RaiseCanExecuteChanged();
+        NavigateTasksCommand.RaiseCanExecuteChanged();
+        SearchTasksCommand.RaiseCanExecuteChanged();
+        NavigateHistoryCommand.RaiseCanExecuteChanged();
+        NavigateImportCommand.RaiseCanExecuteChanged();
+        NavigateBackupRestoreCommand.RaiseCanExecuteChanged();
+        OpenDetailCommand.RaiseCanExecuteChanged();
     }
 
     private void LogException(Exception exception) => _logger.TryWrite(

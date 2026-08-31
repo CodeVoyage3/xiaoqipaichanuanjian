@@ -316,7 +316,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         InvalidateDetailAndRevisionLoads();
         try
         {
-            var result = await Task.Run(() => _editHistory(request));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _editHistory(request)));
             switch (result.Status)
             {
                 case "changed":
@@ -374,7 +374,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
 
         try
         {
-            var records = await Task.Run(_loadList);
+            var records = await Task.Run(() => DatabaseRuntimeGate.Run(_loadList));
             if (version != _loadVersion)
             {
                 return;
@@ -624,7 +624,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
 
         try
         {
-            var result = await Task.Run(() => _loadDetail(record.InspectionId));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadDetail(record.InspectionId)));
             if (version != _detailLoadVersion || SelectedRecord?.InspectionId != record.InspectionId)
             {
                 return;
@@ -675,7 +675,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
 
         try
         {
-            var result = await Task.Run(() => _loadRevisions(inspectionId, item.InspectionItemId));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadRevisions(inspectionId, item.InspectionItemId)));
             if (version != _revisionLoadVersion
                 || Detail?.InspectionId != inspectionId
                 || SelectedDetailItem?.InspectionItemId != item.InspectionItemId)
