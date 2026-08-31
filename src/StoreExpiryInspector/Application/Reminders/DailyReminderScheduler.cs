@@ -8,7 +8,7 @@ public sealed class DailyReminderScheduler : IDisposable
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan MaximumWakeDelay = TimeSpan.FromMinutes(1);
 
-    private readonly int _reminderMinuteOfDay;
+    private int _reminderMinuteOfDay;
     private readonly Func<DateTime, DailyReminderRuntimeResult> _runReminder;
     private readonly Func<DateTime> _localNow;
     private readonly LocalFileLogger _logger;
@@ -52,6 +52,20 @@ public sealed class DailyReminderScheduler : IDisposable
     {
         IsRunning = false;
         _timer.Stop();
+    }
+
+    public void Reschedule(int reminderMinuteOfDay)
+    {
+        if (reminderMinuteOfDay is < 0 or >= 24 * 60)
+        {
+            throw new ArgumentOutOfRangeException(nameof(reminderMinuteOfDay));
+        }
+
+        _reminderMinuteOfDay = reminderMinuteOfDay;
+        if (IsRunning)
+        {
+            RunAndSchedule(_localNow());
+        }
     }
 
     public void Dispose()

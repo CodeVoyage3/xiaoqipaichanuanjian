@@ -5,12 +5,16 @@ using System.Windows.Media;
 using System.Windows.Markup;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
+using StoreExpiryInspector.Infrastructure;
 
 namespace StoreExpiryInspector.UI;
 
 public partial class MainWindow : Window
 {
+    public event Action<int>? ReminderTimeChanged;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -113,6 +117,184 @@ public partial class MainWindow : Window
         }
 
         shell.Import.TrySelectFile(dialog.FileName);
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var settings = new ReminderSettingsUseCase();
+            int reminderMinuteOfDay;
+            using (var context = DatabaseInitializer.CreateContext())
+            {
+                reminderMinuteOfDay = settings.GetReminderMinuteOfDay(context);
+            }
+
+            var executablePath = Environment.ProcessPath
+                ?? throw new InvalidOperationException("无法确定当前应用程序路径。");
+            var autoStart = new WindowsAutoStartService(
+                new CurrentUserRunRegistry(),
+                executablePath);
+            var autoStartState = autoStart.ReadState();
+
+            var dialog = new Window
+            {
+                Owner = this,
+                Title = "设置",
+                FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
+                Language = XmlLanguage.GetLanguage("zh-CN"),
+                Width = 460,
+                Height = 300,
+                MinWidth = 420,
+                MinHeight = 280,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ShowInTaskbar = false,
+                Content = new StackPanel { Margin = new Thickness(24) }
+            };
+            var panel = (StackPanel)dialog.Content;
+            panel.Children.Add(new TextBlock
+            {
+                Text = "每日提醒时间",
+                FontSize = 16,
+                FontWeight = FontWeights.SemiBold
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = "使用本地时间，格式为 HH:mm。修改后立即重新安排提醒。",
+                Foreground = (Brush)FindResource("SecondaryTextBrush"),
+                FontSize = 13,
+                Margin = new Thickness(0, 6, 0, 10)
+            });
+            var reminderTime = new TextBox
+            {
+                Text = ReminderSettingsUseCase.Format(reminderMinuteOfDay),
+                Width = 120,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                MaxLength = 5
+            };
+            panel.Children.Add(reminderTime);
+            var autoStartCheckBox = new CheckBox
+            {
+                Content = "开机自启动（仅当前 Windows 用户）",
+                IsChecked = autoStartState.IsEnabled,
+                IsEnabled = autoStartState.Succeeded,
+                FontSize = 14,
+                Margin = new Thickness(0, 20, 0, 0)
+            };
+            panel.Children.Add(autoStartCheckBox);
+            var validation = new TextBlock
+            {
+                Foreground = (Brush)FindResource("DangerBrush"),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 10, 0, 0),
+                Text = autoStartState.Succeeded
+                    ? string.Empty
+                    : $"开机自启动状态读取失败，本次不会修改：{autoStartState.ErrorMessage}"
+            };
+            panel.Children.Add(validation);
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 18, 0, 0)
+            };
+            var cancel = new Button
+            {
+                Content = "取消",
+                IsCancel = true,
+                Width = 88,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            var save = new Button
+            {
+                Content = "保存",
+                IsDefault = true,
+                Width = 88,
+                Style = (Style)FindResource("PrimaryButtonStyle")
+            };
+            int? savedMinuteOfDay = null;
+            save.Click += (_, _) =>
+            {
+                ReminderTimeSaveResult result;
+                try
+                {
+                    using var context = DatabaseInitializer.CreateContext();
+                    result = settings.SaveReminderTime(context, reminderTime.Text);
+                }
+                catch (Exception exception)
+                {
+                    validation.Text = $"提醒时间保存失败：{exception.Message}";
+                    return;
+                }
+
+                if (!result.Succeeded || result.ReminderMinuteOfDay is not int savedMinute)
+                {
+                    validation.Text = result.Message;
+                    reminderTime.Focus();
+                    reminderTime.SelectAll();
+                    return;
+                }
+
+                savedMinuteOfDay = savedMinute;
+                if (!autoStartState.Succeeded)
+                {
+                    MessageBox.Show(
+                        dialog,
+                        "提醒时间已保存；开机自启动状态读取失败，本次未修改。",
+                        "设置已部分保存",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    dialog.DialogResult = true;
+                    return;
+                }
+
+                var autoStartResult = autoStart.SetEnabled(autoStartCheckBox.IsChecked == true);
+                if (!autoStartResult.Succeeded
+                    || autoStartResult.IsEnabled != (autoStartCheckBox.IsChecked == true))
+                {
+                    MessageBox.Show(
+                        dialog,
+                        $"提醒时间已保存，但开机自启动设置失败：{autoStartResult.ErrorMessage ?? "Windows 状态未按预期更新。"}",
+                        "设置未完全保存",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        dialog,
+                        "设置已保存。",
+                        "设置",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
+                dialog.DialogResult = true;
+            };
+            buttons.Children.Add(cancel);
+            buttons.Children.Add(save);
+            panel.Children.Add(buttons);
+            dialog.Loaded += (_, _) =>
+            {
+                reminderTime.Focus();
+                reminderTime.SelectAll();
+            };
+            dialog.ShowDialog();
+            if (savedMinuteOfDay.HasValue)
+            {
+                ReminderTimeChanged?.Invoke(savedMinuteOfDay.Value);
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                this,
+                $"设置无法打开：{exception.Message}",
+                "设置错误",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private void ReturnFromOverStockButton_IsVisibleChanged(

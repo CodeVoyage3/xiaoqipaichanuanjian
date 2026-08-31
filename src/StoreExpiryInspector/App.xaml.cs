@@ -90,7 +90,7 @@ public partial class App : System.Windows.Application
 
     private void InitializeTrayAndReminderScheduler()
     {
-        if (MainWindow is not Window mainWindow || _logger is null)
+        if (MainWindow is not UI.MainWindow mainWindow || _logger is null)
         {
             return;
         }
@@ -133,6 +133,7 @@ public partial class App : System.Windows.Application
             _trayIcon = trayIcon;
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             mainWindow.Closing += MainWindow_Closing;
+            mainWindow.ReminderTimeChanged += ReminderTimeChanged;
             _reminderScheduler.Start();
         }
         catch (Exception exception)
@@ -180,6 +181,9 @@ public partial class App : System.Windows.Application
         MainWindow?.Close();
         Shutdown();
     }
+
+    private void ReminderTimeChanged(int reminderMinuteOfDay) =>
+        _reminderScheduler?.Reschedule(reminderMinuteOfDay);
 
     private void StopRuntime()
     {

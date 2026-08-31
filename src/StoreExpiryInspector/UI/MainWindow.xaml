@@ -271,15 +271,14 @@
                             <TextBlock Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button AutomationProperties.Name="设置（后续阶段）"
-                            ToolTip="设置将在后续阶段开放"
-                            Command="{Binding NavigateSettingsCommand}"
-                            IsEnabled="False"
+                    <Button AutomationProperties.Name="设置"
+                            ToolTip="提醒时间与开机自启动"
+                            Click="Settings_Click"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource GearIcon}"
                                   Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{DynamicResource DisabledTextBrush}"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
                             <TextBlock Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
