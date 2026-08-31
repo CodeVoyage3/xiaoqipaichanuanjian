@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 7 的 S7-T02 已独立验收并正式归档；停止在 S7-T03 门禁前
-- 状态：S7-T02 正式完成；未创建、编号、派发或实施 S7-T03
+- 当前阶段：Stage 7 的 S7-T03 本地备份 / 恢复 WPF 接入，已获用户批准实施
+- 状态：S7-T01 / S7-T02 已正式归档；S7-T03 由本卡全新 Luna（max）实施，Sol 独立技术验收通过，等待用户隔离 GUI 及正式环境恢复回执，尚未正式归档
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -39,6 +39,8 @@
 - Stage 6 最终总验收通过：S6-T01/T02/T03/T04 分别 13/13、10/10、12/12、17/17，Stage 5 51/51、Stage 4 179/179、Stage 3 170/170、Release 635/635，build 0/0；EF 无漂移，migration=8，依赖未变。正式数据库恢复至 299008 bytes / 指定 SHA-256，进程 0，无范围越界。
 - S7-T01 已复用 Stage 2 SQLite 在线快照能力，新增本地数据库备份 Application 契约、独立备份目录、JSON/既有 `BackupRecord` 元数据、完整性/migration/SHA-256 核验和单次并发门禁；专项 6/6、共享快照回归 12/12、Stage 6 52/52、Stage 5 51/51、Stage 4 179/179、Stage 3 170/170、Release 641/641、build 0/0、EF 无漂移、migration=8、依赖未变。用户本机只读回执确认正式库 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，Codex Sol 复核进程 0；S7-T01 已独立验收并正式归档。
 - S7-T02 已交付可信 S7-T01 备份的离线安全恢复 Application 契约、恢复前保护备份、staging + 原子替换、SHA/integrity/migration 最终验证、sidecar 精确隔离清理、失败回退与共享并发门禁；最终实现基线 `fea023ca3fda983329c77856ef3700a71d50691b`。专项 9/9、S7-T01/共享快照 12/12、Stage 6 52/52、Stage 5 51/51、Stage 4 179/179、Stage 3 170/170、Release 650/650、build 0/0、EF 无漂移、migration=8、依赖未变。用户实施后只读回执确认正式库仍为 299008 bytes / 指定 SHA-256，进程 0、无 sidecar 或恢复残留；S7-T02 已独立验收并正式归档。
+
+- S7-T03 已交付备份/恢复 WPF 入口、经过校验的备份列表、显式选择/二次确认与恢复维护门禁；实现 `da8b43233fe965784701283a5ecf0839f72750ed`。本轮 Sol 独立专项 30/30、T02 9/9、T01/共享 12/12、Stage 6 52/52、Stage 5 51/51、Stage 4 179/179、Stage 3 170/170、Release 680/680、build 0/0、EF 无漂移、migration=8、依赖未变。用户 GUI 待验收，尚未正式完成；本轮正式库仅确认大小 299008 bytes，SHA-256 因既有 Junction 错误未重新确认。未启动 WPF，应用进程 0。
 
 ## 冻结业务红线
 
@@ -91,14 +93,17 @@
 - Stage 7 接任说明：`.ai-dev/STAGES/STAGE-7-HANDOFF.md`
 - S7-T01 正式验收：`.ai-dev/ACCEPTANCE/S7-T01.md`
 - S7-T02 正式验收：`.ai-dev/ACCEPTANCE/S7-T02.md`
+- S7-T03 技术验收（GUI 待验收）：`.ai-dev/ACCEPTANCE/S7-T03.md`
+- S7-T03 用户隔离 GUI 指南：`docs/S7-T03-GUI验收.md`
 
 ## 下一步门禁
 
 - Stage 6 技术、用户 Windows GUI、正式环境恢复、隔离清理和最终总验收均已通过并正式归档；详见 `.ai-dev/ACCEPTANCE/STAGE-6.md` 与 `.ai-dev/STAGES/STAGE-6-CLOSEOUT.md`。
-- 最新结论（2026-08-31）：Stage 6 四卡及总验收全部通过；Release 635/635、build 0/0、EF 无漂移、migration=8。用户本机 `RESTORE_PASS` 回执确认正式库 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`、进程 0，Stage 6 隔离目录已清理且恢复后未再启动应用。
+- Stage 6 历史结论（2026-08-31）：Stage 6 四卡及总验收全部通过；Release 635/635、build 0/0、EF 无漂移、migration=8。用户本机 `RESTORE_PASS` 回执确认正式库 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`、进程 0，Stage 6 隔离目录已清理且恢复后未再启动应用。
 - 历史结论（2026-08-30）：S5-T03 用户 GUI 通过，并提供本机 `RESTORE_PASS` 截图及一致的共享回执；正式库大小 299008 bytes / 指定 SHA-256，进程 0，隔离运行目录和恢复暂存目录已删除。Sol 已清理共享 `obj/S5T03GuiAcceptance`，恢复后未启动应用。
 - Stage 4 已完成总验收与归档；1024×600、125% 缩放、鼠标滚轮、Tab 与窗口恢复已由用户最终 GUI 验收通过。
 - 在线 NuGet 漏洞审计因本机 SSL/TLS/凭据环境失败的风险已由用户在 S4-T09 接受；不得改写为在线审计成功。
 - S5-T03 闪退修复 `4341c213dc0377a661992aecdde93ffead034b7d`、多列表头修复 `e4c3d4d8d6b18c3fc9e1f9773815d6fde11430ae` 均由原 Luna 执行，Sol 独立复验，用户最终 GUI 通过；各轮失败/修复/复验过程保留在 S5-T03 验收记录。本轮归档不修改生产代码，不将历史测试计数冒充重新运行。
 - 工具侧默认 C 盘目录仍为旧异常 Junction，与用户本机正常恢复目录是不同视图。正式旁置原件及 S4-T09 历史备份保留；不宣称工具侧路径修复完成，未来通过工具启动前必须重新核实处理。此为独立环境限制，用户本机数据恢复已按回执闭环。Sol 不启动 WPF、不使用电脑操控验收。
-- S7-T02 已独立验收并正式归档；正式库实施后只读回执为 299008 bytes / 指定 SHA-256，应用进程 0，无 sidecar 或恢复残留。停止；不得创建、编号、派发或实施 S7-T03。
+- S7-T02 归档时正式库实施后只读回执为 299008 bytes / 指定 SHA-256，应用进程 0，无 sidecar 或恢复残留；这是历史验收，不冒充后续轮次的现场读取。
+- 最新结论（2026-08-31）：S7-T03 Sol 独立技术门禁已通过，见 `.ai-dev/ACCEPTANCE/S7-T03.md`。由用户本人按 `docs/S7-T03-GUI验收.md` 完成隔离 GUI，并提供 `GUI_RESTORE_BYTES_PASS` / `RESTORE_PASS` 回执；此前尚未正式完成或归档。不创建、编号、派发或实施 S7-T04。
