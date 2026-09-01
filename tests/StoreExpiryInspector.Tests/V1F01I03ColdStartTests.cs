@@ -184,6 +184,12 @@ public sealed class V1F01I03ColdStartTests
             Assert.Empty(verify.ScopeBaselines);
             Assert.Empty(verify.BatchBaselines);
             Assert.Empty(verify.Tasks);
+            Assert.Empty(verify.ImportIssues);
+            var batch = verify.Batches.Single();
+            Assert.Equal(ExpiryStageCalculator.None, batch.CurrentStage);
+            Assert.Null(batch.NextTriggerDate);
+            Assert.Equal("active", batch.TrackingStatus);
+            Assert.Equal(0, batch.HandledAttentionVersion);
             verify.Database.ExecuteSqlRaw("DROP TRIGGER fail_i03_task;");
             Assert.True(Execute(verify, importId).Started);
         }
