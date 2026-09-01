@@ -129,6 +129,40 @@ public sealed class V1F01I03ColdStartTests
     }
 
     [Fact]
+    public void ScopeGateAndNonV1RejectionLeaveEveryBusinessFactUntouched()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var import = AddImport(context);
+        var excluded = new Product { ProductCode = "X", CategoryCode = "seasonal_assortment", PolicyCode = null, PolicyVersion = null, ExpiryManagementStatus = ExpiryManagementStatus.Excluded, EffectiveStockQty = 5 };
+        context.Products.Add(excluded); context.SaveChanges();
+        context.Batches.Add(new Batch { ProductId = excluded.Id, ExpiryDate = Day.AddDays(-1), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 }); context.SaveChanges();
+        var batch = context.Batches.Single();
+        var before = (context.ScopeBaselines.Count(), context.BatchBaselines.Count(), context.Tasks.Count(), context.TaskItems.Count(), batch.TrackingStatus, batch.CurrentStage, batch.HandledAttentionVersion, context.ImportIssues.Count(), context.Inspections.Count(), context.InspectionItemRevisions.Count(), context.LifecycleEvents.Count());
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ColdStartScopeBaselineUseCase().Execute(context, new("food", ExpiryPolicies.Food, 2, import.Id, Day, Utc)));
+        Assert.Throws<InvalidOperationException>(() => new ColdStartScopeBaselineUseCase().Execute(context, new("seasonal_assortment", ExpiryPolicies.Food, 1, import.Id, Day, Utc)));
+        var after = (context.ScopeBaselines.Count(), context.BatchBaselines.Count(), context.Tasks.Count(), context.TaskItems.Count(), batch.TrackingStatus, batch.CurrentStage, batch.HandledAttentionVersion, context.ImportIssues.Count(), context.Inspections.Count(), context.InspectionItemRevisions.Count(), context.LifecycleEvents.Count());
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public void CatchupClampAndScopeIsolationAreIndependent()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var import = AddImport(context);
+        Add(context, "F", 5, Day.AddDays(-3), Day.AddDays(-4)); // lower clamp 3 inclusive.
+        Add(context, "F", 5, Day.AddDays(-4), Day.AddDays(-5)); // lower clamp outside.
+        Add(context, "F", 5, Day.AddDays(-30), Day.AddDays(-1030)); // upper clamp 30 inclusive.
+        context.Products.Add(new Product { ProductCode = "PET", CategoryCode = "pet", PolicyCode = ExpiryPolicies.Pet, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 5 }); context.SaveChanges();
+        context.Batches.Add(new Batch { ProductId = context.Products.Single(p => p.ProductCode == "PET").Id, ProductionDate = Day.AddDays(-100), ExpiryDate = Day.AddDays(-1), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 }); context.SaveChanges();
+        Assert.True(Execute(context, import.Id).Started);
+        Assert.True(new ColdStartScopeBaselineUseCase().Execute(context, new("pet", ExpiryPolicies.Pet, 1, import.Id, Day, Utc)).Started);
+        Assert.Equal(2, context.ScopeBaselines.Count());
+        Assert.Equal(3, context.BatchBaselines.Count(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask));
+    }
+
+    [Fact]
     public void TaskInsertFailureRollsBackAndRetryCompletes()
     {
         using var database = SqliteTestDatabase.Create();
