@@ -108,6 +108,13 @@ public sealed class V1F01I03ColdStartTests
             context.Tasks.Add(new ProductTask { ProductId = product.Id, Status = "completed", HighestStage = ExpiryStageCalculator.Withdraw, CreatedAtUtc = Utc, UpdatedAtUtc = Utc, ClosedAtUtc = Utc });
             context.Tasks.Add(new ProductTask { ProductId = product.Id, Status = "open", HighestStage = ExpiryStageCalculator.Withdraw, CreatedAtUtc = Utc, UpdatedAtUtc = Utc });
             context.SaveChanges();
+            var completed = context.Tasks.Single(task => task.Status == "completed");
+            var batch = context.Batches.Single();
+            var inspection = new Inspection { TaskId = completed.Id, ProductId = product.Id, ProductCodeSnapshot = "P", StageSnapshot = ExpiryStageCalculator.Withdraw, InspectorName = "history", CheckDate = Day, SubmittedAtUtc = Utc };
+            context.Inspections.Add(inspection); context.SaveChanges();
+            var item = new InspectionItem { InspectionId = inspection.Id, ProductId = product.Id, BatchId = batch.Id, ExpiryDateSnapshot = batch.ExpiryDate, StageSnapshot = ExpiryStageCalculator.Withdraw, UpdatedAtUtc = Utc };
+            context.InspectionItems.Add(item); context.SaveChanges();
+            context.InspectionItemRevisions.Add(new InspectionItemRevision { InspectionItemId = item.Id, PreviousCheckedQty = 1, NewCheckedQty = 2, ChangedAtUtc = Utc }); context.SaveChanges();
             Assert.True(Execute(context, import.Id).Started);
         }
         using var verify = database.Open();
@@ -115,6 +122,8 @@ public sealed class V1F01I03ColdStartTests
         Assert.Single(verify.Tasks.Where(task => task.Status == "open"));
         Assert.Single(verify.TaskItems);
         Assert.Equal(7, verify.Batches.Single().HandledAttentionVersion);
+        Assert.Equal("history", verify.Inspections.Single().InspectorName);
+        Assert.Equal(2, verify.InspectionItemRevisions.Single().NewCheckedQty);
     }
 
     [Fact]
