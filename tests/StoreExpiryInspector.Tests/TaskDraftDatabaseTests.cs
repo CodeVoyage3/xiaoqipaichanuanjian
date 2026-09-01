@@ -374,6 +374,11 @@ public sealed class TaskDraftDatabaseTests
 
     private static Product AddProduct(StoreDbContext context, string code)
     {
+        if (!SqliteTestDatabase.ReadTableColumns(context, "products").Contains("expiry_management_status"))
+        {
+            context.Database.ExecuteSql($"INSERT INTO products (product_code, excel_stock_qty, effective_stock_qty, lifecycle_generation) VALUES ({code}, 0, 0, 0)");
+            return new Product { Id = context.Database.SqlQuery<long>($"SELECT last_insert_rowid() AS Value").Single(), ProductCode = code };
+        }
         var product = new Product { ProductCode = code };
         context.Products.Add(product);
         context.SaveChanges();

@@ -49,7 +49,9 @@ public sealed class ExcelImportPlannerTests
         var newProduct = Assert.Single(plan.NewProducts);
         Assert.Equal("P-NEW", newProduct.ProductCode);
         Assert.Equal("food", newProduct.CategoryCode);
-        Assert.Equal("food_v1", newProduct.PolicyCode);
+        Assert.Equal(ExpiryPolicies.Food, newProduct.PolicyCode);
+        Assert.Equal(ExpiryPolicies.Version1, newProduct.PolicyVersion);
+        Assert.Equal(ExpiryManagementStatus.Managed, newProduct.ExpiryManagementStatus);
         Assert.Equal(2, newProduct.ExcelStockQty);
         Assert.Equal(2, newProduct.EffectiveStockQty);
         Assert.Equal("excel", newProduct.EffectiveStockSource);

@@ -28,7 +28,7 @@ public sealed class ProductBatchDatabaseTests
     }
 
     [Fact]
-    public void CategoryAndPolicyCodesRejectBlankValuesButAllowStableFutureCodes()
+    public void ExpiryManagementStatusRequiresExactlyTheV1PolicyContract()
     {
         using (var database = SqliteTestDatabase.Create())
         using (var context = database.Open())
@@ -37,7 +37,7 @@ public sealed class ProductBatchDatabaseTests
             {
                 ProductCode = "SKU-BLANK-CATEGORY",
                 CategoryCode = " ",
-                PolicyCode = "food_v1"
+                PolicyCode = ExpiryPolicies.Food
             });
             Assert.Throws<DbUpdateException>(() => context.SaveChanges());
         }
@@ -59,13 +59,23 @@ public sealed class ProductBatchDatabaseTests
         {
             context.Products.Add(new Product
             {
-                ProductCode = "SKU-FUTURE",
+                ProductCode = "SKU-EXCLUDED",
                 CategoryCode = "medicine",
-                PolicyCode = "medicine_v1"
+                ExpiryManagementStatus = ExpiryManagementStatus.Excluded,
+                PolicyCode = null,
+                PolicyVersion = null
             });
             context.SaveChanges();
             Assert.Equal("medicine", context.Products.Single().CategoryCode);
-            Assert.Equal("medicine_v1", context.Products.Single().PolicyCode);
+            Assert.Null(context.Products.Single().PolicyCode);
+
+            context.Products.Add(new Product
+            {
+                ProductCode = "SKU-UNKNOWN-POLICY",
+                PolicyCode = "medicine_expiry",
+                PolicyVersion = 1
+            });
+            Assert.Throws<DbUpdateException>(() => context.SaveChanges());
         }
     }
 

@@ -156,7 +156,9 @@ public sealed class ConfirmedImportExecutorTests
 
             var newProduct = verify.Products.AsNoTracking().Single(product => product.ProductCode == "P-NEW");
             Assert.Equal("food", newProduct.CategoryCode);
-            Assert.Equal("food_v1", newProduct.PolicyCode);
+            Assert.Equal(ExpiryPolicies.Food, newProduct.PolicyCode);
+            Assert.Equal(ExpiryPolicies.Version1, newProduct.PolicyVersion);
+            Assert.Equal(ExpiryManagementStatus.Managed, newProduct.ExpiryManagementStatus);
             Assert.Equal(0, newProduct.ExcelStockQty);
             Assert.Equal(0, newProduct.EffectiveStockQty);
             Assert.Equal("excel", newProduct.EffectiveStockSource);
@@ -885,7 +887,7 @@ public sealed class ConfirmedImportExecutorTests
         string? CurrentName,
         string? CurrentBarcode,
         string CategoryCode,
-        string PolicyCode,
+        string? PolicyCode,
         int ExcelStockQty,
         int EffectiveStockQty,
         string? EffectiveStockSource,

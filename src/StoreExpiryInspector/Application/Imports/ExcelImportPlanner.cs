@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Excel;
 
@@ -774,7 +775,9 @@ public sealed class NewProductPlan
         NameIsAmbiguous = nameIsAmbiguous;
         BarcodeIsAmbiguous = barcodeIsAmbiguous;
         CategoryCode = "food";
-        PolicyCode = "food_v1";
+        PolicyCode = ExpiryPolicies.Food;
+        PolicyVersion = ExpiryPolicies.Version1;
+        ExpiryManagementStatus = ExpiryManagementStatus.Managed;
         ExcelStockQty = stockQuantity;
         EffectiveStockQty = stockQuantity;
         EffectiveStockSource = "excel";
@@ -795,6 +798,10 @@ public sealed class NewProductPlan
     public string CategoryCode { get; }
 
     public string PolicyCode { get; }
+
+    public int PolicyVersion { get; }
+
+    public ExpiryManagementStatus ExpiryManagementStatus { get; }
 
     public int ExcelStockQty { get; }
 

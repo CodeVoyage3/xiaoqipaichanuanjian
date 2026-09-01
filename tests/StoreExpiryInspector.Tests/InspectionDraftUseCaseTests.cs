@@ -972,7 +972,7 @@ public sealed class InspectionDraftUseCaseTests
         product.CurrentName = "图谱商品";
         product.CurrentBarcode = "6900000000001";
         product.CategoryCode = "food";
-        product.PolicyCode = "food_v1";
+        product.PolicyCode = ExpiryPolicies.Food;
         product.ExcelStockQty = 21;
         product.EffectiveStockQty = 19;
         product.EffectiveStockSource = "fixture";
@@ -1160,7 +1160,7 @@ public sealed class InspectionDraftUseCaseTests
         string? CurrentName,
         string? CurrentBarcode,
         string CategoryCode,
-        string PolicyCode,
+        string? PolicyCode,
         int ExcelStockQty,
         int EffectiveStockQty,
         string? EffectiveStockSource,

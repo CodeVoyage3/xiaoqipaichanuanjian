@@ -499,7 +499,9 @@ public sealed class ConfirmedImportExecutor
         {
             if (!productActions.Add(product.ProductCode) ||
                 product.CategoryCode != "food" ||
-                product.PolicyCode != "food_v1" ||
+                product.PolicyCode != ExpiryPolicies.Food ||
+                product.PolicyVersion != ExpiryPolicies.Version1 ||
+                product.ExpiryManagementStatus != ExpiryManagementStatus.Managed ||
                 product.ExcelStockQty < 0 ||
                 product.EffectiveStockQty < 0 ||
                 product.EffectiveStockQty != product.ExcelStockQty ||
@@ -872,7 +874,9 @@ public sealed class ConfirmedImportExecutor
                 CurrentName = newProduct.CurrentName,
                 CurrentBarcode = newProduct.CurrentBarcode,
                 CategoryCode = "food",
-                PolicyCode = "food_v1",
+                PolicyCode = ExpiryPolicies.Food,
+                PolicyVersion = ExpiryPolicies.Version1,
+                ExpiryManagementStatus = ExpiryManagementStatus.Managed,
                 ExcelStockQty = newProduct.ExcelStockQty,
                 EffectiveStockQty = newProduct.EffectiveStockQty,
                 EffectiveStockSource = "excel",

@@ -855,7 +855,7 @@ public sealed class S3T07CombinationEvidenceTests
         string? CurrentName,
         string? CurrentBarcode,
         string CategoryCode,
-        string PolicyCode,
+        string? PolicyCode,
         int ExcelStockQty,
         int EffectiveStockQty,
         string? EffectiveStockSource,

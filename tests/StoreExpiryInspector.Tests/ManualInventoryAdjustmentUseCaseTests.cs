@@ -1517,7 +1517,7 @@ public sealed class ManualInventoryAdjustmentUseCaseTests
         string? CurrentName,
         string? CurrentBarcode,
         string CategoryCode,
-        string PolicyCode,
+        string? PolicyCode,
         int ExcelStockQty,
         int EffectiveStockQty,
         string? EffectiveStockSource,

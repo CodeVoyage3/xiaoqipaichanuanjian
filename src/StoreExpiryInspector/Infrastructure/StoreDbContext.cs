@@ -45,6 +45,10 @@ public sealed class StoreDbContext : DbContext
 
     public DbSet<LifecycleEvent> LifecycleEvents => Set<LifecycleEvent>();
 
+    public DbSet<ScopeBaseline> ScopeBaselines => Set<ScopeBaseline>();
+
+    public DbSet<BatchBaseline> BatchBaselines => Set<BatchBaseline>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -64,5 +68,7 @@ public sealed class StoreDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
         modelBuilder.ApplyConfiguration(new AppStateConfiguration());
         modelBuilder.ApplyConfiguration(new LifecycleEventConfiguration());
+        modelBuilder.ApplyConfiguration(new ScopeBaselineConfiguration());
+        modelBuilder.ApplyConfiguration(new BatchBaselineConfiguration());
     }
 }

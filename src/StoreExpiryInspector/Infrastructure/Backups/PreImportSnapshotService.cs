@@ -30,6 +30,7 @@ public sealed class PreImportSnapshotService
     {
         "app_state",
         "backups",
+        "batch_baselines",
         "batches",
         "draft_items",
         "drafts",
@@ -42,6 +43,7 @@ public sealed class PreImportSnapshotService
         "inventory_adjustments",
         "lifecycle_events",
         "products",
+        "scope_baselines",
         "settings",
         "task_items",
         "tasks",
@@ -57,7 +59,8 @@ public sealed class PreImportSnapshotService
         "20260826152131_AddImportPersistence",
         "20260826155455_AddBackupMetadata",
         "20260826162033_AddSettingsAndAppState",
-        "20260826170403_AddLifecycleEvents"
+        "20260826170403_AddLifecycleEvents",
+        "20260901153711_AddPolicyAndBaselineFoundation"
     };
 
     private const string EfMigrationsLockTable = "__EFMigrationsLock";

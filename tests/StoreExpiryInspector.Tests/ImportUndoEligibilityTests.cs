@@ -873,7 +873,7 @@ public sealed class ImportUndoEligibilityTests
         {
             "products", "batches", "tasks", "task_items", "drafts", "draft_items", "inspections",
             "inspection_items", "inspection_item_revisions", "inventory_adjustments", "imports",
-            "import_workbooks", "import_issues", "backups", "settings", "app_state", "lifecycle_events",
+            "import_workbooks", "import_issues", "backups", "settings", "app_state", "lifecycle_events", "scope_baselines", "batch_baselines",
             "__EFMigrationsHistory"
         };
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder

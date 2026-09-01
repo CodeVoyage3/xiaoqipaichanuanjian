@@ -23,8 +23,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
                 "CK_products_category_code_not_blank",
                 "length(trim(category_code)) > 0");
             table.HasCheckConstraint(
-                "CK_products_policy_code_not_blank",
-                "length(trim(policy_code)) > 0");
+                "CK_products_expiry_management_policy",
+                "(expiry_management_status = 'managed' AND policy_code IN ('food_expiry', 'pet_expiry', 'general_long_expiry') AND policy_version = 1) OR " +
+                "(expiry_management_status IN ('excluded', 'unresolved') AND policy_code IS NULL AND policy_version IS NULL)");
         });
 
         entity.HasKey(product => product.Id);
@@ -50,7 +51,17 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         entity.Property(product => product.PolicyCode)
             .HasColumnName("policy_code")
             .HasMaxLength(50)
-            .HasDefaultValue("food_v1")
+            .HasDefaultValue(ExpiryPolicies.Food);
+        entity.Property(product => product.PolicyVersion)
+            .HasColumnName("policy_version")
+            .HasDefaultValue(ExpiryPolicies.Version1);
+        entity.Property(product => product.ExpiryManagementStatus)
+            .HasColumnName("expiry_management_status")
+            .HasMaxLength(20)
+            .HasConversion(
+                value => value.ToString().ToLowerInvariant(),
+                value => Enum.Parse<ExpiryManagementStatus>(value, ignoreCase: true))
+            .HasDefaultValue(ExpiryManagementStatus.Managed)
             .IsRequired();
         entity.Property(product => product.ExcelStockQty)
             .HasColumnName("excel_stock_qty");
