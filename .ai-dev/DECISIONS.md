@@ -241,3 +241,12 @@
 - 方案 C、库存 0 优先、真实 3% 动态补查、BatchBaseline 审计、ProductTask 聚合、事务回滚与完成范围幂等均按 I03 任务卡实施；不伪造正式排查历史。
 - Sol 最终门禁：I03/导入编排 23/23、I01/I02 回归 137/137、真实样本 1/1 且 583 = 210 收仓 + 373 过期、Release 735/735、build 0/0、EF 无漂移、migration=9。
 - 无 schema、migration、ModelSnapshot、依赖、WPF 或 Reminder 变化；未访问正式数据库。停止在 I03，不创建 I04，不进入 V1-F02 或 Stage 8。
+
+## D-029｜V1-F01-I04 与 V1-F01 最终收口
+
+- 状态：产品经理单独批准 I04 并授权 Sol 自行进行隔离 GUI 验收；全新 GPT-5.6 Terra（medium）完成实现，Sol 独立技术与 GUI 验收于 2026-09-02 通过，V1-F01 整体收口。
+- 正常生命周期只放行具有匹配完成 ScopeBaseline 的 Managed、批准 policy、version 1 商品；Post-import、startup、ProductTask、AttentionVersion / HandledAttentionVersion、Inspection / Revision 与 Reminder 继续复用既有权威。
+- Excluded、Unresolved、无匹配完成基线或无有效 policy 的商品不进入 Stage、Task 或 Reminder；I03 首次 5折/2折基线不被追补，首次冷启动不重跑。
+- Sol 最终门禁：I04 受影响专项 99/99、I01～I03 回归 159/159、库存回归 30/30、Release 751/751、build 0/0、EF 无漂移、migration=9；无 schema、依赖或项目文件变化。
+- 隔离 WPF 使用真实 10 类 Excel 与 180 天 Unresolved 边界样本完成导入、列表、详情和实际到点 Reminder 验收；Excluded / Unresolved 零 Task/Reminder，正式数据库未访问或修改。
+- I04 不包含提前 3 天预提醒。收口不授权 V1-F02、V1-F03 或 Stage 8；等待产品经理单独批准。

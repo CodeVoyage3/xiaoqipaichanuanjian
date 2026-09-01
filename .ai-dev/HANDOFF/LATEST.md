@@ -2,43 +2,42 @@
 
 ## 当前任务
 
-`V1-F01-I03｜方案 C 首次冷启动与历史补查` 已完成实现和 Sol 独立技术验收。
+`V1-F01-I04｜基线后正常生命周期与端到端收口` 已完成 Sol 独立技术验收、隔离 WPF GUI 验收与 V1-F01 总体收口。
 
 ## 当前状态
 
-`I03_TECHNICALLY_ACCEPTED / WAITING_I04_APPROVAL`
+`V1-F01_COMPLETED / WAITING_PRODUCT_MANAGER_NEXT_APPROVAL`
 
 ## 当前 Git
 
 - 分支：`master`。
-- I03 最终实现修复 HEAD：`9859988bb00e0b4cd93871dbe5d3368a381c1597`。
+- I04 最终实现与测试 HEAD：`71c161469272c12a2088b804e0d401d8d6e92438`。
 - 本文件所在治理提交为最终交接 HEAD；具体 SHA 与 GitHub `main` 以本次 push 后实时引用为准。
 
-## I03 交付事实
+## I04 交付事实
 
-- V1 永久固定 `policy_version = 1`；非 version 1 及无关成功 Import 在写入前明确拒绝并保持业务事实不变。
-- 确认导入后按 `scope_key + policy_code + 1` 首次冷启动；完成范围幂等 no-op，不同 canonical scope 相互独立。
-- 方案 C：5折/2折只建基线；收仓、到期当天、窗口内历史过期生成 open ProductTask；窗口外历史过期和库存 0 只建基线。
-- 历史窗口为 `clamp(ceil((expiry_date - production_date) * 3%), 3, 30)`，端点包含；无法得到正的真实保质期时写稳定 ImportIssue，不猜测补查窗口。
-- BatchBaseline 使用 I01 七类 disposition 和适用的 Task/Catchup 来源；ProductTask 继续由既有 Aggregator 聚合，不伪造 Inspection、Revision、LifecycleEvent、completed Task 或 HandledAttentionVersion。
-- 冷启动、Task、审计事实和 ScopeBaseline 完成均处于确认导入事务内；异常整体回滚，回滚后可重试。
+- 完成匹配 ScopeBaseline 的 Managed 范围进入 policy-aware 正常生命周期；Post-import、startup、ProductTask、AttentionVersion / HandledAttentionVersion、正式提交与更高 Stage 继续复用既有权威。
+- Excluded、Unresolved、无匹配完成基线或无有效 version 1 policy 的商品不进入 Stage、Task 或 Reminder。
+- I03 首次 5折/2折基线不被历史追补，冷启动不重跑；库存 0、正式 0 件停止、MaxArrivalQty、ProductCode、BatchKey 等权威保持不变。
+- Reminder 继续消费合法 Managed open Task；未实现提前 3 天预提醒。
+- WPF 仅完成必要全品类文案收口，无新页面或 UI/UX 重构。
 
 ## Sol 独立验收
 
-- I03 + 确认导入编排专项：23/23。
-- I01/I02 相关回归：137/137。
-- 真实 Excel + 隔离 SQLite：1/1；源文件前后为 2,522,641 bytes / SHA-256 `BBD91AE4E40E5381D749F8DB8F4CC0A600FB88D8C1CF6EA160C7C33EC1A3F0F6`。
-- 真实样本 open ProductTask：583；5折 0、2折 0、收仓 210、过期 373；8 个 Managed ScopeBaseline 完成，Excluded / Unresolved 零 Task。
-- Release 全量：735/735；Release build：0 warning / 0 error。
+- I04 受影响专项 99/99；I01～I03 回归 159/159；库存回归 30/30。
+- Release 全量 751/751；Release build 0 warning / 0 error。
 - EF 无 pending model changes；migration 仍为 9，最后一条为 I01 的 `20260901155124_AddPolicyAndBaselineFoundation`。
-- 无 migration、ModelSnapshot、schema、依赖、`.csproj`、`.slnx`、WPF 或 Reminder 变更；`git diff --check` 通过。
+- 无 migration、ModelSnapshot、schema、依赖、`.csproj` 或 `.slnx` 变化；`git diff --check` 通过。
+- 真实全品类 Excel 在隔离 WPF/SQLite 导入 7,007 个商品、32,402 个批次；10 个 canonical 大类、8 个 Managed scope baseline 对账通过。
+- 业务日期 `2026-09-02` 的 576 个 open Task 均为 Managed；实际到点 Reminder 显示 576。应季搭配、赠品小样与 180 天 Unresolved 边界样本均保存且零 Task/Reminder。
 
 ## 环境与边界
 
-- `StoreExpiryInspector` 进程为 0；未启动 WPF。
-- 未访问、迁移或修改正式数据库；测试均使用临时隔离 SQLite。
-- 未实现 I04、基线后完整正常生命周期收口或提前 3 天预提醒；未进入 V1-F02 或 Stage 8。
+- GUI 使用同一 HEAD 源码的隔离路径测试构建；生产跟踪源码未改为测试路径。
+- 正式 LocalApplicationData 入口未删除、修复或绕过；正式数据库未访问、迁移或修改，本轮不声称重新确认其 hash。
+- 隔离数据库完整性为 `ok`，WPF 已退出，应用进程为 0；原始 Excel hash 前后不变。
+- 未实现或创建 V1-F02、V1-F03、Stage 8 或其他后续任务。
 
 ## 下一决策
 
-等待产品经理单独批准 I04。不得提前创建 I04 正式任务卡，不得派发 I04 Terra。
+等待产品经理单独批准下一阶段。不得自动创建 V1-F02 任务卡，不得派发后续 Terra。

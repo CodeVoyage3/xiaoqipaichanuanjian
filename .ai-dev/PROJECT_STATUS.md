@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 7 已正式完成总验收与收口
-- 状态：S7-T01～S7-T03 及 UIUX-R01～R03 已归档；V1-F01-I01～I03 已技术验收；I04 与 Stage 8 尚未开始
+- 状态：S7-T01～S7-T03、UIUX-R01～R03 及 V1-F01-I01～I04 已归档；V1-F01 已完成，Stage 8 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -47,6 +47,7 @@
 - UIUX-R01 已完成审计、Token、Taste 二审及三类代表页高保真视觉门禁并获用户放行。UIUX-R02 已落地 Dashboard、待排查任务列表、排查详情及必要共享视觉资源；用户完成多轮真实 GUI 验收并在最终三列居中修正后明确“通过”。最终 UIUX-R02 1/1、UIUX-R02 + S4-T10 3/3、Release 681/681；离线 Release build 0 warning / 0 error，在线 NuGet 漏洞审计本轮不可用；EF 无漂移、migration=8、依赖不变、无业务逻辑变化。正式库经用户现场恢复回执确认为 299008 bytes / 指定 SHA-256，进程 0、无 sidecar 或 UIUX-R02 恢复残留，恢复后未启动 WPF。UIUX-R02 已正式归档。
 - UIUX-R03 已把同一设计系统铺到 Excel 导入、历史/Revision、Reminder 设置、备份/恢复、应用内部 Dialog 与 Shell，并闭环用户统一返修及后续定向复验。最终相关定向组合 31/31、Stage 3～7 分别 170/170、186/186、52/52、52/52、51/51，Release 完整复跑 692/692、build 0/0、EF 无漂移、migration=8、依赖/项目/schema 不变。用户确认全部 GUI 项通过；正式库已恢复为 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，进程 0、无 sidecar，恢复后未启动 WPF。UIUX-R03 已正式归档。
 - V1-F01-I03 已交付 version 1 固定范围的一次性方案 C 冷启动、真实 3% 历史补查、BatchBaseline 审计与 ProductTask 聚合。Sol 最终专项 23/23、I01/I02 回归 137/137、真实样本 583（210 收仓 + 373 过期）、Release 735/735、build 0/0、EF 无漂移、migration=9；无 schema/依赖/WPF/Reminder 变化，未访问正式数据库。
+- V1-F01-I04 已交付完成基线后的 policy-aware 正常生命周期、Managed Reminder 防御与最小全品类 WPF 文案。Sol 最终受影响专项 99/99、I01～I03 回归 159/159、库存回归 30/30、Release 751/751、build 0/0、EF 无漂移、migration=9；真实全品类 Excel 与隔离 WPF/SQLite 验收通过，正式数据库未访问或修改。V1-F01 已整体收口。
 
 ## 冻结业务红线
 
@@ -108,6 +109,7 @@
 - UIUX-R01 设计系统与视觉稿：`.ai-dev/UI-REFRESH/`
 - UIUX-R02 任务与最终验收：`.ai-dev/TASKS/UIUX-R02.md`、`.ai-dev/ACCEPTANCE/UIUX-R02.md`
 - UIUX-R03 任务与最终验收：`.ai-dev/TASKS/UIUX-R03.md`、`.ai-dev/ACCEPTANCE/UIUX-R03.md`
+- V1-F01 I01～I04 验收：`.ai-dev/ACCEPTANCE/V1-F01-I01.md`、`.ai-dev/ACCEPTANCE/V1-F01-I02.md`、`.ai-dev/ACCEPTANCE/V1-F01-I03.md`、`.ai-dev/ACCEPTANCE/V1-F01-I04.md`
 
 ## 下一步门禁
 
@@ -123,5 +125,5 @@
 - 最新结论（2026-08-31）：Stage 7 总验收与 closeout 已完成，最终范围为本地安全备份 / 恢复 / WPF 闭环，Excel 导出已 deferred。收口本轮确认正式库存在、299008 bytes、进程 0；SHA-256、实际 migration 与完整 sidecar/备份目录因既有 Junction 限制未重新确认，引用最近 S7-T03 用户原始回执，不冒充现场读取成功。
 - 最新 UI/UX 结论（2026-09-01）：UIUX-R01 已获视觉放行；UIUX-R02 三类代表页实施、后续人工反馈修正、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R02 正式归档。
 - 最新 UI/UX 结论（2026-09-01）：UIUX-R03 剩余页面统一、全部返修、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R03 正式归档。
-- 下一步等待产品经理单独批准 I04；不创建 I04 任务卡或 Terra，不进入 V1-F02 或 Stage 8。
-- V1-F01 设计已于 2026-09-01 获产品经理最终批准。I01 持久化/policy 底座已创建、由全新 Terra 实现并经 Sol 独立技术验收：Release 711/711、build 0/0、EF 无漂移、migration=9；未启动 WPF、未访问正式数据库。当前等待产品经理单独批准 I02 全品类导入；未创建 I02 任务卡或实现 Terra，不进入 I03/I04、V1-F02 或 Stage 8。
+- 下一步等待产品经理单独批准后续任务；不创建 V1-F02 任务卡或 Terra，不进入 V1-F03 或 Stage 8。
+- V1-F01 最终结论（2026-09-02）：I01～I04 已按单卡授权全部完成并归档；最终 Release 751/751、build 0/0、EF 无漂移、migration=9，隔离 GUI 验收通过。不得据此自动进入 V1-F02、V1-F03 或 Stage 8。
