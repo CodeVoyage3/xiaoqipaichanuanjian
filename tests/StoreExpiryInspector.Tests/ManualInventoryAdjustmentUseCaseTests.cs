@@ -649,6 +649,17 @@ public sealed class ManualInventoryAdjustmentUseCaseTests
             var product = AddProduct(seed, "P-RESTORE-S3T05", 10, 10);
             product.LastSeenImportId = importId;
             seed.SaveChanges();
+            seed.ScopeBaselines.Add(new ScopeBaseline
+            {
+                ScopeKey = product.CategoryCode,
+                PolicyCode = product.PolicyCode!,
+                PolicyVersion = product.PolicyVersion!.Value,
+                CreatedImportId = importId,
+                BusinessDate = BusinessDate,
+                IsCompleted = true,
+                CompletedAtUtc = AdjustedAtUtc
+            });
+            seed.SaveChanges();
             var oldBatch = AddBatch(seed, product.Id);
             oldBatch.LastSeenImportId = importId;
             seed.SaveChanges();
