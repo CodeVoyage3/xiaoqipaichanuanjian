@@ -233,3 +233,11 @@
 - 不要求真实持久化同 scope 的 version 1 / version 2 两套 ScopeBaseline；非 version 1 请求必须明确拒绝，且不得改变已有 version 1 的 ScopeBaseline、BatchBaseline、ProductTask、Batch 状态或其他业务事实。
 - I01 Schema、migration、ModelSnapshot 保持不变；migration 总数继续为 9。I03 不得新增 migration/schema。
 - 其余方案 C、3% 动态历史补查、事务、幂等、范围隔离、真实样本与停止门禁不变；应创建全新 GPT-5.6 Terra（medium）仅执行 I03，Sol 独立验收后停止。
+
+## D-028｜V1-F01-I03 首次冷启动技术验收
+
+- 状态：全新 GPT-5.6 Terra（medium）完成 I03，Sol 多轮独立审查、退回和复跑后于 2026-09-02 技术验收通过；I04 未获批准。
+- V1 冷启动只接受 version 1，并要求触发 Import 与至少一个完全匹配 Managed Product 的 `LastSeenImportId` 一致；无关 Import 和非 version 1 请求零污染拒绝。
+- 方案 C、库存 0 优先、真实 3% 动态补查、BatchBaseline 审计、ProductTask 聚合、事务回滚与完成范围幂等均按 I03 任务卡实施；不伪造正式排查历史。
+- Sol 最终门禁：I03/导入编排 23/23、I01/I02 回归 137/137、真实样本 1/1 且 583 = 210 收仓 + 373 过期、Release 735/735、build 0/0、EF 无漂移、migration=9。
+- 无 schema、migration、ModelSnapshot、依赖、WPF 或 Reminder 变化；未访问正式数据库。停止在 I03，不创建 I04，不进入 V1-F02 或 Stage 8。

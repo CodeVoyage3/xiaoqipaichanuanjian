@@ -2,58 +2,43 @@
 
 ## 当前任务
 
-产品经理已批准 `V1-F01-I03｜方案 C 首次冷启动与历史补查`，并明确 V1 永久固定 `policy_version = 1`；Schema 阻断已解除，等待全新 Terra 仅执行 I03。
+`V1-F01-I03｜方案 C 首次冷启动与历史补查` 已完成实现和 Sol 独立技术验收。
 
 ## 当前状态
 
-`I03_APPROVED / READY_FOR_IMPLEMENTATION`
+`I03_TECHNICALLY_ACCEPTED / WAITING_I04_APPROVAL`
 
-I03 正式任务卡已创建并按产品经理 version 1 决定修订；I03 实现代理尚未创建或派发，生产实现未开始。
+## 当前 Git
 
-## 当前 HEAD
+- 分支：`master`。
+- I03 最终实现修复 HEAD：`9859988bb00e0b4cd93871dbe5d3368a381c1597`。
+- 本文件所在治理提交为最终交接 HEAD；具体 SHA 与 GitHub `main` 以本次 push 后实时引用为准。
 
-- 本文件所在提交即当前交接 HEAD。
-- I02 治理提交：`7208b2c`；Terra 实现与修复链：`9976957`、`10212d7`、`c9489f1`、`e4436f8`。
-- 本地 `master` 与 GitHub `main` 必须以最终 push 后的实时引用为准；不得把 push 前 tracking ref 冒充远端当前值。
+## I03 交付事实
 
-## I03 Version 契约决定
-
-- 产品经理确认现有效期规则不会通过 v2/v3 方式变更，V1 固定只支持 `policy_version = 1`。
-- 不再要求持久化同 scope 的 version 1 / version 2 两套基线；非 version 1 请求必须明确拒绝且零污染已有 version 1 业务事实。
-- I01 Schema、migration、ModelSnapshot 保持不变，migration 总数继续为 9；原阻断已解除。
-
-## I02 交付事实
-
-- 10 个批准源大类均在现有导入链路正常识别并保存稳定 canonical CategoryCode；中文显示名不作为永久 identity。
-- 食品为 `food_expiry / 1`，宠物为 `pet_expiry / 1`；六类通用长效商品总效期 `>180` 天为 `general_long_expiry / 1`。
-- 应季搭配、赠品小样保存 Product / Batch，标记 Excluded、policy/version 为空；不产生生命周期 Task。
-- 六类通用长效商品 `<=180` 天保存为 Unresolved、policy/version 为空，并持久化 `expiry_policy_unresolved`。
-- 同 ProductCode scope/policy 冲突产生 `product_scope_policy_conflict`，不静默改绑、不复制、不写该商品的批次/库存动作或生命周期。
-- 未完成匹配 ScopeBaseline 的 Managed 商品只保存导入和身份；导入后与启动重算均不提前产生 Task。
+- V1 永久固定 `policy_version = 1`；非 version 1 及无关成功 Import 在写入前明确拒绝并保持业务事实不变。
+- 确认导入后按 `scope_key + policy_code + 1` 首次冷启动；完成范围幂等 no-op，不同 canonical scope 相互独立。
+- 方案 C：5折/2折只建基线；收仓、到期当天、窗口内历史过期生成 open ProductTask；窗口外历史过期和库存 0 只建基线。
+- 历史窗口为 `clamp(ceil((expiry_date - production_date) * 3%), 3, 30)`，端点包含；无法得到正的真实保质期时写稳定 ImportIssue，不猜测补查窗口。
+- BatchBaseline 使用 I01 七类 disposition 和适用的 Task/Catchup 来源；ProductTask 继续由既有 Aggregator 聚合，不伪造 Inspection、Revision、LifecycleEvent、completed Task 或 HandledAttentionVersion。
+- 冷启动、Task、审计事实和 ScopeBaseline 完成均处于确认导入事务内；异常整体回滚，回滚后可重试。
 
 ## Sol 独立验收
 
-- 首轮代码审查退回冲突库存动作、生命周期防御及端到端测试缺口；修复后继续审查。
-- 首次受影响专项 115/116，发现 unknown category 的既有 unsupported 统计丢失；修复后最终受影响链路 117/117。
-- 首次 Release 全量 721/723：一项 I02 startup fixture 缺 baseline、一项既有 S7T03 5 秒超时；补 fixture，超时精确复跑未复现，最终 Release 723/723。
-- Release build 0 warning / 0 error；EF 无 pending model changes；migration list 为 9；`git diff --check` 通过。
-- 相对 I02 治理基线无 migration、ModelSnapshot、schema、`.csproj`、`.slnx`、依赖、WPF 或 Reminder 变化。
+- I03 + 确认导入编排专项：23/23。
+- I01/I02 相关回归：137/137。
+- 真实 Excel + 隔离 SQLite：1/1；源文件前后为 2,522,641 bytes / SHA-256 `BBD91AE4E40E5381D749F8DB8F4CC0A600FB88D8C1CF6EA160C7C33EC1A3F0F6`。
+- 真实样本 open ProductTask：583；5折 0、2折 0、收仓 210、过期 373；8 个 Managed ScopeBaseline 完成，Excluded / Unresolved 零 Task。
+- Release 全量：735/735；Release build：0 warning / 0 error。
+- EF 无 pending model changes；migration 仍为 9，最后一条为 I01 的 `20260901155124_AddPolicyAndBaselineFoundation`。
+- 无 migration、ModelSnapshot、schema、依赖、`.csproj`、`.slnx`、WPF 或 Reminder 变更；`git diff --check` 通过。
 
-## GUI 与数据库状态
+## 环境与边界
 
-- I02 无生产 UI 变化，不需要用户 GUI 验收。
-- 本轮未启动 WPF；收口检查 `StoreExpiryInspector` 进程为 0。
-- 未访问、迁移或修改正式数据库；所有持久化验证均使用临时隔离 SQLite 测试库。
-
-## 当前禁止事项
-
-- 仅允许创建一个全新的 GPT-5.6 Terra（medium）执行 I03；不得复用旧 Terra。
-- 不开始 I04，不进入 V1-F02 或 Stage 8。
-- I03/I04 默认禁止新增 migration；schema 若不足必须停止并重新审批。
-- 不执行方案 C、3% 历史过期补查或首次接管；这些属于 I03。
-- 不实现提前 3 天预提醒；I04 仅允许保持现有 Reminder 消费 open Task 链路。
-- 不操作正式数据库，不启动 WPF，不 squash、不重写历史、不 force push。
+- `StoreExpiryInspector` 进程为 0；未启动 WPF。
+- 未访问、迁移或修改正式数据库；测试均使用临时隔离 SQLite。
+- 未实现 I04、基线后完整正常生命周期收口或提前 3 天预提醒；未进入 V1-F02 或 Stage 8。
 
 ## 下一决策
 
-按已批准任务卡创建全新 Terra 仅执行 I03；完成后由 Sol 独立验收并停止，不创建 I04。
+等待产品经理单独批准 I04。不得提前创建 I04 正式任务卡，不得派发 I04 Terra。
