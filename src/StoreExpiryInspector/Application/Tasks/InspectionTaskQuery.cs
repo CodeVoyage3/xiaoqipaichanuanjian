@@ -116,7 +116,7 @@ public sealed class InspectionTaskQuery
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return Array.AsReadOnly(OrderTasks(QueryTaskList(context))
+        return Array.AsReadOnly(OrderTasks(QueryTaskList(context, eligibleForReminder: true))
             .Select(task => new ReminderCandidate(
                 task.ProductId,
                 task.ProductName,
@@ -345,11 +345,26 @@ public sealed class InspectionTaskQuery
     private static IReadOnlyList<InspectionTaskListItem> QueryTaskList(
         StoreDbContext context,
         string? search = null,
-        string? stage = null)
+        string? stage = null,
+        bool eligibleForReminder = false)
     {
         var query = context.Tasks
             .AsNoTracking()
             .Where(task => task.Status == "open");
+        if (eligibleForReminder)
+        {
+            query = query.Where(task =>
+                task.Product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+                task.Product.PolicyVersion == ExpiryPolicies.Version1 &&
+                (task.Product.PolicyCode == ExpiryPolicies.Food ||
+                 task.Product.PolicyCode == ExpiryPolicies.Pet ||
+                 task.Product.PolicyCode == ExpiryPolicies.GeneralLong) &&
+                context.ScopeBaselines.Any(baseline =>
+                    baseline.IsCompleted &&
+                    baseline.ScopeKey == task.Product.CategoryCode &&
+                    baseline.PolicyCode == task.Product.PolicyCode &&
+                    baseline.PolicyVersion == task.Product.PolicyVersion));
+        }
         if (!string.IsNullOrEmpty(stage))
         {
             query = query.Where(task => task.HighestStage == stage);

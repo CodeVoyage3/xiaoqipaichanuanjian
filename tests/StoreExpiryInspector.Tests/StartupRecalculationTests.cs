@@ -521,6 +521,29 @@ public sealed class StartupRecalculationTests
         Assert.Equal(BusinessDate, verify.Batches.Single().NextTriggerDate);
     }
 
+    [Theory]
+    [InlineData(ExpiryPolicies.Food, 270, 25, ExpiryStageCalculator.Discount50)]
+    [InlineData(ExpiryPolicies.Pet, 270, 80, ExpiryStageCalculator.Discount50)]
+    [InlineData(ExpiryPolicies.GeneralLong, 360, 170, ExpiryStageCalculator.Discount50)]
+    public void CompletedManagedScopeUsesItsOwnPolicy(string policyCode, int shelfLifeDays, int remainingDays, string expectedStage)
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var product = AddProduct(seed, policyCode);
+            AddBatch(seed, product.Id, BusinessDate.AddDays(remainingDays), BusinessDate, ExpiryStageCalculator.None, shelfLifeDays: shelfLifeDays);
+        }
+
+        using (var context = database.Open())
+        {
+            Execute(context);
+        }
+
+        using var verify = database.Open();
+        Assert.Equal(expectedStage, verify.Batches.Single().CurrentStage);
+        Assert.Equal(expectedStage, verify.Tasks.Single().HighestStage);
+    }
+
     private static StartupRecalculationResult Execute(
         StoreDbContext context,
         DateTime? updatedAtUtc = null) =>
@@ -557,12 +580,12 @@ public sealed class StartupRecalculationTests
         Assert.Single(context.TaskItems);
     }
 
-    private static Product AddProduct(StoreDbContext context)
+    private static Product AddProduct(StoreDbContext context, string policyCode = ExpiryPolicies.Food)
     {
-        var product = new Product { ProductCode = $"SKU-{Guid.NewGuid():N}" };
+        var product = new Product { ProductCode = $"SKU-{Guid.NewGuid():N}", CategoryCode = policyCode, PolicyCode = policyCode, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed };
         context.Products.Add(product);
         context.SaveChanges();
-        if (context.ScopeBaselines.Any())
+        if (context.ScopeBaselines.Any(baseline => baseline.ScopeKey == product.CategoryCode && baseline.PolicyCode == product.PolicyCode && baseline.PolicyVersion == product.PolicyVersion))
         {
             return product;
         }
@@ -581,13 +604,14 @@ public sealed class StartupRecalculationTests
         DateOnly? nextTriggerDate,
         string currentStage,
         string trackingStatus = "active",
-        int attentionVersion = 0)
+        int attentionVersion = 0,
+        int shelfLifeDays = 270)
     {
         var batch = new Batch
         {
             ProductId = productId,
             ExpiryDate = expiryDate,
-            ShelfLifeValue = 270,
+            ShelfLifeValue = shelfLifeDays,
             ShelfLifeUnit = "D",
             CurrentArrivalQty = 10,
             MaxArrivalQty = 10,

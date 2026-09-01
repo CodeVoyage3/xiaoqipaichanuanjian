@@ -915,6 +915,12 @@ public sealed class BatchCheckedZeroLifecycleUseCaseTests
         };
         context.Products.Add(product);
         context.SaveChanges();
+        if (!context.ScopeBaselines.Any(baseline => baseline.ScopeKey == product.CategoryCode && baseline.PolicyCode == product.PolicyCode && baseline.PolicyVersion == product.PolicyVersion))
+        {
+            var import = AddImport(context);
+            context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = product.CategoryCode, PolicyCode = product.PolicyCode!, PolicyVersion = product.PolicyVersion!.Value, CreatedImportId = import.Id, BusinessDate = BusinessDate, IsCompleted = true, CompletedAtUtc = SeedUtc });
+            context.SaveChanges();
+        }
         return product;
     }
 

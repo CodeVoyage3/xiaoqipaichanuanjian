@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
@@ -250,6 +251,11 @@ public sealed class S6T04SettingsAndAutoStartTests
             EffectiveStockSource = "excel"
         };
         context.Products.Add(product);
+        context.SaveChanges();
+        var import = new ImportRecord { SourceFileName = "s6t04.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = DateTime.UtcNow, ConfirmedAtUtc = DateTime.UtcNow, Status = ImportStatuses.Succeeded };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = product.CategoryCode, PolicyCode = product.PolicyCode!, PolicyVersion = product.PolicyVersion!.Value, CreatedImportId = import.Id, BusinessDate = Today, IsCompleted = true, CompletedAtUtc = DateTime.UtcNow });
         context.SaveChanges();
         var batch = new Batch
         {

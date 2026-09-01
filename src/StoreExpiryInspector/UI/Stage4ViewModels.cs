@@ -1173,7 +1173,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.Dashboard => "今日需要处理的效期任务与数据状态",
         ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
         ShellPage.History => "查看已完成的正式排查记录及修改留痕",
-        ShellPage.Import => "导入最新的食品效期 Excel，更新商品与批次数据",
+        ShellPage.Import => "导入最新的商品效期 Excel，更新商品与批次数据",
         ShellPage.BackupRestore => "创建经过验证的本地备份，或从应用备份安全恢复",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
         _ => "查看当前数据状态"

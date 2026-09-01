@@ -42,7 +42,7 @@ public sealed class UIUXR03UiStaticAuditTests
 
         var dashboard = Section(window, "<!-- 首页 -->", "<!-- 待排查任务 -->");
         Assert.Contains("Text=\"正在加载首页数据…\"", dashboard, StringComparison.Ordinal);
-        Assert.Contains("Text=\"暂无导入数据，请先导入最新的食品效期 Excel。\"", dashboard, StringComparison.Ordinal);
+        Assert.Contains("Text=\"暂无导入数据，请先导入最新的商品效期 Excel。\"", dashboard, StringComparison.Ordinal);
         Assert.Contains("Visibility=\"{Binding Dashboard.HasError, Converter={StaticResource InverseBoolToVisibility}}\"", dashboard, StringComparison.Ordinal);
         Assert.Contains("Foreground=\"#8995AA\"", dashboard, StringComparison.Ordinal);
         Assert.Contains("DashboardDataGridStyle", dashboard, StringComparison.Ordinal);

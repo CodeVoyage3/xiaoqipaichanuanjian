@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
@@ -207,6 +208,30 @@ public sealed class S6T02DailyReminderRuntimeTests
             };
             Context.Products.Add(product);
             Context.SaveChanges();
+            if (!Context.ScopeBaselines.Any())
+            {
+                var import = new ImportRecord
+                {
+                    SourceFileName = "reminder-runtime.xlsx",
+                    SourceFileSha256 = new string('a', 64),
+                    ParsedAtUtc = DateTime.UtcNow,
+                    ConfirmedAtUtc = DateTime.UtcNow,
+                    Status = ImportStatuses.Succeeded
+                };
+                Context.Imports.Add(import);
+                Context.SaveChanges();
+                Context.ScopeBaselines.Add(new ScopeBaseline
+                {
+                    ScopeKey = product.CategoryCode,
+                    PolicyCode = product.PolicyCode!,
+                    PolicyVersion = product.PolicyVersion!.Value,
+                    CreatedImportId = import.Id,
+                    BusinessDate = Today,
+                    IsCompleted = true,
+                    CompletedAtUtc = DateTime.UtcNow
+                });
+                Context.SaveChanges();
+            }
             var task = new ProductTask { ProductId = product.Id, HighestStage = stage };
             Context.Tasks.Add(task);
             Context.SaveChanges();

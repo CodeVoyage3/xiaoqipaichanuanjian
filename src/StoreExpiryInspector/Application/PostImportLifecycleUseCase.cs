@@ -143,7 +143,7 @@ public sealed class PostImportLifecycleUseCase
                 throw new KeyNotFoundException($"Batch {missingBatchId} does not exist.");
             }
 
-            ValidateDatabaseFacts(request, products, batches);
+            ValidateDatabaseFacts(context, request, products, batches);
             var prepared = PrepareFacts(request, products, batches);
             journal.CaptureOpenTasks(context, productIds);
 
@@ -385,6 +385,7 @@ public sealed class PostImportLifecycleUseCase
     }
 
     private static void ValidateDatabaseFacts(
+        StoreDbContext context,
         PostImportLifecycleRequest request,
         IReadOnlyDictionary<long, Product> products,
         IReadOnlyDictionary<long, Batch> batches)
@@ -392,6 +393,12 @@ public sealed class PostImportLifecycleUseCase
         foreach (var group in request.ProductGroups)
         {
             var product = products[group.ProductId];
+            if (!IsLifecycleEligible(context, product))
+            {
+                throw new InvalidOperationException(
+                    $"Product {product.Id} is not eligible for expiry lifecycle processing.");
+            }
+
             if (product.EffectiveStockQty <= 0)
             {
                 throw new InvalidOperationException(
@@ -457,11 +464,7 @@ public sealed class PostImportLifecycleUseCase
                         product,
                         batch,
                         fact,
-                        ExpiryStageCalculator.Calculate(
-                            request.BusinessDate,
-                            batch.ExpiryDate,
-                            batch.ShelfLifeValue,
-                            batch.ShelfLifeUnit),
+                        CalculateStage(product, batch, request.BusinessDate),
                         PreparedAction.New));
                     continue;
                 }
@@ -495,11 +498,7 @@ public sealed class PostImportLifecycleUseCase
                         product,
                         batch,
                         fact,
-                        ExpiryStageCalculator.Calculate(
-                            request.BusinessDate,
-                            batch.ExpiryDate,
-                            batch.ShelfLifeValue,
-                            batch.ShelfLifeUnit),
+                        CalculateStage(product, batch, request.BusinessDate),
                         PreparedAction.Resume));
                     continue;
                 }
@@ -520,17 +519,40 @@ public sealed class PostImportLifecycleUseCase
                     product,
                     batch,
                     fact,
-                    ExpiryStageCalculator.Calculate(
-                        request.BusinessDate,
-                        batch.ExpiryDate,
-                        batch.ShelfLifeValue,
-                        batch.ShelfLifeUnit),
+                    CalculateStage(product, batch, request.BusinessDate),
                     PreparedAction.Arrival));
             }
         }
 
         return prepared;
     }
+
+    private static bool IsLifecycleEligible(StoreDbContext context, Product product) =>
+        product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+        product.PolicyVersion == ExpiryPolicies.Version1 &&
+        product.PolicyCode is ExpiryPolicies.Food or ExpiryPolicies.Pet or ExpiryPolicies.GeneralLong &&
+        context.ScopeBaselines.Any(baseline =>
+            baseline.IsCompleted &&
+            baseline.ScopeKey == product.CategoryCode &&
+            baseline.PolicyCode == product.PolicyCode &&
+            baseline.PolicyVersion == product.PolicyVersion);
+
+    private static ExpiryStageResult CalculateStage(Product product, Batch batch, DateOnly businessDate) =>
+        ExpiryPolicyCalculator.Calculate(
+            product.PolicyCode!,
+            product.PolicyVersion!.Value,
+            businessDate,
+            batch.ExpiryDate,
+            ShelfLifeDays(batch))
+        ?? throw new InvalidOperationException($"Product {product.Id} has an uncovered expiry policy.");
+
+    private static int ShelfLifeDays(Batch batch) => batch.ShelfLifeUnit switch
+    {
+        "D" => batch.ShelfLifeValue,
+        "M" => checked(batch.ShelfLifeValue * 30),
+        "Y" => checked(batch.ShelfLifeValue * 365),
+        _ => throw new ArgumentException("Invalid shelf life unit.")
+    };
 
     private static bool IsUnprocessedNewBatch(Batch batch) =>
         batch.LifecycleGeneration == 0 &&

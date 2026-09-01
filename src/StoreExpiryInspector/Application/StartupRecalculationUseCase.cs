@@ -47,6 +47,7 @@ public sealed class StartupRecalculationUseCase
 
             var batches = context.Batches
                 .AsTracking()
+                .Include(batch => batch.Product)
                 .Where(batch =>
                     batch.TrackingStatus == "active" &&
                     batch.NextTriggerDate.HasValue &&
@@ -54,6 +55,10 @@ public sealed class StartupRecalculationUseCase
                     context.Products.Any(product =>
                         product.Id == batch.ProductId &&
                         product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+                        product.PolicyVersion == ExpiryPolicies.Version1 &&
+                        (product.PolicyCode == ExpiryPolicies.Food ||
+                         product.PolicyCode == ExpiryPolicies.Pet ||
+                         product.PolicyCode == ExpiryPolicies.GeneralLong) &&
                         context.ScopeBaselines.Any(baseline =>
                             baseline.IsCompleted &&
                             baseline.ScopeKey == product.CategoryCode &&
@@ -71,11 +76,16 @@ public sealed class StartupRecalculationUseCase
             var changedBatchCount = 0;
             foreach (var batch in batches)
             {
-                var result = ExpiryStageCalculator.Calculate(
+                var result = ExpiryPolicyCalculator.Calculate(
+                    batch.Product.PolicyCode!,
+                    batch.Product.PolicyVersion!.Value,
                     request.BusinessDate,
                     batch.ExpiryDate,
-                    batch.ShelfLifeValue,
-                    batch.ShelfLifeUnit);
+                    ShelfLifeDays(batch));
+                if (result is null)
+                {
+                    continue;
+                }
                 calculated.Add((batch, result));
 
                 if (string.Equals(batch.CurrentStage, result.CurrentStage, StringComparison.Ordinal) &&
@@ -148,4 +158,12 @@ public sealed class StartupRecalculationUseCase
         DateOnly businessDate,
         DateTime updatedAtUtc) =>
         Execute(context, new StartupRecalculationRequest(businessDate, updatedAtUtc));
+
+    private static int ShelfLifeDays(Batch batch) => batch.ShelfLifeUnit switch
+    {
+        "D" => batch.ShelfLifeValue,
+        "M" => checked(batch.ShelfLifeValue * 30),
+        "Y" => checked(batch.ShelfLifeValue * 365),
+        _ => throw new ArgumentException("Invalid shelf life unit.")
+    };
 }

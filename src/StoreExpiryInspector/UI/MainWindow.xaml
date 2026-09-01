@@ -896,7 +896,7 @@
                                        FontSize="13"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        Margin="0,0,0,8" />
-                            <TextBlock Text="暂无导入数据，请先导入最新的食品效期 Excel。"
+                            <TextBlock Text="暂无导入数据，请先导入最新的商品效期 Excel。"
                                        Visibility="{Binding Dashboard.HasNoImportData, Converter={StaticResource BoolToVisibility}}"
                                        FontSize="14"
                                        Foreground="{DynamicResource SecondaryTextBrush}"

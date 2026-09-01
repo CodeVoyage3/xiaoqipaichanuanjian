@@ -53,6 +53,32 @@ public sealed class PostImportLifecycleUseCaseTests
         Assert.Equal(0, batch.HandledAttentionVersion);
     }
 
+    [Fact]
+    public void DirectLifecycleRejectsExcludedOrUnbaselinedProductBeforeWrites()
+    {
+        using var database = SqliteTestDatabase.Create();
+        long importId;
+        long productId;
+        long batchId;
+        using (var seed = database.Open())
+        {
+            importId = AddImport(seed).Id;
+            var product = AddProduct(seed, importId);
+            product.ExpiryManagementStatus = ExpiryManagementStatus.Excluded;
+            product.PolicyCode = null;
+            product.PolicyVersion = null;
+            seed.SaveChanges();
+            productId = product.Id;
+            batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(10), 0);
+        }
+
+        using (var context = database.Open())
+        {
+            Assert.Throws<InvalidOperationException>(() => Execute(context, Request(importId, Group(productId, New(batchId, 0, 2)))));
+            Assert.Empty(context.Tasks);
+        }
+    }
+
     [Theory]
     [InlineData(80, "discount_50")]
     [InlineData(30, "discount_20")]

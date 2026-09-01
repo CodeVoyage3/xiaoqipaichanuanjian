@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
@@ -135,6 +136,32 @@ public sealed class DailyReminderUseCaseTests
     }
 
     [Fact]
+    public void ReminderIgnoresAnomalousOpenTaskOutsideManagedCompletedScope()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        AddOpenTask(context, "SKU-MANAGED", ExpiryStageCalculator.Withdraw);
+        var excluded = new Product
+        {
+            ProductCode = "SKU-EXCLUDED",
+            CategoryCode = "seasonal_assortment",
+            PolicyCode = null,
+            PolicyVersion = null,
+            ExpiryManagementStatus = ExpiryManagementStatus.Excluded,
+            EffectiveStockQty = 5
+        };
+        context.Products.Add(excluded);
+        context.SaveChanges();
+        var task = new ProductTask { ProductId = excluded.Id, HighestStage = ExpiryStageCalculator.Expired };
+        context.Tasks.Add(task);
+        context.SaveChanges();
+        AddTaskItem(context, excluded, task, ExpiryStageCalculator.Expired, Today);
+
+        var candidate = Assert.Single(new InspectionTaskQuery().GetReminderCandidates(context));
+        Assert.Equal("SKU-MANAGED", candidate.ProductCode);
+    }
+
+    [Fact]
     public void CandidateQueryDoesNotWriteOrTrackEntities()
     {
         using var database = SqliteTestDatabase.Create();
@@ -248,6 +275,30 @@ public sealed class DailyReminderUseCaseTests
         };
         context.Products.Add(product);
         context.SaveChanges();
+        if (!context.ScopeBaselines.Any())
+        {
+            var import = new ImportRecord
+            {
+                SourceFileName = "reminder.xlsx",
+                SourceFileSha256 = new string('a', 64),
+                ParsedAtUtc = DateTime.UtcNow,
+                ConfirmedAtUtc = DateTime.UtcNow,
+                Status = ImportStatuses.Succeeded
+            };
+            context.Imports.Add(import);
+            context.SaveChanges();
+            context.ScopeBaselines.Add(new ScopeBaseline
+            {
+                ScopeKey = product.CategoryCode,
+                PolicyCode = product.PolicyCode!,
+                PolicyVersion = product.PolicyVersion!.Value,
+                CreatedImportId = import.Id,
+                BusinessDate = Today,
+                IsCompleted = true,
+                CompletedAtUtc = DateTime.UtcNow
+            });
+            context.SaveChanges();
+        }
         var task = new ProductTask { ProductId = product.Id, HighestStage = stage };
         context.Tasks.Add(task);
         context.SaveChanges();
