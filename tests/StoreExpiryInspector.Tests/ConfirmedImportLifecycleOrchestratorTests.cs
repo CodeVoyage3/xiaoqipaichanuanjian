@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
@@ -17,6 +18,122 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         "商品大类", "商品编码", "商品条码", "商品名称", "生产日期", "有效日期", "保质期",
         "保质期单位", "是否该做临期折扣", "该批次累计到货数量", "该商品门店库存总数"
     ];
+
+    [Theory]
+    [InlineData("应季搭配", "seasonal_assortment")]
+    [InlineData("赠品小样", "gift_sample")]
+    public void ExcludedCategoryPersistsProductAndBatchWithoutPolicyOrTask(string category, string expectedScope)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var sourcePath = Path.Combine(database.Directory, "excluded.xlsx");
+        WriteWorkbook(sourcePath, [category, "P-EXCLUDED", "B", "排除商品", "2026-01-01", "2026-09-20", "12", "M", "否", "1", "5"]);
+        var contract = ReadContract(database, sourcePath);
+
+        using (var context = database.Open())
+        {
+            var result = new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
+                contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc)));
+            Assert.True(result.Succeeded);
+        }
+
+        using var verify = database.Open();
+        var product = Assert.Single(verify.Products);
+        Assert.Equal(expectedScope, product.CategoryCode);
+        Assert.Equal(ExpiryManagementStatus.Excluded, product.ExpiryManagementStatus);
+        Assert.Null(product.PolicyCode);
+        Assert.Null(product.PolicyVersion);
+        Assert.Single(verify.Batches);
+        Assert.Empty(verify.Tasks);
+    }
+
+    [Fact]
+    public void UnresolvedGeneralCategoryPersistsItsImportIssueAndNeverStartsLifecycleWithoutBaseline()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var sourcePath = Path.Combine(database.Directory, "unresolved.xlsx");
+        WriteWorkbook(sourcePath, ["日用", "P-UNRESOLVED", "B", "短效日用", "2026-01-01", "2026-09-20", "180", "D", "否", "1", "5"]);
+        var contract = ReadContract(database, sourcePath);
+
+        using (var context = database.Open())
+        {
+            Assert.True(new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
+                contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc))).Succeeded);
+        }
+
+        using var verify = database.Open();
+        var product = Assert.Single(verify.Products);
+        Assert.Equal(ExpiryManagementStatus.Unresolved, product.ExpiryManagementStatus);
+        Assert.Null(product.PolicyCode);
+        Assert.Null(product.PolicyVersion);
+        Assert.Contains(verify.ImportIssues, issue => issue.IssueType == "expiry_policy_unresolved");
+        Assert.Empty(verify.Tasks);
+    }
+
+    [Fact]
+    public void ManagedImportAndStartupDoNotCreateTasksBeforeScopeBaselineCompletes()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var sourcePath = Path.Combine(database.Directory, "unbaselined.xlsx");
+        WriteWorkbook(sourcePath, ["食品", "P-UNBASELINED", "B", "未建基线", "2026-01-01", "2026-09-20", "12", "M", "否", "1", "5"]);
+        var contract = ReadContract(database, sourcePath);
+
+        using (var context = database.Open())
+        {
+            Assert.True(new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
+                contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc))).Succeeded);
+            var batch = context.Batches.Single();
+            batch.NextTriggerDate = new DateOnly(2026, 8, 27);
+            context.SaveChanges();
+        }
+
+        using (var context = database.Open())
+        {
+            var startup = new StartupRecalculationUseCase().Execute(context, new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 10, 0, 0, DateTimeKind.Utc));
+            Assert.Equal(0, startup.MatchedBatchCount);
+        }
+
+        using var verify = database.Open();
+        Assert.Empty(verify.ScopeBaselines);
+        Assert.Empty(verify.Tasks);
+    }
+
+    [Fact]
+    public void ScopeConflictHasNoStockActionAndPersistsIssueAlongsideOtherValidProduct()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            seed.Products.Add(new Product { ProductCode = "P-CONFLICT", CurrentName = "原商品", CurrentBarcode = "B-OLD", ExcelStockQty = 7, EffectiveStockQty = 7, EffectiveStockSource = "excel" });
+            seed.SaveChanges();
+            seed.Batches.Add(new Batch { ProductId = seed.Products.Single().Id, ExpiryDate = new DateOnly(2026, 12, 31), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 });
+            seed.SaveChanges();
+        }
+        var sourcePath = Path.Combine(database.Directory, "conflict.xlsx");
+        WriteWorkbook(sourcePath, new IReadOnlyList<string>[]
+        {
+            ["宠物", "P-CONFLICT", "B-NEW", "冲突商品", "2026-01-01", "2026-09-20", "12", "M", "否", "2", "0"],
+            ["食品", "P-VALID", "B", "有效商品", "2026-01-01", "2026-09-20", "12", "M", "否", "1", "5"]
+        });
+        ImportConfirmationContract contract;
+        using (var preview = database.Open())
+        {
+            var workbook = new ExcelTemplateReader().Read(sourcePath);
+            var plan = new ExcelImportPlanner().Plan(preview, new ExcelFileClassifier().Classify(workbook));
+            Assert.DoesNotContain(plan.ExplicitProductStocks, stock => stock.ProductCode == "P-CONFLICT");
+            contract = Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(new ImportConfirmationGuard().BindPreview(sourcePath, workbook, plan)).Contract);
+        }
+        using (var context = database.Open())
+        {
+            Assert.True(new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
+                contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc))).Succeeded);
+        }
+        using var verify = database.Open();
+        var original = verify.Products.Single(product => product.ProductCode == "P-CONFLICT");
+        Assert.Equal(7, original.EffectiveStockQty);
+        Assert.Single(verify.Batches.Where(batch => batch.ProductId == original.Id));
+        Assert.Contains(verify.ImportIssues, issue => issue.IssueType == "product_scope_policy_conflict");
+        Assert.Empty(verify.Tasks);
+    }
 
     [Fact]
     public void RealXlsxNewBatchRunsStage2AndPostImportInOneCommit()
@@ -370,6 +487,9 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     }
 
     private static void WriteWorkbook(string path, IReadOnlyList<string> values)
+        => WriteWorkbook(path, [values]);
+
+    private static void WriteWorkbook(string path, IReadOnlyList<IReadOnlyList<string>> rows)
     {
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
         AddEntry(archive, "[Content_Types].xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>");
@@ -377,8 +497,9 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         AddEntry(archive, "xl/workbook.xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>");
         AddEntry(archive, "xl/_rels/workbook.xml.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/></Relationships>");
         var header = string.Join(string.Empty, Headers.Select((value, index) => InlineCell(ColumnName(index), 1, value)));
-        var row = string.Join(string.Empty, values.Select((value, index) => InlineCell(ColumnName(index), 2, value)));
-        AddEntry(archive, "xl/worksheets/sheet1.xml", $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData><row r=\"1\">{header}</row><row r=\"2\">{row}</row></sheetData></worksheet>");
+        var dataRows = string.Join(string.Empty, rows.Select((values, rowIndex) =>
+            $"<row r=\"{rowIndex + 2}\">{string.Join(string.Empty, values.Select((value, index) => InlineCell(ColumnName(index), rowIndex + 2, value)))}</row>"));
+        AddEntry(archive, "xl/worksheets/sheet1.xml", $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData><row r=\"1\">{header}</row>{dataRows}</sheetData></worksheet>");
     }
 
     private static void AddCompletedFoodBaseline(StoreDbContext context)

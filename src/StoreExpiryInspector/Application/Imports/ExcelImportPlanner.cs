@@ -80,6 +80,10 @@ public sealed class ExcelImportPlanner
         var normalByCode = normalBatches
             .GroupBy(batch => batch.BatchKey.ProductCode, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var scopeConflictCodes = classification.BatchConflicts
+            .Where(conflict => conflict.DifferingFields.Contains("商品大类", StringComparer.Ordinal))
+            .Select(conflict => conflict.BatchKey.ProductCode)
+            .ToHashSet(StringComparer.Ordinal);
         var planningIssues = new List<ImportPreviewIssue>();
         var newProducts = new List<NewProductPlan>();
         var updatedProducts = new List<ProductUpdatePlan>();
@@ -101,12 +105,18 @@ public sealed class ExcelImportPlanner
             var stockDecision = hasExistingProduct || canCreateProduct
                 ? ReadStock(productCode, stock, canCreateProduct, planningIssues)
                 : StockDecision.Unavailable;
-            if (stockDecision.IsValid)
-            {
-                explicitProductStocks.Add(new ExplicitProductStock(productCode, stockDecision.Quantity!.Value));
-            }
             var productValues = ReadProductValues(productCode, productNormalBatches, planningIssues);
             var sourceRows = SourceRows(productNormalBatches, stock);
+            if (scopeConflictCodes.Contains(productCode))
+            {
+                planningIssues.Add(new ImportPreviewIssue(
+                    productCode,
+                    sourceRows.Count == 0 ? null : sourceRows[0],
+                    "product_scope_policy_conflict",
+                    "商品大类",
+                    "同一商品的管理范围或效期策略不一致，未导入该商品。"));
+                continue;
+            }
             var scope = default(ProductCategoryScope);
             if (hasNormalBatches && !TryResolveScope(productCode, productNormalBatches, planningIssues, out scope))
             {
@@ -131,6 +141,10 @@ public sealed class ExcelImportPlanner
                     "expiry_policy_unresolved",
                     "保质期",
                     "规则未覆盖；商品和批次将保存，但不纳入效期管理。"));
+            }
+            if (stockDecision.IsValid)
+            {
+                explicitProductStocks.Add(new ExplicitProductStock(productCode, stockDecision.Quantity!.Value));
             }
             var canPlanNewProduct = canCreateProduct && stockDecision.IsValid && hasResolvedScope;
 

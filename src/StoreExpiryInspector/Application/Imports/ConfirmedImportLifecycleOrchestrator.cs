@@ -79,9 +79,13 @@ public sealed class ConfirmedImportLifecycleOrchestrator
             var eligibleProductIds = CompletedScopeProductIds(context);
             var explicitStocks = request.Contract.Plan.ExplicitProductStocks
                 .ToDictionary(stock => stock.ProductCode, StringComparer.Ordinal);
+            var eligibleStocks = explicitStocks.Values
+                .Where(stock => productsByCode.TryGetValue(stock.ProductCode, out var product) &&
+                    eligibleProductIds.Contains(product.Id))
+                .ToArray();
 
-            foreach (var stock in explicitStocks.Values
-                         .Where(stock => stock.Quantity == 0 && eligibleProductIds.Contains(productsByCode[stock.ProductCode].Id))
+            foreach (var stock in eligibleStocks
+                         .Where(stock => stock.Quantity == 0)
                          .OrderBy(stock => stock.ProductCode, StringComparer.Ordinal))
             {
                 if (!productsByCode.TryGetValue(stock.ProductCode, out var product))
@@ -99,20 +103,16 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                         SourceImportId: importId));
             }
 
-            var zeroProductCodes = explicitStocks.Values
-                .Where(stock => stock.Quantity == 0 && eligibleProductIds.Contains(productsByCode[stock.ProductCode].Id))
+            var zeroProductCodes = eligibleStocks
+                .Where(stock => stock.Quantity == 0)
                 .Select(stock => stock.ProductCode)
                 .ToHashSet(StringComparer.Ordinal);
             var positiveGroups = resolved.BatchFacts
                 .GroupBy(fact => fact.ProductCode, StringComparer.Ordinal)
-                .Where(group =>
-                    !zeroProductCodes.Contains(group.Key) &&
-                    productsByCode[group.Key].EffectiveStockQty > 0 &&
-                    eligibleProductIds.Contains(productsByCode[group.Key].Id))
                 .OrderBy(group => group.Key, StringComparer.Ordinal)
-                .Select(group => new PostImportProductGroup(
-                    productsByCode[group.Key].Id,
-                    group.Select(fact => fact.ToPostImportFact()).ToArray()))
+                .Select(group => TryCreateEligibleGroup(group, productsByCode, eligibleProductIds, zeroProductCodes))
+                .Where(group => group is not null)
+                .Select(group => group!)
                 .ToArray();
 
             foreach (var group in positiveGroups)
@@ -355,6 +355,23 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 baseline.PolicyVersion == product.PolicyVersion))
         .Select(product => product.Id)
         .ToHashSet();
+
+    private static PostImportProductGroup? TryCreateEligibleGroup(
+        IGrouping<string, ResolvedBatchFact> group,
+        IReadOnlyDictionary<string, ProductSnapshot> productsByCode,
+        ISet<long> eligibleProductIds,
+        ISet<string> zeroProductCodes)
+    {
+        if (zeroProductCodes.Contains(group.Key) ||
+            !productsByCode.TryGetValue(group.Key, out var product) ||
+            product.EffectiveStockQty <= 0 ||
+            !eligibleProductIds.Contains(product.Id))
+        {
+            return null;
+        }
+
+        return new PostImportProductGroup(product.Id, group.Select(fact => fact.ToPostImportFact()).ToArray());
+    }
 
     private static IEnumerable<PlannedBatch> BatchPlans(ImportPlan plan)
     {

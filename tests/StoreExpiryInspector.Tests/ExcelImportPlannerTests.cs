@@ -95,11 +95,20 @@ public sealed class ExcelImportPlannerTests
 
         var plan = new ExcelImportPlanner().Plan(context, Classify(
             Row(2, category: "食品", code: "P", expiry: "2026-12-31"),
-            Row(3, category: "宠物", code: "P", expiry: "2027-12-31")));
+            Row(3, category: "宠物", code: "P", expiry: "2026-12-31")));
 
         Assert.Empty(plan.NewProducts);
         Assert.Empty(plan.NewBatches);
         Assert.Contains(plan.Preview.PlanningIssues, issue => issue.Code == "product_scope_policy_conflict" && issue.ExcelRowNumber == 2);
+    }
+
+    [Fact]
+    public void GeneralScopeComparisonDoesNotOverflowForLargeValidShelfLife()
+    {
+        var scope = ProductCategoryScopes.Resolve("日用", int.MaxValue, "Y");
+
+        Assert.Equal(ExpiryManagementStatus.Managed, scope.ExpiryManagementStatus);
+        Assert.Equal(ExpiryPolicies.GeneralLong, scope.PolicyCode);
     }
 
     [Fact]

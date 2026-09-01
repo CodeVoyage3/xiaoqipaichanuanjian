@@ -37,11 +37,11 @@ public static class ProductCategoryScopes
             ? Managed(categoryCode, ExpiryPolicies.GeneralLong)
             : Unmanaged(categoryCode, ExpiryManagementStatus.Unresolved);
 
-    private static int ToDays(int value, string unit) => unit switch
+    private static long ToDays(int value, string unit) => unit switch
     {
         "D" => value,
-        "M" => checked(value * 30),
-        "Y" => checked(value * 365),
+        "M" => (long)value * 30,
+        "Y" => (long)value * 365,
         _ => throw new ArgumentOutOfRangeException(nameof(unit))
     };
 
