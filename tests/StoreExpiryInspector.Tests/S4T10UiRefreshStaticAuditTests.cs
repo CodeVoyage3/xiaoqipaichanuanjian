@@ -84,7 +84,14 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("ItemTemplate", window, StringComparison.Ordinal);
         Assert.Contains("new(\"全部阶段\", null)", viewModels, StringComparison.Ordinal);
         Assert.Contains("Dashboard.ExpiredCount", window, StringComparison.Ordinal);
-        Assert.DoesNotContain("Content=\"搜索\"", window, StringComparison.Ordinal);
+        var dashboardStart = window.IndexOf("<!-- 首页", StringComparison.Ordinal);
+        var pendingStart = window.IndexOf("<!-- 待排查任务", dashboardStart, StringComparison.Ordinal);
+        var historyStart = window.IndexOf("<!-- 排查历史", pendingStart, StringComparison.Ordinal);
+        Assert.True(dashboardStart >= 0 && pendingStart > dashboardStart && historyStart > pendingStart);
+        var dashboard = window[dashboardStart..pendingStart];
+        var pending = window[pendingStart..historyStart];
+        Assert.Contains("Command=\"{Binding SearchTasksCommand}\"", SearchButtonMarkup(dashboard), StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding PendingTasks.SearchCommand}\"", SearchButtonMarkup(pending), StringComparison.Ordinal);
         Assert.DoesNotContain("Text=\"（以当前 Application 结果为准）\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("SubmissionHintText", window, StringComparison.Ordinal);
         Assert.DoesNotContain("查看导入记录", window, StringComparison.Ordinal);
@@ -134,6 +141,8 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var detail = window.Substring(detailStart, detailEnd - detailStart);
         Assert.Equal(1, Count(detail, "<ScrollViewer"));
         Assert.Contains("x:Name=\"DetailScrollViewer\"", detail, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"InspectionDetailRoot\"", detail, StringComparison.Ordinal);
+        Assert.Contains("CanContentScroll=\"False\"", detail, StringComparison.Ordinal);
         Assert.Contains("ItemsSource=\"{Binding Detail.TaskItems}\"", detail, StringComparison.Ordinal);
         Assert.Contains("ItemsSource=\"{Binding Detail.NormalBatches}\"", detail, StringComparison.Ordinal);
         Assert.DoesNotContain("<DataGrid", detail, StringComparison.Ordinal);
@@ -149,7 +158,7 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var taskItemsContainer = detail.LastIndexOf("<Border", taskItems, StringComparison.Ordinal);
         Assert.True(taskItemsContainer >= 0);
         Assert.Contains("Grid.Row=\"1\"", detail[taskItemsContainer..taskItems], StringComparison.Ordinal);
-        var footer = detail.IndexOf("Grid Grid.Row=\"1\"", detailScrollEnd, StringComparison.Ordinal);
+        var footer = detail.IndexOf("Grid Grid.Row=\"2\"", detailScrollEnd, StringComparison.Ordinal);
         Assert.True(footer > detailScrollEnd, "固定底栏必须位于详情滚动区之外");
         var expanderEnd = detail.IndexOf("</Expander>", expanderStart, StringComparison.Ordinal);
         Assert.True(expanderStart >= 0 && expanderEnd > expanderStart);
@@ -192,6 +201,15 @@ public sealed class S4T10UiRefreshStaticAuditTests
         }
 
         return count;
+    }
+
+    private static string SearchButtonMarkup(string section)
+    {
+        var start = section.IndexOf("Content=\"搜索\"", StringComparison.Ordinal);
+        Assert.True(start >= 0, "未找到可见搜索按钮。");
+        var end = section.IndexOf("/>", start, StringComparison.Ordinal);
+        Assert.True(end > start, "未找到可见搜索按钮结束标记。");
+        return section[start..(end + 2)];
     }
 
     private static string StyleBlock(string source, string marker)

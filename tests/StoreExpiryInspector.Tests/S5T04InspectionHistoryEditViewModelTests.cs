@@ -159,7 +159,7 @@ public sealed class S5T04InspectionHistoryEditViewModelTests
 
         Assert.True(vm.IsDetailNotFound);
         Assert.False(vm.HasDetail);
-        Assert.Equal("正式排查明细不存在或已失效", vm.EditFeedbackMessage);
+        Assert.Equal("正式排查批次不存在或已失效", vm.EditFeedbackMessage);
         Assert.DoesNotContain("成功", vm.EditFeedbackMessage, StringComparison.Ordinal);
         Assert.False(vm.HasEditError);
     }

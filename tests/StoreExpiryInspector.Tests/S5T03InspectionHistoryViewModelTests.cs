@@ -112,6 +112,8 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Equal(detail.SubmittedAtUtc, vm.Detail.SubmittedAtUtc);
         Assert.Equal("HISTORY-42", vm.Detail!.ProductCodeSnapshot);
         Assert.Equal(2, vm.DetailItems.Count);
+        Assert.Equal(new[] { 1, 2 }, vm.DisplayDetailItems.Select(item => item.DisplayBatchNumber));
+        Assert.Equal(new[] { 4201L, 4202L }, vm.DetailItems.Select(item => item.InspectionItemId));
         Assert.Equal(0, vm.DetailItems[0].CheckedQty);
         Assert.Null(vm.DetailItems[0].ProductionDateSnapshot);
         Assert.Equal("none", vm.DetailItems[0].StageSnapshot);
@@ -129,6 +131,53 @@ public sealed class S5T03InspectionHistoryViewModelTests
         await WaitUntil(() => vm.HasDetail);
         Assert.True(vm.IsDetailVisible);
         Assert.Same(record, vm.SelectedRecord);
+    }
+
+    [Fact]
+    public async Task DetailDisplayNumbersAreContiguousWhileRevisionAndSaveKeepInternalItemId()
+    {
+        var record = ListItem(42, "HISTORY-42");
+        var items = new[]
+        {
+            DetailItem(7007, 42, 1),
+            DetailItem(7013, 42, 2),
+            DetailItem(7021, 42, 3)
+        };
+        long lastRevisionItemId = 0;
+        InspectionHistoryEditRequest? savedRequest = null;
+        var vm = new InspectionHistoryViewModel(
+            () => new[] { record },
+            _ => new(42, "found", Detail(42, "HISTORY-42", items)),
+            (_, itemId) =>
+            {
+                Interlocked.Exchange(ref lastRevisionItemId, itemId);
+                return RevisionResult(42, itemId, 2);
+            },
+            editHistory: request =>
+            {
+                savedRequest = request;
+                return new(request.InspectionId, request.InspectionItemId, "no_change", 2, 2, null, request.ChangedAtUtc);
+            },
+            confirmEdit: _ => true,
+            utcNow: () => Utc(15));
+
+        await vm.LoadAsync();
+        vm.OpenDetail(record);
+        await WaitUntil(() => vm.HasDetail);
+
+        Assert.Equal(new[] { 1, 2, 3 }, vm.DisplayDetailItems.Select(item => item.DisplayBatchNumber));
+        Assert.Equal(new[] { 7007L, 7013L, 7021L }, vm.DetailItems.Select(item => item.InspectionItemId));
+
+        vm.SelectedDetailItem = vm.DetailItems[1];
+        await WaitUntil(() => Volatile.Read(ref lastRevisionItemId) == 7013);
+        Assert.Equal(7013, vm.SelectedDetailItem!.InspectionItemId);
+
+        vm.BeginEdit();
+        vm.EditCheckedQtyText = "9";
+        await vm.SaveEditAsync();
+
+        Assert.NotNull(savedRequest);
+        Assert.Equal(7013, savedRequest!.InspectionItemId);
     }
 
     [Fact]
@@ -391,7 +440,7 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.True(start >= 0 && end > start);
         var history = window[start..end];
         var listGridStart = history.IndexOf("ItemsSource=\"{Binding History.Items}\"", StringComparison.Ordinal);
-        var detailGridStart = history.IndexOf("ItemsSource=\"{Binding History.DetailItems}\"", StringComparison.Ordinal);
+        var detailGridStart = history.IndexOf("ItemsSource=\"{Binding History.DisplayDetailItems}\"", StringComparison.Ordinal);
         Assert.True(listGridStart >= 0 && detailGridStart > listGridStart);
         var listGrid = history[listGridStart..detailGridStart];
 
@@ -405,7 +454,7 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Equal(3, historyGrids.Length);
 
         var listDataGrid = HistoryGrid(historyGrids, "{Binding History.Items}");
-        var detailDataGrid = HistoryGrid(historyGrids, "{Binding History.DetailItems}");
+        var detailDataGrid = HistoryGrid(historyGrids, "{Binding History.DisplayDetailItems}");
         var revisionDataGrid = HistoryGrid(historyGrids, "{Binding History.Revisions}");
         foreach (var dataGrid in historyGrids)
         {
@@ -418,28 +467,62 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Equal("Cell", (string?)listDataGrid.Attribute("SelectionUnit"));
         Assert.Null(listDataGrid.Attribute("SelectedItem"));
         Assert.Equal("FullRow", (string?)detailDataGrid.Attribute("SelectionUnit"));
-        Assert.Equal("{Binding History.SelectedDetailItem, Mode=TwoWay}", (string?)detailDataGrid.Attribute("SelectedItem"));
+        Assert.Equal("Item", (string?)detailDataGrid.Attribute("SelectedValuePath"));
+        Assert.Equal("{Binding History.SelectedDetailItem, Mode=TwoWay}", (string?)detailDataGrid.Attribute("SelectedValue"));
         Assert.Equal("Cell", (string?)revisionDataGrid.Attribute("SelectionUnit"));
         Assert.Equal(6, listDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
-        Assert.Equal(8, detailDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
+        Assert.Equal(7, detailDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
         Assert.Equal(3, revisionDataGrid.Elements(wpf + "DataGrid.Columns").Single().Elements().Count());
         AssertHistoryColumn(listDataGrid, "商品名称", "*", "140", "{StaticResource HistoryCellTextStyle}");
         AssertHistoryColumn(listDataGrid, "商品条码", "Auto", "138", "{StaticResource HistoryNumberTextStyle}");
         AssertHistoryColumn(listDataGrid, "商品编码", "Auto", "126", "{StaticResource HistoryNumberTextStyle}");
-        AssertHistoryColumn(listDataGrid, "正式排查时间（UTC）", "Auto", "155", "{StaticResource HistoryNumberTextStyle}");
-        AssertHistoryColumn(listDataGrid, "明细数量", "Auto", "78", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(listDataGrid, "正式排查时间", "Auto", "155", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(listDataGrid, "批次数", "Auto", "78", "{StaticResource HistoryNumberTextStyle}");
         AssertHistoryColumn(listDataGrid, "操作", "Auto", "96", null);
-        AssertHistoryColumn(detailDataGrid, "明细编号", "Auto", "76", "{StaticResource HistoryNumberTextStyle}");
-        AssertHistoryColumn(detailDataGrid, "批次编号", "Auto", "76", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(
+            detailDataGrid,
+            "批次",
+            "Auto",
+            "76",
+            "{StaticResource TableNumericCenterTextStyle}",
+            "{StaticResource TableCenterColumnHeaderStyle}");
+        var batchColumn = Assert.Single(detailDataGrid.Elements(wpf + "DataGrid.Columns")
+            .Single()
+            .Elements(), column => string.Equals((string?)column.Attribute("Header"), "批次", StringComparison.Ordinal));
+        Assert.Equal("{Binding DisplayBatchNumber}", (string?)batchColumn.Attribute("Binding"));
+        Assert.DoesNotContain("InspectionItemId", batchColumn.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("SelectedDetailItem.InspectionItemId", history, StringComparison.Ordinal);
         AssertHistoryColumn(detailDataGrid, "生产日期", "Auto", "84", "{StaticResource HistoryNumberTextStyle}");
         AssertHistoryColumn(detailDataGrid, "有效日期", "Auto", "84", "{StaticResource HistoryNumberTextStyle}");
         AssertHistoryColumn(detailDataGrid, "阶段", "Auto", "72", null);
-        AssertHistoryColumn(detailDataGrid, "累计到货", "Auto", "80", "{StaticResource HistoryNumberTextStyle}");
-        AssertHistoryColumn(detailDataGrid, "正式排查数量", "Auto", "102", "{StaticResource HistoryNumberTextStyle}");
-        AssertHistoryColumn(detailDataGrid, "更新时间（UTC）", "Auto", "155", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(
+            detailDataGrid,
+            "累计到货",
+            "Auto",
+            "80",
+            "{StaticResource TableNumericCenterTextStyle}",
+            "{StaticResource TableCenterColumnHeaderStyle}");
+        AssertHistoryColumn(
+            detailDataGrid,
+            "正式排查数量",
+            "Auto",
+            "102",
+            "{StaticResource TableNumericCenterTextStyle}",
+            "{StaticResource TableCenterColumnHeaderStyle}");
+        AssertHistoryColumn(detailDataGrid, "更新时间", "Auto", "155", "{StaticResource HistoryNumberTextStyle}");
+        var detailHeaders = detailDataGrid.Elements(wpf + "DataGrid.Columns")
+            .Single()
+            .Elements()
+            .Select(column => (string?)column.Attribute("Header"))
+            .ToArray();
+        foreach (var header in new[] { "生产日期", "有效日期", "阶段", "累计到货", "正式排查数量", "更新时间" })
+        {
+            Assert.Contains(header, detailHeaders);
+        }
+        Assert.DoesNotContain("批次编号", detailHeaders);
         AssertHistoryColumn(revisionDataGrid, "修改前数量", "*", "108", "{StaticResource HistoryNumberTextStyle}");
         AssertHistoryColumn(revisionDataGrid, "修改后数量", "*", "108", "{StaticResource HistoryNumberTextStyle}");
-        AssertHistoryColumn(revisionDataGrid, "修改时间（UTC）", "2*", "196", "{StaticResource HistoryNumberTextStyle}");
+        AssertHistoryColumn(revisionDataGrid, "修改时间", "2*", "196", "{StaticResource HistoryNumberTextStyle}");
 
         var historyCellTextStyle = Assert.Single(xaml.Descendants(wpf + "Style"), style =>
             string.Equals((string?)style.Attribute(x + "Key"), "HistoryCellTextStyle", StringComparison.Ordinal));
@@ -517,7 +600,8 @@ public sealed class S5T03InspectionHistoryViewModelTests
         string header,
         string width,
         string minWidth,
-        string? elementStyle)
+        string? elementStyle,
+        string? headerStyle = null)
     {
         XNamespace wpf = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         var columns = grid.Elements(wpf + "DataGrid.Columns").Single().Elements();
@@ -528,6 +612,10 @@ public sealed class S5T03InspectionHistoryViewModelTests
         Assert.Equal(width, (string?)column.Attribute("Width"));
         Assert.Equal(minWidth, (string?)column.Attribute("MinWidth"));
         Assert.Equal(elementStyle, (string?)column.Attribute("ElementStyle"));
+        if (headerStyle is not null)
+        {
+            Assert.Equal(headerStyle, (string?)column.Attribute("HeaderStyle"));
+        }
     }
 
     private static InspectionHistoryViewModel CreateVm(

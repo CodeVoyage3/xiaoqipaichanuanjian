@@ -395,6 +395,27 @@ public sealed class S4T06ImportViewModelTests
     }
 
     [Fact]
+    public async Task ImportSuccessSummaryAppearsOnlyAfterTheImportCompletes()
+    {
+        using var fixture = TestFixture.Create();
+        var vm = new ImportViewModel(
+            parsePreview: fixture.Coordinator.Parse,
+            confirmPreview: fixture.Coordinator.Confirm,
+            executeImport: fixture.Coordinator.Execute,
+            utcNow: () => fixture.UtcNow);
+
+        await vm.SelectFileAsync(fixture.Path);
+
+        Assert.Equal(string.Empty, vm.SuccessSummaryText);
+        Assert.DoesNotContain("导入成功", vm.StatusMessage, StringComparison.Ordinal);
+
+        await vm.ConfirmAsync();
+
+        Assert.Contains("新增商品 1 个", vm.SuccessSummaryText, StringComparison.Ordinal);
+        Assert.Contains("新增批次 1 个", vm.SuccessSummaryText, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RefreshFailureKeepsSuccessfulImportAndRetryOnlyRefreshesPages()
     {
         using var fixture = TestFixture.Create();

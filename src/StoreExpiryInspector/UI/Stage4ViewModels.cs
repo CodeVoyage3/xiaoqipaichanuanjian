@@ -99,12 +99,55 @@ public sealed class DateOnlyDisplayConverter : IValueConverter
         Binding.DoNothing;
 }
 
+public sealed class HumanReadableFileSizeConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not IConvertible convertible)
+        {
+            return "—";
+        }
+
+        long bytes;
+        try
+        {
+            bytes = convertible.ToInt64(CultureInfo.InvariantCulture);
+        }
+        catch (Exception) when (value is not long)
+        {
+            return "—";
+        }
+
+        if (bytes < 0)
+        {
+            return "—";
+        }
+
+        if (bytes < 1024)
+        {
+            return $"{bytes:N0} B";
+        }
+
+        var kibibytes = bytes / 1024d;
+        if (kibibytes < 1024)
+        {
+            return $"{kibibytes:0.#} KB";
+        }
+
+        var mebibytes = kibibytes / 1024d;
+        return $"{mebibytes:0.#} MB";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
 public sealed class UtcDateTimeDisplayConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
         value is DateTime date
             ? DateTime.SpecifyKind(date, DateTimeKind.Utc)
-                .ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)
+                .ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
             : "—";
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
@@ -143,6 +186,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private static readonly TimeSpan StaleAfter = TimeSpan.FromDays(7);
 
     private readonly Func<InspectionDashboardResult> _loadDashboard;
+    private readonly Func<InspectionTaskSearchRequest, InspectionTaskSearchResult>? _searchTasks;
     private readonly Action<Exception>? _logException;
     private readonly Func<DateTime> _utcNow;
     private readonly Action? _openTasks;
@@ -159,23 +203,70 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _productCount;
     private int _batchCount;
     private DateTime? _lastSuccessfulImportAtUtc;
+    private bool _isSearchActive;
+    private int _searchResultCount;
 
     public DashboardViewModel(
         Func<InspectionDashboardResult> loadDashboard,
         Action<Exception>? logException = null,
         Func<DateTime>? utcNow = null,
-        Action? openTasks = null)
+        Action? openTasks = null,
+        Func<InspectionTaskSearchRequest, InspectionTaskSearchResult>? searchTasks = null)
     {
         ArgumentNullException.ThrowIfNull(loadDashboard);
         _loadDashboard = loadDashboard;
         _logException = logException;
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _openTasks = openTasks;
+        _searchTasks = searchTasks;
         RefreshCommand = new RelayCommand(parameter => { _ = LoadAsync(); });
         ViewAllTasksCommand = new RelayCommand(_ => _openTasks?.Invoke());
     }
 
     public ObservableCollection<InspectionTaskListItem> UrgentTasks { get; } = [];
+
+    public bool IsSearchActive
+    {
+        get => _isSearchActive;
+        private set
+        {
+            if (_isSearchActive == value)
+            {
+                return;
+            }
+
+            _isSearchActive = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasNoSearchResults));
+            OnPropertyChanged(nameof(SearchResultText));
+        }
+    }
+
+    public int SearchResultCount
+    {
+        get => _searchResultCount;
+        private set
+        {
+            if (_searchResultCount == value)
+            {
+                return;
+            }
+
+            _searchResultCount = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasNoSearchResults));
+            OnPropertyChanged(nameof(SearchResultText));
+        }
+    }
+
+    public bool HasNoSearchResults => IsSearchActive
+        && !IsLoading
+        && !HasError
+        && SearchResultCount == 0;
+
+    public string SearchResultText => IsSearchActive
+        ? $"搜索结果：{SearchResultCount} 个商品"
+        : string.Empty;
 
     public RelayCommand RefreshCommand { get; }
 
@@ -193,6 +284,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
             _isLoading = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasNoSearchResults));
         }
     }
 
@@ -211,6 +303,7 @@ public sealed class DashboardViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasLoadedResult));
             OnPropertyChanged(nameof(HasNoImportData));
             OnPropertyChanged(nameof(HasNoOpenTasks));
+            OnPropertyChanged(nameof(HasNoSearchResults));
             OnPropertyChanged(nameof(IsStale));
         }
     }
@@ -394,12 +487,76 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public string FreshnessWarningText => IsStale ? "数据已超过7天未更新" : string.Empty;
 
+    public async Task SearchAsync(string? searchText)
+    {
+        var normalizedSearchText = searchText?.Trim() ?? string.Empty;
+        if (normalizedSearchText.Length == 0)
+        {
+            await LoadAsync();
+            return;
+        }
+
+        if (_searchTasks is null)
+        {
+            _openTasks?.Invoke();
+            return;
+        }
+
+        var version = Interlocked.Increment(ref _loadVersion);
+        IsLoading = true;
+        HasError = false;
+        ErrorMessage = string.Empty;
+        IsSearchActive = true;
+
+        try
+        {
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _searchTasks(
+                new InspectionTaskSearchRequest(normalizedSearchText, null, 1, 20))));
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
+            UrgentTasks.Clear();
+            foreach (var item in result.Items)
+            {
+                UrgentTasks.Add(item);
+            }
+
+            SearchResultCount = result.TotalCount;
+            HasLoadedResult = true;
+        }
+        catch (Exception exception)
+        {
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
+            _logException?.Invoke(exception);
+            UrgentTasks.Clear();
+            SearchResultCount = 0;
+            HasLoadedResult = false;
+            HasError = true;
+            ErrorMessage = "首页搜索失败";
+        }
+        finally
+        {
+            if (version == _loadVersion)
+            {
+                IsLoading = false;
+            }
+        }
+    }
+
     public async Task LoadAsync()
     {
         var version = Interlocked.Increment(ref _loadVersion);
         IsLoading = true;
         HasError = false;
         ErrorMessage = string.Empty;
+        IsSearchActive = false;
+        SearchResultCount = 0;
         OnPropertyChanged(nameof(LastImportText));
 
         try
@@ -604,6 +761,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
             _searchText = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSearchText));
             OnPropertyChanged(nameof(IsFilterActive));
             OnPropertyChanged(nameof(IsFilterEmpty));
             OnPropertyChanged(nameof(IsDatabaseEmpty));
@@ -696,6 +854,8 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
     public string PageSummary => $"第 {CurrentPage} / {TotalPages} 页 · 共 {TotalCount} 个商品";
 
+    public bool HasSearchText => !string.IsNullOrEmpty(SearchText);
+
     public bool IsFilterActive => !string.IsNullOrWhiteSpace(SearchText)
         || !string.IsNullOrWhiteSpace(SelectedStage);
 
@@ -718,6 +878,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
         _selectedStage = null;
         CurrentPage = 1;
         OnPropertyChanged(nameof(SearchText));
+        OnPropertyChanged(nameof(HasSearchText));
         OnPropertyChanged(nameof(SelectedStage));
         OnPropertyChanged(nameof(IsFilterActive));
         OnPropertyChanged(nameof(IsFilterEmpty));
@@ -839,12 +1000,14 @@ public sealed class ShellViewModel : ViewModelBase
             "StoreExpiryInspector",
             "logs"));
         var logger = logException ?? LogException;
+        var searchTasks = taskLoader ?? SearchTasks;
         Dashboard = new DashboardViewModel(
             dashboardLoader ?? LoadDashboard,
             logger,
             utcNow,
-            () => NavigateTo(ShellPage.PendingTasks));
-        PendingTasks = new PendingTasksViewModel(taskLoader ?? SearchTasks, logger);
+            () => NavigateTo(ShellPage.PendingTasks),
+            searchTasks);
+        PendingTasks = new PendingTasksViewModel(searchTasks, logger);
         History = new InspectionHistoryViewModel(
             historyListLoader ?? LoadHistory,
             historyDetailLoader ?? LoadHistoryDetail,
@@ -881,7 +1044,8 @@ public sealed class ShellViewModel : ViewModelBase
             submit: submit ?? SubmitInspection);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => CanNavigate);
-        SearchTasksCommand = new RelayCommand(_ => { _ = NavigateToPendingTasksAndSearchAsync(); }, _ => CanNavigate);
+        SearchTasksCommand = new RelayCommand(_ => { _ = SearchDashboardAsync(); }, _ => CanNavigate);
+        ClearDashboardSearchCommand = new RelayCommand(_ => { _ = ClearDashboardSearchAsync(); }, _ => CanNavigate);
         NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => CanNavigate);
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => CanNavigate);
         NavigateBackupRestoreCommand = new RelayCommand(_ => NavigateTo(ShellPage.BackupRestore), _ => CanNavigate);
@@ -945,6 +1109,8 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand NavigateTasksCommand { get; }
 
     public RelayCommand SearchTasksCommand { get; }
+
+    public RelayCommand ClearDashboardSearchCommand { get; }
 
     public RelayCommand NavigateHistoryCommand { get; }
 
@@ -1077,10 +1243,13 @@ public sealed class ShellViewModel : ViewModelBase
     private async Task ReturnFromDetailAsync() =>
         await NavigateAwayFromDetailAsync(_detailReturnPage);
 
-    private async Task NavigateToPendingTasksAndSearchAsync()
+    private async Task SearchDashboardAsync() =>
+        await Dashboard.SearchAsync(PendingTasks.SearchText);
+
+    private async Task ClearDashboardSearchAsync()
     {
-        await NavigateToAsync(ShellPage.PendingTasks);
-        await PendingTasks.SearchAsync();
+        PendingTasks.SearchText = string.Empty;
+        await Dashboard.LoadAsync();
     }
 
     private async Task NavigateAwayFromDetailAsync(ShellPage page)
@@ -1222,6 +1391,7 @@ public sealed class ShellViewModel : ViewModelBase
         NavigateHomeCommand.RaiseCanExecuteChanged();
         NavigateTasksCommand.RaiseCanExecuteChanged();
         SearchTasksCommand.RaiseCanExecuteChanged();
+        ClearDashboardSearchCommand.RaiseCanExecuteChanged();
         NavigateHistoryCommand.RaiseCanExecuteChanged();
         NavigateImportCommand.RaiseCanExecuteChanged();
         NavigateBackupRestoreCommand.RaiseCanExecuteChanged();

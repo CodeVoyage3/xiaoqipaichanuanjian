@@ -509,6 +509,60 @@ public sealed class S4T08InspectionSubmissionViewModelTests
         Assert.Equal("排查详情加载失败", vm.ErrorMessage);
     }
 
+    [Theory]
+    [InlineData("InspectorName is required for submission.", "请填写排查人后再完成排查")]
+    [InlineData("CheckDate is required for submission.", "请选择排查日期后再完成排查。")]
+    [InlineData("Task item 101 has no checked quantity.", "请填写所有批次的本次排查数量后再提交。")]
+    public async Task KnownApplicationValidationFailuresAreMappedToUserFacingMessages(
+        string message,
+        string expectedMessage)
+    {
+        var vm = CreateVm(
+            _ => OpenResult(42, checkedQty: 1),
+            submit: _ => throw new InvalidOperationException(message));
+
+        await vm.LoadAsync(42);
+        await vm.SubmitAsync();
+
+        Assert.Equal(expectedMessage, vm.ActionErrorMessage);
+    }
+
+    [Fact]
+    public async Task InspectorNameValidationIsLocalizedAndHighlightsTheField()
+    {
+        var vm = CreateVm(
+            _ => OpenResult(42, checkedQty: 1),
+            submit: _ => throw new InvalidOperationException("InspectorName is required for submission."));
+
+        await vm.LoadAsync(42);
+        await vm.SubmitAsync();
+
+        Assert.Equal("请填写排查人后再完成排查", vm.ActionErrorMessage);
+        Assert.True(vm.HasInspectorNameError);
+
+        vm.InspectorName = "张三";
+
+        Assert.False(vm.HasInspectorNameError);
+        Assert.False(vm.HasActionError);
+    }
+
+    [Theory]
+    [InlineData("internal submission invariant failed")]
+    [InlineData("内部提交异常，禁止透传")]
+    public async Task UnknownSubmissionFailureUsesTheSafeGenericMessage(string message)
+    {
+        var vm = CreateVm(
+            _ => OpenResult(42, checkedQty: 1),
+            submit: _ => throw new InvalidOperationException(message));
+
+        await vm.LoadAsync(42);
+        await vm.SubmitAsync();
+
+        Assert.Equal("排查提交失败，请重试。", vm.ActionErrorMessage);
+        Assert.DoesNotContain(message, vm.ActionErrorMessage, StringComparison.Ordinal);
+        Assert.False(vm.HasInspectorNameError);
+    }
+
     [Fact]
     public async Task SuccessfulSubmissionStaysCompletedWhenListRefreshFails()
     {

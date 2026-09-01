@@ -750,6 +750,14 @@
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
             <Setter Property="Padding" Value="12,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self}}" Value="批次数">
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self}}" Value="批次">
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="DataGridCell">

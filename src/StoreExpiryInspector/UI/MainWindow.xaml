@@ -26,6 +26,7 @@
         <ui:Stage4BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <ui:Stage4InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <ui:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
+        <ui:HumanReadableFileSizeConverter x:Key="HumanReadableFileSizeConverter" />
 
         <Style x:Key="DraftFooterStatusTextStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
@@ -211,7 +212,6 @@
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
-                                <Setter TargetName="Chrome" Property="BorderThickness" Value="2" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Chrome" Property="Opacity" Value="0.56" />
@@ -220,6 +220,17 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="InspectionInspectorNameTextBoxStyle"
+               TargetType="TextBox"
+               BasedOn="{StaticResource PageTextBoxStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Detail.HasInspectorNameError}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource ErrorSurfaceBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="ReadOnlyIdentityTextBoxStyle"
@@ -244,11 +255,17 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <Style x:Key="PendingProductNameTextStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource TableCellTextStyle}">
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+
         <Style x:Key="TableNumericTextStyle"
                TargetType="TextBlock"
                BasedOn="{StaticResource TableCellTextStyle}">
             <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
 
         <Style x:Key="TableCenterColumnHeaderStyle"
@@ -303,6 +320,9 @@
                 <DataTrigger Binding="{Binding Dashboard.HasNoOpenTasks}" Value="True">
                     <Setter Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Dashboard.HasNoSearchResults}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -346,15 +366,116 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        <!-- UIUX-R03: remaining pages use one restrained work-surface language. -->
+        <Style x:Key="PageSectionBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+
+        <Style x:Key="ImportAvailabilityTextStyle" TargetType="TextBlock">
+            <Setter Property="Visibility" Value="{Binding Import.CanConfirm, Converter={StaticResource InverseBoolToVisibility}}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Import.IsSucceeded}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="StateMessageBorderStyle"
+               TargetType="Border"
+               BasedOn="{StaticResource PageSectionBorderStyle}">
+            <Setter Property="Background" Value="{DynamicResource SurfaceSubtleBrush}" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+            <Setter Property="MinHeight" Value="112" />
+        </Style>
+
+        <Style x:Key="HistoryListDataGridStyle"
+               TargetType="DataGrid"
+               BasedOn="{StaticResource {x:Type DataGrid}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding History.IsLoading}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding History.HasError}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding History.HasEmptyResult}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HistoryListSurfaceStyle"
+               TargetType="Border"
+               BasedOn="{StaticResource PageSectionBorderStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding History.IsLoading}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding History.HasError}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding History.HasEmptyResult}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="BackupListDataGridStyle"
+               TargetType="DataGrid"
+               BasedOn="{StaticResource {x:Type DataGrid}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding BackupRestore.IsLoading}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding BackupRestore.HasError}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding BackupRestore.HasNoBackups}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding BackupRestore.IsLocked}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="BackupListSurfaceStyle"
+               TargetType="Border"
+               BasedOn="{StaticResource PageSectionBorderStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding BackupRestore.IsLoading}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding BackupRestore.HasError}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding BackupRestore.HasNoBackups}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding BackupRestore.IsLocked}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="ShellRoot"
+          MinHeight="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="ShellColumn" Width="208" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0"
+        <Border Grid.Row="0"
+                Grid.Column="0"
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,1,0">
@@ -365,8 +486,23 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Margin="16,24,12,24" Orientation="Horizontal">
-                    <Border Width="32"
+                    <Grid x:Name="NavigationBrandArea" Margin="12,20,12,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="NavigationToggleButton"
+                            Content="‹"
+                            Click="ToggleNavigation_Click"
+                            Style="{StaticResource LinkButtonStyle}"
+                            Width="32"
+                            Height="32"
+                            Padding="0"
+                            ToolTip="收起导航"
+                            AutomationProperties.Name="收起或展开导航" />
+                    <Border Grid.Column="1"
+                            Width="32"
                             Height="32"
                             Background="{DynamicResource PrimaryActionBrush}"
                             CornerRadius="7"
@@ -376,16 +512,20 @@
                               Stretch="Uniform"
                               Margin="7" />
                     </Border>
-                    <TextBlock Margin="8,0,0,0"
+                    <TextBlock x:Name="NavigationBrandText"
+                               Grid.Column="2"
+                               Margin="8,0,0,0"
                                Text="门店效期排查软件"
                                FontSize="16"
                                FontWeight="SemiBold"
                                TextWrapping="NoWrap"
                                VerticalAlignment="Center" />
-                </StackPanel>
+                </Grid>
 
                 <StackPanel Grid.Row="1" Margin="12,0,12,0">
-                    <Button AutomationProperties.Name="首页"
+                    <Button x:Name="NavigationHomeButton"
+                            AutomationProperties.Name="首页"
+                            ToolTip="首页"
                             Command="{Binding NavigateHomeCommand}"
                             Tag="{Binding IsDashboardVisible}"
                             Style="{StaticResource NavButtonStyle}">
@@ -394,10 +534,12 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationHomeText" Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button AutomationProperties.Name="待排查任务"
+                    <Button x:Name="NavigationTasksButton"
+                            AutomationProperties.Name="待排查任务"
+                            ToolTip="待排查任务"
                             Command="{Binding NavigateTasksCommand}"
                             Tag="{Binding IsPendingTasksVisible}"
                             Style="{StaticResource NavButtonStyle}">
@@ -406,10 +548,12 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationTasksText" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button AutomationProperties.Name="排查历史"
+                    <Button x:Name="NavigationHistoryButton"
+                            AutomationProperties.Name="排查历史"
+                            ToolTip="排查历史"
                             Command="{Binding NavigateHistoryCommand}"
                             Tag="{Binding IsHistoryVisible}"
                             Style="{StaticResource NavButtonStyle}">
@@ -418,10 +562,12 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock Text="排查历史" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationHistoryText" Text="排查历史" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button AutomationProperties.Name="数据导入"
+                    <Button x:Name="NavigationImportButton"
+                            AutomationProperties.Name="数据导入"
+                            ToolTip="数据导入"
                             Command="{Binding NavigateImportCommand}"
                             Tag="{Binding IsImportVisible}"
                             Style="{StaticResource NavButtonStyle}">
@@ -430,10 +576,12 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationImportText" Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button AutomationProperties.Name="数据备份与恢复"
+                    <Button x:Name="NavigationBackupButton"
+                            AutomationProperties.Name="数据备份与恢复"
+                            ToolTip="数据备份与恢复"
                             Command="{Binding NavigateBackupRestoreCommand}"
                             Tag="{Binding IsBackupRestoreVisible}"
                             Style="{StaticResource NavButtonStyle}">
@@ -442,10 +590,11 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationBackupText" Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button AutomationProperties.Name="设置"
+                    <Button x:Name="NavigationSettingsButton"
+                            AutomationProperties.Name="设置"
                             ToolTip="提醒时间与开机自启动"
                             Click="Settings_Click"
                             IsEnabled="{Binding CanOpenSettings}"
@@ -455,7 +604,7 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationSettingsText" Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -465,7 +614,8 @@
                     <Border BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="0,1,0,0"
                             Margin="0,0,0,12" />
-                    <TextBlock Text="软件版本：v1.0.0"
+                    <TextBlock x:Name="NavigationVersionText"
+                               Text="软件版本：v1.0.0"
                                FontSize="12"
                                Foreground="{DynamicResource SecondaryTextBrush}" />
                 </StackPanel>
@@ -473,8 +623,11 @@
         </Border>
 
         <Grid x:Name="ContentRoot"
+              Grid.Row="0"
               Grid.Column="1"
-              Margin="24,0,24,0">
+              Margin="24,0,24,0"
+              MinHeight="0"
+              VerticalAlignment="Stretch">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -484,8 +637,8 @@
                   Visibility="{Binding IsInspectionDetailVisible, Converter={StaticResource InverseBoolToVisibility}}">
                 <Grid.Style>
                     <Style TargetType="Grid">
-                        <Setter Property="Height" Value="Auto" />
-                        <Setter Property="Margin" Value="0,24,0,20" />
+                        <Setter Property="Height" Value="72" />
+                        <Setter Property="Margin" Value="0" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsDashboardVisible}" Value="True">
                                 <Setter Property="Height" Value="72" />
@@ -511,29 +664,6 @@
                                FontSize="14"
                                Foreground="{DynamicResource SecondaryTextBrush}" />
                 </StackPanel>
-                <Button Grid.Column="1"
-                        AutomationProperties.Name="导入数据"
-                        Content="导入数据"
-                        Command="{Binding NavigateImportCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Visibility="{Binding IsDashboardVisible, Converter={StaticResource BoolToVisibility}}"
-                        VerticalAlignment="Center"
-                        Padding="18,0">
-                    <Button.ContentTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource ImportIcon}"
-                                      Width="18"
-                                      Height="18"
-                                      Stroke="White"
-                                      StrokeThickness="1.7"
-                                      Fill="Transparent"
-                                      Margin="0,0,8,0" />
-                                <TextBlock Text="导入数据" Foreground="White" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </Button.ContentTemplate>
-                </Button>
             </Grid>
 
             <Grid Grid.Row="0"
@@ -562,7 +692,13 @@
                         VerticalAlignment="Center" />
             </Grid>
 
-            <Grid Grid.Row="1">
+            <Grid x:Name="ContentPageRoot"
+                  Grid.Row="1"
+                  MinHeight="0"
+                  VerticalAlignment="Stretch">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <!-- 首页 -->
                 <Grid Visibility="{Binding IsDashboardVisible, Converter={StaticResource BoolToVisibility}}">
                     <ScrollViewer x:Name="DashboardScrollViewer"
@@ -579,6 +715,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="28" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Path Data="{StaticResource SearchIcon}"
@@ -602,6 +739,28 @@
                                             <KeyBinding Key="Enter" Command="{Binding SearchTasksCommand}" />
                                         </TextBox.InputBindings>
                                     </TextBox>
+                                    <Button Grid.Column="2"
+                                            Content="搜索"
+                                            Command="{Binding SearchTasksCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="72"
+                                            Height="32"
+                                            Padding="8,0"
+                                            Margin="8,0,4,0"
+                                            ToolTip="搜索"
+                                            AutomationProperties.Name="搜索"
+                                            />
+                                    <Button Grid.Column="3"
+                                            Content="×"
+                                            Command="{Binding ClearDashboardSearchCommand}"
+                                            Style="{StaticResource LinkButtonStyle}"
+                                            FontSize="18"
+                                            Width="32"
+                                            Height="32"
+                                            Padding="0"
+                                            ToolTip="清空首页搜索"
+                                            AutomationProperties.Name="清空首页搜索"
+                                            Visibility="{Binding PendingTasks.HasSearchText, Converter={StaticResource BoolToVisibility}}" />
                                     <TextBlock Grid.Column="1"
                                                Text="搜索商品名称 / 商品条码 / 商品编码"
                                                IsHitTestVisible="False"
@@ -747,6 +906,16 @@
                                        FontSize="14"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding Dashboard.SearchResultText}"
+                                       Visibility="{Binding Dashboard.IsSearchActive, Converter={StaticResource BoolToVisibility}}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Text="没有找到符合条件的待排查商品。"
+                                       Visibility="{Binding Dashboard.HasNoSearchResults, Converter={StaticResource BoolToVisibility}}"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Margin="0,0,0,8" />
                             <StackPanel Visibility="{Binding Dashboard.HasError, Converter={StaticResource BoolToVisibility}}"
                                          Margin="0,0,0,8">
                                 <TextBlock Text="首页数据加载失败"
@@ -879,8 +1048,20 @@
                                     VerticalAlignment="Center"
                                     Margin="0,0,6,0"
                                     ToolTip="清空搜索和阶段筛选"
+                                    AutomationProperties.Name="清空搜索和阶段筛选"
                                     Visibility="{Binding PendingTasks.IsFilterActive, Converter={StaticResource BoolToVisibility}}" />
                         </Grid>
+                        <Button Grid.Column="1"
+                                    Content="搜索"
+                                    Command="{Binding PendingTasks.SearchCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Width="72"
+                                    Height="42"
+                                    Padding="8,0"
+                                    Margin="8,0,0,0"
+                                    ToolTip="搜索"
+                                    AutomationProperties.Name="搜索"
+                                    />
                     </Grid>
 
                     <Grid Grid.Row="1" Margin="0,0,0,8">
@@ -988,10 +1169,13 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="商品名称" Binding="{Binding ProductName}" Width="*" ElementStyle="{StaticResource TableCellTextStyle}" />
-                                    <DataGridTextColumn Header="商品条码（可复制）" Binding="{Binding ProductBarcode}" Width="142" ElementStyle="{StaticResource TableCellTextStyle}" />
-                                    <DataGridTextColumn Header="商品编码（可复制）" Binding="{Binding ProductCode}" Width="142" ElementStyle="{StaticResource TableCellTextStyle}" />
-                                    <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="76" ElementStyle="{StaticResource TableNumericTextStyle}" />
+                                    <DataGridTextColumn Header="商品名称" Binding="{Binding ProductName}" Width="*" ElementStyle="{StaticResource PendingProductNameTextStyle}" />
+                                    <DataGridTextColumn Header="商品条码" Binding="{Binding ProductBarcode}" Width="142" ElementStyle="{StaticResource TableCellTextStyle}" />
+                                    <DataGridTextColumn Header="商品编码" Binding="{Binding ProductCode}" Width="142" ElementStyle="{StaticResource TableCellTextStyle}" />
+                                    <DataGridTextColumn Header="批次数"
+                                                         Binding="{Binding PendingBatchCount}"
+                                                         Width="76"
+                                                         ElementStyle="{StaticResource TableNumericTextStyle}" />
                                     <DataGridTextColumn Header="库存"
                                                          HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"
                                                          Binding="{Binding EffectiveStockQty}"
@@ -1083,7 +1267,10 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="批次" Binding="{Binding PendingBatchCount}" Width="70" ElementStyle="{StaticResource TableNumericTextStyle}" />
+                                    <DataGridTextColumn Header="批次"
+                                                         Binding="{Binding PendingBatchCount}"
+                                                         Width="70"
+                                                         ElementStyle="{StaticResource TableNumericTextStyle}" />
                                     <DataGridTextColumn Header="库存"
                                                          HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"
                                                          Binding="{Binding EffectiveStockQty}"
@@ -1152,7 +1339,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <Grid Grid.Row="4" Margin="0,12,0,0">
+                    <Grid Grid.Row="4" Margin="0,12,0,16">
                         <TextBlock Text="{Binding PendingTasks.PageSummary}"
                                    VerticalAlignment="Center"
                                    FontSize="13"
@@ -1227,16 +1414,14 @@
                                     Command="{Binding History.RefreshCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Width="88"
-                                    HorizontalAlignment="Right" />
+                                    HorizontalAlignment="Right"
+                                    AutomationProperties.Name="刷新排查历史" />
                         </Grid>
 
                         <Grid Grid.Row="1">
-                            <Border Background="{DynamicResource SurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
-                                    Visibility="{Binding History.HasError, Converter={StaticResource InverseBoolToVisibility}}">
+                            <Border Style="{StaticResource HistoryListSurfaceStyle}">
                                 <DataGrid ItemsSource="{Binding History.Items}"
+                                          Style="{StaticResource HistoryListDataGridStyle}"
                                           AutoGenerateColumns="False"
                                           ColumnWidth="Auto"
                                           ColumnHeaderStyle="{StaticResource HistoryColumnHeaderStyle}"
@@ -1246,6 +1431,7 @@
                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                           IsTabStop="True"
                                           Focusable="True"
+                                          AutomationProperties.Name="正式排查历史列表"
                                           BorderThickness="0">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="商品名称"
@@ -1263,12 +1449,12 @@
                                                              Width="Auto"
                                                              MinWidth="126"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="正式排查时间（UTC）"
+                                        <DataGridTextColumn Header="正式排查时间"
                                                              Binding="{Binding SubmittedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
                                                              Width="Auto"
                                                              MinWidth="155"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="明细数量"
+                         <DataGridTextColumn Header="批次数"
                                                              Binding="{Binding ItemCount}"
                                                              Width="Auto"
                                                              MinWidth="78"
@@ -1290,41 +1476,55 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Border>
-                            <TextBlock Text="正在加载排查历史…"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="15"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Visibility="{Binding History.IsLoading, Converter={StaticResource BoolToVisibility}}" />
-                            <StackPanel HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Visibility="{Binding History.HasError, Converter={StaticResource BoolToVisibility}}">
-                                <TextBlock Text="排查历史加载失败"
-                                           FontSize="16"
-                                           HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource DangerBrush}" />
-                                <TextBlock Text="{Binding History.ErrorMessage}"
-                                           Margin="0,8,0,0"
-                                           HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource SecondaryTextBrush}" />
-                                <Button Content="重试"
-                                        Command="{Binding History.RetryCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Width="88"
-                                        Margin="0,16,0,0" />
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Visibility="{Binding History.HasEmptyResult, Converter={StaticResource BoolToVisibility}}">
-                                <TextBlock Text="暂无正式排查记录"
-                                           FontSize="15"
-                                           HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource SecondaryTextBrush}" />
-                                <Button Content="刷新"
-                                        Command="{Binding History.RefreshCommand}"
-                                        Style="{StaticResource LinkButtonStyle}"
-                                        Margin="0,8,0,0" />
-                            </StackPanel>
+                            <Border Style="{StaticResource StateMessageBorderStyle}"
+                                    Visibility="{Binding History.IsLoading, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="正在加载排查历史…"
+                                               FontSize="15"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="请稍候，历史快照仍在读取。"
+                                               Margin="0,4,0,0"
+                                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StateMessageBorderStyle}"
+                                    Background="{DynamicResource ErrorSurfaceBrush}"
+                                    Visibility="{Binding History.HasError, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel>
+                                    <TextBlock Text="排查历史加载失败"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource DangerBrush}" />
+                                    <TextBlock Text="{Binding History.ErrorMessage}"
+                                               Margin="0,4,0,0"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               TextWrapping="Wrap" />
+                                    <Button Content="重试"
+                                            Command="{Binding History.RetryCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="88"
+                                            Margin="0,12,0,0"
+                                            AutomationProperties.Name="重试加载排查历史" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StateMessageBorderStyle}"
+                                    Visibility="{Binding History.HasEmptyResult, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel>
+                                    <TextBlock Text="暂无正式排查记录"
+                                               FontSize="15"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="完成一次正式排查后，记录会以只读历史快照显示。"
+                                               Margin="0,4,0,0"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               TextWrapping="Wrap" />
+                                    <Button Content="刷新"
+                                            Command="{Binding History.RefreshCommand}"
+                                            Style="{StaticResource LinkButtonStyle}"
+                                            Margin="0,8,0,0"
+                                            HorizontalAlignment="Left"
+                                            AutomationProperties.Name="刷新排查历史" />
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </Grid>
 
@@ -1375,11 +1575,12 @@
                         </Grid>
 
                         <Border Grid.Row="1"
+                                Style="{StaticResource PageSectionBorderStyle}"
                                 Padding="12"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="6"
                                 Visibility="{Binding History.HasDetail, Converter={StaticResource BoolToVisibility}}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -1408,7 +1609,8 @@
                                              TextWrapping="Wrap"
                                              FontFamily="Segoe UI"
                                              ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=Text}"
-                                             Margin="0,2,0,0" />
+                                             Margin="0,2,0,0"
+                                             AutomationProperties.Name="历史商品条码，可复制" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="0,0,16,0">
                                     <TextBlock Text="商品编码" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -1424,15 +1626,16 @@
                                              TextWrapping="Wrap"
                                              FontFamily="Segoe UI"
                                              ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=Text}"
-                                             Margin="0,2,0,0" />
-                                    <TextBlock Text="正式排查时间（UTC）" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,10,0,0" />
+                                             Margin="0,2,0,0"
+                                             AutomationProperties.Name="历史商品编码，可复制" />
+                                    <TextBlock Text="正式排查时间" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,10,0,0" />
                                     <TextBlock Text="{Binding History.Detail.SubmittedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
                                                FontSize="13"
                                                FontFamily="Segoe UI"
                                                Margin="0,4,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Margin="0,0,16,0">
-                                    <TextBlock Text="正式阶段" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                    <TextBlock Text="排查时阶段" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
                                     <TextBlock Text="{Binding History.Detail.StageSnapshot, Converter={StaticResource StageLabelConverter}}"
                                                FontSize="14"
                                                FontWeight="SemiBold"
@@ -1458,13 +1661,15 @@
                         </Border>
 
                         <Grid Grid.Row="2" Margin="0,12,0,0">
-                            <Border Background="{DynamicResource SurfaceBrush}"
+                            <Border Style="{StaticResource PageSectionBorderStyle}"
+                                    Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="6"
                                     Visibility="{Binding History.HasDetail, Converter={StaticResource BoolToVisibility}}">
-                                <DataGrid ItemsSource="{Binding History.DetailItems}"
-                                          SelectedItem="{Binding History.SelectedDetailItem, Mode=TwoWay}"
+                                    <DataGrid ItemsSource="{Binding History.DisplayDetailItems}"
+                                              SelectedValuePath="Item"
+                                              SelectedValue="{Binding History.SelectedDetailItem, Mode=TwoWay}"
                                           IsEnabled="{Binding History.CanChangeHistorySelection}"
                                           AutoGenerateColumns="False"
                                           ColumnWidth="Auto"
@@ -1473,36 +1678,51 @@
                                           SelectionUnit="FullRow"
                                           ClipboardCopyMode="ExcludeHeader"
                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                          IsTabStop="True"
-                                          Focusable="True"
-                                          BorderThickness="0">
+                                              IsTabStop="True"
+                                              Focusable="True"
+                                              AutomationProperties.Name="正式排查批次快照列表"
+                                              BorderThickness="0">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="明细编号" Binding="{Binding InspectionItemId}" Width="Auto" MinWidth="76" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="批次编号" Binding="{Binding BatchId}" Width="Auto" MinWidth="76" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
+                                        <DataGridTextColumn Header="批次"
+                                                             HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"
+                                                             Binding="{Binding DisplayBatchNumber}"
+                                                             Width="Auto"
+                                                             MinWidth="76"
+                                                             ElementStyle="{StaticResource TableNumericCenterTextStyle}" />
                                         <DataGridTextColumn Header="生产日期"
-                                                             Binding="{Binding ProductionDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
+                                                             Binding="{Binding Item.ProductionDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
                                                              Width="Auto"
                                                              MinWidth="84"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTextColumn Header="有效日期"
-                                                             Binding="{Binding ExpiryDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
+                                                             Binding="{Binding Item.ExpiryDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
                                                              Width="Auto"
                                                              MinWidth="84"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         <DataGridTemplateColumn Header="阶段" Width="Auto" MinWidth="72">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <ContentControl Content="{Binding}"
+                                                    <ContentControl Content="{Binding Item}"
                                                                     ContentTemplate="{StaticResource HistoryStageBadgeTemplate}"
                                                                     Margin="12,0"
                                                                     VerticalAlignment="Center" />
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="累计到货" Binding="{Binding ArrivalQtySnapshot}" Width="Auto" MinWidth="80" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="正式排查数量" Binding="{Binding CheckedQty}" Width="Auto" MinWidth="102" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                        <DataGridTextColumn Header="更新时间（UTC）"
-                                                             Binding="{Binding UpdatedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
+                                        <DataGridTextColumn Header="累计到货"
+                                                             HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"
+                                                             Binding="{Binding Item.ArrivalQtySnapshot}"
+                                                             Width="Auto"
+                                                             MinWidth="80"
+                                                             ElementStyle="{StaticResource TableNumericCenterTextStyle}" />
+                                        <DataGridTextColumn Header="正式排查数量"
+                                                             HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"
+                                                             Binding="{Binding Item.CheckedQty}"
+                                                             Width="Auto"
+                                                             MinWidth="102"
+                                                             ElementStyle="{StaticResource TableNumericCenterTextStyle}" />
+                                        <DataGridTextColumn Header="更新时间"
+                                                             Binding="{Binding Item.UpdatedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
                                                              Width="Auto"
                                                              MinWidth="155"
                                                              ElementStyle="{StaticResource HistoryNumberTextStyle}" />
@@ -1555,12 +1775,13 @@
                         </Grid>
 
                         <Border Grid.Row="3"
+                                Style="{StaticResource PageSectionBorderStyle}"
                                 Margin="0,12,0,0"
                                 Padding="10"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="6"
                                 Visibility="{Binding History.HasDetail, Converter={StaticResource BoolToVisibility}}">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -1571,13 +1792,13 @@
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="修改历史" FontSize="16" FontWeight="SemiBold" />
-                                        <TextBlock Text="选择明细后查看前值 → 后值 → 时间"
+                                        <TextBlock Text="选择批次后查看前值 → 后值 → 时间"
                                                    FontSize="12"
                                                     Foreground="{DynamicResource SecondaryTextBrush}"
                                                     Margin="12,3,0,0" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding History.SelectedDetailItem.InspectionItemId, StringFormat=明细 {0}}"
+                                        <TextBlock Text="{Binding History.SelectedDetailBatchNumber, StringFormat=批次 {0}}"
                                                    VerticalAlignment="Center"
                                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                                    Visibility="{Binding History.HasSelectedDetailItem, Converter={StaticResource BoolToVisibility}}" />
@@ -1586,7 +1807,7 @@
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Height="32"
                                                 Margin="12,0,0,0"
-                                                AutomationProperties.Name="修改选中明细数量" />
+                                                AutomationProperties.Name="修改选中批次数量" />
                                     </StackPanel>
                                 </Grid>
                                 <Border Grid.Row="1"
@@ -1606,6 +1827,39 @@
                                             <TextBlock Text="修改正式排查数量"
                                                        FontWeight="SemiBold"
                                                        TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding History.SelectedDetailBatchNumber, StringFormat=正在修改：批次 {0}}"
+                                                       Margin="0,6,0,0"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryActionBrush}"
+                                                       Visibility="{Binding History.HasSelectedDetailItem, Converter={StaticResource BoolToVisibility}}"
+                                                       AutomationProperties.Name="当前正在修改的批次" />
+                                            <Grid Margin="0,6,0,0"
+                                                  Visibility="{Binding History.HasSelectedDetailItem, Converter={StaticResource BoolToVisibility}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="生产日期：" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding History.SelectedDetailItem.ProductionDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
+                                                           Margin="4,0,16,0"
+                                                           FontFamily="Segoe UI" />
+                                                <TextBlock Grid.Column="2" Text="有效日期：" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{Binding History.SelectedDetailItem.ExpiryDateSnapshot, Converter={StaticResource DateOnlyDisplayConverter}}"
+                                                           Margin="4,0,16,0"
+                                                           FontFamily="Segoe UI" />
+                                                <TextBlock Grid.Column="4" Text="当前数量：" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Grid.Column="5"
+                                                           Text="{Binding History.SelectedDetailItem.CheckedQty}"
+                                                           Margin="4,0,0,0"
+                                                           FontFamily="Segoe UI"
+                                                           FontWeight="SemiBold" />
+                                            </Grid>
                                             <TextBlock Text="仅修改数量，商品身份与其他历史快照保持不变"
                                                        Margin="0,4,0,0"
                                                        FontSize="12"
@@ -1658,18 +1912,19 @@
                                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                               Height="120"
                                               BorderThickness="0"
+                                              AutomationProperties.Name="选中批次的 Revision 历史"
                                               Visibility="{Binding History.HasRevisionHistory, Converter={StaticResource BoolToVisibility}}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="修改前数量" Binding="{Binding PreviousCheckedQty}" Width="*" MinWidth="108" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                             <DataGridTextColumn Header="修改后数量" Binding="{Binding NewCheckedQty}" Width="*" MinWidth="108" ElementStyle="{StaticResource HistoryNumberTextStyle}" />
-                                            <DataGridTextColumn Header="修改时间（UTC）"
+                                            <DataGridTextColumn Header="修改时间"
                                                                  Binding="{Binding ChangedAtUtc, Converter={StaticResource UtcDateTimeDisplayConverter}}"
                                                                  Width="2*"
                                                                  MinWidth="196"
                                                                  ElementStyle="{StaticResource HistoryNumberTextStyle}" />
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                    <TextBlock Text="选择一条明细查看修改历史"
+                                    <TextBlock Text="选择一个批次查看修改历史"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource SecondaryTextBrush}"
@@ -1691,7 +1946,7 @@
                                                 Style="{StaticResource LinkButtonStyle}"
                                                 Margin="8,0,0,0" />
                                     </StackPanel>
-                                    <TextBlock Text="该明细的修改历史不可访问"
+                                    <TextBlock Text="该批次的修改历史不可访问"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource SecondaryTextBrush}"
@@ -1714,11 +1969,9 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="0,0,0,24">
-                            <Border Padding="20"
-                                    Background="{DynamicResource SurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8">
+                            <Border Style="{StaticResource PageSectionBorderStyle}"
+                                    Padding="16"
+                                    AutomationProperties.Name="数据备份与恢复工作区">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -1734,7 +1987,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="本地数据保护"
+                                            <TextBlock Text="备份文件"
                                                        FontSize="18"
                                                        FontWeight="SemiBold" />
                                             <TextBlock Text="仅显示当前应用管理目录中已验证的备份文件。恢复前会先创建保护备份。"
@@ -1774,28 +2027,36 @@
                                                 Command="{Binding BackupRestore.RestoreCommand}"
                                                 Style="{StaticResource DangerButtonStyle}"
                                                 Width="136"
-                                                AutomationProperties.Name="恢复所选备份" />
+                                                AutomationProperties.Name="恢复所选备份"
+                                                ToolTip="选择一份已验证备份后恢复；恢复前会创建保护备份" />
                                     </Grid>
 
-                                    <TextBlock Grid.Row="2"
-                                               Text="{Binding BackupRestore.StatusMessage}"
-                                               Margin="0,12,0,0"
-                                               Foreground="{DynamicResource SecondaryTextBrush}"
-                                               TextWrapping="Wrap" />
+                                    <StackPanel Grid.Row="2"
+                                                Orientation="Horizontal"
+                                                Margin="0,12,0,0"
+                                                AutomationProperties.Name="备份恢复状态">
+                                        <ProgressBar Width="120"
+                                                     Height="8"
+                                                     IsIndeterminate="True"
+                                                     VerticalAlignment="Center"
+                                                     Visibility="{Binding BackupRestore.IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                                        <TextBlock Text="{Binding BackupRestore.StatusMessage}"
+                                                   Margin="0,0,0,0"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
                                     <TextBlock Grid.Row="3"
                                                Text="{Binding BackupRestore.ErrorMessage}"
                                                Margin="0,4,0,0"
                                                Foreground="{DynamicResource DangerBrush}"
                                                TextWrapping="Wrap"
-                                               Visibility="{Binding BackupRestore.HasError, Converter={StaticResource BoolToVisibility}}" />
+                                               Visibility="{Binding BackupRestore.HasError, Converter={StaticResource BoolToVisibility}}"
+                                               AutomationProperties.Name="备份恢复错误" />
 
                                     <Grid Grid.Row="4" MinHeight="230" Margin="0,16,0,0">
-                                        <Border Background="{DynamicResource CanvasBrush}"
-                                                BorderBrush="{DynamicResource BorderBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="6"
-                                                Visibility="{Binding BackupRestore.HasError, Converter={StaticResource InverseBoolToVisibility}}">
+                                        <Border Style="{StaticResource BackupListSurfaceStyle}">
                                             <DataGrid ItemsSource="{Binding BackupRestore.Backups}"
+                                                      Style="{StaticResource BackupListDataGridStyle}"
                                                       SelectedItem="{Binding BackupRestore.SelectedBackup, Mode=TwoWay}"
                                                       AutoGenerateColumns="False"
                                                       CanUserAddRows="False"
@@ -1807,54 +2068,94 @@
                                                       GridLinesVisibility="Horizontal"
                                                       BorderThickness="0"
                                                       IsTabStop="True"
-                                                      Focusable="True">
+                                                      Focusable="True"
+                                                      AutomationProperties.Name="已验证备份列表">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="创建时间"
                                                                          Binding="{Binding CreatedAtText}"
-                                                                         Width="170" />
-                                                    <DataGridTextColumn Header="备份文件 / 身份"
-                                                                         Binding="{Binding FileName}"
-                                                                         Width="*" />
+                                                                         Width="170"
+                                                                         ElementStyle="{StaticResource TableCellTextStyle}" />
+                                                    <DataGridTemplateColumn Header="备份" Width="220">
+                                                        <DataGridTemplateColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="本地备份"
+                                                                           Style="{StaticResource TableCellTextStyle}"
+                                                                           ToolTip="{Binding FileName}"
+                                                                           AutomationProperties.Name="本地备份，技术文件名可在提示中查看" />
+                                                            </DataTemplate>
+                                                        </DataGridTemplateColumn.CellTemplate>
+                                                    </DataGridTemplateColumn>
                                                     <DataGridTextColumn Header="文件大小"
-                                                                         Binding="{Binding FileSizeText}"
-                                                                         Width="120" />
+                                                                         Binding="{Binding FileSize, Converter={StaticResource HumanReadableFileSizeConverter}}"
+                                                                         Width="120"
+                                                                         ElementStyle="{StaticResource TableCellTextStyle}" />
                                                     <DataGridTextColumn Header="验证状态"
                                                                          Binding="{Binding VerificationStatusText}"
-                                                                         Width="150" />
+                                                                         Width="*"
+                                                                         MinWidth="150"
+                                                                         ElementStyle="{StaticResource TableCellTextStyle}" />
                                                 </DataGrid.Columns>
                                             </DataGrid>
                                         </Border>
-                                        <TextBlock Text="正在加载备份列表…"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                                   Visibility="{Binding BackupRestore.IsLoading, Converter={StaticResource BoolToVisibility}}" />
-                                        <StackPanel HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Visibility="{Binding BackupRestore.HasNoBackups, Converter={StaticResource BoolToVisibility}}">
-                                            <TextBlock Text="当前没有可恢复备份"
-                                                       HorizontalAlignment="Center"
-                                                       FontSize="15"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
-                                            <TextBlock Text="创建并验证第一份备份后，它会显示在这里。"
-                                                       Margin="0,6,0,0"
-                                                       HorizontalAlignment="Center"
-                                                       FontSize="13"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        </StackPanel>
+                                        <Border Style="{StaticResource StateMessageBorderStyle}"
+                                                Margin="12"
+                                                Visibility="{Binding BackupRestore.IsLoading, Converter={StaticResource BoolToVisibility}}">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="正在加载备份列表…"
+                                                           FontSize="15"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="只显示应用验证通过的本地备份。"
+                                                           Margin="0,4,0,0"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Style="{StaticResource StateMessageBorderStyle}"
+                                                Margin="12"
+                                                Visibility="{Binding BackupRestore.HasNoBackups, Converter={StaticResource BoolToVisibility}}">
+                                            <StackPanel>
+                                                <TextBlock Text="当前没有可恢复备份"
+                                                           FontSize="15"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="创建并验证第一份备份后，它会显示在这里。"
+                                                           Margin="0,4,0,0"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="下一步：选择“立即备份”。"
+                                                           Margin="0,4,0,0"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
+                                        </Border>
                                     </Grid>
 
                                     <Border Grid.Row="4"
                                             Margin="0,16,0,0"
                                             Padding="12"
-                                            Background="#FFF8E8"
-                                            BorderBrush="#F0D59A"
+                                            Background="{DynamicResource WarningSurfaceBrush}"
+                                            BorderBrush="{DynamicResource WarningTextBrush}"
                                             BorderThickness="1"
                                             CornerRadius="6"
                                             Visibility="{Binding BackupRestore.IsLocked, Converter={StaticResource BoolToVisibility}}">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding BackupRestore.StatusMessage}"
+                                            <TextBlock Text="操作已锁定"
+                                                       FontWeight="SemiBold"
                                                        Foreground="{DynamicResource DangerBrush}"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="恢复成功，需要退出并重新启动应用。"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource SuccessBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Visibility="{Binding BackupRestore.IsRestartRequired, Converter={StaticResource BoolToVisibility}}" />
+                                            <TextBlock Text="恢复过程未能确认当前数据状态。"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource DangerBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Visibility="{Binding BackupRestore.IsCriticalFailure, Converter={StaticResource BoolToVisibility}}" />
+                                            <TextBlock Text="{Binding BackupRestore.StatusMessage}"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="下一步：退出应用，并按提示处理保护备份。"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
                                                        TextWrapping="Wrap" />
                                             <Button Content="退出应用"
                                                     Command="{Binding BackupRestore.ExitApplicationCommand}"
@@ -1872,20 +2173,21 @@
                 </Grid>
 
                 <!-- 排查详情 -->
-                <Grid Visibility="{Binding IsInspectionDetailVisible, Converter={StaticResource BoolToVisibility}}">
-                    <Grid Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
+                <Grid x:Name="InspectionDetailPage"
+                      MinHeight="0"
+                      VerticalAlignment="Stretch"
+                      Visibility="{Binding IsInspectionDetailVisible, Converter={StaticResource BoolToVisibility}}">
+                    <Grid x:Name="InspectionDetailRoot"
+                          MinHeight="0"
+                          VerticalAlignment="Stretch"
+                          Visibility="{Binding Detail.IsOpen, Converter={StaticResource BoolToVisibility}}">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <ScrollViewer x:Name="DetailScrollViewer"
-                                      Grid.Row="0"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Auto"
-                                      CanContentScroll="True"
-                                      Margin="0,0,0,12">
-                            <StackPanel>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
                         <Border
                                 Padding="16,12"
                                 Background="{DynamicResource SurfaceBrush}"
@@ -1905,21 +2207,34 @@
                                                FontSize="20"
                                                FontWeight="SemiBold"
                                                TextWrapping="Wrap" />
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="商品条码：" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBox Text="{Binding Detail.ProductBarcode, Mode=OneWay}"
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="72" />
+                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="72" />
+                                            <ColumnDefinition Width="132" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="商品条码："
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Detail.ProductBarcode, Mode=OneWay}"
                                                  Style="{StaticResource ReadOnlyIdentityTextBoxStyle}"
                                                  Width="132"
-                                                 Margin="0,0,16,0"
                                                  AutomationProperties.Name="商品条码"
                                                  ToolTip="商品条码，可复制" />
-                                        <TextBlock Text="商品编码：" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBox Text="{Binding Detail.ProductCode, Mode=OneWay}"
+                                        <TextBlock Grid.Column="2"
+                                                   Text="商品编码："
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="16,0,0,0" />
+                                        <TextBox Grid.Column="3"
+                                                 Text="{Binding Detail.ProductCode, Mode=OneWay}"
                                                  Style="{StaticResource ReadOnlyIdentityTextBoxStyle}"
                                                  Width="132"
                                                  AutomationProperties.Name="商品编码"
                                                  ToolTip="商品编码，可复制" />
-                                    </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="当前库存" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" />
@@ -1972,9 +2287,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="排查人" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                                    <TextBox Grid.Column="1"
-                                             Style="{StaticResource PageTextBoxStyle}"
-                                             Text="{Binding Detail.InspectorName, UpdateSourceTrigger=PropertyChanged}"
+                                     <TextBox Grid.Column="1"
+                                               Text="{Binding Detail.InspectorName, UpdateSourceTrigger=PropertyChanged}"
+                                               AutomationProperties.Name="排查人"
+                                               ToolTip="请填写排查人后再完成排查"
+                                               Style="{StaticResource InspectionInspectorNameTextBoxStyle}"
                                              IsEnabled="{Binding Detail.CanEdit}" />
                                     <TextBlock Grid.Column="2" Text="排查日期" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="24,0,10,0" />
                                     <DatePicker Grid.Column="3"
@@ -2024,6 +2341,20 @@
                                         Margin="0" />
                             </Grid>
                         </Border>
+
+                        </StackPanel>
+
+                        <ScrollViewer x:Name="DetailScrollViewer"
+                                      Grid.Row="1"
+                                      MinHeight="0"
+                                      VerticalAlignment="Stretch"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      CanContentScroll="False"
+                                      Focusable="True"
+                                      IsTabStop="True"
+                                      Margin="0,0,0,12">
+                            <StackPanel>
 
                         <StackPanel Margin="0,0,0,12" MinWidth="900">
                             <Grid>
@@ -2105,7 +2436,8 @@
                                                                      HorizontalContentAlignment="Right"
                                                                      VerticalContentAlignment="Center"
                                                                      IsEnabled="{Binding DataContext.Detail.CanEdit, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                     ToolTip="空白=未检查；0=现场无该批次" />
+                                                                     ToolTip="空白=未检查；0=现场无该批次"
+                                                                     AutomationProperties.Name="本次排查数量" />
                                                               <Grid Grid.Column="6" Margin="8,0" VerticalAlignment="Center">
                                                                   <StackPanel Orientation="Horizontal"
                                                                               HorizontalAlignment="Center"
@@ -2121,7 +2453,7 @@
                                                                              Padding="8,0"
                                                                              Margin="8,0,0,0" />
                                                                  </StackPanel>
-                                                             </Grid>
+                                                              </Grid>
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
@@ -2192,21 +2524,39 @@
                                                 </ItemsControl>
                                             </Grid>
                                         </Expander>
-                                        <TextBlock Text="{Binding Detail.ActionErrorMessage}"
-                                                   Visibility="{Binding Detail.HasActionError, Converter={StaticResource BoolToVisibility}}"
-                                                   Foreground="#A4262C"
-                                                   TextWrapping="Wrap"
-                                                   Margin="8,8,8,0" />
                                         <TextBlock Text="{Binding Detail.FeedbackMessage}"
                                                    Visibility="{Binding Detail.HasFeedback, Converter={StaticResource BoolToVisibility}}"
                                                    Foreground="{DynamicResource SuccessBrush}"
                                                    Margin="8,8,8,0" />
                                     </StackPanel>
-
                             </StackPanel>
                         </ScrollViewer>
 
-                        <Grid Grid.Row="1" Margin="0,0,0,0">
+                        <Grid Grid.Row="2" Margin="0,0,0,0">
+                            <StackPanel>
+                                <Border Background="{DynamicResource ErrorSurfaceBrush}"
+                                        BorderBrush="{DynamicResource DangerBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="10"
+                                        Margin="0,0,0,8"
+                                        Visibility="{Binding Detail.HasActionError, Converter={StaticResource BoolToVisibility}}"
+                                        AutomationProperties.Name="提交失败">
+                                    <StackPanel>
+                                        <TextBlock Text="提交失败"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource DangerBrush}" />
+                                        <TextBlock Text="{Binding Detail.ActionErrorMessage}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+                                        <TextBlock Text="下一步：请修改后重新提交；如仍失败请重试。"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                                    </StackPanel>
+                                </Border>
                             <Border Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
@@ -2288,9 +2638,10 @@
                                                 Command="{Binding Detail.ConfirmOverStockCommand}"
                                                 Style="{StaticResource PrimaryButtonStyle}"
                                                 Margin="0" />
-                                    </WrapPanel>
-                                </Grid>
-                            </Border>
+                                     </WrapPanel>
+                                 </Grid>
+                             </Border>
+                            </StackPanel>
                         </Grid>
                     </Grid>
 
@@ -2355,52 +2706,24 @@
                 <Grid Visibility="{Binding IsImportVisible, Converter={StaticResource BoolToVisibility}}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="0,0,0,24">
-                            <Grid Margin="0,0,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="30" Height="30" Fill="{DynamicResource PrimaryActionBrush}" />
-                                    <TextBlock Text="1" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-21,0,0,0" />
-                                    <TextBlock Text="选择文件" Foreground="{DynamicResource PrimaryActionBrush}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="14,0,0,0" />
-                                </StackPanel>
-                                <Border Grid.Column="1" Height="1" Background="{DynamicResource PrimaryActionBrush}" VerticalAlignment="Center" Margin="12,0" />
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                    <Ellipse Width="30" Height="30" Fill="#BFD7FF" />
-                                    <TextBlock Text="2" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-21,0,0,0" />
-                                    <TextBlock Text="导入预览" FontSize="16" VerticalAlignment="Center" Margin="14,0,0,0" />
-                                </StackPanel>
-                                <Border Grid.Column="3" Height="1" Background="{DynamicResource BorderBrush}" VerticalAlignment="Center" Margin="12,0" />
-                                <StackPanel Grid.Column="4" Orientation="Horizontal">
-                                    <Ellipse Width="30" Height="30" Fill="{DynamicResource SurfaceBrush}" Stroke="{DynamicResource BorderBrush}" />
-                                    <TextBlock Text="3" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-21,0,0,0" />
-                                    <TextBlock Text="正在导入" FontSize="16" VerticalAlignment="Center" Margin="14,0,0,0" />
-                                </StackPanel>
-                            </Grid>
-
-                            <Border Padding="20"
-                                    Background="{DynamicResource SurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8">
+                            <Border Style="{StaticResource PageSectionBorderStyle}"
+                                    Padding="16"
+                                    AutomationProperties.Name="Excel 文件身份与解析状态">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.4*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="0,0,24,0">
-                                        <TextBlock Text="选择文件" FontSize="16" FontWeight="SemiBold" />
+                                        <TextBlock Text="文件来源" FontSize="16" FontWeight="SemiBold" />
                                         <Button Content="选择 Excel 文件"
                                                 Click="SelectExcel_Click"
                                                 IsEnabled="{Binding Import.CanSelectFile}"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Width="180"
                                                 HorizontalAlignment="Left"
-                                                Margin="0,16,0,0" />
+                                                Margin="0,16,0,0"
+                                                AutomationProperties.Name="选择 Excel 文件" />
                                         <TextBlock Text="支持标准 .xlsx 文件"
                                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                                    FontSize="13"
@@ -2415,15 +2738,30 @@
                                             <TextBlock Text="{Binding Import.SelectedFileName}"
                                                        FontSize="16"
                                                        FontWeight="SemiBold"
-                                                       Margin="0,8,0,0" />
+                                                       Margin="0,8,0,0"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Import.SelectedFileName}" />
+                                            <TextBlock Text="{Binding Import.SelectedFilePath}"
+                                                       FontFamily="Segoe UI, Microsoft YaHei UI"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource MutedTextBrush}"
+                                                       Margin="0,4,0,0"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Import.SelectedFilePath}" />
+                                            <TextBlock Text="{Binding Import.ChangeStatusText}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryActionBrush}"
+                                                       Margin="0,8,0,0"
+                                                       Visibility="{Binding Import.IsSucceeded, Converter={StaticResource InverseBoolToVisibility}}" />
                                             <TextBlock Text="{Binding Import.StatusMessage}"
                                                        TextWrapping="Wrap"
                                                        Foreground="{DynamicResource SecondaryTextBrush}"
-                                                       Margin="0,8,0,0" />
+                                                       Margin="0,8,0,0"
+                                                       Visibility="{Binding Import.IsSucceeded, Converter={StaticResource InverseBoolToVisibility}}" />
                                             <TextBlock Text="{Binding Import.ErrorMessage}"
                                                        Visibility="{Binding Import.HasError, Converter={StaticResource BoolToVisibility}}"
                                                        TextWrapping="Wrap"
-                                                       Foreground="#A4262C"
+                                                        Foreground="{DynamicResource DangerBrush}"
                                                        Margin="0,8,0,0" />
                                             <TextBlock Text="{Binding Import.RefreshErrorMessage}"
                                                        Visibility="{Binding Import.HasRefreshError, Converter={StaticResource BoolToVisibility}}"
@@ -2436,7 +2774,7 @@
                                                              IsIndeterminate="True"
                                                              Visibility="{Binding Import.IsConfirming, Converter={StaticResource BoolToVisibility}}"
                                                              VerticalAlignment="Center" />
-                                                <TextBlock Text="正在处理…"
+                                                <TextBlock Text="正在解析文件，请稍候…"
                                                            Visibility="{Binding Import.IsParsing, Converter={StaticResource BoolToVisibility}}"
                                                            Foreground="{DynamicResource SecondaryTextBrush}"
                                                            Margin="12,0,0,0"
@@ -2447,67 +2785,118 @@
                                                            Margin="12,0,0,0"
                                                            VerticalAlignment="Center" />
                                                 <Button Content="重试"
-                                                        Command="{Binding Import.RetryCommand}"
-                                                        Visibility="{Binding Import.CanRetry, Converter={StaticResource BoolToVisibility}}"
-                                                        Style="{StaticResource LinkButtonStyle}"
-                                                        Margin="12,0,0,0" />
+                                                         Command="{Binding Import.RetryCommand}"
+                                                         Visibility="{Binding Import.CanRetry, Converter={StaticResource BoolToVisibility}}"
+                                                         Style="{StaticResource LinkButtonStyle}"
+                                                         Margin="12,0,0,0"
+                                                         AutomationProperties.Name="重试导入" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Grid>
-                            </Border>
+                             </Border>
 
-                            <Border Margin="0,16,0,0"
+                             <Border Margin="0,12,0,0"
+                                     Padding="14,12"
+                                     Background="{DynamicResource SuccessSurfaceBrush}"
+                                     BorderBrush="{DynamicResource SuccessBrush}"
+                                     BorderThickness="1"
+                                     CornerRadius="6"
+                                     AutomationProperties.Name="导入成功结果"
+                                     Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
+                                 <Grid>
+                                     <Grid.ColumnDefinitions>
+                                         <ColumnDefinition Width="28" />
+                                         <ColumnDefinition Width="*" />
+                                     </Grid.ColumnDefinitions>
+                                     <TextBlock Text="✓"
+                                                FontSize="20"
+                                                FontWeight="SemiBold"
+                                                Foreground="{DynamicResource SuccessBrush}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Top" />
+                                     <StackPanel Grid.Column="1">
+                                         <TextBlock Text="导入成功"
+                                                    FontSize="15"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{DynamicResource SuccessBrush}" />
+                                         <TextBlock Text="{Binding Import.SuccessSummaryText}"
+                                                    Margin="0,4,0,0"
+                                                    TextWrapping="Wrap"
+                                                    Foreground="{DynamicResource PrimaryTextBrush}" />
+                                     </StackPanel>
+                                 </Grid>
+                             </Border>
+
+                             <Border Margin="0,12,0,0"
                                     Padding="16"
-                                    Background="{DynamicResource SurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
+                                    Style="{StaticResource PageSectionBorderStyle}"
+                                    AutomationProperties.Name="导入影响摘要与异常行"
                                     Visibility="{Binding Import.HasPreview, Converter={StaticResource BoolToVisibility}}">
                                 <StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="导入预览" FontSize="16" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                    <UniformGrid Columns="5" Margin="0,14,0,0">
-                                        <Border Margin="0,0,8,0" Padding="12" Background="#F4F8FF" BorderBrush="#DCE8FF" BorderThickness="1" CornerRadius="6">
-                                            <StackPanel>
-                                                <TextBlock Text="涉及商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
-                                                <TextBlock Text="{Binding Import.InvolvedProductCount}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" Margin="0,4,0,0" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                             <TextBlock Text="影响摘要" FontSize="16" FontWeight="SemiBold" />
+                                             <TextBlock Text="{Binding Import.ChangeStatusText}"
+                                                       Margin="12,2,0,0"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       Visibility="{Binding Import.IsSucceeded, Converter={StaticResource InverseBoolToVisibility}}" />
+                                         </StackPanel>
+                                         <TextBlock Grid.Column="1"
+                                                    Text="{Binding Import.ConfirmAvailabilityText}"
+                                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding Import.IsSucceeded, Converter={StaticResource InverseBoolToVisibility}}" />
+                                    </Grid>
+                                    <Grid Margin="0,12,0,0" MinHeight="64">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="1.3*" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="1.3*" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="1.1*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="涉及商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                                            <TextBlock Text="{Binding Import.InvolvedProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                        <Border Grid.Column="1" Margin="12,0" Background="{DynamicResource BorderBrush}" Width="1" />
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="批次数" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                                            <TextBlock Text="{Binding Import.NormalBatchKeyCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                        <Border Grid.Column="3" Margin="12,0" Background="{DynamicResource BorderBrush}" Width="1" />
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="新增 / 更新商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding Import.NewProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
+                                                <TextBlock Text=" / " FontSize="16" Foreground="{DynamicResource WarningTextBrush}" />
+                                                <TextBlock Text="{Binding Import.UpdatedProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
                                             </StackPanel>
-                                        </Border>
-                                        <Border Margin="0,0,8,0" Padding="12" Background="#F3FBF6" BorderBrush="#D8F0E0" BorderThickness="1" CornerRadius="6">
-                                            <StackPanel>
-                                                <TextBlock Text="批次数" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
-                                                <TextBlock Text="{Binding Import.NormalBatchKeyCount}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                        <Border Grid.Column="5" Margin="12,0" Background="{DynamicResource BorderBrush}" Width="1" />
+                                        <StackPanel Grid.Column="6">
+                                            <TextBlock Text="新增 / 更新批次" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding Import.NewBatchCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
+                                                <TextBlock Text=" / " FontSize="16" Foreground="{DynamicResource WarningTextBrush}" />
+                                                <TextBlock Text="{Binding Import.UpdatedBatchCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
                                             </StackPanel>
-                                        </Border>
-                                        <Border Margin="0,0,8,0" Padding="12" Background="#FFF9F0" BorderBrush="#FCE5C5" BorderThickness="1" CornerRadius="6">
-                                            <StackPanel>
-                                                <TextBlock Text="新增 / 更新商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
-                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                    <TextBlock Text="{Binding Import.NewProductCount}" FontSize="24" FontWeight="SemiBold" Foreground="#C96D0B" />
-                                                    <TextBlock Text=" / " FontSize="20" Foreground="#C96D0B" />
-                                                    <TextBlock Text="{Binding Import.UpdatedProductCount}" FontSize="24" FontWeight="SemiBold" Foreground="#C96D0B" />
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                        <Border Padding="12" Background="#FFF9F0" BorderBrush="#FCE5C5" BorderThickness="1" CornerRadius="6">
-                                            <StackPanel>
-                                                <TextBlock Text="新增 / 更新批次" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
-                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                    <TextBlock Text="{Binding Import.NewBatchCount}" FontSize="24" FontWeight="SemiBold" Foreground="#C96D0B" />
-                                                    <TextBlock Text=" / " FontSize="20" Foreground="#C96D0B" />
-                                                    <TextBlock Text="{Binding Import.UpdatedBatchCount}" FontSize="24" FontWeight="SemiBold" Foreground="#C96D0B" />
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                        <Border Padding="12" Background="#FFF2F2" BorderBrush="#F6D1D1" BorderThickness="1" CornerRadius="6">
-                                            <StackPanel>
-                                                <TextBlock Text="数据异常" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
-                                                <TextBlock Text="{Binding Import.WarningCount}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" Margin="0,4,0,0" />
-                                            </StackPanel>
-                                        </Border>
-                                    </UniformGrid>
+                                        </StackPanel>
+                                        <Border Grid.Column="7" Margin="12,0" Background="{DynamicResource BorderBrush}" Width="1" />
+                                        <StackPanel Grid.Column="8">
+                                            <TextBlock Text="数据异常" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                                            <TextBlock Text="{Binding Import.WarningCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Grid>
 
                                     <Grid Margin="0,16,0,0">
                                         <Grid.ColumnDefinitions>
@@ -2534,6 +2923,7 @@
                                               ClipboardCopyMode="ExcludeHeader"
                                               Height="188"
                                               BorderThickness="1"
+                                              AutomationProperties.Name="Excel 导入异常行列表"
                                               Visibility="{Binding Import.HasWarningDetails, Converter={StaticResource BoolToVisibility}}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="行号" Binding="{Binding ExcelRowNumber}" Width="72" />
@@ -2556,7 +2946,7 @@
                                 <TextBlock Text="{Binding Import.ConfirmAvailabilityText}"
                                            Foreground="{DynamicResource SecondaryTextBrush}"
                                            VerticalAlignment="Center"
-                                           Visibility="{Binding Import.CanConfirm, Converter={StaticResource InverseBoolToVisibility}}" />
+                                           Style="{StaticResource ImportAvailabilityTextStyle}" />
                                 <StackPanel Grid.Column="1"
                                             Orientation="Horizontal"
                                             HorizontalAlignment="Right"
@@ -2564,11 +2954,13 @@
                                     <Button Content="取消"
                                             Command="{Binding NavigateHomeCommand}"
                                             Width="92"
-                                            Margin="0,0,12,0" />
+                                            Margin="0,0,12,0"
+                                            AutomationProperties.Name="取消本次导入" />
                                     <Button Content="确认导入"
                                             Command="{Binding Import.ConfirmCommand}"
                                             Style="{StaticResource PrimaryButtonStyle}"
-                                            Width="112" />
+                                            Width="112"
+                                            AutomationProperties.Name="确认导入 Excel 数据" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

@@ -30,11 +30,13 @@ public partial class App : System.Windows.Application
         {
             _instanceMutex.Dispose();
             _instanceMutex = null;
-            MessageBox.Show(
-                "门店效期排查软件已在运行，请从系统托盘打开。",
+            WpfDialogService.Show(
+                owner: null,
                 "门店效期排查软件",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                "门店效期排查软件已在运行，请从系统托盘打开。",
+                "知道了",
+                WpfDialogKind.Information,
+                showCancel: false);
             Shutdown();
             return;
         }
@@ -188,24 +190,26 @@ public partial class App : System.Windows.Application
         if (MainWindow.DataContext is ShellViewModel shell && shell.IsDatabaseProtectionBusy)
         {
             e.Cancel = true;
-            MessageBox.Show(
+            WpfDialogService.Show(
                 MainWindow,
-                "数据备份或恢复正在进行，请等待操作完成后再关闭应用。",
                 "操作进行中",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                "数据备份或恢复正在进行，请等待操作完成后再关闭应用。",
+                "知道了",
+                WpfDialogKind.Information,
+                showCancel: false);
             return;
         }
 
         if (MainWindow.DataContext is ShellViewModel { IsDatabaseProtectionLocked: true })
         {
             e.Cancel = true;
-            MessageBox.Show(
+            WpfDialogService.Show(
                 MainWindow,
-                "当前数据保护操作已完成或遇到严重错误，请使用页面中的“退出应用”完成正常退出。",
                 "请退出应用",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                "当前数据保护操作已完成或遇到严重错误，请使用页面中的“退出应用”完成正常退出。",
+                "知道了",
+                WpfDialogKind.Warning,
+                showCancel: false);
             return;
         }
 
@@ -240,12 +244,13 @@ public partial class App : System.Windows.Application
     {
         if (MainWindow?.DataContext is ShellViewModel { IsDatabaseProtectionBusy: true })
         {
-            MessageBox.Show(
+            WpfDialogService.Show(
                 MainWindow,
-                "数据备份或恢复正在进行，请等待操作完成后再退出应用。",
                 "操作进行中",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                "数据备份或恢复正在进行，请等待操作完成后再退出应用。",
+                "知道了",
+                WpfDialogKind.Information,
+                showCancel: false);
             return;
         }
 

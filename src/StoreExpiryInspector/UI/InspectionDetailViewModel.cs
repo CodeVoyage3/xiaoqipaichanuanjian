@@ -217,6 +217,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
     private DateTime? _lastSavedAtUtc;
     private string _errorMessage = string.Empty;
     private string _actionErrorMessage = string.Empty;
+    private bool _hasInspectorNameError;
     private string _feedbackMessage = string.Empty;
     private string _inspectorName = string.Empty;
     private DateOnly? _checkDate;
@@ -411,6 +412,8 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     public bool HasActionError => !string.IsNullOrEmpty(ActionErrorMessage);
 
+    public bool HasInspectorNameError => _hasInspectorNameError;
+
     public string FeedbackMessage => _feedbackMessage;
 
     public bool HasFeedback => !string.IsNullOrEmpty(FeedbackMessage);
@@ -421,12 +424,28 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         set
         {
             value ??= string.Empty;
-            if (!CanEditInput || string.Equals(_inspectorName, value, StringComparison.Ordinal))
+            if (!CanEditInput)
             {
                 return;
             }
 
+            if (string.Equals(_inspectorName, value, StringComparison.Ordinal))
+            {
+                if (_hasInspectorNameError && !string.IsNullOrWhiteSpace(value))
+                {
+                    _hasInspectorNameError = false;
+                    OnPropertyChanged(nameof(HasInspectorNameError));
+                }
+
+                return;
+            }
+
             _inspectorName = value;
+            if (_hasInspectorNameError && !string.IsNullOrWhiteSpace(value))
+            {
+                _hasInspectorNameError = false;
+                OnPropertyChanged(nameof(HasInspectorNameError));
+            }
             _inspectorDirty = true;
             _inspectorEditVersion = ++_editVersion;
             NotifyInputChanged();
@@ -717,6 +736,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         SetState(InspectionDetailPageState.Loading);
         _errorMessage = string.Empty;
         _actionErrorMessage = string.Empty;
+        _hasInspectorNameError = false;
         _feedbackMessage = string.Empty;
         NotifyMessages();
         NotifySubmissionProperties();
@@ -849,7 +869,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         catch (Exception exception)
         {
             _logException?.Invoke(exception);
-            await HandleSubmissionFailureAsync(request);
+            await HandleSubmissionFailureAsync(request, exception);
         }
         finally
         {
@@ -879,23 +899,98 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         await RefreshAfterSubmissionAsync(submissionCompleted: true);
     }
 
-    private async Task HandleSubmissionFailureAsync(InspectionSubmissionRequest? request)
+    private static string MapSubmissionFailureMessage(
+        Exception exception,
+        out bool hasInspectorNameError)
     {
+        hasInspectorNameError = false;
+        var message = exception.Message?.Trim() ?? string.Empty;
+        if (string.Equals(message, "InspectorName is required for submission.", StringComparison.OrdinalIgnoreCase))
+        {
+            hasInspectorNameError = true;
+            return "请填写排查人后再完成排查";
+        }
+
+        if (string.Equals(message, "CheckDate is required for submission.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "请选择排查日期后再完成排查。";
+        }
+
+        if (string.Equals(message, "CheckDate cannot be later than BusinessDate.", StringComparison.OrdinalIgnoreCase))
+        {
+            return "排查日期不能晚于当前业务日期。";
+        }
+
+        if (message.Contains("has no current task items", StringComparison.OrdinalIgnoreCase))
+        {
+            return "当前任务没有可排查批次，请刷新后重试。";
+        }
+
+        if (message.Contains("inconsistent task, product, or batch ownership", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("does not belong to product", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("inconsistent attention versions", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("invalid handled attention version", StringComparison.OrdinalIgnoreCase))
+        {
+            return "当前批次信息已变化，请刷新后重试。";
+        }
+
+        if (message.Contains("has no current valid draft", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("is invalid and cannot be submitted", StringComparison.OrdinalIgnoreCase))
+        {
+            return "当前草稿已失效，请重新填写后再提交。";
+        }
+
+        if (message.Contains("does not match the current task items", StringComparison.OrdinalIgnoreCase))
+        {
+            return "草稿与当前批次不一致，请刷新后重新填写。";
+        }
+
+        if (message.Contains("has no complete draft input", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("has no checked quantity", StringComparison.OrdinalIgnoreCase))
+        {
+            return "请填写所有批次的本次排查数量后再提交。";
+        }
+
+        if (message.Contains("requires reconfirmation", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("stale attention version", StringComparison.OrdinalIgnoreCase))
+        {
+            return "当前批次状态已变化，请先重新确认后再提交。";
+        }
+
+        if (message.Contains("does not belong to task", StringComparison.OrdinalIgnoreCase))
+        {
+            return "排查记录与当前任务不一致，请刷新后重试。";
+        }
+
+        return "排查提交失败，请重试。";
+    }
+
+    private async Task HandleSubmissionFailureAsync(
+        InspectionSubmissionRequest? request,
+        Exception submissionException)
+    {
+        var mappedMessage = MapSubmissionFailureMessage(
+            submissionException,
+            out var hasInspectorNameError);
         await ReloadAsync(preserveInput: true);
         switch (State)
         {
             case InspectionDetailPageState.Open when TaskItems.Any(item => item.RequiresReconfirmation):
+                _hasInspectorNameError = false;
                 _actionErrorMessage = "当前排查状态已变化，请重新确认";
                 break;
             case InspectionDetailPageState.Open:
             case InspectionDetailPageState.Error:
-                _actionErrorMessage = "排查提交失败，请重试。";
+                _hasInspectorNameError = hasInspectorNameError;
+                _actionErrorMessage = mappedMessage;
                 break;
             case InspectionDetailPageState.Completed:
+                _hasInspectorNameError = false;
                 await VerifyCompletedAfterSubmissionFailureAsync(request);
                 break;
             case InspectionDetailPageState.SystemClosed:
             case InspectionDetailPageState.NotFound:
+                _hasInspectorNameError = false;
                 await RefreshAfterSubmissionAsync(submissionCompleted: false);
                 break;
         }
@@ -1320,6 +1415,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         _errorMessage = string.Empty;
         _closeReason = null;
         _submissionIntegrityError = false;
+        _hasInspectorNameError = false;
         var draft = detail.Draft;
         _inspectorName = draft?.InspectorName?.Trim() ?? string.Empty;
         _checkDate = draft?.CheckDate
@@ -1380,6 +1476,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         NormalBatches.Clear();
         _inspectorName = string.Empty;
         _checkDate = null;
+        _hasInspectorNameError = false;
         _inspectorDirty = false;
         _checkDateDirty = false;
         _lastSavedAtUtc = null;
@@ -1714,6 +1811,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(DraftFooterStatusText));
         OnPropertyChanged(nameof(ActionErrorMessage));
         OnPropertyChanged(nameof(HasActionError));
+        OnPropertyChanged(nameof(HasInspectorNameError));
         OnPropertyChanged(nameof(FeedbackMessage));
         OnPropertyChanged(nameof(HasFeedback));
         OnPropertyChanged(nameof(CloseReasonText));
@@ -1754,6 +1852,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(ErrorMessage));
         OnPropertyChanged(nameof(ActionErrorMessage));
         OnPropertyChanged(nameof(HasActionError));
+        OnPropertyChanged(nameof(HasInspectorNameError));
         OnPropertyChanged(nameof(FeedbackMessage));
         OnPropertyChanged(nameof(HasFeedback));
         OnPropertyChanged(nameof(InventoryError));

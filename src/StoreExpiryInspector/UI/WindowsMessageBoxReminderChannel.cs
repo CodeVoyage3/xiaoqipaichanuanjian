@@ -22,14 +22,13 @@ public sealed class WindowsMessageBoxReminderChannel : IReminderChannel
 
         var message = FormatMessage(notification);
         var owner = _owner();
-        if (owner is null)
-        {
-            MessageBox.Show(message, "门店效期提醒", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-        else
-        {
-            MessageBox.Show(owner, message, "门店效期提醒", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
+        WpfDialogService.Show(
+            owner,
+            "门店效期提醒",
+            message,
+            "知道了",
+            WpfDialogKind.Warning,
+            showCancel: false);
 
         return true;
     }

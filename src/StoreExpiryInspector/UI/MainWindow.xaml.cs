@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -14,11 +15,14 @@ namespace StoreExpiryInspector.UI;
 
 public partial class MainWindow : Window
 {
+    private bool _isNavigationCollapsed;
+
     public event Action<int>? ReminderTimeChanged;
 
     public MainWindow()
     {
         InitializeComponent();
+        ApplyNavigationLayout();
         DataContext = new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
@@ -29,13 +33,84 @@ public partial class MainWindow : Window
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         var compact = e.NewSize.Width < 1280;
-        ShellColumn.Width = new(compact ? 176 : 208);
+        if (_isNavigationCollapsed)
+        {
+            ShellColumn.Width = new GridLength(72);
+        }
+        else
+        {
+            ShellColumn.Width = new(compact ? 176 : 208);
+        }
         ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
         if (PendingTasksStandardGrid is not null && PendingTasksCompactGrid is not null)
         {
             PendingTasksStandardGrid.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
             PendingTasksCompactGrid.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
         }
+    }
+
+    private void ToggleNavigation_Click(object sender, RoutedEventArgs e)
+    {
+        _isNavigationCollapsed = !_isNavigationCollapsed;
+        ApplyNavigationLayout();
+    }
+
+    private void ApplyNavigationLayout()
+    {
+        if (NavigationBrandText is null)
+        {
+            return;
+        }
+
+        var compact = ActualWidth < 1280;
+        if (_isNavigationCollapsed)
+        {
+            ShellColumn.Width = new GridLength(72);
+        }
+        else
+        {
+            ShellColumn.Width = new(compact ? 176 : 208);
+        }
+        var textVisibility = _isNavigationCollapsed
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+        NavigationBrandText.Visibility = textVisibility;
+        NavigationVersionText.Visibility = textVisibility;
+        NavigationHomeText.Visibility = textVisibility;
+        NavigationTasksText.Visibility = textVisibility;
+        NavigationHistoryText.Visibility = textVisibility;
+        NavigationImportText.Visibility = textVisibility;
+        NavigationBackupText.Visibility = textVisibility;
+        NavigationSettingsText.Visibility = textVisibility;
+
+        foreach (var button in new[]
+        {
+            NavigationHomeButton,
+            NavigationTasksButton,
+            NavigationHistoryButton,
+            NavigationImportButton,
+            NavigationBackupButton,
+            NavigationSettingsButton
+        })
+        {
+            button.HorizontalContentAlignment = _isNavigationCollapsed
+                ? HorizontalAlignment.Center
+                : HorizontalAlignment.Left;
+            button.Padding = _isNavigationCollapsed
+                ? new Thickness(0)
+                : new Thickness(14, 0, 14, 0);
+        }
+
+        NavigationBrandArea.Margin = _isNavigationCollapsed
+            ? new Thickness(4, 20, 4, 20)
+            : new Thickness(12, 20, 12, 20);
+        NavigationToggleButton.Width = _isNavigationCollapsed ? 24 : 32;
+        NavigationToggleButton.Height = _isNavigationCollapsed ? 24 : 32;
+        NavigationToggleButton.FontSize = _isNavigationCollapsed ? 16 : 14;
+        NavigationToggleButton.HorizontalAlignment = HorizontalAlignment.Center;
+        NavigationToggleButton.VerticalAlignment = VerticalAlignment.Center;
+        NavigationToggleButton.Content = _isNavigationCollapsed ? "›" : "‹";
+        NavigationToggleButton.ToolTip = _isNavigationCollapsed ? "展开导航" : "收起导航";
     }
 
     private void DashboardDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -130,14 +205,15 @@ public partial class MainWindow : Window
     {
         if (DataContext is ShellViewModel shell && !shell.CanOpenSettings)
         {
-            MessageBox.Show(
+            WpfDialogService.Show(
                 this,
+                "暂不可打开设置",
                 shell.IsDatabaseProtectionBlocking
                     ? "数据备份或恢复正在进行，请等待完成后再打开设置。"
                     : "当前页面操作尚未完成，请等待保存或提交结束后再打开设置。",
-                "暂不可打开设置",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                "知道了",
+                WpfDialogKind.Information,
+                showCancel: false);
             return;
         }
 
@@ -172,6 +248,7 @@ public partial class MainWindow : Window
                 ShowInTaskbar = false,
                 Content = new StackPanel { Margin = new Thickness(24) }
             };
+            AutomationProperties.SetName(dialog, "提醒设置");
             var panel = (StackPanel)dialog.Content;
             panel.Children.Add(new TextBlock
             {
@@ -191,8 +268,11 @@ public partial class MainWindow : Window
                 Text = ReminderSettingsUseCase.Format(reminderMinuteOfDay),
                 Width = 120,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                MaxLength = 5
+                MaxLength = 5,
+                ToolTip = "请输入 HH:mm，例如 09:30",
+                Style = (Style)FindResource("PageTextBoxStyle")
             };
+            AutomationProperties.SetName(reminderTime, "每日提醒时间，格式 HH:mm");
             panel.Children.Add(reminderTime);
             var autoStartCheckBox = new CheckBox
             {
@@ -202,6 +282,7 @@ public partial class MainWindow : Window
                 FontSize = 14,
                 Margin = new Thickness(0, 20, 0, 0)
             };
+            AutomationProperties.SetName(autoStartCheckBox, "开机自启动，仅当前 Windows 用户");
             panel.Children.Add(autoStartCheckBox);
             var validation = new TextBlock
             {
@@ -212,6 +293,7 @@ public partial class MainWindow : Window
                     ? string.Empty
                     : $"开机自启动状态读取失败，本次不会修改：{autoStartState.ErrorMessage}"
             };
+            AutomationProperties.SetName(validation, "提醒设置校验结果");
             panel.Children.Add(validation);
             var buttons = new StackPanel
             {
@@ -224,8 +306,10 @@ public partial class MainWindow : Window
                 Content = "取消",
                 IsCancel = true,
                 Width = 88,
-                Margin = new Thickness(0, 0, 8, 0)
+                Margin = new Thickness(0, 0, 8, 0),
+                Style = (Style)FindResource("SecondaryButtonStyle")
             };
+            AutomationProperties.SetName(cancel, "取消提醒设置");
             var save = new Button
             {
                 Content = "保存",
@@ -233,6 +317,7 @@ public partial class MainWindow : Window
                 Width = 88,
                 Style = (Style)FindResource("PrimaryButtonStyle")
             };
+            AutomationProperties.SetName(save, "保存提醒设置");
             int? savedMinuteOfDay = null;
             save.Click += (_, _) =>
             {
@@ -259,12 +344,13 @@ public partial class MainWindow : Window
                 savedMinuteOfDay = savedMinute;
                 if (!autoStartState.Succeeded)
                 {
-                    MessageBox.Show(
+                    WpfDialogService.Show(
                         dialog,
-                        "提醒时间已保存；开机自启动状态读取失败，本次未修改。",
                         "设置已部分保存",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                        "提醒时间已保存；开机自启动状态读取失败，本次未修改。",
+                        "知道了",
+                        WpfDialogKind.Warning,
+                        showCancel: false);
                     dialog.DialogResult = true;
                     return;
                 }
@@ -273,21 +359,23 @@ public partial class MainWindow : Window
                 if (!autoStartResult.Succeeded
                     || autoStartResult.IsEnabled != (autoStartCheckBox.IsChecked == true))
                 {
-                    MessageBox.Show(
+                    WpfDialogService.Show(
                         dialog,
-                        $"提醒时间已保存，但开机自启动设置失败：{autoStartResult.ErrorMessage ?? "Windows 状态未按预期更新。"}",
                         "设置未完全保存",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                        $"提醒时间已保存，但开机自启动设置失败：{autoStartResult.ErrorMessage ?? "Windows 状态未按预期更新。"}",
+                        "知道了",
+                        WpfDialogKind.Warning,
+                        showCancel: false);
                 }
                 else
                 {
-                    MessageBox.Show(
+                    WpfDialogService.Show(
                         dialog,
-                        "设置已保存。",
                         "设置",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                        "设置已保存。",
+                        "知道了",
+                        WpfDialogKind.Information,
+                        showCancel: false);
                 }
 
                 dialog.DialogResult = true;
@@ -308,12 +396,13 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            MessageBox.Show(
+            WpfDialogService.Show(
                 this,
-                $"设置无法打开：{exception.Message}",
                 "设置错误",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                $"设置无法打开：{exception.Message}",
+                "知道了",
+                WpfDialogKind.Error,
+                showCancel: false);
         }
     }
 
@@ -328,13 +417,14 @@ public partial class MainWindow : Window
     }
 
     private bool ConfirmClearDraft() =>
-        MessageBox.Show(
+        WpfDialogService.Show(
             this,
-            "将清空当前未提交内容。",
             "清空草稿",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning,
-            MessageBoxResult.No) == MessageBoxResult.Yes;
+            "将清空当前未提交内容，已填写数量和草稿不会保留；正式历史不受影响。",
+            "清空草稿",
+            WpfDialogKind.Warning,
+            nextAction: "下一步：选择“取消”保留当前草稿。\n此操作不会影响正式历史。",
+            showCancel: true);
 
     private bool ConfirmZeroInventory()
     {
@@ -351,13 +441,16 @@ public partial class MainWindow : Window
             ShowInTaskbar = false,
             Content = new StackPanel { Margin = new Thickness(20) }
         };
+        AutomationProperties.SetName(dialog, "确认库存修正");
         var panel = (StackPanel)dialog.Content;
-        panel.Children.Add(new TextBlock
+        var consequence = new TextBlock
         {
             Text = "库存修正为0后，将结束该商品所有批次的效期跟踪。此操作会系统关闭当前任务并使草稿失效。",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 14
-        });
+        };
+        AutomationProperties.SetName(consequence, "库存归零后果说明");
+        panel.Children.Add(consequence);
         var buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -370,14 +463,17 @@ public partial class MainWindow : Window
             IsDefault = true,
             IsCancel = true,
             Width = 88,
-            Margin = new Thickness(0, 0, 8, 0)
+            Margin = new Thickness(0, 0, 8, 0),
+            Style = (Style)FindResource("SecondaryButtonStyle")
         };
+        AutomationProperties.SetName(cancel, "取消库存修正");
         var confirm = new Button
         {
             Content = "确认修正为0",
             Width = 112,
             Style = (Style)FindResource("DangerButtonStyle")
         };
+        AutomationProperties.SetName(confirm, "确认库存修正为零");
         cancel.Click += (_, _) => dialog.DialogResult = false;
         confirm.Click += (_, _) => dialog.DialogResult = true;
         buttons.Children.Add(cancel);
@@ -387,24 +483,32 @@ public partial class MainWindow : Window
         return dialog.ShowDialog() == true;
     }
 
-    private bool ConfirmHistoryEdit(InspectionHistoryEditRequest request) =>
-        MessageBox.Show(
+    private bool ConfirmHistoryEdit(InspectionHistoryEditRequest request)
+    {
+        var displayBatchNumber = (DataContext as ShellViewModel)
+            ?.History
+            .SelectedDetailBatchNumber;
+        var batchLabel = displayBatchNumber is > 0
+            ? $"批次 {displayBatchNumber.Value}"
+            : "当前批次";
+        return WpfDialogService.Show(
             this,
-            $"将明细 {request.InspectionItemId} 的正式排查数量修改为 {request.NewCheckedQty}。\n确认写入并保留修改记录吗？",
             "确认修改正式数量",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning,
-            MessageBoxResult.No) == MessageBoxResult.Yes;
+            $"将修改{batchLabel}的正式排查数量为 {request.NewCheckedQty}。",
+            "确认修改",
+            WpfDialogKind.Warning,
+            nextAction: $"只修改{batchLabel}，不改变商品库存或任务生命周期。保存后会保留修改记录。",
+            showCancel: true);
+    }
 
     private bool ConfirmRestore(LocalDatabaseBackupListItem backup) =>
-        MessageBox.Show(
+        WpfDialogService.Show(
             this,
-            $"将用备份“{backup.FileName}”替换当前数据。\n"
-            + "系统会先创建恢复前保护备份。\n"
-            + "恢复完成后当前应用必须退出并重新启动，当前运行态不能无感撤销。\n"
-            + "确认继续恢复吗？",
-            "确认恢复当前数据",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning,
-            MessageBoxResult.No) == MessageBoxResult.Yes;
+            "确认恢复备份",
+            $"将恢复到：{backup.CreatedAtText} 的本地备份\n状态：{backup.VerificationStatusText}",
+            "确认恢复",
+            WpfDialogKind.Danger,
+            nextAction: "当前数据将被该备份替换。\n恢复前会自动创建保护备份。恢复完成后应用将退出，请重新打开。\n恢复完成后无法在当前操作中直接撤销。",
+            showCancel: true);
+
 }

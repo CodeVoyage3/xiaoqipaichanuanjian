@@ -273,6 +273,10 @@ public sealed class ImportViewModel : ViewModelBase
 
     public string ChangeStatusText => HasChanges ? "有变化，可确认导入" : "无变化，无需确认导入";
 
+    public string SuccessSummaryText => !IsSucceeded || Plan is null
+        ? string.Empty
+        : $"本次导入：新增商品 {NewProductCount} 个，更新商品 {UpdatedProductCount} 个；新增批次 {NewBatchCount} 个，更新批次 {UpdatedBatchCount} 个。";
+
     public string ConfirmAvailabilityText => IsParsing
         ? "正在生成预览…"
         : IsConfirming
@@ -630,6 +634,7 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsFailed));
         OnPropertyChanged(nameof(HasError));
         OnPropertyChanged(nameof(HasRefreshError));
+        OnPropertyChanged(nameof(SuccessSummaryText));
         OnPropertyChanged(nameof(ConfirmAvailabilityText));
         ConfirmCommand.RaiseCanExecuteChanged();
         RetryCommand.RaiseCanExecuteChanged();
@@ -659,6 +664,7 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(PlanningIssueCount));
         OnPropertyChanged(nameof(HasChanges));
         OnPropertyChanged(nameof(ChangeStatusText));
+        OnPropertyChanged(nameof(SuccessSummaryText));
         OnPropertyChanged(nameof(ConfirmAvailabilityText));
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(IssueRows));

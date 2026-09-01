@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 7 已正式完成总验收与收口
-- 状态：S7-T01～S7-T03 及 Stage 7 总验收已归档；UIUX-R01 视觉门禁已放行；UIUX-R02 技术与用户 GUI 验收均通过并正式归档；Stage 8 尚未开始
+- 状态：S7-T01～S7-T03 及 Stage 7 总验收已归档；UIUX-R01 视觉门禁已放行；UIUX-R02、UIUX-R03 技术与用户 GUI 验收均通过并正式归档；Stage 8 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -45,6 +45,7 @@
 - Stage 7 最终总验收于 2026-08-31 重新运行通过：T01 6/6、T01/共享组合 12/12、T02 9/9、T03 30/30；Stage 6 52/52、Stage 5 51/51、Stage 4 179/179、Stage 3 170/170；Release 680/680、0 失败/跳过，build 0/0，EF 无漂移、migration=8，无包依赖变化。工程唯一额外元数据为 T02 已归档的 InternalsVisibleTo，不伪称整个 csproj diff 为空。
 
 - UIUX-R01 已完成审计、Token、Taste 二审及三类代表页高保真视觉门禁并获用户放行。UIUX-R02 已落地 Dashboard、待排查任务列表、排查详情及必要共享视觉资源；用户完成多轮真实 GUI 验收并在最终三列居中修正后明确“通过”。最终 UIUX-R02 1/1、UIUX-R02 + S4-T10 3/3、Release 681/681；离线 Release build 0 warning / 0 error，在线 NuGet 漏洞审计本轮不可用；EF 无漂移、migration=8、依赖不变、无业务逻辑变化。正式库经用户现场恢复回执确认为 299008 bytes / 指定 SHA-256，进程 0、无 sidecar 或 UIUX-R02 恢复残留，恢复后未启动 WPF。UIUX-R02 已正式归档。
+- UIUX-R03 已把同一设计系统铺到 Excel 导入、历史/Revision、Reminder 设置、备份/恢复、应用内部 Dialog 与 Shell，并闭环用户统一返修及后续定向复验。最终相关定向组合 31/31、Stage 3～7 分别 170/170、186/186、52/52、52/52、51/51，Release 完整复跑 692/692、build 0/0、EF 无漂移、migration=8、依赖/项目/schema 不变。用户确认全部 GUI 项通过；正式库已恢复为 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，进程 0、无 sidecar，恢复后未启动 WPF。UIUX-R03 已正式归档。
 
 ## 冻结业务红线
 
@@ -105,6 +106,7 @@
 - UI/UX 统一重构交接（非实施授权）：`.ai-dev/STAGES/UI-UX-REFRESH-HANDOFF.md`
 - UIUX-R01 设计系统与视觉稿：`.ai-dev/UI-REFRESH/`
 - UIUX-R02 任务与最终验收：`.ai-dev/TASKS/UIUX-R02.md`、`.ai-dev/ACCEPTANCE/UIUX-R02.md`
+- UIUX-R03 任务与最终验收：`.ai-dev/TASKS/UIUX-R03.md`、`.ai-dev/ACCEPTANCE/UIUX-R03.md`
 
 ## 下一步门禁
 
@@ -119,4 +121,5 @@
 - S7-T03 归档事实（2026-08-31）：技术与用户 GUI 验收全部通过。恢复 A、重开后 10:00 及正式环境 RESTORE_PASS 原始证据已保存；用户最终确认“通过，未再次启动软件”。正式库 299008 bytes / 指定 SHA-256、隔离清理及原自启动恢复据用户本机回执通过。
 - 最新结论（2026-08-31）：Stage 7 总验收与 closeout 已完成，最终范围为本地安全备份 / 恢复 / WPF 闭环，Excel 导出已 deferred。收口本轮确认正式库存在、299008 bytes、进程 0；SHA-256、实际 migration 与完整 sidecar/备份目录因既有 Junction 限制未重新确认，引用最近 S7-T03 用户原始回执，不冒充现场读取成功。
 - 最新 UI/UX 结论（2026-09-01）：UIUX-R01 已获视觉放行；UIUX-R02 三类代表页实施、后续人工反馈修正、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R02 正式归档。
-- 下一步等待用户单独批准；不自动创建 UIUX-R03，不进入 Stage 8。
+- 最新 UI/UX 结论（2026-09-01）：UIUX-R03 剩余页面统一、全部返修、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R03 正式归档。
+- 下一步等待用户单独批准；不自动创建 UIUX-R04，不进入 Stage 8，不启动下一张业务任务。

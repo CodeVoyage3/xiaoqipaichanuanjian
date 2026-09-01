@@ -41,22 +41,27 @@ public sealed class UIUXR02UiStaticAuditTests
 
         var dashboardStart = window.IndexOf("<!-- 首页", StringComparison.Ordinal);
         var pendingStart = window.IndexOf("<!-- 待排查任务", dashboardStart, StringComparison.Ordinal);
-        var detailStart = window.IndexOf("<!-- 排查详情", pendingStart, StringComparison.Ordinal);
+        var historyStart = window.IndexOf("<!-- 排查历史", pendingStart, StringComparison.Ordinal);
+        var detailStart = window.IndexOf("<!-- 排查详情", historyStart, StringComparison.Ordinal);
         var detailEnd = window.IndexOf("<!-- 数据导入", detailStart, StringComparison.Ordinal);
-        Assert.True(dashboardStart >= 0 && pendingStart > dashboardStart && detailStart > pendingStart && detailEnd > detailStart);
+        Assert.True(dashboardStart >= 0
+            && pendingStart > dashboardStart
+            && historyStart > pendingStart
+            && detailStart > historyStart
+            && detailEnd > detailStart);
 
         var dashboard = window[dashboardStart..pendingStart];
-        var pending = window[pendingStart..detailStart];
+        var pending = window[pendingStart..historyStart];
         var detail = window[detailStart..detailEnd];
         Assert.Contains("商品编码", dashboard, StringComparison.Ordinal);
         var centeredHeaderMarker = "HeaderStyle=\"{StaticResource TableCenterColumnHeaderStyle}\"";
         var centeredNumericMarker = "ElementStyle=\"{StaticResource TableNumericCenterTextStyle}\"";
         Assert.Equal(3, Count(dashboard, centeredHeaderMarker));
         Assert.Equal(6, Count(pending, centeredHeaderMarker));
-        Assert.Equal(9, Count(window, centeredHeaderMarker));
+        Assert.Equal(12, Count(window, centeredHeaderMarker));
         Assert.Equal(2, Count(dashboard, centeredNumericMarker));
         Assert.Equal(4, Count(pending, centeredNumericMarker));
-        Assert.Equal(6, Count(window, centeredNumericMarker));
+        Assert.Equal(9, Count(window, centeredNumericMarker));
         var centeredHeaderStyleStart = window.IndexOf("<Style x:Key=\"TableCenterColumnHeaderStyle\"", StringComparison.Ordinal);
         var centeredHeaderStyleEnd = window.IndexOf("</Style>", centeredHeaderStyleStart, StringComparison.Ordinal);
         Assert.True(centeredHeaderStyleStart >= 0 && centeredHeaderStyleEnd > centeredHeaderStyleStart);

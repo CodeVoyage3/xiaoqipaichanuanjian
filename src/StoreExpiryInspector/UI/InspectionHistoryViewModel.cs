@@ -82,6 +82,8 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
 
     public ObservableCollection<InspectionHistoryItemDetail> DetailItems { get; } = [];
 
+    public ObservableCollection<InspectionHistoryDetailRowViewModel> DisplayDetailItems { get; } = [];
+
     public ObservableCollection<InspectionItemRevisionDetail> Revisions { get; } = [];
 
     public RelayCommand RefreshCommand { get; }
@@ -160,6 +162,20 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
             }
 
             SetSelectedDetailItem(value, loadRevisions: true, clearEditMessages: true);
+        }
+    }
+
+    public int? SelectedDetailBatchNumber
+    {
+        get
+        {
+            if (_selectedDetailItem is null)
+            {
+                return null;
+            }
+
+            var index = DetailItems.IndexOf(_selectedDetailItem);
+            return index >= 0 ? index + 1 : null;
         }
     }
 
@@ -472,7 +488,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         }
 
         EndEditSession();
-        _editFeedbackMessage = "正式排查明细不存在或已失效";
+        _editFeedbackMessage = "正式排查批次不存在或已失效";
         NotifyEditMessages();
     }
 
@@ -535,7 +551,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         }
 
         _selectedDetailItem = value;
-        Notify(nameof(SelectedDetailItem), nameof(HasSelectedDetailItem));
+        Notify(nameof(SelectedDetailItem), nameof(HasSelectedDetailItem), nameof(SelectedDetailBatchNumber));
         Interlocked.Increment(ref _revisionLoadVersion);
         ClearRevisionState();
         if (clearEditMessages)
@@ -644,9 +660,12 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
 
             _detail = result.Detail;
             DetailItems.Clear();
-            foreach (var item in result.Detail.Items)
+            DisplayDetailItems.Clear();
+            for (var index = 0; index < result.Detail.Items.Count; index++)
             {
+                var item = result.Detail.Items[index];
                 DetailItems.Add(item);
+                DisplayDetailItems.Add(new InspectionHistoryDetailRowViewModel(item, index + 1));
             }
 
             _detailState = DetailLoadState.Found;
@@ -743,8 +762,9 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         _detailErrorMessage = string.Empty;
         _detail = null;
         DetailItems.Clear();
+        DisplayDetailItems.Clear();
         _selectedDetailItem = null;
-        Notify(nameof(Detail), nameof(DetailErrorMessage), nameof(SelectedDetailItem), nameof(HasSelectedDetailItem));
+        Notify(nameof(Detail), nameof(DetailErrorMessage), nameof(SelectedDetailItem), nameof(HasSelectedDetailItem), nameof(SelectedDetailBatchNumber));
         ClearRevisionState();
         Notify(nameof(IsDetailLoading), nameof(HasDetail), nameof(HasDetailError), nameof(IsDetailNotFound));
         if (!IsEditBusy)

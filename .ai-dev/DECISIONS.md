@@ -186,3 +186,13 @@
 - Sol 最终技术门禁：UIUX-R02 1/1、UIUX-R02 + S4-T10 3/3、Release 681/681；离线 Release build 0 warning / 0 error，在线 NuGet 漏洞审计本轮不可用；EF 无漂移、migration=8、dependency 无变化。
 - 用户在全部已知视觉修正完成后明确 GUI“通过”；正式库最终由用户现场恢复并回执为 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，进程 0，恢复后未启动 WPF。
 - UIUX-R02 归档不授权后续任务；不自动创建 UIUX-R03，不进入 Stage 8，等待用户单独批准。
+
+## D-023｜UIUX-R03 剩余页面统一与最终归档
+
+- 状态：UIUX-R03 实现、Sol 独立技术验收、用户真实 WPF GUI 复验和正式数据恢复均已通过，2026-09-01 正式归档。
+- 范围：只把 UIUX-R01 / R02 设计系统铺到 Excel 导入、历史/Revision、Reminder、备份/恢复、应用内部 Dialog 和 Shell 一致性；Dashboard、待排查、详情仅修复用户明确回归，不重新设计。
+- 业务边界：Stage 3～7 生命周期、Draft/Reconfirm/Submission、History/Revision、Reminder、Backup/Restore 权威不变；无 schema、migration、dependency、项目文件或 Application/Domain/Infrastructure 变化。
+- 最终展示决策：历史“批次”是当前正式排查记录内从 1 连续编号的 UI 序号；表格、Revision、编辑和确认弹窗均使用该序号，不暴露内部明细 ID。内部 `InspectionItemId` 仍是查询、Revision、保存和刷新身份。
+- 最终门禁：相关定向 31/31，Stage 3～7 为 170/170、186/186、52/52、52/52、51/51，Release 完整复跑 692/692，build 0 warning / 0 error，EF 无漂移，migration=8，`git diff --check` 通过。
+- 用户确认全部 GUI 项通过；正式库恢复为 299008 bytes / 指定 SHA-256，无 WAL/SHM/journal，进程 0，恢复后未启动 WPF。
+- UIUX-R03 归档不授权后续任务；不创建 UIUX-R04，不进入 Stage 8，不启动下一张业务任务，等待用户单独批准。
