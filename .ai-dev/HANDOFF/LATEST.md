@@ -2,53 +2,52 @@
 
 ## 当前任务
 
-`V1-F01-I01｜Policy 与范围基线持久化底座` 已完成 Sol 独立技术验收；等待产品经理决定是否批准 `V1-F01-I02｜全品类导入与管理范围映射`。
+`V1-F01-I02｜全品类导入与管理范围映射` 已完成 Sol 独立技术验收；等待产品经理决定是否批准 `V1-F01-I03`。
 
 ## 当前状态
 
-`TECHNICALLY_ACCEPTED / WAITING_I02_APPROVAL`
+`TECHNICALLY_ACCEPTED / WAITING_I03_APPROVAL`
 
-I02 正式任务卡尚未创建，I02 实现 Terra 尚未创建或派发，I02 未开始。
+I03 正式任务卡尚未创建，I03 实现代理尚未创建或派发，I03 未开始。
 
 ## 当前 HEAD
 
-- 本文件所在提交即当前交接 HEAD；实施与修复提交链为 `609989f0e326ce9adcae4ed6f03ba7fd0cdbe1c5`、`67efc68b401117eab74b5a53aba0b123199f36de`、`1863fb55436beaa1a67d55b1ee4cdaf1bf394488`。
-- 本地 `master` 与 GitHub `main` 必须以最终 push 后的实时引用为准；不得把 push 前的本地 tracking ref 冒充远端当前值。
+- 本文件所在提交即当前交接 HEAD。
+- I02 治理提交：`7208b2c`；Terra 实现与修复链：`9976957`、`10212d7`、`c9489f1`、`e4436f8`。
+- 本地 `master` 与 GitHub `main` 必须以最终 push 后的实时引用为准；不得把 push 前 tracking ref 冒充远端当前值。
 
-## I01 交付事实
+## I02 交付事实
 
-- Product 新增独立 `PolicyVersion` 和 Managed / Excluded / Unresolved；V1 policy code 为 `food_expiry / pet_expiry / general_long_expiry`，不含版本号。
-- `CategoryCode` 继续作为 canonical scope_key 持久化位置；I01 只保留既有食品 canonical `food`，未实现 I02 的源大类映射。
-- 新增 ScopeBaseline 与 BatchBaseline 持久化、唯一键、状态/来源/check constraint 及最小 V1 policy 计算。
-- 唯一新增 migration 为 `20260901155124_AddPolicyAndBaselineFoundation`，migration 总数由 8 增至 9；旧 `food_v1` 显式迁移为 `food_expiry / 1 / managed`。
-- 未改变 ProductCode、BatchKey、Seen BatchKey、MaxArrivalQty、库存 0、Task 聚合或 AttentionVersion / HandledAttentionVersion 权威。
+- 10 个批准源大类均在现有导入链路正常识别并保存稳定 canonical CategoryCode；中文显示名不作为永久 identity。
+- 食品为 `food_expiry / 1`，宠物为 `pet_expiry / 1`；六类通用长效商品总效期 `>180` 天为 `general_long_expiry / 1`。
+- 应季搭配、赠品小样保存 Product / Batch，标记 Excluded、policy/version 为空；不产生生命周期 Task。
+- 六类通用长效商品 `<=180` 天保存为 Unresolved、policy/version 为空，并持久化 `expiry_policy_unresolved`。
+- 同 ProductCode scope/policy 冲突产生 `product_scope_policy_conflict`，不静默改绑、不复制、不写该商品的批次/库存动作或生命周期。
+- 未完成匹配 ScopeBaseline 的 Managed 商品只保存导入和身份；导入后与启动重算均不提前产生 Task。
 
 ## Sol 独立验收
 
-- 第一轮相关专项 12/13，发现 Excluded 空 policy 被 store default 覆盖；退回修复后相关专项 25/25。
-- 第一轮 Release 全量 709/711，发现旧 schema 测试 helper 丢失 tracked-entity 语义；退回修复后最终 Release 711/711，0 失败、0 跳过。
-- Release build 0 warning / 0 error；EF 无 pending model changes；migration list 为 9；全量 migration script 已生成并人工核对 SQLite rebuild 顺序；`git diff --check` 通过。
-- 相对 I01 治理基线无 `.csproj`、`.slnx`、依赖、WPF 或 Reminder 变化。
-- restore 使用 `--ignore-failed-sources -p:NuGetAudit=false`；不构成在线漏洞审计通过。
+- 首轮代码审查退回冲突库存动作、生命周期防御及端到端测试缺口；修复后继续审查。
+- 首次受影响专项 115/116，发现 unknown category 的既有 unsupported 统计丢失；修复后最终受影响链路 117/117。
+- 首次 Release 全量 721/723：一项 I02 startup fixture 缺 baseline、一项既有 S7T03 5 秒超时；补 fixture，超时精确复跑未复现，最终 Release 723/723。
+- Release build 0 warning / 0 error；EF 无 pending model changes；migration list 为 9；`git diff --check` 通过。
+- 相对 I02 治理基线无 migration、ModelSnapshot、schema、`.csproj`、`.slnx`、依赖、WPF 或 Reminder 变化。
 
 ## GUI 与数据库状态
 
-- I01 无生产 UI 变化，不需要用户 GUI 验收。
-- 本轮未启动 WPF；收口时 `StoreExpiryInspector` 进程为 0。
-- 未访问、迁移或修改正式数据库；旧库升级只在临时隔离 SQLite 测试中验证。
+- I02 无生产 UI 变化，不需要用户 GUI 验收。
+- 本轮未启动 WPF；收口检查 `StoreExpiryInspector` 进程为 0。
+- 未访问、迁移或修改正式数据库；所有持久化验证均使用临时隔离 SQLite 测试库。
 
 ## 当前禁止事项
 
-- 不创建或执行 I02，不派发 I02 Terra；须等待产品经理单独批准。
-- 不开始 I03/I04，不进入 V1-F02 或 Stage 8。
-- I02--I04 默认禁止新增 migration；schema 若不足必须停止并重新审批。
+- 不创建或执行 I03，不派发 I03 实现代理；须等待产品经理单独批准。
+- 不开始 I04，不进入 V1-F02 或 Stage 8。
+- I03/I04 默认禁止新增 migration；schema 若不足必须停止并重新审批。
+- 不执行方案 C、3% 历史过期补查或首次接管；这些属于 I03。
 - 不实现提前 3 天预提醒；I04 仅允许保持现有 Reminder 消费 open Task 链路。
 - 不操作正式数据库，不启动 WPF，不 squash、不重写历史、不 force push。
 
 ## 下一决策
 
-是否批准创建并执行：
-
-`V1-F01-I02｜全品类导入与管理范围映射`
-
-若获批准，Sol 先创建正式 I02 任务卡，再新建一个全新的 GPT-5.6 Terra（medium、平台标准速度）仅实现 I02；Terra 完成后停止，由 Sol 独立验收。
+是否单独批准创建并执行 `V1-F01-I03`。若未批准，保持停止。

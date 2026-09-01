@@ -216,3 +216,12 @@
 - Sol 最终门禁：I01 相关 25/25、Release 711/711、build 0 warning / 0 error、EF 无漂移、migration=9、脚本生成、依赖与 WPF/Reminder 范围未变、应用进程 0。
 - I04 只保持现有 Reminder 消费 open Task 链路，不实现提前 3 天预提醒；该能力仍属于未批准的 V1-F02。
 - 当前停止在 I01 技术验收完成；不创建或执行 I02，等待产品经理单独批准。
+
+## D-026｜V1-F01-I02 全品类导入与管理范围映射
+
+- 状态：产品经理于 2026-09-02 单独批准 I02；全新 GPT-5.6 Terra（medium）实施后经 Sol 三次缺陷退回并独立技术验收通过。I03 未获批准。
+- 10 个源中文大类映射为稳定 canonical CategoryCode；食品、宠物和六类 `>180` 天通用长效商品为 Managed 并绑定批准的 policy/version；应季搭配、赠品小样为 Excluded；六类 `<=180` 天商品为 Unresolved 并留存规则未覆盖 ImportIssue。
+- 同 ProductCode scope/policy 冲突不改绑、不复制、不写该商品批次/库存动作或生命周期；unknown category 保持既有 unsupported 统计并产生稳定 ImportIssue。
+- 未完成匹配 ScopeBaseline 的 Managed 商品只保存导入与身份；导入后和启动重算均不得提前产生效期 Task。I02 不创建 ScopeBaseline/BatchBaseline 事实，首次接管仍只属于未批准的 I03。
+- Sol 最终门禁：受影响链路 117/117、Release 723/723、build 0 warning / 0 error、EF 无漂移、migration=9、依赖/WPF/Reminder/schema 无变化、应用进程 0；未访问正式数据库。
+- 当前停止在 I02 技术验收完成；不创建或执行 I03，不进入 I04、V1-F02 或 Stage 8，等待产品经理单独批准。
