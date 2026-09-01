@@ -154,12 +154,16 @@ public sealed class V1F01I03ColdStartTests
         Add(context, "F", 5, Day.AddDays(-3), Day.AddDays(-4)); // lower clamp 3 inclusive.
         Add(context, "F", 5, Day.AddDays(-4), Day.AddDays(-5)); // lower clamp outside.
         Add(context, "F", 5, Day.AddDays(-30), Day.AddDays(-1030)); // upper clamp 30 inclusive.
+        Add(context, "F", 5, Day.AddDays(-31), Day.AddDays(-1031)); // upper clamp outside.
         context.Products.Add(new Product { ProductCode = "PET", CategoryCode = "pet", PolicyCode = ExpiryPolicies.Pet, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 5 }); context.SaveChanges();
         context.Batches.Add(new Batch { ProductId = context.Products.Single(p => p.ProductCode == "PET").Id, ProductionDate = Day.AddDays(-100), ExpiryDate = Day.AddDays(-1), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 }); context.SaveChanges();
         Assert.True(Execute(context, import.Id).Started);
         Assert.True(new ColdStartScopeBaselineUseCase().Execute(context, new("pet", ExpiryPolicies.Pet, 1, import.Id, Day, Utc)).Started);
         Assert.Equal(2, context.ScopeBaselines.Count());
-        Assert.Equal(3, context.BatchBaselines.Count(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask));
+        var facts = context.BatchBaselines.OrderBy(item => item.BatchId).ToArray();
+        Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 3);
+        Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 30);
+        Assert.Equal(2, facts.Count(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredHistoricalBaseline));
     }
 
     [Fact]
