@@ -2,17 +2,27 @@
 
 ## 当前任务
 
-`V1-F01-I04｜基线后正常生命周期与端到端收口` 已完成 Sol 独立技术验收、隔离 WPF GUI 验收与 V1-F01 总体收口。
+`V1-F02｜效期节点提前 3 天预提醒` 已获产品经理单独批准；Sol 已完成接任、Reminder / Scheduler / Startup 架构审计并创建正式实现卡，等待全新 Terra 按卡实施。
 
 ## 当前状态
 
-`V1-F01_COMPLETED / WAITING_PRODUCT_MANAGER_NEXT_APPROVAL`
+`V1-F02_APPROVED / WAITING_NEW_TERRA_IMPLEMENTATION`
 
 ## 当前 Git
 
 - 分支：`master`。
-- I04 最终实现与测试 HEAD：`71c161469272c12a2088b804e0d401d8d6e92438`。
+- V1-F01 最终 GitHub 基线：`e5b748bfd44bb2256e82c638e8d72d98ee03bf82`。
 - 本文件所在治理提交为最终交接 HEAD；具体 SHA 与 GitHub `main` 以本次 push 后实时引用为准。
+
+## V1-F02 开工事实
+
+- 正式任务卡：`.ai-dev/TASKS/V1-F02.md`；V1-F02 可作为一张实现卡完成。
+- 现有 Schema 足够：预提醒以 `(BatchId, TargetStage)` 和 policy 派生日期识别，继续复用全局 `LastReminderDate` 的每日集中提醒同日幂等；migration 保持 9。
+- `StageEffectiveDate` 与 `ReminderDate` 分离；四节点均为正式生效日前 3 个日历日。
+- 候选窗口为 `ReminderDate <= BusinessDate < StageEffectiveDate`；错过首日可在正式节点到达前按既有跨日每日提醒补入，节点正式生效后不得补发提前提醒。
+- 不提前改变 Stage，不创建或伪造 ProductTask、Inspection、Revision、LifecycleEvent、HandledAttentionVersion 或其他正式业务事实。
+- Excluded、Unresolved、非 version 1、无匹配完成 ScopeBaseline、库存 0 或 stopped Batch 零预提醒。
+- 正式 Task 与预提醒合并为同一次 Windows 集中提醒；同日幂等、日期回拨、失败重试、托盘、scheduler、提醒时间和自启动继续复用 Stage 6 权威。
 
 ## I04 交付事实
 
@@ -38,6 +48,9 @@
 - 隔离数据库完整性为 `ok`，WPF 已退出，应用进程为 0；原始 Excel hash 前后不变。
 - 未实现或创建 V1-F02、V1-F03、Stage 8 或其他后续任务。
 
-## 下一决策
+## 下一步与停点
 
-等待产品经理单独批准下一阶段。不得自动创建 V1-F02 任务卡，不得派发后续 Terra。
+- 必须使用全新的 GPT-5.6 Terra（medium、标准速度）只实施 `.ai-dev/TASKS/V1-F02.md`，完成提交后停止；Sol 独立验收。
+- 真实 WPF GUI 最终验收恢复由用户本人执行；Sol 只提供精简隔离清单。
+- 若发现 Schema 不足，立即停止并提交最小 Schema / migration / 旧库兼容方案，等待产品经理单独批准。
+- 不得进入 V1-F03、Stage 8、Stage 9 或其他未批准功能。

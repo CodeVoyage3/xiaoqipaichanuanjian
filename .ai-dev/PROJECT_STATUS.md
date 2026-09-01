@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 7 已正式完成总验收与收口
-- 状态：S7-T01～S7-T03、UIUX-R01～R03 及 V1-F01-I01～I04 已归档；V1-F01 已完成，Stage 8 尚未开始
+- 状态：S7-T01～S7-T03、UIUX-R01～R03 及 V1-F01-I01～I04 已归档；V1-F01 已完成，V1-F02 已批准并创建单张实现卡，Stage 8 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -125,5 +125,5 @@
 - 最新结论（2026-08-31）：Stage 7 总验收与 closeout 已完成，最终范围为本地安全备份 / 恢复 / WPF 闭环，Excel 导出已 deferred。收口本轮确认正式库存在、299008 bytes、进程 0；SHA-256、实际 migration 与完整 sidecar/备份目录因既有 Junction 限制未重新确认，引用最近 S7-T03 用户原始回执，不冒充现场读取成功。
 - 最新 UI/UX 结论（2026-09-01）：UIUX-R01 已获视觉放行；UIUX-R02 三类代表页实施、后续人工反馈修正、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R02 正式归档。
 - 最新 UI/UX 结论（2026-09-01）：UIUX-R03 剩余页面统一、全部返修、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R03 正式归档。
-- 下一步等待产品经理单独批准后续任务；不创建 V1-F02 任务卡或 Terra，不进入 V1-F03 或 Stage 8。
+- V1-F02 最新门禁（2026-09-02）：产品经理只批准“效期节点提前 3 天预提醒”；正式任务卡为 `.ai-dev/TASKS/V1-F02.md`，使用全新 GPT-5.6 Terra（medium、标准速度）实施，Sol 独立验收，用户本人执行最终真实 WPF GUI 验收。现有 Schema 足够，migration 保持 9；若实现发现不足必须停止重新审批。
 - V1-F01 最终结论（2026-09-02）：I01～I04 已按单卡授权全部完成并归档；最终 Release 751/751、build 0/0、EF 无漂移、migration=9，隔离 GUI 验收通过。不得据此自动进入 V1-F02、V1-F03 或 Stage 8。
