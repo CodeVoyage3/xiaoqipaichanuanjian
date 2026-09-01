@@ -50,7 +50,15 @@ public sealed class StartupRecalculationUseCase
                 .Where(batch =>
                     batch.TrackingStatus == "active" &&
                     batch.NextTriggerDate.HasValue &&
-                    batch.NextTriggerDate.Value <= request.BusinessDate)
+                    batch.NextTriggerDate.Value <= request.BusinessDate &&
+                    context.Products.Any(product =>
+                        product.Id == batch.ProductId &&
+                        product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+                        context.ScopeBaselines.Any(baseline =>
+                            baseline.IsCompleted &&
+                            baseline.ScopeKey == product.CategoryCode &&
+                            baseline.PolicyCode == product.PolicyCode &&
+                            baseline.PolicyVersion == product.PolicyVersion)))
                 .ToArray();
 
             if (batches.Length == 0)

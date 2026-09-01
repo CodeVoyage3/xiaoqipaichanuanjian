@@ -2,10 +2,10 @@ namespace StoreExpiryInspector.Infrastructure.Excel;
 
 public sealed class ExcelFileClassifier
 {
-    private const string FoodCategory = "食品";
 
     private static readonly string[] BatchConflictFields =
     [
+        "商品大类",
         "商品条码",
         "商品名称",
         "保质期",
@@ -22,17 +22,21 @@ public sealed class ExcelFileClassifier
         var rowIssues = new List<ExcelRowIssue>();
         var validRows = new List<ExcelNormalizedRow>();
         var stockValuesByCode = new Dictionary<string, Dictionary<StockValueKey, List<int>>>(StringComparer.Ordinal);
-        var foodRowCount = 0;
+        var acceptedRowCount = 0;
 
         foreach (var row in workbook.Rows)
         {
-            if (!string.Equals(row.ProductCategory?.Trim(), FoodCategory, StringComparison.Ordinal))
+            if (!ProductCategoryScopes.IsKnown(row.ProductCategory))
             {
-                skippedRows.Add(new ExcelSkippedRow(row.ExcelRowNumber, row.ProductCategory));
+                rowIssues.Add(new ExcelRowIssue(
+                    row.ExcelRowNumber,
+                    "unsupported_product_category",
+                    "商品大类",
+                    "商品大类规则未覆盖，未导入该商品。"));
                 continue;
             }
 
-            foodRowCount++;
+            acceptedRowCount++;
             var issues = ValidateRow(row, out var normalizedProductCode, out var normalizedRow);
             rowIssues.AddRange(issues);
 
@@ -115,7 +119,7 @@ public sealed class ExcelFileClassifier
         var productStocks = BuildProductStocks(stockValuesByCode);
         return new ExcelClassificationResult(
             workbook.Rows.Count,
-            foodRowCount,
+            acceptedRowCount,
             ReadOnly(skippedRows.OrderBy(static row => row.ExcelRowNumber)),
             ReadOnly(rowIssues
                 .OrderBy(static issue => issue.ExcelRowNumber)
@@ -259,24 +263,29 @@ public sealed class ExcelFileClassifier
         var values = rows.ToArray();
         var first = values[0];
         var differingFields = new List<string>();
-        if (values.Any(row => !string.Equals(row.ProductBarcode, first.ProductBarcode, StringComparison.Ordinal)))
+        if (values.Any(row => !string.Equals(row.ProductCategory, first.ProductCategory, StringComparison.Ordinal)))
         {
             differingFields.Add(BatchConflictFields[0]);
         }
 
-        if (values.Any(row => !string.Equals(row.ProductName, first.ProductName, StringComparison.Ordinal)))
+        if (values.Any(row => !string.Equals(row.ProductBarcode, first.ProductBarcode, StringComparison.Ordinal)))
         {
             differingFields.Add(BatchConflictFields[1]);
         }
 
-        if (values.Any(row => !string.Equals(row.ShelfLife, first.ShelfLife, StringComparison.Ordinal)))
+        if (values.Any(row => !string.Equals(row.ProductName, first.ProductName, StringComparison.Ordinal)))
         {
             differingFields.Add(BatchConflictFields[2]);
         }
 
-        if (values.Any(row => !string.Equals(row.ShelfLifeUnit, first.ShelfLifeUnit, StringComparison.Ordinal)))
+        if (values.Any(row => !string.Equals(row.ShelfLife, first.ShelfLife, StringComparison.Ordinal)))
         {
             differingFields.Add(BatchConflictFields[3]);
+        }
+
+        if (values.Any(row => !string.Equals(row.ShelfLifeUnit, first.ShelfLifeUnit, StringComparison.Ordinal)))
+        {
+            differingFields.Add(BatchConflictFields[4]);
         }
 
         if (values.Any(row => !string.Equals(
@@ -284,7 +293,7 @@ public sealed class ExcelFileClassifier
                 first.IsNearExpiryDiscountRequired,
                 StringComparison.Ordinal)))
         {
-            differingFields.Add(BatchConflictFields[4]);
+            differingFields.Add(BatchConflictFields[5]);
         }
 
         if (values.Any(row => !string.Equals(
@@ -292,7 +301,7 @@ public sealed class ExcelFileClassifier
                 first.CumulativeArrivalQuantity,
                 StringComparison.Ordinal)))
         {
-            differingFields.Add(BatchConflictFields[5]);
+            differingFields.Add(BatchConflictFields[6]);
         }
 
         return differingFields;

@@ -149,7 +149,7 @@ public sealed class ExcelClassificationResult
 {
     internal ExcelClassificationResult(
         int totalRowCount,
-        int foodRowCount,
+        int acceptedRowCount,
         IReadOnlyList<ExcelSkippedRow> skippedRows,
         IReadOnlyList<ExcelRowIssue> rowIssues,
         int batchKeyCount,
@@ -159,7 +159,7 @@ public sealed class ExcelClassificationResult
         IReadOnlyList<ExcelProductStock> productStocks)
     {
         TotalRowCount = totalRowCount;
-        FoodRowCount = foodRowCount;
+        AcceptedRowCount = acceptedRowCount;
         SkippedRows = Array.AsReadOnly(skippedRows.ToArray());
         RowIssues = Array.AsReadOnly(rowIssues.ToArray());
         BatchKeyCount = batchKeyCount;
@@ -172,7 +172,10 @@ public sealed class ExcelClassificationResult
 
     public int TotalRowCount { get; }
 
-    public int FoodRowCount { get; }
+    public int AcceptedRowCount { get; }
+
+    [Obsolete("Use AcceptedRowCount; imports are no longer food-only.")]
+    public int FoodRowCount => AcceptedRowCount;
 
     public int SkippedRowCount => SkippedRows.Count;
 

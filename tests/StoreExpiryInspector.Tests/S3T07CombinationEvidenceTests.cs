@@ -32,6 +32,10 @@ public sealed class S3T07CombinationEvidenceTests
     public void RealXlsxNewNoneBatchRemainsActiveWithNoTask()
     {
         using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            EnsureFoodBaseline(seed);
+        }
         var prepared = Prepare(
             database,
             "new-none.xlsx",
@@ -334,6 +338,7 @@ public sealed class S3T07CombinationEvidenceTests
         {
             AddHistory(seed, 1);
             AddHistory(seed, 2);
+            EnsureFoodBaseline(seed);
         }
 
         using (var schema = database.Open())
@@ -353,7 +358,7 @@ public sealed class S3T07CombinationEvidenceTests
         Assert.NotNull(result.SnapshotPath);
         Assert.True(File.Exists(result.SnapshotPath));
         using var verify = database.Open();
-        Assert.Equal(new[] { "old-1.xlsx", "old-2.xlsx" }, verify.Imports.AsNoTracking()
+        Assert.Equal(new[] { "old-1.xlsx", "old-2.xlsx", "baseline.xlsx" }, verify.Imports.AsNoTracking()
             .OrderBy(import => import.Id).Select(import => import.SourceFileName));
         Assert.Equal(new[] { "old-1.xlsx", "old-2.xlsx" }, verify.ImportWorkbooks.AsNoTracking()
             .OrderBy(workbook => workbook.Id).Select(workbook => workbook.OriginalFileName));
@@ -481,7 +486,18 @@ public sealed class S3T07CombinationEvidenceTests
         };
         context.Products.Add(product);
         context.SaveChanges();
+        EnsureFoodBaseline(context);
         return product;
+    }
+
+    private static void EnsureFoodBaseline(StoreDbContext context)
+    {
+        if (context.ScopeBaselines.Any()) return;
+        var import = new ImportRecord { SourceFileName = "baseline.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = OccurredAtUtc, ConfirmedAtUtc = OccurredAtUtc, Status = "succeeded" };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, BusinessDate = BusinessDate, IsCompleted = true, CompletedAtUtc = OccurredAtUtc });
+        context.SaveChanges();
     }
 
     private static Batch AddBatch(

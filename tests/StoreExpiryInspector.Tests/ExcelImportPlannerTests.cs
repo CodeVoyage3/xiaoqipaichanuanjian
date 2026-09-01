@@ -10,6 +10,99 @@ namespace StoreExpiryInspector.Tests;
 public sealed class ExcelImportPlannerTests
 {
     [Fact]
+    public void MapsAllTenApprovedCategoriesToCanonicalScopeIdentities()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var rows = new[]
+        {
+            Row(2, category: "食品", code: "FOOD"),
+            Row(3, category: "宠物", code: "PET"),
+            Row(4, category: "日用", code: "DAILY", shelfLife: "181", shelfLifeUnit: "D"),
+            Row(5, category: "美妆", code: "BEAUTY", shelfLife: "181", shelfLifeUnit: "D"),
+            Row(6, category: "家居", code: "HOME", shelfLife: "181", shelfLifeUnit: "D"),
+            Row(7, category: "香氛香水", code: "FRAGRANCE", shelfLife: "181", shelfLifeUnit: "D"),
+            Row(8, category: "文具", code: "STATIONERY", shelfLife: "181", shelfLifeUnit: "D"),
+            Row(9, category: "潮流玩具", code: "TOYS", shelfLife: "181", shelfLifeUnit: "D"),
+            Row(10, category: "应季搭配", code: "SEASONAL"),
+            Row(11, category: "赠品小样", code: "GIFT")
+        };
+
+        var plan = new ExcelImportPlanner().Plan(context, Classify(rows));
+
+        Assert.Equal(10, plan.NewProducts.Count);
+        Assert.Equal("food", plan.NewProducts.Single(product => product.ProductCode == "FOOD").CategoryCode);
+        Assert.Equal(ExpiryPolicies.Food, plan.NewProducts.Single(product => product.ProductCode == "FOOD").PolicyCode);
+        Assert.Equal("pet", plan.NewProducts.Single(product => product.ProductCode == "PET").CategoryCode);
+        Assert.Equal(ExpiryPolicies.Pet, plan.NewProducts.Single(product => product.ProductCode == "PET").PolicyCode);
+        Assert.All(plan.NewProducts.Where(product => product.ProductCode is "DAILY" or "BEAUTY" or "HOME" or "FRAGRANCE" or "STATIONERY" or "TOYS"), product =>
+        {
+            Assert.Equal(ExpiryManagementStatus.Managed, product.ExpiryManagementStatus);
+            Assert.Equal(ExpiryPolicies.GeneralLong, product.PolicyCode);
+            Assert.Equal(1, product.PolicyVersion);
+        });
+        Assert.All(plan.NewProducts.Where(product => product.ProductCode is "SEASONAL" or "GIFT"), product =>
+        {
+            Assert.Equal(ExpiryManagementStatus.Excluded, product.ExpiryManagementStatus);
+            Assert.Null(product.PolicyCode);
+            Assert.Null(product.PolicyVersion);
+        });
+    }
+
+    [Theory]
+    [InlineData("180", "D")]
+    [InlineData("6", "M")]
+    public void GeneralCategoriesAtOrBelow180DaysAreUnresolvedButStillPlanned(string shelfLife, string unit)
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+
+        var plan = new ExcelImportPlanner().Plan(context, Classify(
+            Row(2, category: "日用", code: "SHORT", shelfLife: shelfLife, shelfLifeUnit: unit)));
+
+        var product = Assert.Single(plan.NewProducts);
+        Assert.Equal(ExpiryManagementStatus.Unresolved, product.ExpiryManagementStatus);
+        Assert.Null(product.PolicyCode);
+        Assert.Null(product.PolicyVersion);
+        Assert.Single(plan.NewBatches);
+        Assert.Contains(plan.Preview.PlanningIssues, issue => issue.Code == "expiry_policy_unresolved" && issue.ProductCode == "SHORT");
+    }
+
+    [Fact]
+    public void ExistingProductScopeConflictIsAuditableAndDoesNotPlanChanges()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            AddProduct(seed, "P", "商品", "B", 1, 1, "excel");
+            seed.SaveChanges();
+        }
+        using var context = database.Open();
+
+        var plan = new ExcelImportPlanner().Plan(context, Classify(Row(2, category: "宠物", code: "P")));
+
+        Assert.Empty(plan.NewProducts);
+        Assert.Empty(plan.UpdatedProducts);
+        Assert.Empty(plan.NewBatches);
+        Assert.Contains(plan.Preview.PlanningIssues, issue => issue.Code == "product_scope_policy_conflict" && issue.ExcelRowNumber == 2);
+    }
+
+    [Fact]
+    public void SourceProductScopeConflictDoesNotChooseOrCreateAProduct()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+
+        var plan = new ExcelImportPlanner().Plan(context, Classify(
+            Row(2, category: "食品", code: "P", expiry: "2026-12-31"),
+            Row(3, category: "宠物", code: "P", expiry: "2027-12-31")));
+
+        Assert.Empty(plan.NewProducts);
+        Assert.Empty(plan.NewBatches);
+        Assert.Contains(plan.Preview.PlanningIssues, issue => issue.Code == "product_scope_policy_conflict" && issue.ExcelRowNumber == 2);
+    }
+
+    [Fact]
     public void PlansNewProductAndBatchAndExistingProductChangesWithoutWriting()
     {
         using var database = SqliteTestDatabase.Create();
@@ -553,8 +646,8 @@ public sealed class ExcelImportPlannerTests
         Assert.Equal(classification.DuplicateRows, plan.Preview.DuplicateRows);
         Assert.Equal(classification.BatchConflicts, plan.Preview.BatchConflicts);
         Assert.Equal(classification.StockConflicts, plan.Preview.StockConflicts);
-        Assert.Equal(1, plan.Preview.SkippedRowCount);
-        Assert.Equal(1, plan.Preview.RowIssueCount);
+        Assert.Equal(0, plan.Preview.SkippedRowCount);
+        Assert.Equal(2, plan.Preview.RowIssueCount);
         Assert.Equal(1, plan.Preview.DuplicateRowCount);
         Assert.Equal(1, plan.Preview.BatchConflictCount);
         Assert.Equal(1, plan.Preview.StockConflictCount);

@@ -301,7 +301,18 @@ public sealed class S3T07StartupEvidenceTests
         };
         context.Products.Add(product);
         context.SaveChanges();
+        EnsureFoodBaseline(context);
         return product;
+    }
+
+    private static void EnsureFoodBaseline(StoreDbContext context)
+    {
+        if (context.ScopeBaselines.Any()) return;
+        var import = new ImportRecord { SourceFileName = "baseline.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = OccurredAtUtc, ConfirmedAtUtc = OccurredAtUtc, Status = "succeeded" };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, BusinessDate = Today, IsCompleted = true, CompletedAtUtc = OccurredAtUtc });
+        context.SaveChanges();
     }
 
     private static Batch AddBatch(

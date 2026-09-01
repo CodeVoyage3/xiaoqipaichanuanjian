@@ -17,7 +17,7 @@ public sealed class ExcelFileClassifierTests
 
         Assert.Equal("20fe1898dba98f48bcd8b83673f2001fe3ed0dfc01a89aa4ebdff9d1af6cacce", beforeHash);
         Assert.Equal(3712, result.TotalRowCount);
-        Assert.Equal(3712, result.FoodRowCount);
+        Assert.Equal(3712, result.AcceptedRowCount);
         Assert.Equal(0, result.SkippedRowCount);
         Assert.Empty(result.RowIssues);
         Assert.Empty(result.DuplicateRows);
@@ -45,7 +45,7 @@ public sealed class ExcelFileClassifierTests
     }
 
     [Fact]
-    public void SkipsNonFoodRowsAndCollectsEveryApplicableFoodIssue()
+    public void AcceptsKnownNonFoodRowsAndCollectsEveryApplicableIssue()
     {
         var workbook = Workbook(
             Row(2, category: " 日用 ", code: null, expiry: "bad", shelfLife: null, shelfLifeUnit: null),
@@ -54,19 +54,10 @@ public sealed class ExcelFileClassifierTests
         var result = new ExcelFileClassifier().Classify(workbook);
 
         Assert.Equal(2, result.TotalRowCount);
-        Assert.Equal(1, result.FoodRowCount);
-        Assert.Equal(1, result.SkippedRowCount);
-        Assert.Equal(2, result.SkippedRows[0].ExcelRowNumber);
-        Assert.Equal(" 日用 ", result.SkippedRows[0].OriginalProductCategory);
-        Assert.DoesNotContain(result.RowIssues, issue => issue.ExcelRowNumber == 2);
-        Assert.Equal(
-            [
-                "missing_product_code",
-                "missing_expiry_date",
-                "missing_shelf_life",
-                "missing_shelf_life_unit"
-            ],
-            result.RowIssues.Select(issue => issue.Code));
+        Assert.Equal(2, result.AcceptedRowCount);
+        Assert.Equal(0, result.SkippedRowCount);
+        Assert.Equal(8, result.RowIssues.Count);
+        Assert.All(result.RowIssues, issue => Assert.Contains(issue.ExcelRowNumber, new[] { 2, 3 }));
     }
 
     [Fact]

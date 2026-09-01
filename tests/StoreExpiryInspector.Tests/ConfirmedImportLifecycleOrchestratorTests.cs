@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Domain;
+using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Excel;
 using Xunit;
 
@@ -21,6 +22,10 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     public void RealXlsxNewBatchRunsStage2AndPostImportInOneCommit()
     {
         using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            AddCompletedFoodBaseline(seed);
+        }
         var sourcePath = Path.Combine(database.Directory, "source.xlsx");
         WriteWorkbook(sourcePath, [
             "食品", "P-NEW", "B-NEW", "新商品", "2026-01-01", "2026-09-20", "12", "M", "是", "3", "5"
@@ -67,6 +72,10 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     public void ExplicitZeroUsesStockZeroLifecycleAndSkipsPostImport()
     {
         using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            AddCompletedFoodBaseline(seed);
+        }
         var sourcePath = Path.Combine(database.Directory, "zero.xlsx");
         WriteWorkbook(sourcePath, [
             "食品", "P-ZERO", "B-ZERO", "归零商品", "2026-01-01", "2026-09-20", "12", "M", "是", "3", "0"
@@ -140,6 +149,7 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
                 AttentionVersion = 4
             });
             seed.SaveChanges();
+            AddCompletedFoodBaseline(seed);
         }
 
         var sourcePath = Path.Combine(database.Directory, "arrival.xlsx");
@@ -240,6 +250,7 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
                 UpdatedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc)
             });
             seed.SaveChanges();
+            AddCompletedFoodBaseline(seed);
         }
         using (var schema = database.Open())
         {
@@ -270,7 +281,7 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         }
 
         using var verify = database.Open();
-        Assert.Empty(verify.Imports.AsNoTracking());
+        Assert.Single(verify.Imports.AsNoTracking());
         var product = Assert.Single(verify.Products.AsNoTracking());
         Assert.Equal("导入前商品", product.CurrentName);
         Assert.Equal("B-FAIL-OLD", product.CurrentBarcode);
@@ -318,6 +329,7 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
                 SourceDiscountReference = "是"
             });
             seed.SaveChanges();
+            AddCompletedFoodBaseline(seed);
         }
         var sourcePath = Path.Combine(database.Directory, "replay.xlsx");
         WriteWorkbook(sourcePath, [
@@ -345,7 +357,7 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         }
 
         using var verify = database.Open();
-        Assert.Single(verify.Imports.AsNoTracking());
+        Assert.Equal(2, verify.Imports.AsNoTracking().Count());
         Assert.Single(verify.Products.AsNoTracking());
         Assert.Single(verify.Batches.AsNoTracking());
         Assert.Single(verify.Tasks.AsNoTracking());
@@ -367,6 +379,15 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         var header = string.Join(string.Empty, Headers.Select((value, index) => InlineCell(ColumnName(index), 1, value)));
         var row = string.Join(string.Empty, values.Select((value, index) => InlineCell(ColumnName(index), 2, value)));
         AddEntry(archive, "xl/worksheets/sheet1.xml", $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData><row r=\"1\">{header}</row><row r=\"2\">{row}</row></sheetData></worksheet>");
+    }
+
+    private static void AddCompletedFoodBaseline(StoreDbContext context)
+    {
+        var import = new ImportRecord { SourceFileName = "baseline.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = DateTime.UtcNow, ConfirmedAtUtc = DateTime.UtcNow, Status = "succeeded" };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, BusinessDate = new DateOnly(2026, 8, 26), IsCompleted = true, CompletedAtUtc = DateTime.UtcNow });
+        context.SaveChanges();
     }
 
     private static ImportConfirmationContract ReadContract(SqliteTestDatabase database, string sourcePath)

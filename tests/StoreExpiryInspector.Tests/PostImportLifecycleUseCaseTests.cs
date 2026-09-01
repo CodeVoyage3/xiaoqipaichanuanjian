@@ -1292,6 +1292,11 @@ public sealed class PostImportLifecycleUseCaseTests
         };
         context.Products.Add(product);
         context.SaveChanges();
+        if (!context.ScopeBaselines.Any())
+        {
+            context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = importId, BusinessDate = BusinessDate, IsCompleted = true, CompletedAtUtc = SeedUtc });
+            context.SaveChanges();
+        }
         return product;
     }
 

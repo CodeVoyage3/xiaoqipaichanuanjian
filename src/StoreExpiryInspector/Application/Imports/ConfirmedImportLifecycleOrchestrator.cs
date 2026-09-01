@@ -76,11 +76,12 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 frozenFacts,
                 importId);
             var productsByCode = resolved.ProductsByCode;
+            var eligibleProductIds = CompletedScopeProductIds(context);
             var explicitStocks = request.Contract.Plan.ExplicitProductStocks
                 .ToDictionary(stock => stock.ProductCode, StringComparer.Ordinal);
 
             foreach (var stock in explicitStocks.Values
-                         .Where(stock => stock.Quantity == 0)
+                         .Where(stock => stock.Quantity == 0 && eligibleProductIds.Contains(productsByCode[stock.ProductCode].Id))
                          .OrderBy(stock => stock.ProductCode, StringComparer.Ordinal))
             {
                 if (!productsByCode.TryGetValue(stock.ProductCode, out var product))
@@ -99,14 +100,15 @@ public sealed class ConfirmedImportLifecycleOrchestrator
             }
 
             var zeroProductCodes = explicitStocks.Values
-                .Where(stock => stock.Quantity == 0)
+                .Where(stock => stock.Quantity == 0 && eligibleProductIds.Contains(productsByCode[stock.ProductCode].Id))
                 .Select(stock => stock.ProductCode)
                 .ToHashSet(StringComparer.Ordinal);
             var positiveGroups = resolved.BatchFacts
                 .GroupBy(fact => fact.ProductCode, StringComparer.Ordinal)
                 .Where(group =>
                     !zeroProductCodes.Contains(group.Key) &&
-                    productsByCode[group.Key].EffectiveStockQty > 0)
+                    productsByCode[group.Key].EffectiveStockQty > 0 &&
+                    eligibleProductIds.Contains(productsByCode[group.Key].Id))
                 .OrderBy(group => group.Key, StringComparer.Ordinal)
                 .Select(group => new PostImportProductGroup(
                     productsByCode[group.Key].Id,
@@ -341,6 +343,18 @@ public sealed class ConfirmedImportLifecycleOrchestrator
 
         return new ResolvedImportFacts(products, facts);
     }
+
+    private static HashSet<long> CompletedScopeProductIds(StoreDbContext context) => context.Products
+        .AsNoTracking()
+        .Where(product =>
+            product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+            context.ScopeBaselines.Any(baseline =>
+                baseline.IsCompleted &&
+                baseline.ScopeKey == product.CategoryCode &&
+                baseline.PolicyCode == product.PolicyCode &&
+                baseline.PolicyVersion == product.PolicyVersion))
+        .Select(product => product.Id)
+        .ToHashSet();
 
     private static IEnumerable<PlannedBatch> BatchPlans(ImportPlan plan)
     {

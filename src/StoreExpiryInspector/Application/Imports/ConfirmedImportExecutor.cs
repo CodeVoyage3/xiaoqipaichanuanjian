@@ -498,10 +498,7 @@ public sealed class ConfirmedImportExecutor
         foreach (var product in plan.NewProducts)
         {
             if (!productActions.Add(product.ProductCode) ||
-                product.CategoryCode != "food" ||
-                product.PolicyCode != ExpiryPolicies.Food ||
-                product.PolicyVersion != ExpiryPolicies.Version1 ||
-                product.ExpiryManagementStatus != ExpiryManagementStatus.Managed ||
+                !ValidScope(product) ||
                 product.ExcelStockQty < 0 ||
                 product.EffectiveStockQty < 0 ||
                 product.EffectiveStockQty != product.ExcelStockQty ||
@@ -651,6 +648,13 @@ public sealed class ConfirmedImportExecutor
 
         return true;
     }
+
+    private static bool ValidScope(NewProductPlan product) =>
+        product.ExpiryManagementStatus == ExpiryManagementStatus.Managed
+            ? (product.PolicyCode is ExpiryPolicies.Food or ExpiryPolicies.Pet or ExpiryPolicies.GeneralLong) &&
+              product.PolicyVersion == ExpiryPolicies.Version1
+            : (product.ExpiryManagementStatus is ExpiryManagementStatus.Excluded or ExpiryManagementStatus.Unresolved) &&
+              product.PolicyCode is null && product.PolicyVersion is null;
 
     private static bool ValidateBatchChanges(IReadOnlyList<ImportFieldChange> changes)
     {
@@ -873,10 +877,10 @@ public sealed class ConfirmedImportExecutor
                 ProductCode = newProduct.ProductCode,
                 CurrentName = newProduct.CurrentName,
                 CurrentBarcode = newProduct.CurrentBarcode,
-                CategoryCode = "food",
-                PolicyCode = ExpiryPolicies.Food,
-                PolicyVersion = ExpiryPolicies.Version1,
-                ExpiryManagementStatus = ExpiryManagementStatus.Managed,
+                CategoryCode = newProduct.CategoryCode,
+                PolicyCode = newProduct.PolicyCode,
+                PolicyVersion = newProduct.PolicyVersion,
+                ExpiryManagementStatus = newProduct.ExpiryManagementStatus,
                 ExcelStockQty = newProduct.ExcelStockQty,
                 EffectiveStockQty = newProduct.EffectiveStockQty,
                 EffectiveStockSource = "excel",

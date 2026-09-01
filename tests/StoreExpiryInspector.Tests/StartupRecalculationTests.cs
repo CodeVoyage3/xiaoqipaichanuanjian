@@ -562,6 +562,15 @@ public sealed class StartupRecalculationTests
         var product = new Product { ProductCode = $"SKU-{Guid.NewGuid():N}" };
         context.Products.Add(product);
         context.SaveChanges();
+        if (context.ScopeBaselines.Any())
+        {
+            return product;
+        }
+        var import = new ImportRecord { SourceFileName = "baseline.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = SeedUtc, ConfirmedAtUtc = SeedUtc, Status = "succeeded" };
+        context.Imports.Add(import);
+        context.SaveChanges();
+        context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = product.CategoryCode, PolicyCode = product.PolicyCode!, PolicyVersion = product.PolicyVersion!.Value, CreatedImportId = import.Id, BusinessDate = DateOnly.FromDateTime(SeedUtc), IsCompleted = true, CompletedAtUtc = SeedUtc });
+        context.SaveChanges();
         return product;
     }
 

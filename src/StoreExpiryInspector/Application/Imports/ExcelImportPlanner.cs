@@ -39,6 +39,10 @@ public sealed class ExcelImportPlanner
                     product.ProductCode,
                     product.CurrentName,
                     product.CurrentBarcode,
+                    product.CategoryCode,
+                    product.PolicyCode,
+                    product.PolicyVersion,
+                    product.ExpiryManagementStatus,
                     product.ExcelStockQty,
                     product.EffectiveStockQty,
                     product.EffectiveStockSource))
@@ -103,7 +107,32 @@ public sealed class ExcelImportPlanner
             }
             var productValues = ReadProductValues(productCode, productNormalBatches, planningIssues);
             var sourceRows = SourceRows(productNormalBatches, stock);
-            var canPlanNewProduct = canCreateProduct && stockDecision.IsValid;
+            var scope = default(ProductCategoryScope);
+            if (hasNormalBatches && !TryResolveScope(productCode, productNormalBatches, planningIssues, out scope))
+            {
+                continue;
+            }
+            var hasResolvedScope = scope.CategoryCode is not null;
+            if (hasResolvedScope && hasExistingProduct && !MatchesScope(existingProduct!, scope))
+            {
+                planningIssues.Add(new ImportPreviewIssue(
+                    productCode,
+                    sourceRows.Count == 0 ? null : sourceRows[0],
+                    "product_scope_policy_conflict",
+                    "商品大类",
+                    "商品管理范围或效期策略与既有商品不一致，未改绑或导入该商品。"));
+                continue;
+            }
+            if (hasResolvedScope && scope.ExpiryManagementStatus == ExpiryManagementStatus.Unresolved)
+            {
+                planningIssues.Add(new ImportPreviewIssue(
+                    productCode,
+                    sourceRows.Count == 0 ? null : sourceRows[0],
+                    "expiry_policy_unresolved",
+                    "保质期",
+                    "规则未覆盖；商品和批次将保存，但不纳入效期管理。"));
+            }
+            var canPlanNewProduct = canCreateProduct && stockDecision.IsValid && hasResolvedScope;
 
             if (canPlanNewProduct)
             {
@@ -114,6 +143,7 @@ public sealed class ExcelImportPlanner
                     productValues.NameIsAmbiguous,
                     productValues.BarcodeIsAmbiguous,
                     stockDecision.Quantity!.Value,
+                    scope,
                     sourceRows));
             }
             else if (hasExistingProduct)
@@ -300,6 +330,54 @@ public sealed class ExcelImportPlanner
 
         return changes;
     }
+
+    private static bool TryResolveScope(
+        string productCode,
+        IReadOnlyList<ExcelNormalBatch> batches,
+        ICollection<ImportPreviewIssue> planningIssues,
+        out ProductCategoryScope scope)
+    {
+        scope = default;
+        var scopes = new List<(ProductCategoryScope Scope, int Row)>();
+        foreach (var batch in batches)
+        {
+            if (!TryParseInteger(batch.RepresentativeRow.ShelfLife, out var shelfLife) || shelfLife <= 0)
+            {
+                continue;
+            }
+
+            scopes.Add((ProductCategoryScopes.Resolve(
+                batch.RepresentativeRow.ProductCategory,
+                shelfLife,
+                batch.RepresentativeRow.ShelfLifeUnit), batch.RepresentativeRowNumber));
+        }
+
+        if (scopes.Count == 0)
+        {
+            return true;
+        }
+
+        var first = scopes.OrderBy(item => item.Row).First();
+        if (scopes.Any(item => item.Scope != first.Scope))
+        {
+            planningIssues.Add(new ImportPreviewIssue(
+                productCode,
+                first.Row,
+                "product_scope_policy_conflict",
+                "商品大类",
+                "同一商品的管理范围或效期策略不一致，未导入该商品。"));
+            return false;
+        }
+
+        scope = first.Scope;
+        return true;
+    }
+
+    private static bool MatchesScope(ProductSnapshot product, ProductCategoryScope scope) =>
+        product.CategoryCode == scope.CategoryCode &&
+        product.ExpiryManagementStatus == scope.ExpiryManagementStatus &&
+        product.PolicyCode == scope.PolicyCode &&
+        product.PolicyVersion == scope.PolicyVersion;
 
     private static IReadOnlyList<ImportFieldChange> CompareBatch(
         BatchSnapshot existing,
@@ -552,6 +630,10 @@ public sealed class ExcelImportPlanner
         string ProductCode,
         string? CurrentName,
         string? CurrentBarcode,
+        string CategoryCode,
+        string? PolicyCode,
+        int? PolicyVersion,
+        ExpiryManagementStatus ExpiryManagementStatus,
         int ExcelStockQty,
         int EffectiveStockQty,
         string? EffectiveStockSource);
@@ -767,6 +849,7 @@ public sealed class NewProductPlan
         bool nameIsAmbiguous,
         bool barcodeIsAmbiguous,
         int stockQuantity,
+        ProductCategoryScope scope,
         IReadOnlyList<int> sourceExcelRowNumbers)
     {
         ProductCode = productCode;
@@ -774,10 +857,10 @@ public sealed class NewProductPlan
         CurrentBarcode = currentBarcode;
         NameIsAmbiguous = nameIsAmbiguous;
         BarcodeIsAmbiguous = barcodeIsAmbiguous;
-        CategoryCode = "food";
-        PolicyCode = ExpiryPolicies.Food;
-        PolicyVersion = ExpiryPolicies.Version1;
-        ExpiryManagementStatus = ExpiryManagementStatus.Managed;
+        CategoryCode = scope.CategoryCode;
+        PolicyCode = scope.PolicyCode;
+        PolicyVersion = scope.PolicyVersion;
+        ExpiryManagementStatus = scope.ExpiryManagementStatus;
         ExcelStockQty = stockQuantity;
         EffectiveStockQty = stockQuantity;
         EffectiveStockSource = "excel";
@@ -797,9 +880,9 @@ public sealed class NewProductPlan
 
     public string CategoryCode { get; }
 
-    public string PolicyCode { get; }
+    public string? PolicyCode { get; }
 
-    public int PolicyVersion { get; }
+    public int? PolicyVersion { get; }
 
     public ExpiryManagementStatus ExpiryManagementStatus { get; }
 
