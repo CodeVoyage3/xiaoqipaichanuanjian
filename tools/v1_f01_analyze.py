@@ -14,8 +14,8 @@ from pathlib import Path
 import openpyxl
 
 BUSINESS_DATE = dt.date(2026, 9, 1)
-REQUIRED = ("商品大类", "商品编码", "商品条码", "商品名称", "生产日期", "有效日期", "保质期", "保质期单位", "是否该做临期折扣", "该批次累计到货数量", "该商品门店库存总数")
-STAGE_DATE_HEADER = "折扣日期"
+REQUIRED = ("商品大类", "商品中类", "商品小类", "商品编码", "商品条码", "商品名称", "生产日期", "有效日期", "保质期", "保质期单位", "是否该做临期折扣", "该批次累计到货数量", "该商品门店库存总数")
+GENERAL_LONG_LIFE_CATEGORIES = {"日用", "美妆", "家居", "香氛香水", "文具", "潮流玩具"}
 SCHEMES = {
     "ratio_3pct": (0.03, None, None),
     "ratio_5pct": (0.05, None, None),
@@ -52,10 +52,8 @@ def integer(value):
         return None
 
 
-def stage(expiry, shelf_life, unit):
-    total = shelf_life * {"D": 1, "M": 30, "Y": 365}[unit]
+def stage_from_windows(expiry, first, second, third):
     remaining = (expiry - BUSINESS_DATE).days
-    first, second, third = (90, 60, 14) if total > 270 else (30, 14, 7)
     if remaining <= 0:
         return "expired"
     if remaining > first:
@@ -76,30 +74,23 @@ def window(days, ratio, lower, upper):
     return value
 
 
-def policy_nodes(expiry, shelf_life, unit):
-    """Return current food_v1 trigger dates; production date is not an input to this code path."""
-    total = shelf_life * {"D": 1, "M": 30, "Y": 365}[unit]
-    first, second, third = (90, 60, 14) if total > 270 else (30, 14, 7)
-    return {
-        "discount_50": expiry - dt.timedelta(days=first),
-        "discount_20": expiry - dt.timedelta(days=second),
-        "withdraw": expiry - dt.timedelta(days=third),
-    }
-
-
-def empty_stage_comparison():
-    return {
-        "eligible_batches": 0,
-        "excel_discount_date_present": 0,
-        "excel_discount_date_missing": 0,
-        "against_discount_50": collections.Counter(),
-        "against_discount_20": collections.Counter(),
-        "against_withdraw": collections.Counter(),
-        "all_three_match": 0,
-        "any_difference": 0,
-        "difference_days": {"discount_50": collections.Counter(), "discount_20": collections.Counter(), "withdraw": collections.Counter()},
-        "examples": [],
-    }
+def approved_policy(record):
+    """Return (policy_code, stage) only where the company rule is fully applicable."""
+    category, total = record["category"], record["declared_days"]
+    if category == "食品":
+        windows = (30, 14, 7) if total <= 270 else (90, 60, 14)
+        return "food_expiry_v1", stage_from_windows(record["expiry"], *windows)
+    if category == "宠物":
+        return "pet_expiry_v1", stage_from_windows(record["expiry"], 90, 60, 14)
+    if category in GENERAL_LONG_LIFE_CATEGORIES:
+        if total > 180:
+            return "general_long_expiry_v1", stage_from_windows(record["expiry"], 180, 90, 14)
+        return None, "uncovered_total_shelf_life_le_6_months"
+    if category == "应季搭配":
+        return None, "seasonality_and_off_season_decision_unavailable"
+    if category == "赠品小样":
+        return None, "source_category_does_not_prove_original_policy"
+    return None, "no_confirmed_policy_for_category"
 
 
 def percentile_nearest_rank(values, percentile):
@@ -135,9 +126,6 @@ def main():
     if missing:
         raise SystemExit("Missing required headers: " + ", ".join(missing))
     col = {header: headers.index(header) for header in REQUIRED}
-    stage_date_column_found = STAGE_DATE_HEADER in headers
-    if stage_date_column_found:
-        col[STAGE_DATE_HEADER] = headers.index(STAGE_DATE_HEADER)
     rows = []
     for excel_row, values in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         record = {name: values[index] if index < len(values) else None for name, index in col.items()}
@@ -149,10 +137,11 @@ def main():
     usable = []
     invalid_reasons = collections.Counter()
     for r in rows:
-        category, code, barcode, name = clean(r["商品大类"]), clean(r["商品编码"]), clean(r["商品条码"]), clean(r["商品名称"])
+        category, middle, small = clean(r["商品大类"]), clean(r["商品中类"]), clean(r["商品小类"])
+        code, barcode, name = clean(r["商品编码"]), clean(r["商品条码"]), clean(r["商品名称"])
         production, expiry = date_value(r["生产日期"]), date_value(r["有效日期"])
         life, unit, stock, arrival = integer(r["保质期"]), clean(r["保质期单位"]), integer(r["该商品门店库存总数"]), integer(r["该批次累计到货数量"])
-        for field, value in (("商品大类", category), ("商品编码", code), ("商品条码", barcode), ("商品名称", name), ("生产日期", production), ("有效日期", expiry), ("保质期", life), ("保质期单位", unit), ("是否该做临期折扣", clean(r["是否该做临期折扣"])), ("该批次累计到货数量", arrival), ("该商品门店库存总数", stock)):
+        for field, value in (("商品大类", category), ("商品中类", middle), ("商品小类", small), ("商品编码", code), ("商品条码", barcode), ("商品名称", name), ("生产日期", production), ("有效日期", expiry), ("保质期", life), ("保质期单位", unit), ("是否该做临期折扣", clean(r["是否该做临期折扣"])), ("该批次累计到货数量", arrival), ("该商品门店库存总数", stock)):
             field_quality[field]["missing" if value is None else "present"] += 1
         if r["生产日期"] is not None and production is None: field_quality["生产日期"]["invalid"] += 1
         if r["有效日期"] is not None and expiry is None: field_quality["有效日期"]["invalid"] += 1
@@ -177,7 +166,7 @@ def main():
         if reasons:
             invalid_reasons.update(reasons)
         else:
-            r.update(category=category or "<空白>", code=code, barcode=barcode, name=name, production=production, expiry=expiry, life=life, unit=unit, stock=stock, arrival=arrival, actual_days=(expiry-production).days)
+            r.update(category=category or "<空白>", middle=middle or "<空白>", small=small or "<空白>", code=code, barcode=barcode, name=name, production=production, expiry=expiry, life=life, unit=unit, stock=stock, arrival=arrival, actual_days=(expiry-production).days, declared_days=life * {"D": 1, "M": 30, "Y": 365}[unit])
             usable.append(r)
 
     conflict_fields = ("商品条码", "商品名称", "保质期", "保质期单位", "是否该做临期折扣", "该批次累计到货数量")
@@ -210,9 +199,7 @@ def main():
         p = simulation_by_category[r["category"]]
         p["eligible_batches"] += 1
         if r["expiry"] < BUSINESS_DATE: p["expired_batches"] += 1
-        current = stage(r["expiry"], r["life"], r["unit"])
         if r["stock"] == 0: p["stock_zero_batches"] += 1
-        elif current in {"discount_50", "discount_20", "withdraw"}: p["executable_batches"] += 1
         if r["expiry"] < BUSINESS_DATE and r["stock"] != 0:
             for name, (ratio, low, high) in SCHEMES.items():
                 days = window(r["actual_days"], ratio, low, high)
@@ -221,47 +208,24 @@ def main():
                 else:
                     schemes[name]["history_baseline"] += 1; p["schemes"][name]["history_baseline"] += 1
 
-    stage_by_category = {cat: empty_stage_comparison() for cat in category_profile}
-    stage_total = empty_stage_comparison()
-    for r in unique_usable.values():
-        excel_date = date_value(r.get(STAGE_DATE_HEADER)) if stage_date_column_found else None
-        nodes = policy_nodes(r["expiry"], r["life"], r["unit"])
-        for comparison in (stage_total, stage_by_category[r["category"]]):
-            comparison["eligible_batches"] += 1
-            if excel_date is None:
-                comparison["excel_discount_date_missing"] += 1
-                continue
-            comparison["excel_discount_date_present"] += 1
-            matches = []
-            for stage_name, calculated in nodes.items():
-                outcome = "match" if excel_date == calculated else "mismatch"
-                comparison[f"against_{stage_name}"][outcome] += 1
-                comparison["difference_days"][stage_name][(excel_date - calculated).days] += 1
-                matches.append(outcome == "match")
-            comparison["all_three_match"] += int(all(matches))
-            comparison["any_difference"] += int(not all(matches))
-            if len(comparison["examples"]) < 3 and not matches[0]:
-                comparison["examples"].append({
-                    "category": r["category"],
-                    "shelf_life": r["life"],
-                    "unit": r["unit"],
-                    "production": r["production"].isoformat(),
-                    "expiry": r["expiry"].isoformat(),
-                    "excel_discount_date": excel_date.isoformat(),
-                    "delta_to_discount_50_days": (excel_date - nodes["discount_50"]).days,
-                    "delta_to_discount_20_days": (excel_date - nodes["discount_20"]).days,
-                    "delta_to_withdraw_days": (excel_date - nodes["withdraw"]).days,
-                })
-
     approved_history = []
     current_executable = []
+    policy_coverage = {cat: {"calculable_batches": 0, "uncalculable_batches": 0, "calculable_product_codes": set(), "uncalculable_product_codes": set(), "reasons": collections.Counter()} for cat in category_profile}
     for r in unique_usable.values():
+        policy_code, current = approved_policy(r)
+        coverage = policy_coverage[r["category"]]
+        if policy_code:
+            coverage["calculable_batches"] += 1
+            coverage["calculable_product_codes"].add(r["code"])
+        else:
+            coverage["uncalculable_batches"] += 1
+            coverage["uncalculable_product_codes"].add(r["code"])
+            coverage["reasons"][current] += 1
         if r["stock"] == 0:
             continue
-        current = stage(r["expiry"], r["life"], r["unit"])
         if r["expiry"] < BUSINESS_DATE and (BUSINESS_DATE - r["expiry"]).days <= window(r["actual_days"], 0.05, 3, 60):
             approved_history.append((r, "expired"))
-        if current in {"discount_50", "discount_20", "withdraw"}:
+        if policy_code and current in {"discount_50", "discount_20", "withdraw", "expired"} and r["expiry"] >= BUSINESS_DATE:
             current_executable.append((r, current))
 
     def workload(items):
@@ -309,6 +273,38 @@ def main():
         "overlapping_product_codes": len(set(history_workload.pop("product_codes")) & set(executable_workload.pop("product_codes"))),
     }
     merged_workload.pop("product_codes")
+
+    def category_composition(category):
+        items = [r for r in unique_usable.values() if r["category"] == category]
+        buckets = collections.defaultdict(lambda: {"products": set(), "batches": 0, "shelf_life": collections.Counter()})
+        for r in items:
+            bucket = buckets[(r["middle"], r["small"])]
+            bucket["products"].add(r["code"]); bucket["batches"] += 1
+            bucket["shelf_life"][(r["life"], r["unit"])] += 1
+        return [{"middle_category": middle, "small_category": small, "products": len(value["products"]), "batches": value["batches"], "shelf_life_distribution": {f"{life} {unit}": count for (life, unit), count in sorted(value["shelf_life"].items())}} for (middle, small), value in sorted(buckets.items())]
+
+    gift_rows = []
+    for r in sorted((x for x in unique_usable.values() if x["category"] == "赠品小样"), key=lambda x: x["name"]):
+        gift_rows.append({"middle_category": r["middle"], "small_category": r["small"], "product_name": r["name"], "shelf_life": r["life"], "unit": r["unit"], "declared_days": r["declared_days"]})
+
+    long_life_boundary = {}
+    for category in sorted(GENERAL_LONG_LIFE_CATEGORIES):
+        buckets = {"gt_6_months": {"products": set(), "batches": 0}, "eq_6_months": {"products": set(), "batches": 0}, "lt_6_months": {"products": set(), "batches": 0}}
+        short_detail = collections.defaultdict(lambda: {"products": set(), "batches": 0})
+        items = [r for r in unique_usable.values() if r["category"] == category]
+        for r in items:
+            key = "gt_6_months" if r["declared_days"] > 180 else "eq_6_months" if r["declared_days"] == 180 else "lt_6_months"
+            buckets[key]["products"].add(r["code"]); buckets[key]["batches"] += 1
+            if key != "gt_6_months":
+                detail = short_detail[(r["middle"], r["small"])]
+                detail["products"].add(r["code"]); detail["batches"] += 1
+        long_life_boundary[category] = {
+            "total_products": len({r["code"] for r in items}), "total_batches": len(items),
+            **{name: {"products": len(value["products"]), "batches": value["batches"]} for name, value in buckets.items()},
+            "le_6_months_distribution": [{"middle_category": middle, "small_category": small, "products": len(value["products"]), "batches": value["batches"]} for (middle, small), value in sorted(short_detail.items())],
+        }
+
+    coverage_result = {category: {"calculable_batches": value["calculable_batches"], "uncalculable_batches": value["uncalculable_batches"], "calculable_products": len(value["calculable_product_codes"]), "uncalculable_products": len(value["uncalculable_product_codes"]), "uncalculable_reasons": counter_dict(value["reasons"])} for category, value in sorted(policy_coverage.items())}
     usable_row_numbers = {r["row"] for r in usable}
     for cat, p in simulation_by_category.items():
         p["products_by_product_code"] = category_profile[cat]["products_by_product_code"]
@@ -327,14 +323,21 @@ def main():
         "identity_quality": {"product_codes_with_multiple_names": sum(1 for v in product_rows.values() if len({clean(x["商品名称"]) for x in v}) > 1), "product_codes_with_multiple_barcodes": sum(1 for v in product_rows.values() if len({clean(x["商品条码"]) for x in v}) > 1)},
         "shelf_life_actual_days": {"count": len(life_days), "min": min(life_days) if life_days else None, "max": max(life_days) if life_days else None, "median": sorted(life_days)[len(life_days)//2] if life_days else None, "unit_counts": counter_dict(life_by_unit)},
         "simulation": {"eligible_unique_batch_basis": "product_code + production_date + expiry_date; first row only for identical keys", "schemes": {name: dict(value) for name, value in schemes.items()}, "by_category": simulation_by_category, "stage_window_reverse": "existing authoritative calculation: D/M/Y to 1/30/365 days; total >270 then 90/60/14 else 30/14/7; not a historical-expiry follow-up rule"},
-        "stage_policy_comparison": {
-            "source_columns": {"discount_date": STAGE_DATE_HEADER if stage_date_column_found else None, "discount_20_date": None, "withdraw_date": None},
-            "semantic_limit": "The source has only one neutral '折扣日期' column. It has no separately headed 2折 or 下架/收仓 date columns; the comparisons below are numerical cross-checks, not proof that the source date is authoritative or a named-stage field.",
-            "food_v1_nodes": "D/M/Y=1/30/365; total shelf-life >270 uses expiry minus 90/60/14, otherwise expiry minus 30/14/7. Production date is not an input to the current stage calculator.",
-            "overall": stage_total,
-            "by_category": stage_by_category,
+        "company_stage_policy": {
+            "authority": "Product-manager supplied company rule; neutral Excel discount date is not used for policy inference.",
+            "month_conversion_for_simulation_only": "1 month = 30 days; total shelf-life D/M/Y = 1/30/365. This is an analysis convention aligned with existing code, not an additional company rule.",
+            "policy_groups": {
+                "food_expiry_v1": "食品: total <=270 days 30/14/7; >270 days 90/60/14",
+                "pet_expiry_v1": "宠物: 90/60/14 regardless of total shelf-life",
+                "general_long_expiry_v1": "日用/美妆/家居/香氛香水/文具/潮流玩具: total >180 days only, 180/90/14",
+                "unresolved": "应季搭配 requires seasonality and off-season decision; 赠品小样 does not prove original category; six general categories with total <=180 days have no supplied policy",
+            },
+            "coverage_by_category": coverage_result,
+            "seasonal_matching": {"category": "应季搭配", "composition": category_composition("应季搭配"), "decision": "unresolved: source has no reliable season or off-season approval attribute"},
+            "gift_sample_matching": {"category": "赠品小样", "products": gift_rows, "decision": "unresolved: source category and attributes do not prove an original company policy"},
+            "general_long_life_boundary": long_life_boundary,
         },
-        "first_day_workload": workload_result,
+        "first_day_workload_company_policy": workload_result,
     }
     after = hashlib.sha256(source.read_bytes()).hexdigest().upper()
     if after != before or source.stat().st_size != size:

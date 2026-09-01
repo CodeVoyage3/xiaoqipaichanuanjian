@@ -57,3 +57,15 @@ python -B tools/v1_f01_analyze.py --source <原表> --output obj/V1F01/sol-summa
 Terra 已补充提交 `V1-F01-STAGE-POLICY-AND-FIRST-DAY-WORKLOAD.md`，并最小更新只读 `tools/v1_f01_analyze.py`，以增加源表“折扣日期”与 food_v1 三候选节点的数值交叉对照及按 ProductCode 的首日工作量聚合。源表没有独立 2 折、下架或收仓日期字段；中性“折扣日期”不能认定为业务权威。Sol 使用工作区捆绑 Python 两次重跑，聚合 JSON SHA-256 均为 `B233ECF01AE95E86B91E1B2F9D3C000D2DA778C3C7DE961CC775AC44F3745E82`，源表指纹仍为 `2522641 bytes` 与 `BBD91AE4E40E5381D749F8DB8F4CC0A600FB88D8C1CF6EA160C7C33EC1A3F0F6`。
 
 Sol 已复核真实 20 表头、`32,402 = 31,184 非空 + 1,218 空`、10 类对账、三候选节点各自分母、629 / 2,493 批次守恒、`465 + 1,175 - 366 = 1,274` 商品任务并集、合并阶段 `200 / 430 / 179 / 465`、批次压力平均 `2.450549...`、P50 `2`、P90 `5`、最大 `12`。结果通过；但 Stage policy 因缺少三节点语义证据仍是产品阻断，不得据此开始 V1-F01 实现。
+
+## H 节公司规则输入｜Sol 独立复核通过
+
+- 公司规则已替代 Excel 中性 `折扣日期` 的 policy 推断；分析脚本不再用该列计算或证明 policy。
+- Terra 运行：`python -B tools/v1_f01_analyze.py --source D:\下载\东莞壹号广场KKV店商品效期折扣判断表_2026-09-01-17-19-31.xlsx --output obj/V1F01/terra-company-policy-summary.json`。
+- 读取前后源文件：`2,522,641 bytes`、`BBD91AE4E40E5381D749F8DB8F4CC0A600FB88D8C1CF6EA160C7C33EC1A3F0F6`；输出为汇总 JSON，不含完整门店明细。
+- H2：应季搭配 797 商品 / 1,212 批因季节、反季和上下图决定缺失不可映射；赠品小样 7 商品 / 7 批因原始 policy 来源缺失不可映射；六个通用长效类本表均无 `<=6个月` 批次。
+- H3：已确认 policy 可计算 / 不可计算为 `31,183 / 1,219` 批；历史补查 `629 / 465`（批 / Task），当前可执行 `3,730 / 1,407`，合并去重 `4,359 / 1,474`，ProductCode 交集 398，合并 Stage 为 `255 / 543 / 174 / 502`（5折 / 2折 / 收仓 / 过期），压力平均 / P50 / P90 / 最大为 `2.96 / 2 / 6 / 14`。
+- Terra 结论：只建议 `food_expiry_v1`、`pet_expiry_v1`、`general_long_expiry_v1` 三个确认 policy 分组；季节性及赠品范围保持 `unresolved`。月=30天仅为与现有系统一致的模拟换算，未当作新的业务规则。
+- Sol 使用工作区捆绑 Python 独立重跑两次，两个汇总 SHA-256 均为 `5D84A2415E1827637A46D47EF40AD5BFCE3840574BF7AA956FDD9ECEC9A9F44A`；原表指纹保持 `2,522,641 bytes`、`BBD91AE4E40E5381D749F8DB8F4CC0A600FB88D8C1CF6EA160C7C33EC1A3F0F6`。
+- Sol 已核对 `31,183 + 1,219 = 32,402`、应季 797 商品 / 1,212 批 / 48 个中小类组合、赠品 7 项、六类六个月分桶、629 / 3,730 / 4,359 批次、`465 + 1,407 - 398 = 1,474`、四阶段 `255 + 543 + 174 + 502 = 1,474`、逐类合计及压力分位数，均通过。
+- 差异仅限任务卡、分析文档、验收记录和只读脚本；无 `src/**`、生产测试、项目、依赖、schema、migration 或数据库修改，未启动 WPF。状态保持 `READY_FOR_PRODUCT_DECISION`，不进入实现。
