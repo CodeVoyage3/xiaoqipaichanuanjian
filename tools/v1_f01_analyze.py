@@ -16,6 +16,7 @@ import openpyxl
 BUSINESS_DATE = dt.date(2026, 9, 1)
 REQUIRED = ("商品大类", "商品中类", "商品小类", "商品编码", "商品条码", "商品名称", "生产日期", "有效日期", "保质期", "保质期单位", "是否该做临期折扣", "该批次累计到货数量", "该商品门店库存总数")
 GENERAL_LONG_LIFE_CATEGORIES = {"日用", "美妆", "家居", "香氛香水", "文具", "潮流玩具"}
+V1_EXCLUDED_CATEGORIES = {"应季搭配", "赠品小样"}
 SCHEMES = {
     "ratio_3pct": (0.03, None, None),
     "ratio_5pct": (0.05, None, None),
@@ -23,6 +24,7 @@ SCHEMES = {
     "ratio_5pct_clamp_3_30": (0.05, 3, 30),
     "ratio_5pct_clamp_3_60": (0.05, 3, 60),
     "ratio_5pct_clamp_7_60": (0.05, 7, 60),
+    "ratio_3pct_clamp_3_30": (0.03, 3, 30),
 }
 
 
@@ -86,10 +88,8 @@ def approved_policy(record):
         if total > 180:
             return "general_long_expiry_v1", stage_from_windows(record["expiry"], 180, 90, 14)
         return None, "uncovered_total_shelf_life_le_6_months"
-    if category == "应季搭配":
-        return None, "seasonality_and_off_season_decision_unavailable"
-    if category == "赠品小样":
-        return None, "source_category_does_not_prove_original_policy"
+    if category in V1_EXCLUDED_CATEGORIES:
+        return None, "excluded_from_expiry_management_in_v1"
     return None, "no_confirmed_policy_for_category"
 
 
@@ -208,7 +208,7 @@ def main():
                 else:
                     schemes[name]["history_baseline"] += 1; p["schemes"][name]["history_baseline"] += 1
 
-    approved_history = []
+    history_by_window = {"pct_5_clamp_3_60": [], "pct_3_clamp_3_30": []}
     current_executable = []
     policy_coverage = {cat: {"calculable_batches": 0, "uncalculable_batches": 0, "calculable_product_codes": set(), "uncalculable_product_codes": set(), "reasons": collections.Counter()} for cat in category_profile}
     for r in unique_usable.values():
@@ -223,8 +223,12 @@ def main():
             coverage["reasons"][current] += 1
         if r["stock"] == 0:
             continue
-        if r["expiry"] < BUSINESS_DATE and (BUSINESS_DATE - r["expiry"]).days <= window(r["actual_days"], 0.05, 3, 60):
-            approved_history.append((r, "expired"))
+        if policy_code and r["expiry"] < BUSINESS_DATE:
+            overdue_days = (BUSINESS_DATE - r["expiry"]).days
+            if overdue_days <= window(r["actual_days"], 0.05, 3, 60):
+                history_by_window["pct_5_clamp_3_60"].append((r, "expired"))
+            if overdue_days <= window(r["actual_days"], 0.03, 3, 30):
+                history_by_window["pct_3_clamp_3_30"].append((r, "expired"))
         if policy_code and current in {"discount_50", "discount_20", "withdraw", "expired"} and r["expiry"] >= BUSINESS_DATE:
             current_executable.append((r, current))
 
@@ -261,6 +265,7 @@ def main():
             "product_codes": sorted(by_product),
         }
 
+    approved_history = history_by_window["pct_5_clamp_3_60"]
     history_workload = workload(approved_history)
     executable_workload = workload(current_executable)
     merged_by_key = {(r["code"], r["production"], r["expiry"]): (r, stage_name) for r, stage_name in approved_history}
@@ -273,6 +278,37 @@ def main():
         "overlapping_product_codes": len(set(history_workload.pop("product_codes")) & set(executable_workload.pop("product_codes"))),
     }
     merged_workload.pop("product_codes")
+
+    scenario_stage_sets = {
+        "A_all_current_stages": {"discount_50", "discount_20", "withdraw", "expired"},
+        "B_ignore_existing_discount_50": {"discount_20", "withdraw", "expired"},
+        "C_keep_withdraw_and_expired": {"withdraw", "expired"},
+        "D_expired_only": {"expired"},
+    }
+    cold_start_scenarios = {}
+    for history_name, history_items in history_by_window.items():
+        history_summary = workload(history_items)
+        history_summary.pop("product_codes")
+        combinations = {}
+        for scenario_name, included_stages in scenario_stage_sets.items():
+            current_items = [(r, stage_name) for r, stage_name in current_executable if stage_name in included_stages]
+            merged = {(r["code"], r["production"], r["expiry"]): (r, stage_name) for r, stage_name in history_items}
+            merged.update({(r["code"], r["production"], r["expiry"]): (r, stage_name) for r, stage_name in current_items})
+            summary = workload(list(merged.values()))
+            summary.pop("product_codes")
+            combinations[scenario_name] = {
+                "first_day_open_product_tasks": summary["products_and_open_tasks"],
+                "reduction_from_1474": 1474 - summary["products_and_open_tasks"],
+                "stage_distribution": summary["stage_distribution"],
+                "tasks_by_category": {category: value["products_and_open_tasks"] for category, value in summary["by_category"].items()},
+            }
+        cold_start_scenarios[history_name] = {
+            "history_follow_up_batches": history_summary["batches"],
+            "history_follow_up_product_tasks": history_summary["products_and_open_tasks"],
+            "combinations": combinations,
+        }
+    if cold_start_scenarios["pct_5_clamp_3_60"]["combinations"]["A_all_current_stages"]["first_day_open_product_tasks"] != 1474:
+        raise SystemExit("Approved A + 5% baseline no longer equals 1474.")
 
     def category_composition(category):
         items = [r for r in unique_usable.values() if r["category"] == category]
@@ -330,7 +366,8 @@ def main():
                 "food_expiry_v1": "食品: total <=270 days 30/14/7; >270 days 90/60/14",
                 "pet_expiry_v1": "宠物: 90/60/14 regardless of total shelf-life",
                 "general_long_expiry_v1": "日用/美妆/家居/香氛香水/文具/潮流玩具: total >180 days only, 180/90/14",
-                "unresolved": "应季搭配 requires seasonality and off-season decision; 赠品小样 does not prove original category; six general categories with total <=180 days have no supplied policy",
+                "excluded_v1": "应季搭配/赠品小样 import normally but do not participate in expiry management in V1",
+                "unresolved": "six general categories with total <=180 days have no supplied policy and create no expiry tasks",
             },
             "coverage_by_category": coverage_result,
             "seasonal_matching": {"category": "应季搭配", "composition": category_composition("应季搭配"), "decision": "unresolved: source has no reliable season or off-season approval attribute"},
@@ -338,6 +375,7 @@ def main():
             "general_long_life_boundary": long_life_boundary,
         },
         "first_day_workload_company_policy": workload_result,
+        "cold_start_scenarios": cold_start_scenarios,
     }
     after = hashlib.sha256(source.read_bytes()).hexdigest().upper()
     if after != before or source.stat().st_size != size:
