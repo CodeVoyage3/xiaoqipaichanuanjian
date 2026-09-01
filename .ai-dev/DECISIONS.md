@@ -205,3 +205,14 @@
 - 历史补查来源必须可审计且不伪造正式历史；基线后恢复完整四阶段生命周期。月份固定 30 天，到期当天 expired。
 - Seen BatchKey、MaxArrivalQty、库存 0、Task 聚合、AttentionVersion / HandledAttentionVersion 和更高 Stage 权威不变。
 - 实施拟拆 I01--I04；每卡须单独批准并新建 GPT-5.6 Terra（medium，标准速度），Sol 独立验收。当前只批准拆分，不批准 I01 开工，不进入 Stage 8。
+
+## D-025｜V1-F01-I01 Policy 与范围基线持久化底座
+
+- 状态：产品经理于 2026-09-01 批准 I01；Terra 实现后由 Sol 两次退回根因缺陷并独立复跑，2026-09-02 技术验收通过。I02 未获批准。
+- Product policy 身份冻结为独立 `policy_code + policy_version`；V1 为 `food_expiry / pet_expiry / general_long_expiry` + version 1。现有 `food_v1` 由唯一新增 migration 显式迁移，不改变 ProductCode、BatchKey 或既有生命周期身份。
+- `ExpiryManagementStatus` 为 Managed / Excluded / Unresolved；Managed 必须有获准 policy/version，后两者 policy/version 必须为空。`scope_key` 复用 canonical `CategoryCode` 持久化位置。
+- 范围基线唯一键为 `scope_key + policy_code + policy_version`；BatchBaseline 持久化 canonical Stage、七类首次接管 disposition、3..30 catchup 窗口及适用的 Task/Catchup 来源，不伪造正式历史。
+- I01 新增唯一第 9 条 migration `20260901155124_AddPolicyAndBaselineFoundation`；I02--I04 默认禁止 migration，schema 不足时必须停下重新审批。
+- Sol 最终门禁：I01 相关 25/25、Release 711/711、build 0 warning / 0 error、EF 无漂移、migration=9、脚本生成、依赖与 WPF/Reminder 范围未变、应用进程 0。
+- I04 只保持现有 Reminder 消费 open Task 链路，不实现提前 3 天预提醒；该能力仍属于未批准的 V1-F02。
+- 当前停止在 I01 技术验收完成；不创建或执行 I02，等待产品经理单独批准。
