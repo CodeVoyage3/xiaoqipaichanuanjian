@@ -46,6 +46,11 @@ public sealed class V1F01I03ColdStartTests
         Assert.Empty(verify.Inspections);
         Assert.Empty(verify.InspectionItemRevisions);
         Assert.Empty(verify.LifecycleEvents);
+        Assert.Equal(8, verify.ScopeBaselines.Count(scope => scope.IsCompleted));
+        Assert.Empty(verify.Tasks.Join(verify.Products, task => task.ProductId, product => product.Id, (task, product) => product).Where(product => product.ExpiryManagementStatus is ExpiryManagementStatus.Excluded or ExpiryManagementStatus.Unresolved));
+        Assert.Equal(baselineBatches.Length, baselineBatches.GroupBy(item => item.ColdStartDisposition).Sum(group => group.Count()));
+        Assert.Equal(2522641, new FileInfo(source).Length);
+        Assert.Equal("BBD91AE4E40E5381D749F8DB8F4CC0A600FB88D8C1CF6EA160C7C33EC1A3F0F6", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(source))));
     }
 
     [Fact]
