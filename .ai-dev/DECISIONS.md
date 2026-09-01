@@ -176,3 +176,13 @@
 - UI/UX 仅允许在后续批准范围内调整视觉、布局、信息层级和必要交互表达；保持条码、1024×600 / Windows 125%、用户本人 GUI 验收；不得改写 Stage 3～7 权威、schema、migration 或借机新增业务。
 - Stage 8 原规划保持稳定性 / 性能，必须等 Stage 7 收口、UI/UX 完成和用户单独批准后再进入；不创建 S8-T01，不把 UI/UX 并入 Stage 8。
 - 本决策不改写 S7-T02 治理偏差、各卡历史计数和 GUI 复验过程；最终证据索引为 `.ai-dev/ACCEPTANCE/STAGE-7.md`。
+
+## D-022｜UIUX-R01 放行与 UIUX-R02 三页实施门禁
+
+- 状态：UIUX-R01 视觉门禁已放行；UIUX-R02 技术、用户 GUI 与正式数据恢复门禁均已通过，2026-09-01 正式归档。
+- 2026-09-01 用户通过附件明确确认“新的整体视觉方向认可，可以按该设计系统进入生产 UI 重构。”，UIUX-R01 视觉门禁正式通过。
+- UIUX-R02 只允许 Dashboard、待排查任务列表、排查详情及必要共享视觉资源；使用全新的 GPT-5.6 Luna（max），不复用 UIUX-R01 Luna。
+- 实施保持 Stage 3～7 业务权威、固定分页、查询顺序、阶段文案、Draft/Reconfirm/库存修正/提交语义、schema、migration 和依赖不变；共享 Header 的新尺寸只作用于三类代表页，未纳入页面保持旧布局。
+- Sol 最终技术门禁：UIUX-R02 1/1、UIUX-R02 + S4-T10 3/3、Release 681/681；离线 Release build 0 warning / 0 error，在线 NuGet 漏洞审计本轮不可用；EF 无漂移、migration=8、dependency 无变化。
+- 用户在全部已知视觉修正完成后明确 GUI“通过”；正式库最终由用户现场恢复并回执为 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`，进程 0，恢复后未启动 WPF。
+- UIUX-R02 归档不授权后续任务；不自动创建 UIUX-R03，不进入 Stage 8，等待用户单独批准。

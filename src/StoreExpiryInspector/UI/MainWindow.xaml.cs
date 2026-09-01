@@ -29,8 +29,13 @@ public partial class MainWindow : Window
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         var compact = e.NewSize.Width < 1280;
-        ShellColumn.Width = new(224);
+        ShellColumn.Width = new(compact ? 176 : 208);
         ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
+        if (PendingTasksStandardGrid is not null && PendingTasksCompactGrid is not null)
+        {
+            PendingTasksStandardGrid.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            PendingTasksCompactGrid.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     private void DashboardDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

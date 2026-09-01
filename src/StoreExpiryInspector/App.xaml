@@ -9,12 +9,15 @@
         <SolidColorBrush x:Key="SurfaceSubtleBrush" Color="#F8FAFC" />
         <SolidColorBrush x:Key="PrimaryTextBrush" Color="#172033" />
         <SolidColorBrush x:Key="SecondaryTextBrush" Color="#475569" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#64748B" />
         <SolidColorBrush x:Key="DisabledTextBrush" Color="#7C8799" />
         <SolidColorBrush x:Key="BorderBrush" Color="#D6DCE5" />
         <SolidColorBrush x:Key="TableDividerBrush" Color="#E7EBF0" />
         <SolidColorBrush x:Key="PrimaryActionBrush" Color="#1F5FBF" />
         <SolidColorBrush x:Key="PrimaryActionHoverBrush" Color="#174A96" />
         <SolidColorBrush x:Key="FocusRingBrush" Color="#2563EB" />
+        <SolidColorBrush x:Key="HoverSurfaceBrush" Color="#F0F5FC" />
+        <SolidColorBrush x:Key="SelectedSurfaceBrush" Color="#EAF2FF" />
         <SolidColorBrush x:Key="DangerBrush" Color="#B42318" />
         <SolidColorBrush x:Key="WarningTextBrush" Color="#8A4B08" />
         <SolidColorBrush x:Key="WarningSurfaceBrush" Color="#FFF7E6" />
@@ -754,6 +757,16 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisualStyle}" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+                    <Setter Property="BorderThickness" Value="2" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="DataGridRow">
@@ -761,11 +774,11 @@
             <Setter Property="BorderThickness" Value="0" />
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#EAF2FF" />
+                    <Setter Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
                     <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                 </Trigger>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                    <Setter Property="Background" Value="#F3F7FF" />
+                    <Setter Property="Background" Value="{DynamicResource HoverSurfaceBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
