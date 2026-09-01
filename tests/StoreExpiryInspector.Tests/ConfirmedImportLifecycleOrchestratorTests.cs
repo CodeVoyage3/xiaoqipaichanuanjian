@@ -112,7 +112,7 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     }
 
     [Fact]
-    public void ManagedImportAndStartupDoNotCreateTasksBeforeScopeBaselineCompletes()
+    public void ManagedImportColdStartsItsScopeWithoutCreatingDiscountTask()
     {
         using var database = SqliteTestDatabase.Create();
         var sourcePath = Path.Combine(database.Directory, "unbaselined.xlsx");
@@ -123,19 +123,11 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         {
             Assert.True(new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
                 contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc))).Succeeded);
-            var batch = context.Batches.Single();
-            batch.NextTriggerDate = new DateOnly(2026, 8, 27);
-            context.SaveChanges();
-        }
-
-        using (var context = database.Open())
-        {
-            var startup = new StartupRecalculationUseCase().Execute(context, new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 10, 0, 0, DateTimeKind.Utc));
-            Assert.Equal(0, startup.MatchedBatchCount);
         }
 
         using var verify = database.Open();
-        Assert.Empty(verify.ScopeBaselines);
+        Assert.Single(verify.ScopeBaselines);
+        Assert.True(verify.ScopeBaselines.Single().IsCompleted);
         Assert.Empty(verify.Tasks);
     }
 

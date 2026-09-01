@@ -19,15 +19,18 @@ public sealed class ConfirmedImportLifecycleOrchestrator
     private readonly ConfirmedImportExecutor? _executor;
     private readonly ProductStockZeroLifecycleUseCase _stockZeroLifecycle;
     private readonly PostImportLifecycleUseCase _postImportLifecycle;
+    private readonly ColdStartScopeBaselineUseCase _coldStart;
 
     public ConfirmedImportLifecycleOrchestrator(
         ConfirmedImportExecutor? executor = null,
         ProductStockZeroLifecycleUseCase? stockZeroLifecycle = null,
-        PostImportLifecycleUseCase? postImportLifecycle = null)
+        PostImportLifecycleUseCase? postImportLifecycle = null,
+        ColdStartScopeBaselineUseCase? coldStart = null)
     {
         _executor = executor;
         _stockZeroLifecycle = stockZeroLifecycle ?? new ProductStockZeroLifecycleUseCase();
         _postImportLifecycle = postImportLifecycle ?? new PostImportLifecycleUseCase();
+        _coldStart = coldStart ?? new ColdStartScopeBaselineUseCase();
     }
 
     public ConfirmedImportResult Execute(
@@ -76,12 +79,24 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 frozenFacts,
                 importId);
             var productsByCode = resolved.ProductsByCode;
+            var coldStartedProductIds = new HashSet<long>();
+            foreach (var scope in context.Products.AsNoTracking()
+                         .Where(product => product.LastSeenImportId == importId && product.ExpiryManagementStatus == ExpiryManagementStatus.Managed)
+                         .Select(product => new { product.CategoryCode, product.PolicyCode, product.PolicyVersion })
+                         .Distinct().OrderBy(product => product.CategoryCode).ThenBy(product => product.PolicyCode).ThenBy(product => product.PolicyVersion))
+            {
+                var coldStart = _coldStart.Execute(context, new ColdStartScopeBaselineRequest(scope.CategoryCode, scope.PolicyCode!, scope.PolicyVersion!.Value, importId, request.BusinessDate, request.OccurredAtUtc));
+                if (coldStart.Started)
+                {
+                    foreach (var productId in context.Products.AsNoTracking().Where(product => product.CategoryCode == scope.CategoryCode && product.PolicyCode == scope.PolicyCode && product.PolicyVersion == scope.PolicyVersion).Select(product => product.Id)) coldStartedProductIds.Add(productId);
+                }
+            }
             var eligibleProductIds = CompletedScopeProductIds(context);
             var explicitStocks = request.Contract.Plan.ExplicitProductStocks
                 .ToDictionary(stock => stock.ProductCode, StringComparer.Ordinal);
             var eligibleStocks = explicitStocks.Values
                 .Where(stock => productsByCode.TryGetValue(stock.ProductCode, out var product) &&
-                    eligibleProductIds.Contains(product.Id))
+                    eligibleProductIds.Contains(product.Id) && !coldStartedProductIds.Contains(product.Id))
                 .ToArray();
 
             foreach (var stock in eligibleStocks
@@ -107,7 +122,7 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 .Where(stock => stock.Quantity == 0)
                 .Select(stock => stock.ProductCode)
                 .ToHashSet(StringComparer.Ordinal);
-            var positiveGroups = resolved.BatchFacts
+            var positiveGroups = resolved.BatchFacts.Where(fact => !coldStartedProductIds.Contains(productsByCode[fact.ProductCode].Id))
                 .GroupBy(fact => fact.ProductCode, StringComparer.Ordinal)
                 .OrderBy(group => group.Key, StringComparer.Ordinal)
                 .Select(group => TryCreateEligibleGroup(group, productsByCode, eligibleProductIds, zeroProductCodes))
