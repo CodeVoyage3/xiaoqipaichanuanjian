@@ -314,7 +314,9 @@ public sealed class SettingsAppStateDatabaseTests
         if (!SqliteTestDatabase.ReadTableColumns(context, "products").Contains("expiry_management_status"))
         {
             context.Database.ExecuteSql($"INSERT INTO products (product_code, excel_stock_qty, effective_stock_qty, lifecycle_generation) VALUES ({code}, 0, 0, 0)");
-            return new Product { Id = context.Database.SqlQuery<long>($"SELECT last_insert_rowid() AS Value").Single(), ProductCode = code };
+            var legacyProduct = new Product { Id = context.Database.SqlQuery<long>($"SELECT last_insert_rowid() AS Value").Single(), ProductCode = code };
+            context.Attach(legacyProduct);
+            return legacyProduct;
         }
         var product = new Product { ProductCode = code };
         context.Products.Add(product);
