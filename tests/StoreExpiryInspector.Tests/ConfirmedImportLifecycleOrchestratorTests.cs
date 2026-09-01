@@ -132,6 +132,27 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
     }
 
     [Fact]
+    public void FirstImportColdStartDoesNotRunOrdinaryLifecycleAgain()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var sourcePath = Path.Combine(database.Directory, "cold-start-withdraw.xlsx");
+        WriteWorkbook(sourcePath, ["食品", "P-I03", "B-I03", "首次收仓", "2026-01-01", "2026-09-05", "12", "M", "否", "1", "5"]);
+        var contract = ReadContract(database, sourcePath);
+        using (var context = database.Open())
+        {
+            var result = new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
+                contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 9, 1), new DateTime(2026, 9, 1, 8, 1, 0, DateTimeKind.Utc)));
+            Assert.True(result.Succeeded);
+        }
+        using var verify = database.Open();
+        var task = Assert.Single(verify.Tasks.Where(item => item.Status == "open"));
+        Assert.Single(verify.TaskItems);
+        var baseline = Assert.Single(verify.BatchBaselines);
+        Assert.Equal(ColdStartDispositions.WithdrawTask, baseline.ColdStartDisposition);
+        Assert.Equal(task.Id, baseline.SourceTaskId);
+    }
+
+    [Fact]
     public void ScopeConflictHasNoStockActionAndPersistsIssueAlongsideOtherValidProduct()
     {
         using var database = SqliteTestDatabase.Create();
