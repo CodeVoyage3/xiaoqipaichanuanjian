@@ -24,6 +24,26 @@ public sealed class ApplicationStartupCoordinatorTests
             };
             seed.Products.Add(product);
             seed.SaveChanges();
+            var import = new ImportRecord
+            {
+                SourceFileName = "baseline.xlsx",
+                SourceFileSha256 = new string('a', 64),
+                ParsedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc),
+                ConfirmedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc),
+                Status = "succeeded"
+            };
+            seed.Imports.Add(import);
+            seed.SaveChanges();
+            seed.ScopeBaselines.Add(new ScopeBaseline
+            {
+                ScopeKey = "food",
+                PolicyCode = ExpiryPolicies.Food,
+                PolicyVersion = ExpiryPolicies.Version1,
+                CreatedImportId = import.Id,
+                BusinessDate = new DateOnly(2026, 8, 26),
+                IsCompleted = true,
+                CompletedAtUtc = new DateTime(2026, 8, 26, 9, 0, 0, DateTimeKind.Utc)
+            });
             seed.Batches.Add(new Batch
             {
                 ProductId = product.Id,
