@@ -225,3 +225,11 @@
 - 未完成匹配 ScopeBaseline 的 Managed 商品只保存导入与身份；导入后和启动重算均不得提前产生效期 Task。I02 不创建 ScopeBaseline/BatchBaseline 事实，首次接管仍只属于未批准的 I03。
 - Sol 最终门禁：受影响链路 117/117、Release 723/723、build 0 warning / 0 error、EF 无漂移、migration=9、依赖/WPF/Reminder/schema 无变化、应用进程 0；未访问正式数据库。
 - 当前停止在 I02 技术验收完成；不创建或执行 I03，不进入 I04、V1-F02 或 Stage 8，等待产品经理单独批准。
+
+## D-027｜V1-F01-I03 Version 1 固定契约与开工解阻
+
+- 状态：产品经理于 2026-09-02 确认 I03 继续获批并解除 Schema 阻断；仅批准 I03，不批准 I04、V1-F02 或 Stage 8。
+- 现有效期规则不会通过 policy version v2/v3 变更；V1 永久固定 `policy_version = 1`。
+- 不要求真实持久化同 scope 的 version 1 / version 2 两套 ScopeBaseline；非 version 1 请求必须明确拒绝，且不得改变已有 version 1 的 ScopeBaseline、BatchBaseline、ProductTask、Batch 状态或其他业务事实。
+- I01 Schema、migration、ModelSnapshot 保持不变；migration 总数继续为 9。I03 不得新增 migration/schema。
+- 其余方案 C、3% 动态历史补查、事务、幂等、范围隔离、真实样本与停止门禁不变；应创建全新 GPT-5.6 Terra（medium）仅执行 I03，Sol 独立验收后停止。
