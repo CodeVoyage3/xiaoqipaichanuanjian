@@ -20,6 +20,7 @@ SCHEMES = {
     "ratio_5pct": (0.05, None, None),
     "ratio_10pct": (0.10, None, None),
     "ratio_5pct_clamp_3_30": (0.05, 3, 30),
+    "ratio_5pct_clamp_3_60": (0.05, 3, 60),
     "ratio_5pct_clamp_7_60": (0.05, 7, 60),
 }
 
