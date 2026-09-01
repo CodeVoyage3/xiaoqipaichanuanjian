@@ -42,7 +42,8 @@ public sealed class ColdStartScopeBaselineUseCase
 
         if (!context.Imports.AsNoTracking().Any(import => import.Id == request.CreatedImportId && import.Status == ImportStatuses.Succeeded && !import.IsUndone) ||
             !context.Products.AsNoTracking().Any(product => product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
-                product.CategoryCode == request.ScopeKey && product.PolicyCode == request.PolicyCode && product.PolicyVersion == request.PolicyVersion))
+                product.CategoryCode == request.ScopeKey && product.PolicyCode == request.PolicyCode && product.PolicyVersion == request.PolicyVersion &&
+                product.LastSeenImportId == request.CreatedImportId))
         {
             throw new InvalidOperationException("Cold-start scope or import is not valid.");
         }

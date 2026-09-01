@@ -157,6 +157,20 @@ public sealed class V1F01I03ColdStartTests
     }
 
     [Fact]
+    public void UnrelatedSuccessfulImportCannotStartExistingScope()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var imported = AddImport(context);
+        var unrelated = AddImport(context);
+        Add(context, "P", 5, Day.AddDays(-1), Day.AddDays(-100));
+        context.SaveChanges();
+        context.Products.Single().LastSeenImportId = imported.Id; context.SaveChanges();
+        Assert.Throws<InvalidOperationException>(() => new ColdStartScopeBaselineUseCase().Execute(context, new("food", ExpiryPolicies.Food, 1, unrelated.Id, Day, Utc)));
+        Assert.Empty(context.ScopeBaselines); Assert.Empty(context.BatchBaselines); Assert.Empty(context.Tasks); Assert.Empty(context.ImportIssues);
+    }
+
+    [Fact]
     public void CatchupClampAndScopeIsolationAreIndependent()
     {
         using var database = SqliteTestDatabase.Create();
@@ -166,7 +180,7 @@ public sealed class V1F01I03ColdStartTests
         Add(context, "F", 5, Day.AddDays(-4), Day.AddDays(-5)); // lower clamp outside.
         Add(context, "F", 5, Day.AddDays(-30), Day.AddDays(-1030)); // upper clamp 30 inclusive.
         Add(context, "F", 5, Day.AddDays(-31), Day.AddDays(-1031)); // upper clamp outside.
-        context.Products.Add(new Product { ProductCode = "PET", CategoryCode = "pet", PolicyCode = ExpiryPolicies.Pet, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 5 }); context.SaveChanges();
+        context.Products.Add(new Product { ProductCode = "PET", CategoryCode = "pet", PolicyCode = ExpiryPolicies.Pet, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 5, LastSeenImportId = import.Id }); context.SaveChanges();
         context.Batches.Add(new Batch { ProductId = context.Products.Single(p => p.ProductCode == "PET").Id, ProductionDate = Day.AddDays(-100), ExpiryDate = Day.AddDays(-1), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 }); context.SaveChanges();
         Assert.True(Execute(context, import.Id).Started);
         Assert.True(new ColdStartScopeBaselineUseCase().Execute(context, new("pet", ExpiryPolicies.Pet, 1, import.Id, Day, Utc)).Started);
@@ -222,8 +236,12 @@ public sealed class V1F01I03ColdStartTests
         Assert.Single(completed.Tasks);
     }
 
-    private static ColdStartScopeBaselineResult Execute(StoreDbContext context, long importId) =>
-        new ColdStartScopeBaselineUseCase().Execute(context, new("food", ExpiryPolicies.Food, 1, importId, Day, Utc));
+    private static ColdStartScopeBaselineResult Execute(StoreDbContext context, long importId)
+    {
+        foreach (var product in context.Products.Where(product => product.CategoryCode == "food" && product.PolicyCode == ExpiryPolicies.Food)) product.LastSeenImportId = importId;
+        context.SaveChanges();
+        return new ColdStartScopeBaselineUseCase().Execute(context, new("food", ExpiryPolicies.Food, 1, importId, Day, Utc));
+    }
 
     private static ImportRecord AddImport(StoreDbContext context)
     {
