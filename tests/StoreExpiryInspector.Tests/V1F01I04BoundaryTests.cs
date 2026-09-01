@@ -10,8 +10,10 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class V1F01I04BoundaryTests
 {
-    [Fact]
-    public void ColdStartDiscountBaselineDoesNotReplayUntilHigherStage()
+    [Theory]
+    [InlineData(80, 30, ExpiryStageCalculator.Discount20)]
+    [InlineData(50, 40, ExpiryStageCalculator.Withdraw)]
+    public void ColdStartDiscountBaselineDoesNotReplayUntilHigherStage(int remainingDays, int advanceDays, string expectedStage)
     {
         using var database = SqliteTestDatabase.Create();
         var day = new DateOnly(2026, 9, 1);
@@ -23,7 +25,7 @@ public sealed class V1F01I04BoundaryTests
             context.Imports.Add(import); context.SaveChanges();
             var product = new Product { ProductCode = "I04-BOUNDARY", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 5, LastSeenImportId = import.Id };
             context.Products.Add(product); context.SaveChanges();
-            var batch = new Batch { ProductId = product.Id, ProductionDate = day.AddDays(-280), ExpiryDate = day.AddDays(80), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 5, MaxArrivalQty = 5, LastSeenImportId = import.Id, NextTriggerDate = day };
+            var batch = new Batch { ProductId = product.Id, ProductionDate = day.AddDays(remainingDays - 360), ExpiryDate = day.AddDays(remainingDays), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 5, MaxArrivalQty = 5, LastSeenImportId = import.Id, NextTriggerDate = day };
             context.Batches.Add(batch); context.SaveChanges(); batchId = batch.Id;
             Assert.True(new ColdStartScopeBaselineUseCase().Execute(context, new("food", ExpiryPolicies.Food, 1, import.Id, day, utc)).Started);
             Assert.Empty(context.Tasks);
@@ -34,10 +36,11 @@ public sealed class V1F01I04BoundaryTests
             Assert.Empty(context.Tasks);
             Assert.Equal(completed, context.ScopeBaselines.Single().CompletedAtUtc);
             Assert.Equal(snapshot, context.BatchBaselines.Select(item => new { item.BatchId, item.ColdStartDisposition, item.StageAtBaseline }).ToArray());
-            new StartupRecalculationUseCase().Execute(context, day.AddDays(30), utc.AddDays(30));
-            Assert.Equal(ExpiryStageCalculator.Discount20, context.Batches.Single(item => item.Id == batchId).CurrentStage);
+            new StartupRecalculationUseCase().Execute(context, day.AddDays(advanceDays), utc.AddDays(advanceDays));
+            Assert.Equal(expectedStage, context.Batches.Single(item => item.Id == batchId).CurrentStage);
             Assert.Single(context.Tasks);
             Assert.Equal(completed, context.ScopeBaselines.Single().CompletedAtUtc);
+            Assert.Equal(snapshot, context.BatchBaselines.Select(item => new { item.BatchId, item.ColdStartDisposition, item.StageAtBaseline }).ToArray());
         }
     }
 

@@ -89,8 +89,11 @@ public sealed class PostImportLifecycleUseCaseTests
             batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(10), 0);
             if (scenario == "non_v1")
             {
-                Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() =>
-                    seed.Database.ExecuteSqlInterpolated($"UPDATE products SET policy_version = {2} WHERE id = {productId}"));
+                product.PolicyVersion = 2;
+                Assert.Throws<InvalidOperationException>(() => Execute(seed, Request(importId, Group(productId, New(batchId, 0, 2)))));
+                Assert.Empty(seed.Tasks);
+                seed.ChangeTracker.Clear();
+                Assert.Equal(ExpiryPolicies.Version1, seed.Products.Single().PolicyVersion);
                 return;
             }
         }
@@ -156,6 +159,29 @@ public sealed class PostImportLifecycleUseCaseTests
         }
 
         using var verify = database.Open();
+        Assert.Equal(ExpiryStageCalculator.Discount50, verify.Batches.Single().CurrentStage);
+        Assert.Equal(ExpiryStageCalculator.Discount50, verify.Tasks.Single().HighestStage);
+    }
+
+    [Theory]
+    [InlineData(ExpiryPolicies.Pet, 80)]
+    [InlineData(ExpiryPolicies.GeneralLong, 170)]
+    public void ArrivalAboveMaximumUsesItsManagedPolicy(string policyCode, int daysToExpiry)
+    {
+        using var database = SqliteTestDatabase.Create();
+        long importId; long productId; long batchId;
+        using (var seed = database.Open())
+        {
+            importId = AddImport(seed).Id;
+            productId = AddProduct(seed, importId, policyCode: policyCode).Id;
+            batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(daysToExpiry), currentArrivalQty: 5, maxArrivalQty: 5);
+        }
+        using (var context = database.Open())
+        {
+            Execute(context, Request(importId, Group(productId, Existing(batchId, 4, 5, 0, 1))));
+        }
+        using var verify = database.Open();
+        Assert.Equal(1, verify.Batches.Single().AttentionVersion);
         Assert.Equal(ExpiryStageCalculator.Discount50, verify.Batches.Single().CurrentStage);
         Assert.Equal(ExpiryStageCalculator.Discount50, verify.Tasks.Single().HighestStage);
     }
