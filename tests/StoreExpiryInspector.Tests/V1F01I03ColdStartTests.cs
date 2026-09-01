@@ -20,6 +20,7 @@ public sealed class V1F01I03ColdStartTests
         using (var context = database.Open())
         {
             var import = AddImport(context);
+            Add(context, "P", 5, Day.AddDays(70), Day.AddDays(-290)); // 50%.
             Add(context, "P", 5, Day.AddDays(20), Day.AddDays(-340)); // 20%.
             Add(context, "P", 5, Day.AddDays(7), Day.AddDays(-353)); // withdraw.
             Add(context, "P", 5, Day, Day.AddDays(-360)); // expiry today.
@@ -34,12 +35,14 @@ public sealed class V1F01I03ColdStartTests
         }
         using var verify = database.Open();
         var baselines = verify.BatchBaselines.AsNoTracking().OrderBy(item => item.Id).ToArray();
-        Assert.Equal(6, baselines.Length);
+        Assert.Equal(7, baselines.Length);
         Assert.Equal(3, baselines.Count(item => item.SourceTaskId.HasValue));
         Assert.Single(verify.Tasks.AsNoTracking());
         Assert.Equal(ExpiryStageCalculator.Expired, verify.Tasks.Single().HighestStage);
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 4 && item.CatchupSource == "historical_window");
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.StockZeroBaseline && item.SourceTaskId is null);
+        Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.Discount50Baseline && item.SourceTaskId is null);
+        Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.Discount20Baseline && item.SourceTaskId is null);
         Assert.Empty(verify.Inspections);
         Assert.Empty(verify.InspectionItemRevisions);
         Assert.Empty(verify.LifecycleEvents);
@@ -105,6 +108,24 @@ public sealed class V1F01I03ColdStartTests
         Assert.Single(verify.Tasks.Where(task => task.Status == "completed"));
         Assert.Single(verify.Tasks.Where(task => task.Status == "open"));
         Assert.Single(verify.TaskItems);
+    }
+
+    [Fact]
+    public void IncompleteBaselineRejectsDifferentImportOrBusinessDateWithoutFacts()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var first = AddImport(context);
+        var second = AddImport(context);
+        Add(context, "P", 5, Day.AddDays(-1), Day.AddDays(-100));
+        context.SaveChanges();
+        context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = first.Id, BusinessDate = Day, CreatedAtUtc = Utc });
+        context.SaveChanges();
+        Assert.Throws<InvalidOperationException>(() => new ColdStartScopeBaselineUseCase().Execute(context, new("food", ExpiryPolicies.Food, 1, second.Id, Day.AddDays(1), Utc)));
+        Assert.Single(context.ScopeBaselines);
+        Assert.Empty(context.BatchBaselines);
+        Assert.Empty(context.Tasks);
+        Assert.Empty(context.ImportIssues);
     }
 
     [Fact]

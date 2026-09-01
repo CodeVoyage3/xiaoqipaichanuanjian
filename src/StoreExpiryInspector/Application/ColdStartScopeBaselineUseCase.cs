@@ -63,6 +63,10 @@ public sealed class ColdStartScopeBaselineUseCase
             {
                 throw new InvalidOperationException("Incomplete scope baseline contains persisted facts.");
             }
+            if (baseline is not null && (baseline.CreatedImportId != request.CreatedImportId || baseline.BusinessDate != request.BusinessDate))
+            {
+                throw new InvalidOperationException("Incomplete scope baseline request does not match its original facts.");
+            }
             if (baseline is null)
             {
                 baseline = new ScopeBaseline { ScopeKey = request.ScopeKey, PolicyCode = request.PolicyCode, PolicyVersion = request.PolicyVersion, CreatedImportId = request.CreatedImportId, BusinessDate = request.BusinessDate, CreatedAtUtc = request.OccurredAtUtc };
