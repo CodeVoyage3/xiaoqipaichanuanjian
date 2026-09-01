@@ -80,10 +80,12 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 importId);
             var productsByCode = resolved.ProductsByCode;
             var coldStartedProductIds = new HashSet<long>();
-            foreach (var scope in context.Products.AsNoTracking()
+            var coldStartScopes = context.Products.AsNoTracking()
                          .Where(product => product.LastSeenImportId == importId && product.ExpiryManagementStatus == ExpiryManagementStatus.Managed)
                          .Select(product => new { product.CategoryCode, product.PolicyCode, product.PolicyVersion })
-                         .Distinct().OrderBy(product => product.CategoryCode).ThenBy(product => product.PolicyCode).ThenBy(product => product.PolicyVersion))
+                         .Distinct().OrderBy(product => product.CategoryCode).ThenBy(product => product.PolicyCode).ThenBy(product => product.PolicyVersion)
+                         .ToArray();
+            foreach (var scope in coldStartScopes)
             {
                 var coldStart = _coldStart.Execute(context, new ColdStartScopeBaselineRequest(scope.CategoryCode, scope.PolicyCode!, scope.PolicyVersion!.Value, importId, request.BusinessDate, request.OccurredAtUtc));
                 if (coldStart.Started)

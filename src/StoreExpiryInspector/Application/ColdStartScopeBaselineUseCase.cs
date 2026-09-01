@@ -33,9 +33,18 @@ public sealed class ColdStartScopeBaselineUseCase
             throw new ArgumentOutOfRangeException(nameof(request.PolicyVersion), "V1 only supports policy version 1.");
         }
         if (request.CreatedImportId <= 0 || request.OccurredAtUtc.Kind != DateTimeKind.Utc ||
-            string.IsNullOrWhiteSpace(request.ScopeKey) || string.IsNullOrWhiteSpace(request.PolicyCode))
+            string.IsNullOrWhiteSpace(request.ScopeKey) || request.ScopeKey != request.ScopeKey.Trim() ||
+            string.IsNullOrWhiteSpace(request.PolicyCode) || request.PolicyCode != request.PolicyCode.Trim() ||
+            request.PolicyCode is not (ExpiryPolicies.Food or ExpiryPolicies.Pet or ExpiryPolicies.GeneralLong))
         {
             throw new ArgumentException("Cold-start request is invalid.", nameof(request));
+        }
+
+        if (!context.Imports.AsNoTracking().Any(import => import.Id == request.CreatedImportId && import.Status == ImportStatuses.Succeeded && !import.IsUndone) ||
+            !context.Products.AsNoTracking().Any(product => product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+                product.CategoryCode == request.ScopeKey && product.PolicyCode == request.PolicyCode && product.PolicyVersion == request.PolicyVersion))
+        {
+            throw new InvalidOperationException("Cold-start scope or import is not valid.");
         }
 
         var ownsTransaction = context.Database.CurrentTransaction is null;
@@ -43,11 +52,6 @@ public sealed class ColdStartScopeBaselineUseCase
         try
         {
             if (ownsTransaction) transaction = context.Database.BeginTransaction();
-            if (!context.Imports.AsNoTracking().Any(import => import.Id == request.CreatedImportId && import.Status == ImportStatuses.Succeeded && !import.IsUndone))
-            {
-                throw new InvalidOperationException("Cold-start import must be succeeded and not undone.");
-            }
-
             var baseline = context.ScopeBaselines.SingleOrDefault(item =>
                 item.ScopeKey == request.ScopeKey && item.PolicyCode == request.PolicyCode && item.PolicyVersion == request.PolicyVersion);
             if (baseline is { IsCompleted: true })
@@ -66,17 +70,10 @@ public sealed class ColdStartScopeBaselineUseCase
                 context.SaveChanges();
             }
 
-            if (context.Tasks.Any(task => task.Product.CategoryCode == request.ScopeKey &&
-                task.Product.PolicyCode == request.PolicyCode && task.Product.PolicyVersion == request.PolicyVersion))
-            {
-                throw new InvalidOperationException("Cold-start scope already contains task history.");
-            }
-
             var batches = context.Batches
                 .Include(batch => batch.Product)
                 .Where(batch => batch.Product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
-                    batch.Product.CategoryCode == request.ScopeKey && batch.Product.PolicyCode == request.PolicyCode && batch.Product.PolicyVersion == request.PolicyVersion &&
-                    batch.TrackingStatus == "active")
+                    batch.Product.CategoryCode == request.ScopeKey && batch.Product.PolicyCode == request.PolicyCode && batch.Product.PolicyVersion == request.PolicyVersion)
                 .OrderBy(batch => batch.Product.ProductCode).ThenBy(batch => batch.Id).ToArray();
             var facts = batches.Select(batch => Classify(batch, request)).ToArray();
             var taskFacts = facts.Where(fact => fact.NeedsTask).ToArray();
@@ -122,6 +119,7 @@ public sealed class ColdStartScopeBaselineUseCase
     private static ClassifiedBatch Classify(Batch batch, ColdStartScopeBaselineRequest request)
     {
         if (batch.Product.EffectiveStockQty == 0) return new(batch, null, ColdStartDispositions.StockZeroBaseline, null, false, false);
+        if (batch.TrackingStatus != "active") return new(batch, null, null, null, false, false);
         var stage = ExpiryPolicyCalculator.Calculate(request.PolicyCode, request.PolicyVersion, request.BusinessDate, batch.ExpiryDate, ShelfLifeDays(batch));
         if (stage is null || stage.CurrentStage == ExpiryStageCalculator.None) return new(batch, stage, null, null, false, false);
         if (stage.CurrentStage == ExpiryStageCalculator.Discount50) return new(batch, stage, ColdStartDispositions.Discount50Baseline, null, false, false);
@@ -130,7 +128,7 @@ public sealed class ColdStartScopeBaselineUseCase
         if (batch.ExpiryDate == request.BusinessDate) return new(batch, stage, ColdStartDispositions.ExpiredTodayTask, null, true, false);
         if (batch.ProductionDate is not DateOnly production || batch.ExpiryDate <= production)
             return new(batch, stage, ColdStartDispositions.ExpiredHistoricalBaseline, null, false, true);
-        var window = Math.Clamp((int)((batch.ExpiryDate.DayNumber - production.DayNumber + 33) / 34), 3, 30);
+        var window = Math.Clamp((int)((3L * (batch.ExpiryDate.DayNumber - production.DayNumber) + 99) / 100), 3, 30);
         return request.BusinessDate.DayNumber - batch.ExpiryDate.DayNumber <= window
             ? new(batch, stage, ColdStartDispositions.ExpiredCatchupTask, window, true, false)
             : new(batch, stage, ColdStartDispositions.ExpiredHistoricalBaseline, null, false, false);
