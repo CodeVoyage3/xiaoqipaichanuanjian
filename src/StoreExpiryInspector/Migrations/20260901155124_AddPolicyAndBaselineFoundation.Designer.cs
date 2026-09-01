@@ -11,7 +11,7 @@ using StoreExpiryInspector.Infrastructure;
 namespace StoreExpiryInspector.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260901153711_AddPolicyAndBaselineFoundation")]
+    [Migration("20260901155124_AddPolicyAndBaselineFoundation")]
     partial class AddPolicyAndBaselineFoundation
     {
         /// <inheritdoc />
@@ -323,7 +323,7 @@ namespace StoreExpiryInspector.Migrations
 
                             t.HasCheckConstraint("CK_batch_baselines_disposition", "cold_start_disposition IN ('discount50_baseline', 'discount20_baseline', 'withdraw_task', 'expired_today_task', 'expired_catchup_task', 'expired_historical_baseline', 'stock_zero_baseline')");
 
-                            t.HasCheckConstraint("CK_batch_baselines_sources", "(cold_start_disposition IN ('withdraw_task', 'expired_today_task', 'expired_catchup_task')) OR (source_task_id IS NULL AND catchup_source IS NULL)");
+                            t.HasCheckConstraint("CK_batch_baselines_sources", "(cold_start_disposition IN ('withdraw_task', 'expired_today_task', 'expired_catchup_task') AND source_task_id IS NOT NULL) OR (cold_start_disposition NOT IN ('withdraw_task', 'expired_today_task', 'expired_catchup_task') AND source_task_id IS NULL AND catchup_source IS NULL)");
 
                             t.HasCheckConstraint("CK_batch_baselines_stage", "stage_at_baseline IN ('none', 'discount_50', 'discount_20', 'withdraw', 'expired')");
                         });
@@ -993,10 +993,8 @@ namespace StoreExpiryInspector.Migrations
 
                     b.Property<string>("ExpiryManagementStatus")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("TEXT")
-                        .HasDefaultValue("managed")
                         .HasColumnName("expiry_management_status");
 
                     b.Property<bool>("IsStockZeroTerminated")
@@ -1014,16 +1012,12 @@ namespace StoreExpiryInspector.Migrations
                         .HasColumnName("lifecycle_generation");
 
                     b.Property<string>("PolicyCode")
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT")
-                        .HasDefaultValue("food_expiry")
                         .HasColumnName("policy_code");
 
                     b.Property<int?>("PolicyVersion")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
-                        .HasDefaultValue(1)
                         .HasColumnName("policy_version");
 
                     b.Property<string>("ProductCode")
@@ -1262,11 +1256,9 @@ namespace StoreExpiryInspector.Migrations
                         {
                             t.HasCheckConstraint("CK_scope_baselines_completed_fields", "(is_completed = 0 AND completed_at_utc IS NULL) OR (is_completed = 1 AND completed_at_utc IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_scope_baselines_policy_code_not_blank", "length(policy_code) > 0 AND policy_code = trim(policy_code)");
-
-                            t.HasCheckConstraint("CK_scope_baselines_policy_version_positive", "policy_version > 0");
-
                             t.HasCheckConstraint("CK_scope_baselines_scope_key_not_blank", "length(scope_key) > 0 AND scope_key = trim(scope_key)");
+
+                            t.HasCheckConstraint("CK_scope_baselines_v1_policy", "policy_code IN ('food_expiry', 'pet_expiry', 'general_long_expiry') AND policy_version = 1");
                         });
                 });
 

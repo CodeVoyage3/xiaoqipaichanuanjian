@@ -43,7 +43,7 @@ public sealed class PreImportSnapshotServiceTests
         "20260826155455_AddBackupMetadata",
         "20260826162033_AddSettingsAndAppState",
         "20260826170403_AddLifecycleEvents",
-        "20260901153711_AddPolicyAndBaselineFoundation"
+        "20260901155124_AddPolicyAndBaselineFoundation"
     };
 
     [Fact]

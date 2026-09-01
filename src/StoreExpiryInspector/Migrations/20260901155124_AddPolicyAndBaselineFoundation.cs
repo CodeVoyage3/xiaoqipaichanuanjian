@@ -21,7 +21,6 @@ namespace StoreExpiryInspector.Migrations
                 type: "TEXT",
                 maxLength: 50,
                 nullable: true,
-                defaultValue: "food_expiry",
                 oldClrType: typeof(string),
                 oldType: "TEXT",
                 oldMaxLength: 50,
@@ -39,8 +38,7 @@ namespace StoreExpiryInspector.Migrations
                 name: "policy_version",
                 table: "products",
                 type: "INTEGER",
-                nullable: true,
-                defaultValue: 1);
+                nullable: true);
 
             migrationBuilder.Sql("UPDATE products SET policy_code = 'food_expiry', policy_version = 1, expiry_management_status = 'managed' WHERE policy_code = 'food_v1';");
 
@@ -63,9 +61,8 @@ namespace StoreExpiryInspector.Migrations
                 {
                     table.PrimaryKey("PK_scope_baselines", x => x.id);
                     table.CheckConstraint("CK_scope_baselines_completed_fields", "(is_completed = 0 AND completed_at_utc IS NULL) OR (is_completed = 1 AND completed_at_utc IS NOT NULL)");
-                    table.CheckConstraint("CK_scope_baselines_policy_code_not_blank", "length(policy_code) > 0 AND policy_code = trim(policy_code)");
-                    table.CheckConstraint("CK_scope_baselines_policy_version_positive", "policy_version > 0");
                     table.CheckConstraint("CK_scope_baselines_scope_key_not_blank", "length(scope_key) > 0 AND scope_key = trim(scope_key)");
+                    table.CheckConstraint("CK_scope_baselines_v1_policy", "policy_code IN ('food_expiry', 'pet_expiry', 'general_long_expiry') AND policy_version = 1");
                     table.ForeignKey(
                         name: "FK_scope_baselines_imports_created_import_id",
                         column: x => x.created_import_id,
@@ -93,7 +90,7 @@ namespace StoreExpiryInspector.Migrations
                     table.CheckConstraint("CK_batch_baselines_catchup_source", "(cold_start_disposition = 'expired_catchup_task' AND length(catchup_source) > 0 AND catchup_source = trim(catchup_source)) OR (cold_start_disposition <> 'expired_catchup_task' AND catchup_source IS NULL)");
                     table.CheckConstraint("CK_batch_baselines_catchup_window", "(cold_start_disposition = 'expired_catchup_task' AND catchup_window_days BETWEEN 3 AND 30) OR (cold_start_disposition <> 'expired_catchup_task' AND catchup_window_days IS NULL)");
                     table.CheckConstraint("CK_batch_baselines_disposition", "cold_start_disposition IN ('discount50_baseline', 'discount20_baseline', 'withdraw_task', 'expired_today_task', 'expired_catchup_task', 'expired_historical_baseline', 'stock_zero_baseline')");
-                    table.CheckConstraint("CK_batch_baselines_sources", "(cold_start_disposition IN ('withdraw_task', 'expired_today_task', 'expired_catchup_task')) OR (source_task_id IS NULL AND catchup_source IS NULL)");
+                    table.CheckConstraint("CK_batch_baselines_sources", "(cold_start_disposition IN ('withdraw_task', 'expired_today_task', 'expired_catchup_task') AND source_task_id IS NOT NULL) OR (cold_start_disposition NOT IN ('withdraw_task', 'expired_today_task', 'expired_catchup_task') AND source_task_id IS NULL AND catchup_source IS NULL)");
                     table.CheckConstraint("CK_batch_baselines_stage", "stage_at_baseline IN ('none', 'discount_50', 'discount_20', 'withdraw', 'expired')");
                     table.ForeignKey(
                         name: "FK_batch_baselines_batches_batch_id",
@@ -176,8 +173,7 @@ namespace StoreExpiryInspector.Migrations
                 oldClrType: typeof(string),
                 oldType: "TEXT",
                 oldMaxLength: 50,
-                oldNullable: true,
-                oldDefaultValue: "food_expiry");
+                oldNullable: true);
 
             migrationBuilder.AddCheckConstraint(
                 name: "CK_products_policy_code_not_blank",

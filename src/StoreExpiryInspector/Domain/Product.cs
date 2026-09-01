@@ -12,9 +12,9 @@ public sealed class Product
 
     public string CategoryCode { get; set; } = "food";
 
-    public string? PolicyCode { get; set; }
+    public string? PolicyCode { get; set; } = ExpiryPolicies.Food;
 
-    public int? PolicyVersion { get; set; }
+    public int? PolicyVersion { get; set; } = ExpiryPolicies.Version1;
 
     public ExpiryManagementStatus ExpiryManagementStatus { get; set; } = ExpiryManagementStatus.Managed;
 

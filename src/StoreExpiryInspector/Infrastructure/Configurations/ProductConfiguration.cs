@@ -50,18 +50,15 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .IsRequired();
         entity.Property(product => product.PolicyCode)
             .HasColumnName("policy_code")
-            .HasMaxLength(50)
-            .HasDefaultValue(ExpiryPolicies.Food);
+            .HasMaxLength(50);
         entity.Property(product => product.PolicyVersion)
-            .HasColumnName("policy_version")
-            .HasDefaultValue(ExpiryPolicies.Version1);
+            .HasColumnName("policy_version");
         entity.Property(product => product.ExpiryManagementStatus)
             .HasColumnName("expiry_management_status")
             .HasMaxLength(20)
             .HasConversion(
                 value => value.ToString().ToLowerInvariant(),
                 value => Enum.Parse<ExpiryManagementStatus>(value, ignoreCase: true))
-            .HasDefaultValue(ExpiryManagementStatus.Managed)
             .IsRequired();
         entity.Property(product => product.ExcelStockQty)
             .HasColumnName("excel_stock_qty");
