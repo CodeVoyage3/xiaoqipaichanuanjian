@@ -156,6 +156,21 @@ public sealed class DailyReminderUseCaseTests
         context.Tasks.Add(task);
         context.SaveChanges();
         AddTaskItem(context, excluded, task, ExpiryStageCalculator.Expired, Today);
+        var unresolved = new Product
+        {
+            ProductCode = "SKU-UNRESOLVED",
+            CategoryCode = "daily_use",
+            PolicyCode = null,
+            PolicyVersion = null,
+            ExpiryManagementStatus = ExpiryManagementStatus.Unresolved,
+            EffectiveStockQty = 5
+        };
+        context.Products.Add(unresolved);
+        context.SaveChanges();
+        var unresolvedTask = new ProductTask { ProductId = unresolved.Id, HighestStage = ExpiryStageCalculator.Expired };
+        context.Tasks.Add(unresolvedTask);
+        context.SaveChanges();
+        AddTaskItem(context, unresolved, unresolvedTask, ExpiryStageCalculator.Expired, Today);
 
         var candidate = Assert.Single(new InspectionTaskQuery().GetReminderCandidates(context));
         Assert.Equal("SKU-MANAGED", candidate.ProductCode);

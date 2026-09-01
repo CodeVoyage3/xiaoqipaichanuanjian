@@ -84,7 +84,8 @@ public sealed class StartupRecalculationUseCase
                     ShelfLifeDays(batch));
                 if (result is null)
                 {
-                    continue;
+                    throw new InvalidOperationException(
+                        $"Product {batch.ProductId} has an uncovered expiry policy.");
                 }
                 calculated.Add((batch, result));
 

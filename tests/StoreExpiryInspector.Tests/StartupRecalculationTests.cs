@@ -544,6 +544,27 @@ public sealed class StartupRecalculationTests
         Assert.Equal(expectedStage, verify.Tasks.Single().HighestStage);
     }
 
+    [Fact]
+    public void UncoveredManagedGeneralLongFailsAndRollsBack()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var product = AddProduct(seed, ExpiryPolicies.GeneralLong);
+            AddBatch(seed, product.Id, BusinessDate.AddDays(30), BusinessDate, ExpiryStageCalculator.None, shelfLifeDays: 180);
+        }
+
+        using (var context = database.Open())
+        {
+            Assert.Throws<InvalidOperationException>(() => Execute(context));
+            Assert.Empty(context.ChangeTracker.Entries());
+        }
+
+        using var verify = database.Open();
+        Assert.Equal(ExpiryStageCalculator.None, verify.Batches.Single().CurrentStage);
+        Assert.Empty(verify.Tasks);
+    }
+
     private static StartupRecalculationResult Execute(
         StoreDbContext context,
         DateTime? updatedAtUtc = null) =>
@@ -582,7 +603,14 @@ public sealed class StartupRecalculationTests
 
     private static Product AddProduct(StoreDbContext context, string policyCode = ExpiryPolicies.Food)
     {
-        var product = new Product { ProductCode = $"SKU-{Guid.NewGuid():N}", CategoryCode = policyCode, PolicyCode = policyCode, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed };
+        var scopeKey = policyCode switch
+        {
+            ExpiryPolicies.Food => "food",
+            ExpiryPolicies.Pet => "pet",
+            ExpiryPolicies.GeneralLong => "daily_use",
+            _ => throw new ArgumentOutOfRangeException(nameof(policyCode))
+        };
+        var product = new Product { ProductCode = $"SKU-{Guid.NewGuid():N}", CategoryCode = scopeKey, PolicyCode = policyCode, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed };
         context.Products.Add(product);
         context.SaveChanges();
         if (context.ScopeBaselines.Any(baseline => baseline.ScopeKey == product.CategoryCode && baseline.PolicyCode == product.PolicyCode && baseline.PolicyVersion == product.PolicyVersion))

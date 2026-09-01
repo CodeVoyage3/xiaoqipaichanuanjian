@@ -53,8 +53,12 @@ public sealed class PostImportLifecycleUseCaseTests
         Assert.Equal(0, batch.HandledAttentionVersion);
     }
 
-    [Fact]
-    public void DirectLifecycleRejectsExcludedOrUnbaselinedProductBeforeWrites()
+    [Theory]
+    [InlineData("excluded")]
+    [InlineData("no_baseline")]
+    [InlineData("policy_mismatch")]
+    [InlineData("non_v1")]
+    public void DirectLifecycleRejectsIneligibleProductBeforeWrites(string scenario)
     {
         using var database = SqliteTestDatabase.Create();
         long importId;
@@ -64,12 +68,31 @@ public sealed class PostImportLifecycleUseCaseTests
         {
             importId = AddImport(seed).Id;
             var product = AddProduct(seed, importId);
-            product.ExpiryManagementStatus = ExpiryManagementStatus.Excluded;
-            product.PolicyCode = null;
-            product.PolicyVersion = null;
+            switch (scenario)
+            {
+                case "excluded":
+                    product.ExpiryManagementStatus = ExpiryManagementStatus.Excluded;
+                    product.PolicyCode = null;
+                    product.PolicyVersion = null;
+                    break;
+                case "no_baseline":
+                    seed.ScopeBaselines.RemoveRange(seed.ScopeBaselines);
+                    break;
+                case "policy_mismatch":
+                    product.PolicyCode = ExpiryPolicies.Pet;
+                    break;
+                case "non_v1":
+                    break;
+            }
             seed.SaveChanges();
             productId = product.Id;
             batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(10), 0);
+            if (scenario == "non_v1")
+            {
+                Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() =>
+                    seed.Database.ExecuteSqlInterpolated($"UPDATE products SET policy_version = {2} WHERE id = {productId}"));
+                return;
+            }
         }
 
         using (var context = database.Open())
@@ -109,6 +132,32 @@ public sealed class PostImportLifecycleUseCaseTests
         Assert.Equal(expectedStage, verify.Batches.Single().CurrentStage);
         Assert.Equal(expectedStage, verify.TaskItems.Single().Stage);
         Assert.Single(verify.Tasks);
+    }
+
+    [Theory]
+    [InlineData(ExpiryPolicies.Pet, 80)]
+    [InlineData(ExpiryPolicies.GeneralLong, 170)]
+    public void NewBatchUsesItsManagedPolicy(string policyCode, int daysToExpiry)
+    {
+        using var database = SqliteTestDatabase.Create();
+        long importId;
+        long productId;
+        long batchId;
+        using (var seed = database.Open())
+        {
+            importId = AddImport(seed).Id;
+            productId = AddProduct(seed, importId, policyCode: policyCode).Id;
+            batchId = AddBatch(seed, productId, importId, BusinessDate.AddDays(daysToExpiry), 0);
+        }
+
+        using (var context = database.Open())
+        {
+            Execute(context, Request(importId, Group(productId, New(batchId, 0, 2))));
+        }
+
+        using var verify = database.Open();
+        Assert.Equal(ExpiryStageCalculator.Discount50, verify.Batches.Single().CurrentStage);
+        Assert.Equal(ExpiryStageCalculator.Discount50, verify.Tasks.Single().HighestStage);
     }
 
     [Fact]
@@ -1300,8 +1349,10 @@ public sealed class PostImportLifecycleUseCaseTests
         string code = "P",
         int stock = 5,
         int generation = 0,
-        bool terminated = false)
+        bool terminated = false,
+        string policyCode = ExpiryPolicies.Food)
     {
+        var scopeKey = policyCode == ExpiryPolicies.Pet ? "pet" : policyCode == ExpiryPolicies.GeneralLong ? "daily_use" : "food";
         var product = new Product
         {
             ProductCode = code,
@@ -1310,6 +1361,10 @@ public sealed class PostImportLifecycleUseCaseTests
             ExcelStockQty = stock,
             EffectiveStockQty = stock,
             EffectiveStockSource = "excel",
+            CategoryCode = scopeKey,
+            PolicyCode = policyCode,
+            PolicyVersion = ExpiryPolicies.Version1,
+            ExpiryManagementStatus = ExpiryManagementStatus.Managed,
             LifecycleGeneration = generation,
             IsStockZeroTerminated = terminated,
             LastSeenImportId = importId,
@@ -1318,9 +1373,9 @@ public sealed class PostImportLifecycleUseCaseTests
         };
         context.Products.Add(product);
         context.SaveChanges();
-        if (!context.ScopeBaselines.Any())
+        if (!context.ScopeBaselines.Any(baseline => baseline.ScopeKey == scopeKey && baseline.PolicyCode == policyCode && baseline.PolicyVersion == ExpiryPolicies.Version1))
         {
-            context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = importId, BusinessDate = BusinessDate, IsCompleted = true, CompletedAtUtc = SeedUtc });
+            context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = scopeKey, PolicyCode = policyCode, PolicyVersion = 1, CreatedImportId = importId, BusinessDate = BusinessDate, IsCompleted = true, CompletedAtUtc = SeedUtc });
             context.SaveChanges();
         }
         return product;
