@@ -196,3 +196,12 @@
 - 最终门禁：相关定向 31/31，Stage 3～7 为 170/170、186/186、52/52、52/52、51/51，Release 完整复跑 692/692，build 0 warning / 0 error，EF 无漂移，migration=8，`git diff --check` 通过。
 - 用户确认全部 GUI 项通过；正式库恢复为 299008 bytes / 指定 SHA-256，无 WAL/SHM/journal，进程 0，恢复后未启动 WPF。
 - UIUX-R03 归档不授权后续任务；不创建 UIUX-R04，不进入 Stage 8，不启动下一张业务任务，等待用户单独批准。
+
+## D-024｜V1-F01 全品类效期与冷启动最终规则
+
+- 状态：产品经理于 2026-09-01 正式批准设计收口；生产实现尚未逐卡批准。
+- 范围基线唯一身份为 `scope_key + policy_code + policy_version`；`应季搭配`、`赠品小样`导入保存但 V1 不纳管；六类通用长效商品 `<=6个月` 导入并提示规则未覆盖，不生成效期任务。
+- 历史补查为 `clamp(ceil(实际保质期天数 * 3%),3,30)`，端点包含；首次采用方案 C，仅当前收仓、到期当天和窗口内历史过期创建 open Task，既有 5折/2折与窗口外历史只建基线。
+- 历史补查来源必须可审计且不伪造正式历史；基线后恢复完整四阶段生命周期。月份固定 30 天，到期当天 expired。
+- Seen BatchKey、MaxArrivalQty、库存 0、Task 聚合、AttentionVersion / HandledAttentionVersion 和更高 Stage 权威不变。
+- 实施拟拆 I01--I04；每卡须单独批准并新建 GPT-5.6 Terra（medium，标准速度），Sol 独立验收。当前只批准拆分，不批准 I01 开工，不进入 Stage 8。
