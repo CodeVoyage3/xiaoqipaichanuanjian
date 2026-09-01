@@ -104,6 +104,7 @@ public sealed class V1F01I03ColdStartTests
             Add(context, "P", 5, Day.AddDays(-1), Day.AddDays(-100));
             context.SaveChanges();
             var product = context.Products.Single();
+            context.Batches.Single().HandledAttentionVersion = 7;
             context.Tasks.Add(new ProductTask { ProductId = product.Id, Status = "completed", HighestStage = ExpiryStageCalculator.Withdraw, CreatedAtUtc = Utc, UpdatedAtUtc = Utc, ClosedAtUtc = Utc });
             context.Tasks.Add(new ProductTask { ProductId = product.Id, Status = "open", HighestStage = ExpiryStageCalculator.Withdraw, CreatedAtUtc = Utc, UpdatedAtUtc = Utc });
             context.SaveChanges();
@@ -113,6 +114,7 @@ public sealed class V1F01I03ColdStartTests
         Assert.Single(verify.Tasks.Where(task => task.Status == "completed"));
         Assert.Single(verify.Tasks.Where(task => task.Status == "open"));
         Assert.Single(verify.TaskItems);
+        Assert.Equal(7, verify.Batches.Single().HandledAttentionVersion);
     }
 
     [Fact]
@@ -169,6 +171,19 @@ public sealed class V1F01I03ColdStartTests
         Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 3);
         Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 30);
         Assert.Equal(2, facts.Count(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredHistoricalBaseline));
+    }
+
+    [Fact]
+    public void ShelfLifeOverflowRollsBackWithoutBaselineFacts()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var import = AddImport(context);
+        Add(context, "P", 5, Day.AddDays(-1), Day.AddDays(-100)); context.SaveChanges();
+        context.Batches.Single().ShelfLifeValue = int.MaxValue; context.Batches.Single().ShelfLifeUnit = "Y"; context.SaveChanges();
+        Assert.Throws<OverflowException>(() => Execute(context, import.Id));
+        context.ChangeTracker.Clear();
+        Assert.Empty(context.ScopeBaselines); Assert.Empty(context.BatchBaselines); Assert.Empty(context.Tasks); Assert.Empty(context.ImportIssues);
     }
 
     [Fact]
