@@ -28,6 +28,7 @@ public sealed class ExcelFileClassifier
         {
             if (!ProductCategoryScopes.IsKnown(row.ProductCategory))
             {
+                skippedRows.Add(new ExcelSkippedRow(row.ExcelRowNumber, row.ProductCategory));
                 rowIssues.Add(new ExcelRowIssue(
                     row.ExcelRowNumber,
                     "unsupported_product_category",

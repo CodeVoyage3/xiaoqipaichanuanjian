@@ -655,7 +655,7 @@ public sealed class ExcelImportPlannerTests
         Assert.Equal(classification.DuplicateRows, plan.Preview.DuplicateRows);
         Assert.Equal(classification.BatchConflicts, plan.Preview.BatchConflicts);
         Assert.Equal(classification.StockConflicts, plan.Preview.StockConflicts);
-        Assert.Equal(0, plan.Preview.SkippedRowCount);
+        Assert.Equal(1, plan.Preview.SkippedRowCount);
         Assert.Equal(2, plan.Preview.RowIssueCount);
         Assert.Equal(1, plan.Preview.DuplicateRowCount);
         Assert.Equal(1, plan.Preview.BatchConflictCount);

@@ -19,6 +19,48 @@ public sealed class ConfirmedImportLifecycleOrchestratorTests
         "保质期单位", "是否该做临期折扣", "该批次累计到货数量", "该商品门店库存总数"
     ];
 
+    [Fact]
+    public void OneConfirmedImportPersistsAllTenApprovedCategoryIdentitiesWithoutTasks()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var categories = new (string Source, string Code, string Scope, ExpiryManagementStatus Status, string? Policy)[]
+        {
+            ("食品", "P-FOOD", "food", ExpiryManagementStatus.Managed, ExpiryPolicies.Food),
+            ("宠物", "P-PET", "pet", ExpiryManagementStatus.Managed, ExpiryPolicies.Pet),
+            ("日用", "P-DAILY", "daily_use", ExpiryManagementStatus.Managed, ExpiryPolicies.GeneralLong),
+            ("美妆", "P-BEAUTY", "beauty", ExpiryManagementStatus.Managed, ExpiryPolicies.GeneralLong),
+            ("家居", "P-HOME", "home", ExpiryManagementStatus.Managed, ExpiryPolicies.GeneralLong),
+            ("香氛香水", "P-FRAGRANCE", "fragrance", ExpiryManagementStatus.Managed, ExpiryPolicies.GeneralLong),
+            ("文具", "P-STATIONERY", "stationery", ExpiryManagementStatus.Managed, ExpiryPolicies.GeneralLong),
+            ("潮流玩具", "P-TOYS", "trendy_toys", ExpiryManagementStatus.Managed, ExpiryPolicies.GeneralLong),
+            ("应季搭配", "P-SEASONAL", "seasonal_assortment", ExpiryManagementStatus.Excluded, null),
+            ("赠品小样", "P-GIFT", "gift_sample", ExpiryManagementStatus.Excluded, null)
+        };
+        var sourcePath = Path.Combine(database.Directory, "all-categories.xlsx");
+        WriteWorkbook(sourcePath, categories.Select((category, index) => (IReadOnlyList<string>)
+            [category.Source, category.Code, "B-" + category.Code, category.Code, "2026-01-01", $"2026-{9 + index / 20:00}-{20 + index:00}", "181", "D", "否", "1", "5"]).ToArray());
+        var contract = ReadContract(database, sourcePath);
+
+        using (var context = database.Open())
+        {
+            Assert.True(new ConfirmedImportLifecycleOrchestrator().Execute(context, new ConfirmedImportLifecycleRequest(
+                contract, Path.Combine(database.Directory, "snapshots"), new DateTime(2026, 8, 27, 9, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 8, 27), new DateTime(2026, 8, 27, 9, 1, 0, DateTimeKind.Utc))).Succeeded);
+        }
+
+        using var verify = database.Open();
+        Assert.Equal(10, verify.Products.Count());
+        Assert.Equal(10, verify.Batches.Count());
+        foreach (var category in categories)
+        {
+            var product = verify.Products.Single(product => product.ProductCode == category.Code);
+            Assert.Equal(category.Scope, product.CategoryCode);
+            Assert.Equal(category.Status, product.ExpiryManagementStatus);
+            Assert.Equal(category.Policy, product.PolicyCode);
+            Assert.Equal(category.Policy is null ? null : 1, product.PolicyVersion);
+        }
+        Assert.Empty(verify.Tasks);
+    }
+
     [Theory]
     [InlineData("应季搭配", "seasonal_assortment")]
     [InlineData("赠品小样", "gift_sample")]

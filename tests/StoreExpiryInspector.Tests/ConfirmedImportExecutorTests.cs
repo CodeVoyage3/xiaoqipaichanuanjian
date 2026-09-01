@@ -117,7 +117,7 @@ public sealed class ConfirmedImportExecutorTests
             Assert.Equal(1, import.NewProductCount);
             Assert.Equal(1, import.NewBatchCount);
             Assert.Equal(1, import.UpdatedBatchCount);
-            Assert.Equal(1, import.IssueCount);
+            Assert.Equal(2, import.IssueCount);
             Assert.Equal(1, import.UnsupportedCategoryCount);
             Assert.Equal(0, import.NewTaskProductCount);
             Assert.Equal(snapshotPath, import.PreImportSnapshotPath);
@@ -137,12 +137,11 @@ public sealed class ConfirmedImportExecutorTests
             Assert.Equal(contract.SourceFileSha256, workbook.Sha256);
             Assert.Equal(confirmAtUtc, workbook.SavedAtUtc);
 
-            var issue = Assert.Single(verify.ImportIssues.AsNoTracking());
-            Assert.Equal(importId, issue.ImportId);
-            Assert.Equal(4, issue.RowNumber);
-            Assert.Equal("invalid_expiry_date", issue.IssueType);
-            Assert.Equal("有效日期", issue.FieldName);
-            Assert.Contains("无法", issue.SafeSummary);
+            Assert.Equal(2, verify.ImportIssues.Count());
+            Assert.Contains(verify.ImportIssues, issue =>
+                issue.ImportId == importId && issue.RowNumber == 4 && issue.IssueType == "invalid_expiry_date" && issue.FieldName == "有效日期" && issue.SafeSummary.Contains("无法", StringComparison.Ordinal));
+            Assert.Contains(verify.ImportIssues, issue =>
+                issue.ImportId == importId && issue.IssueType == "unsupported_product_category" && issue.FieldName == "商品大类");
 
             var oldProduct = verify.Products.AsNoTracking().Single(product => product.ProductCode == "P-OLD");
             Assert.Equal("新商品", oldProduct.CurrentName);
