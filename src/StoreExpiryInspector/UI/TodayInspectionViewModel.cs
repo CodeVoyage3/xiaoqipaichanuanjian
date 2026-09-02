@@ -171,7 +171,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         if (_currentPreview is null) { StatusText = "请先读取排查结果文件。"; return; }
         if (!TryGetCheckDate(out var checkDate) || string.IsNullOrWhiteSpace(InspectorName)) { StatusText = "排查人必填，排查日期必须为今天或更早的 yyyy-MM-dd。"; return; }
         InvalidateSubmissionIntent();
-        var savedAtUtc = RequireUtcNow();
+        DateTime savedAtUtc;
+        try { savedAtUtc = RequireUtcNow(); }
+        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "保存待确认结果失败，请重新导出最新计划后重试"; return; }
         var draft = await RunAsync("保存待确认结果失败，请重新导出最新计划后重试", () => _apply(new(_currentPreview, _currentPreview.ApplicableTaskIds, InspectorName, checkDate, _businessToday(), savedAtUtc)));
         if (draft is null) return;
         _draftResult = draft;
@@ -184,7 +186,8 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         if (IsBusy) return;
         if (CompleteTaskIds.Count == 0) { StatusText = "仍有未完成排查项，暂无可集中正式提交的 Task。"; return; }
         if (!TryGetCheckDate(out var checkDate)) { StatusText = "排查日期必须为今天或更早的 yyyy-MM-dd。"; return; }
-        _submissionIntent ??= new(CompleteTaskIds, InspectorName, checkDate, _businessToday(), RequireUtcNow());
+        try { _submissionIntent ??= new(CompleteTaskIds, InspectorName, checkDate, _businessToday(), RequireUtcNow()); }
+        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "集中正式提交失败，请检查当前任务状态后重试。"; return; }
         IsBusy = true;
         try
         {
@@ -223,7 +226,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
 
     private async Task RefreshAfterSubmitAsync(IReadOnlyCollection<long> taskIds)
     {
-        try { await _refreshAfterSubmit(taskIds); await ReloadTasksWhileBusyAsync(); StatusText = "提交已成功，首页、今日排查、待办任务、详情和历史已刷新。"; }
+        try { await Task.WhenAll(_refreshAfterSubmit(taskIds), ReloadTasksWhileBusyAsync()); StatusText = "提交已成功，首页、今日排查、待办任务、详情和历史已刷新。"; }
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = "提交已成功，部分页面刷新失败，可手动刷新。"; }
     }
 
@@ -251,7 +254,20 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         foreach (var item in result.Items) { var task = new TodayInspectionTaskViewModel(item) { IsSelected = selected.Contains(item.TaskId) }; task.SelectionChanged += OnSelectionChanged; Tasks.Add(task); }
         OnSelectionChanged();
     }
-    private void ClearSubmittedSession() { _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
+    private void ClearSubmittedSession()
+    {
+        _currentPreview = null;
+        _draftResult = null;
+        InvalidateSubmissionIntent();
+        PreviewRows.Clear();
+        OnPropertyChanged(nameof(HasPreview));
+        OnPropertyChanged(nameof(PreviewSummaryText));
+        OnPropertyChanged(nameof(DraftStatusText));
+        OnPropertyChanged(nameof(CompleteTaskIds));
+        OnPropertyChanged(nameof(OverStockText));
+        OnPropertyChanged(nameof(CanSaveDraft));
+        RefreshCommands();
+    }
     private sealed record SubmissionIntent(IReadOnlyList<long> TaskIds, string InspectorName, DateOnly CheckDate, DateOnly BusinessDate, DateTime SubmittedAtUtc);
     private void RefreshCommands() { ReloadCommand.RaiseCanExecuteChanged(); SelectAllCommand.RaiseCanExecuteChanged(); ClearSelectionCommand.RaiseCanExecuteChanged(); ExportCommand.RaiseCanExecuteChanged(); PreviewCommand.RaiseCanExecuteChanged(); SaveDraftCommand.RaiseCanExecuteChanged(); SubmitCommand.RaiseCanExecuteChanged(); }
 }

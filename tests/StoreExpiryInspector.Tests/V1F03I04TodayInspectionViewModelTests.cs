@@ -77,6 +77,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Equal([1], submittedTaskIds);
         Assert.Empty(vm.CompleteTaskIds);
         Assert.Equal("尚未保存草稿", vm.DraftStatusText);
+        Assert.False(vm.HasPreview);
+        Assert.Empty(vm.PreviewRows);
         Assert.Equal(3, submissions);
         Assert.Equal(2, confirmations);
         Assert.Single(submittedAt.Distinct());
@@ -155,6 +157,42 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Equal(2, calls);
         Assert.Equal(2, prompts);
         Assert.Contains("确认", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task FixedFailuresClearPreviewAndNeverCallTheWrongDelegate()
+    {
+        var exports = 0;
+        var vm = Create(export: (_, _) => { exports++; throw new InvalidOperationException("secret"); }, preview: _ => throw new InvalidDataException("bad format"));
+        await vm.ExportAsync("C:\\plan.xlsx");
+        Assert.Equal(0, exports);
+        Assert.Contains("请先选择", vm.StatusText);
+        await vm.LoadAsync(); vm.Tasks[0].IsSelected = true;
+        await vm.ExportAsync("C:\\plan.xlsx");
+        Assert.Equal(1, exports);
+        Assert.Equal("导出今日排查计划失败", vm.StatusText);
+        await vm.PreviewAsync("C:\\bad.xlsx");
+        Assert.False(vm.HasPreview);
+        Assert.Empty(vm.PreviewRows);
+        Assert.Equal("读取排查结果文件失败", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task RefreshFailureStillReloadsTodayAndClearsAlreadySubmittedSession()
+    {
+        var loads = 0;
+        var submits = 0;
+        var vm = Create(
+            loadTasks: () => { loads++; return new([], 0, 1, int.MaxValue); },
+            submit: _ => { submits++; return new(BulkInspectionSubmissionOutcome.AlreadySubmitted, [], []); },
+            refresh: _ => Task.FromException(new InvalidOperationException("page refresh")));
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员"; await vm.SaveDraftAsync();
+        await vm.SubmitAsync();
+        Assert.Equal(1, loads);
+        Assert.Equal(1, submits);
+        Assert.False(vm.HasPreview);
+        Assert.Contains("部分页面刷新失败", vm.StatusText);
+        Assert.False(vm.SubmitCommand.CanExecute(null));
     }
 
     [Fact]

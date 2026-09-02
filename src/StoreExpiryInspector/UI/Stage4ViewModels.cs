@@ -1407,6 +1407,10 @@ public sealed class ShellViewModel : ViewModelBase
         var refreshes = new List<Task> { Dashboard.LoadAsync(), PendingTasks.LoadAsync(), History.LoadAsync() };
         if (Detail.TaskId is long taskId && taskIds.Contains(taskId)) refreshes.Add(Detail.LoadAsync(taskId));
         await Task.WhenAll(refreshes);
+        if (Dashboard.HasError || PendingTasks.HasError || History.HasError || (Detail.TaskId is long id && taskIds.Contains(id) && Detail.HasError))
+        {
+            throw new InvalidOperationException("One or more post-submission views did not refresh.");
+        }
     }
 
     private static IReadOnlyList<LocalDatabaseBackupListItem> LoadBackups() =>
