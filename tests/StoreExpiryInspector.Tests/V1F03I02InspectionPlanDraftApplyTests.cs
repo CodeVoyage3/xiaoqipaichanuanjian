@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -81,10 +82,10 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         {
             case "stopped": fixture.Context.Batches.Single().TrackingStatus = "stopped"; break;
             case "inspection": fixture.Context.Inspections.Add(new Inspection { TaskId = fixture.Context.Tasks.Single().Id, ProductId = fixture.Context.Products.Single().Id, ProductCodeSnapshot = "x", InspectorName = "x", CheckDate = new(2026, 9, 2), SubmittedAtUtc = DateTime.UtcNow }); break;
-            case "invalid-draft": fixture.Context.Drafts.Add(new InspectionDraft { TaskId = fixture.Context.Tasks.Single().Id, IsInvalid = true }); break;
+            case "invalid-draft": fixture.Context.Drafts.Add(new InspectionDraft { TaskId = fixture.Context.Tasks.Single().Id, IsInvalid = true, InvalidReason = "test", InvalidatedAtUtc = DateTime.UtcNow, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow }); break;
             case "excluded": fixture.Context.Products.Single().ExpiryManagementStatus = ExpiryManagementStatus.Excluded; fixture.Context.Products.Single().PolicyCode = null; fixture.Context.Products.Single().PolicyVersion = null; break;
             case "unresolved": fixture.Context.Products.Single().ExpiryManagementStatus = ExpiryManagementStatus.Unresolved; fixture.Context.Products.Single().PolicyCode = null; fixture.Context.Products.Single().PolicyVersion = null; break;
-            case "baseline": fixture.Context.ScopeBaselines.Single().IsCompleted = false; break;
+            case "baseline": fixture.Context.ScopeBaselines.Single().IsCompleted = false; fixture.Context.ScopeBaselines.Single().CompletedAtUtc = null; break;
         }
         fixture.Context.SaveChanges();
         Assert.False(new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path).Tasks.Single().IsApplicable);
@@ -121,7 +122,9 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
     {
         using var fixture = Fixture.Create(); AddSecondTask(fixture); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); var tasks = fixture.Context.Tasks.OrderBy(task => task.Id).ToArray();
         var corrupt = new InspectionDraft { TaskId = tasks[1].Id, InspectorName = "x", CheckDate = new(2026, 9, 2), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow }; fixture.Context.Drafts.Add(corrupt); fixture.Context.SaveChanges();
-        fixture.Context.DraftItems.Add(new InspectionDraftItem { DraftId = corrupt.Id, TaskId = tasks[1].Id, TaskItemId = fixture.Context.TaskItems.Single(item => item.TaskId == tasks[0].Id).Id, CheckedQty = 1, ConfirmedAttentionVersion = 2 }); fixture.Context.SaveChanges();
+        var connection = fixture.Context.Database.GetDbConnection(); connection.Open();
+        try { using var command = connection.CreateCommand(); command.CommandText = "PRAGMA foreign_keys=OFF; INSERT INTO draft_items (draft_id, task_id, task_item_id, checked_qty, confirmed_attention_version) VALUES ($draft, $task, $item, 1, 2); PRAGMA foreign_keys=ON;"; var draft = command.CreateParameter(); draft.ParameterName = "$draft"; draft.Value = corrupt.Id; command.Parameters.Add(draft); var task = command.CreateParameter(); task.ParameterName = "$task"; task.Value = tasks[1].Id; command.Parameters.Add(task); var item = command.CreateParameter(); item.ParameterName = "$item"; item.Value = fixture.Context.TaskItems.Single(value => value.TaskId == tasks[0].Id).Id; command.Parameters.Add(item); command.ExecuteNonQuery(); }
+        finally { using var restore = connection.CreateCommand(); restore.CommandText = "PRAGMA foreign_keys=ON"; restore.ExecuteNonQuery(); connection.Close(); }
         Assert.Throws<InvalidOperationException>(() => useCase.Apply(fixture.Context, new(preview, preview.ApplicableTaskIds, "检查员", new(2026, 9, 2), new(2026, 9, 2), new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc))));
         Assert.DoesNotContain(fixture.Context.Drafts, draft => draft.TaskId == tasks[0].Id);
     }
@@ -199,14 +202,14 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
 
     private static void Mutate(string path, string reference, string value)
     {
-        using var document = SpreadsheetDocument.Open(path, true);
-        var cell = document.WorkbookPart!.WorksheetParts.Single().Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().Skip(1).Single().Elements<Cell>().Single(cell => cell.CellReference == reference);
-        cell.CellValue = null; cell.DataType = CellValues.InlineString; cell.InlineString = new InlineString(new Text(value)); document.WorkbookPart.Workbook.Save(); document.WorkbookPart.WorksheetParts.Single().Worksheet.Save();
+        using var document = SpreadsheetDocument.Open(path, true); var workbookPart = document.WorkbookPart ?? throw new InvalidOperationException(); var workbook = workbookPart.Workbook ?? throw new InvalidOperationException(); var worksheet = workbookPart.WorksheetParts.Single().Worksheet ?? throw new InvalidOperationException();
+        var cell = (worksheet.GetFirstChild<SheetData>() ?? throw new InvalidOperationException()).Elements<Row>().Skip(1).Single().Elements<Cell>().Single(cell => cell.CellReference == reference);
+        cell.CellValue = null; cell.DataType = CellValues.InlineString; cell.InlineString = new InlineString(new Text(value)); workbook.Save(); worksheet.Save();
     }
 
     private static void DeleteSecondRow(string path)
     {
-        using var document = SpreadsheetDocument.Open(path, true); var sheet = document.WorkbookPart!.WorksheetParts.Single().Worksheet; sheet.GetFirstChild<SheetData>()!.Elements<Row>().Last().Remove(); document.WorkbookPart.Workbook.Save(); sheet.Save();
+        using var document = SpreadsheetDocument.Open(path, true); var workbookPart = document.WorkbookPart ?? throw new InvalidOperationException(); var workbook = workbookPart.Workbook ?? throw new InvalidOperationException(); var sheet = workbookPart.WorksheetParts.Single().Worksheet ?? throw new InvalidOperationException(); (sheet.GetFirstChild<SheetData>() ?? throw new InvalidOperationException()).Elements<Row>().Last().Remove(); workbook.Save(); sheet.Save();
     }
 
     private sealed class Fixture : IDisposable
