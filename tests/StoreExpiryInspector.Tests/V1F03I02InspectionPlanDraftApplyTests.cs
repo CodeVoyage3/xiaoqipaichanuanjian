@@ -8,8 +8,16 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class V1F03I02InspectionPlanDraftApplyTests
 {
-    [Fact]
-    public void PreviewIsReadOnlyAndApplyPatchesTheExportedTask()
+    [Theory]
+    [InlineData("0", true)]
+    [InlineData("7", true)]
+    [InlineData("", true)]
+    [InlineData("not-a-number", false)]
+    [InlineData("1.5", false)]
+    [InlineData("-1", false)]
+    [InlineData("2147483648", false)]
+    [InlineData("FORMULA", false)]
+    public void ReaderQuantityVariantsArePreviewedAndOnlyValidRowsApply(string quantity, bool applicable)
     {
         using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
@@ -40,16 +48,25 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
                 var header = sheetData.Elements<Row>().First().Elements<Cell>().First();
                 header.DataType = CellValues.SharedString; header.CellValue = new CellValue("0"); header.InlineString = null;
                 var row = sheetData.Elements<Row>().Skip(1).Single();
-                row.Elements<Cell>().Single(cell => cell.CellReference == "L2").CellValue = new CellValue("0");
+                var quantityCell = row.Elements<Cell>().Single(cell => cell.CellReference == "L2");
+                if (quantity == "FORMULA") quantityCell.CellFormula = new CellFormula("1+1");
+                else quantityCell.CellValue = new CellValue(quantity);
                 strings.SharedStringTable.Save(); (workbook.Workbook ?? throw new InvalidOperationException()).Save(); worksheet.Save();
             }
             var useCase = new InspectionPlanDraftApplyUseCase();
             var preview = useCase.Preview(context, path);
-            Assert.Equal([task.Id], preview.ApplicableTaskIds);
+            Assert.Equal(applicable, preview.ApplicableTaskIds.Contains(task.Id));
             Assert.Empty(context.Drafts);
+            Assert.Equal(1, preview.Summary.TaskCount);
+            Assert.Equal(applicable ? 0 : 1, preview.Summary.ErrorCount);
+            if (!applicable)
+            {
+                Assert.NotEmpty(preview.File.Rows.Single().Errors);
+                return;
+            }
             var result = useCase.Apply(context, new(preview, [task.Id], "  检查员  ", new DateOnly(2026, 9, 2), new DateOnly(2026, 9, 2), now));
             Assert.True(result.Changed);
-            Assert.Equal(0, context.DraftItems.Single().CheckedQty);
+            Assert.Equal(string.IsNullOrEmpty(quantity) ? null : int.Parse(quantity), context.DraftItems.Single().CheckedQty);
             Assert.Equal("检查员", context.Drafts.Single().InspectorName);
         }
         finally { if (File.Exists(path)) File.Delete(path); }
