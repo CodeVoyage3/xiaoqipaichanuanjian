@@ -121,6 +121,70 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task LargeLoadPublishesOnceAndKeepsAllTaskIdsSelectable()
+    {
+        var items = Enumerable.Range(1, 576).Select(id => new InspectionTaskListItem(id, id, $"商品{id}", id.ToString(), null, "expired", 1, 1, Today, false, "食品")).ToArray();
+        var changes = new List<string?>();
+        var vm = Create(loadTasks: () => new(items, items.Length, 1, int.MaxValue));
+        vm.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
+
+        await vm.LoadAsync();
+        vm.SelectAllCommand.Execute(null);
+
+        Assert.Equal(576, vm.Tasks.Count);
+        Assert.Equal(576, vm.SelectedCount);
+        Assert.Equal(1, changes.Count(name => name == nameof(TodayInspectionViewModel.Tasks)));
+    }
+
+    [Fact]
+    public async Task ShellDoesNotReloadLoadedTodayTasksButRefreshStillDoes()
+    {
+        var loads = 0;
+        var shell = new ShellViewModel(
+            dashboardLoader: () => new(0, 0, 0, 0, 0, []),
+            taskLoader: request =>
+            {
+                if (request.PageSize == int.MaxValue) Interlocked.Increment(ref loads);
+                return new([], 0, request.Page, request.PageSize);
+            });
+
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        await WaitUntil(() => shell.TodayInspection.HasLoadedTasks);
+        await shell.NavigateToAsync(ShellPage.Dashboard);
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        Assert.Equal(1, loads);
+
+        await shell.TodayInspection.LoadAsync();
+        Assert.Equal(2, loads);
+    }
+
+    [Fact]
+    public async Task ListLoadingKeepsShellNavigationEnabledButDisablesTodayActions()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shell = new ShellViewModel(
+            dashboardLoader: () => new(0, 0, 0, 0, 0, []),
+            taskLoader: request =>
+            {
+                if (request.PageSize == int.MaxValue)
+                {
+                    started.TrySetResult();
+                    release.Task.GetAwaiter().GetResult();
+                }
+                return new([], 0, request.Page, request.PageSize);
+            });
+
+        var load = shell.TodayInspection.LoadAsync();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(shell.NavigateHomeCommand.CanExecute(null));
+        Assert.False(shell.TodayInspection.ReloadCommand.CanExecute(null));
+        Assert.False(shell.TodayInspection.PreviewCommand.CanExecute(null));
+        release.SetResult();
+        await load;
+    }
+
+    [Fact]
     public async Task SubmissionFreezesUtcWaitsForRefreshAndCannotRepeat()
     {
         var utc = new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc);
@@ -217,11 +281,18 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void ReadOnlyDraftCheckboxUsesOneWayBinding()
+    public void TodayTaskGridUsesTheDenseVirtualizedEightColumnContract()
     {
         var window = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
-
-        Assert.Contains("<DataGridCheckBoxColumn Header=\"已有 Draft\" Binding=\"{Binding HasValidDraft, Mode=OneWay}\" IsReadOnly=\"True\" Width=\"80\" />", window, StringComparison.Ordinal);
+        foreach (var header in new[] { "选择", "商品编码", "商品名称", "大类", "当前最高阶段", "批次数", "商品当前库存", "任务状态" })
+            Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
+        Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
+        Assert.Contains("CellTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
+        Assert.Contains("TableNumericCenterTextStyle", window, StringComparison.Ordinal);
+        Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", window, StringComparison.Ordinal);
+        Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", window, StringComparison.Ordinal);
+        Assert.Contains("TodayInspection.IsLoadingTasks", window, StringComparison.Ordinal);
     }
 
     private static TodayInspectionViewModel Create(
@@ -261,5 +332,11 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
             if (File.Exists(Path.Combine(directory.FullName, "StoreExpiryInspector.slnx"))) return directory.FullName;
         throw new DirectoryNotFoundException("无法定位 StoreExpiryInspector 仓库根目录。");
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (var i = 0; i < 50 && !condition(); i++) await Task.Delay(10);
+        Assert.True(condition());
     }
 }

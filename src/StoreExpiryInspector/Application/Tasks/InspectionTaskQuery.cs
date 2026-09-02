@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.Infrastructure.Excel;
 
 namespace StoreExpiryInspector.Application.Tasks;
 
@@ -24,7 +25,8 @@ public sealed record InspectionTaskListItem(
     int PendingBatchCount,
     int EffectiveStockQty,
     DateOnly? NearestExpiryDate,
-    bool HasValidDraft);
+    bool HasValidDraft,
+    string CategoryName = "");
 
 public sealed record InspectionDashboardResult(
     int OpenTaskCount,
@@ -385,6 +387,7 @@ public sealed class InspectionTaskQuery
                 task.Product.CurrentName,
                 task.Product.ProductCode,
                 task.Product.CurrentBarcode,
+                task.Product.CategoryCode,
                 task.HighestStage,
                 task.Product.EffectiveStockQty))
             .ToArray();
@@ -420,7 +423,8 @@ public sealed class InspectionTaskQuery
                     items.Count(),
                     header.EffectiveStockQty,
                     items.Select(item => (DateOnly?)item.ExpiryDate).DefaultIfEmpty().Min(),
-                    validDraftTaskIds.Contains(header.TaskId));
+                    validDraftTaskIds.Contains(header.TaskId),
+                    ProductCategoryScopes.DisplayNameForCategoryCode(header.CategoryCode));
             })
             .ToArray());
     }
@@ -475,6 +479,7 @@ public sealed class InspectionTaskQuery
         string? ProductName,
         string ProductCode,
         string? ProductBarcode,
+        string CategoryCode,
         string HighestStage,
         int EffectiveStockQty);
 

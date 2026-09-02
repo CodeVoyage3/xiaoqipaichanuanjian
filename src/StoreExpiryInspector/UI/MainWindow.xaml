@@ -2717,15 +2717,20 @@
 
                 <!-- 数据导入 -->
                 <Grid Visibility="{Binding IsTodayInspectionVisible, Converter={StaticResource BoolToVisibility}}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                        <StackPanel Margin="0,0,0,24">
-                            <Border Padding="16" Style="{StaticResource PageSectionBorderStyle}">
+                    <Grid Margin="0,0,0,16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Padding="16" Style="{StaticResource PageSectionBorderStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="当前任务" FontSize="18" FontWeight="SemiBold" />
                                         <TextBlock Text="选择任务导出计划；回导文件只在当前会话预览。" Margin="0,4,0,0" Foreground="{DynamicResource SecondaryTextBrush}" />
                                         <TextBlock Text="{Binding TodayInspection.StatusText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="正在加载今日任务…" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryTextBrush}" Visibility="{Binding TodayInspection.IsLoadingTasks, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                         <Button Content="全选" Command="{Binding TodayInspection.SelectAllCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" Margin="0,0,8,0" AutomationProperties.Name="全选今日排查任务" />
@@ -2733,26 +2738,27 @@
                                         <Button Content="刷新" Command="{Binding TodayInspection.ReloadCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" AutomationProperties.Name="刷新今日排查任务" />
                                     </StackPanel>
                                 </Grid>
-                            </Border>
-                            <Border Margin="0,12,0,0" Padding="12" Style="{StaticResource PageSectionBorderStyle}">
-                                <StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" Style="{StaticResource PageSectionBorderStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                                     <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding TodayInspection.SelectedCount, StringFormat=已选择 {0} 项}" VerticalAlignment="Center" FontWeight="SemiBold" /><Button Grid.Column="1" Content="导出今日计划" Click="ExportTodayInspection_Click" Command="{Binding TodayInspection.ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="120" AutomationProperties.Name="导出今日排查计划" /></Grid>
-                                    <DataGrid ItemsSource="{Binding TodayInspection.Tasks}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Extended" MinHeight="180" MaxHeight="300" AutomationProperties.Name="今日排查任务列表">
+                                <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.Tasks}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Extended" MinHeight="180" AutomationProperties.Name="今日排查任务列表"
+                                          EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <DataGrid.Columns>
                                             <DataGridCheckBoxColumn Header="选择" Binding="{Binding IsSelected, Mode=TwoWay}" Width="52" />
-                                            <DataGridTextColumn Header="商品名称" Binding="{Binding ProductName}" Width="*" />
-                                            <DataGridTextColumn Header="编码" Binding="{Binding ProductCode}" Width="120" />
-                                            <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="120" />
-                                            <DataGridTextColumn Header="最高阶段" Binding="{Binding HighestStage}" Width="80" />
-                                            <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="72" ElementStyle="{StaticResource TableNumericTextStyle}" />
-                                            <DataGridTextColumn Header="库存" Binding="{Binding EffectiveStockQty}" Width="72" ElementStyle="{StaticResource TableNumericTextStyle}" />
-                                            <DataGridTextColumn Header="最近有效期" Binding="{Binding NearestExpiryDate, Converter={StaticResource DateOnlyDisplayConverter}}" Width="112" />
-                                            <DataGridCheckBoxColumn Header="已有 Draft" Binding="{Binding HasValidDraft, Mode=OneWay}" IsReadOnly="True" Width="80" />
+                                            <DataGridTextColumn Header="商品编码" Binding="{Binding ProductCode}" Width="112" />
+                                            <DataGridTemplateColumn Header="商品名称" Width="2*" MinWidth="160"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="大类" Binding="{Binding CategoryName}" Width="80" />
+                                            <DataGridTemplateColumn Header="当前最高阶段" CellTemplate="{StaticResource StageBadgeTemplate}" Width="104" />
+                                            <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="72" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
+                                            <DataGridTextColumn Header="商品当前库存" Binding="{Binding EffectiveStockQty}" Width="96" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
+                                            <DataGridTextColumn Header="任务状态" Binding="{Binding TaskStatus}" Width="88" />
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,12,0,0" Padding="16" Style="{StaticResource PageSectionBorderStyle}">
+                            </Grid>
+                        </Border>
+                        <Border Grid.Row="2" Margin="0,12,0,0" Padding="16" Style="{StaticResource PageSectionBorderStyle}">
                                 <StackPanel>
                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="回导与待确认结果" FontSize="18" FontWeight="SemiBold" /><Button Grid.Column="1" Content="选择已填写计划" Click="OpenTodayInspection_Click" Command="{Binding TodayInspection.PreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="128" AutomationProperties.Name="选择今日排查结果文件" /></Grid>
                                     <TextBlock Text="{Binding TodayInspection.PreviewSummaryText}" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -2768,9 +2774,8 @@
                                     <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="120" /><ColumnDefinition Width="160" /><ColumnDefinition Width="112" /><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="排查人" VerticalAlignment="Center" /><TextBox Grid.Column="1" Text="{Binding TodayInspection.InspectorName, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" Style="{StaticResource PageTextBoxStyle}" AutomationProperties.Name="排查人" /><TextBlock Grid.Column="2" Text="排查日期" Margin="16,0,0,0" VerticalAlignment="Center" /><TextBox Grid.Column="3" Text="{Binding TodayInspection.CheckDateText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PageTextBoxStyle}" AutomationProperties.Name="排查日期，yyyy-MM-dd" /><TextBlock Grid.Column="4" Text="{Binding TodayInspection.DraftStatusText}" Margin="12,0" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryTextBrush}" /><StackPanel Grid.Column="5" Orientation="Horizontal"><Button Content="保存待确认结果" Command="{Binding TodayInspection.SaveDraftCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="128" Margin="0,0,8,0" AutomationProperties.Name="保存今日排查草稿" /><Button Content="集中正式提交" Command="{Binding TodayInspection.SubmitCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="112" AutomationProperties.Name="集中提交今日排查" /></StackPanel></Grid>
                                     <TextBlock Text="{Binding TodayInspection.OverStockText}" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{DynamicResource WarningTextBrush}" />
                                 </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
+                        </Border>
+                    </Grid>
                 </Grid>
 
                 <Grid Visibility="{Binding IsImportVisible, Converter={StaticResource BoolToVisibility}}">

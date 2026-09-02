@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Globalization;
 using StoreExpiryInspector.Application.Tasks;
 
@@ -19,10 +18,12 @@ public sealed class TodayInspectionTaskViewModel : ViewModelBase
     public string ProductCode => Item.ProductCode;
     public string? ProductBarcode => Item.ProductBarcode;
     public string HighestStage => StageLabels.ToDisplay(Item.HighestStage);
+    public string CategoryName => Item.CategoryName;
     public int PendingBatchCount => Item.PendingBatchCount;
     public int EffectiveStockQty => Item.EffectiveStockQty;
     public DateOnly? NearestExpiryDate => Item.NearestExpiryDate;
     public bool HasValidDraft => Item.HasValidDraft;
+    public string TaskStatus => HasValidDraft ? "已有草稿" : "待排查";
 
     public bool IsSelected
     {
@@ -65,7 +66,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private readonly Action<Exception>? _logException;
     private readonly Func<DateOnly> _businessToday;
     private readonly Func<DateTime> _utcNow;
-    private bool _isBusy;
+    private bool _isLoadingTasks;
+    private bool _isActionBusy;
+    private bool _hasLoadedTasks;
     private string _statusText = "正在加载今日任务…";
     private string _inspectorName = string.Empty;
     private string _checkDateText;
@@ -97,17 +100,17 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _businessToday = businessToday ?? (() => DateOnly.FromDateTime(DateTime.Today));
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _checkDateText = _businessToday().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsBusy);
-        SelectAllCommand = new RelayCommand(_ => SetSelection(true), _ => !IsBusy && Tasks.Count != 0);
-        ClearSelectionCommand = new RelayCommand(_ => SetSelection(false), _ => !IsBusy && SelectedCount != 0);
-        ExportCommand = new RelayCommand(_ => { }, _ => !IsBusy && SelectedCount != 0);
-        PreviewCommand = new RelayCommand(_ => { }, _ => !IsBusy);
-        SaveDraftCommand = new RelayCommand(_ => { _ = SaveDraftAsync(); }, _ => !IsBusy && CanSaveDraft);
-        SubmitCommand = new RelayCommand(_ => { _ = SubmitAsync(); }, _ => !IsBusy && CompleteTaskIds.Count != 0);
+        ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsLoadingTasks && !IsActionBusy);
+        SelectAllCommand = new RelayCommand(_ => SetSelection(true), _ => CanUseContent && Tasks.Count != 0);
+        ClearSelectionCommand = new RelayCommand(_ => SetSelection(false), _ => CanUseContent && SelectedCount != 0);
+        ExportCommand = new RelayCommand(_ => { }, _ => CanUseContent && SelectedCount != 0);
+        PreviewCommand = new RelayCommand(_ => { }, _ => CanUseContent);
+        SaveDraftCommand = new RelayCommand(_ => { _ = SaveDraftAsync(); }, _ => CanUseContent && CanSaveDraft);
+        SubmitCommand = new RelayCommand(_ => { _ = SubmitAsync(); }, _ => CanUseContent && CompleteTaskIds.Count != 0);
     }
 
-    public ObservableCollection<TodayInspectionTaskViewModel> Tasks { get; } = [];
-    public ObservableCollection<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
+    public IReadOnlyList<TodayInspectionTaskViewModel> Tasks { get; private set; } = Array.Empty<TodayInspectionTaskViewModel>();
+    public List<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
     public RelayCommand ReloadCommand { get; }
     public RelayCommand SelectAllCommand { get; }
     public RelayCommand ClearSelectionCommand { get; }
@@ -116,7 +119,11 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public RelayCommand SaveDraftCommand { get; }
     public RelayCommand SubmitCommand { get; }
     public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.IsDraftComplete).Select(task => task.TaskId).ToArray() ?? [];
-    public bool IsBusy { get => _isBusy; private set { if (_isBusy == value) return; _isBusy = value; OnPropertyChanged(); RefreshCommands(); } }
+    public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); RefreshCommands(); } }
+    public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); RefreshCommands(); } }
+    public bool IsBusy => IsActionBusy;
+    public bool HasLoadedTasks => _hasLoadedTasks;
+    public bool CanUseContent => !IsLoadingTasks && !IsActionBusy;
     public int SelectedCount => Tasks.Count(task => task.IsSelected);
     public bool HasPreview => _currentPreview is not null;
     public bool CanSaveDraft => _currentPreview?.ApplicableTaskIds.Count > 0 && IsFormValid;
@@ -129,18 +136,36 @@ public sealed class TodayInspectionViewModel : ViewModelBase
 
     public async Task LoadAsync()
     {
+        await LoadTasksAsync();
+    }
+
+    private async Task<bool> LoadTasksAsync()
+    {
+        if (IsLoadingTasks) return false;
         var selected = Tasks.Where(task => task.IsSelected).Select(task => task.TaskId).ToHashSet();
-        var result = await RunAsync("加载今日任务失败", _loadTasks);
-        if (result is null) return;
-        Tasks.Clear();
-        foreach (var item in result.Items)
+        IsLoadingTasks = true;
+        try
         {
-            var task = new TodayInspectionTaskViewModel(item) { IsSelected = selected.Contains(item.TaskId) };
-            task.SelectionChanged += OnSelectionChanged;
-            Tasks.Add(task);
+            var tasks = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadTasks().Items.Select(item =>
+            {
+                var task = new TodayInspectionTaskViewModel(item) { IsSelected = selected.Contains(item.TaskId) };
+                task.SelectionChanged += OnSelectionChanged;
+                return task;
+            }).ToArray()));
+            Tasks = tasks;
+            _hasLoadedTasks = true;
+            OnPropertyChanged(nameof(Tasks));
         }
+        catch (Exception exception)
+        {
+            _logException?.Invoke(exception);
+            StatusText = "加载今日任务失败";
+            return false;
+        }
+        finally { IsLoadingTasks = false; }
         StatusText = Tasks.Count == 0 ? "当前没有可排查任务。" : $"已加载 {Tasks.Count} 个当前任务，已选择 {SelectedCount} 项。";
         OnSelectionChanged();
+        return true;
     }
 
     public async Task ExportAsync(string path)
@@ -183,12 +208,12 @@ public sealed class TodayInspectionViewModel : ViewModelBase
 
     public async Task SubmitAsync()
     {
-        if (IsBusy) return;
+        if (!CanUseContent) return;
         if (CompleteTaskIds.Count == 0) { StatusText = "仍有未完成排查项，暂无可集中正式提交的 Task。"; return; }
         if (!TryGetCheckDate(out var checkDate)) { StatusText = "排查日期必须为今天或更早的 yyyy-MM-dd。"; return; }
         try { _submissionIntent ??= new(CompleteTaskIds, InspectorName, checkDate, _businessToday(), RequireUtcNow()); }
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = "集中正式提交失败，请检查当前任务状态后重试。"; return; }
-        IsBusy = true;
+        IsActionBusy = true;
         try
         {
             while (true)
@@ -219,7 +244,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             _logException?.Invoke(exception);
             StatusText = "集中正式提交失败，请检查当前任务状态后重试。";
         }
-        finally { IsBusy = false; }
+        finally { IsActionBusy = false; }
     }
 
     public string OverStockText => _pendingConfirmations.Count == 0 ? string.Empty : string.Join("；", _pendingConfirmations.Select(item => $"Task {item.TaskId}/商品 {item.ProductId}：库存 {item.EffectiveStockQty}，本次 {item.TotalCheckedQty}"));
@@ -232,11 +257,11 @@ public sealed class TodayInspectionViewModel : ViewModelBase
 
     private async Task<T?> RunAsync<T>(string failure, Func<T> action)
     {
-        if (IsBusy) return default;
-        IsBusy = true;
+        if (IsActionBusy) return default;
+        IsActionBusy = true;
         try { return await Task.Run(() => DatabaseRuntimeGate.Run(action)); }
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = failure; return default; }
-        finally { IsBusy = false; }
+        finally { IsActionBusy = false; }
     }
 
     private bool TryGetCheckDate(out DateOnly date) => DateOnly.TryParseExact(CheckDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) && date != default && date <= _businessToday();
@@ -246,14 +271,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private void InvalidateSubmissionIntent() { _submissionIntent = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); }
     private void InvalidateDraftOnFormChange() { if (_draftResult is null) return; _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
     private DateTime RequireUtcNow() { var value = _utcNow(); return value.Kind == DateTimeKind.Utc ? value : throw new InvalidOperationException("权威提交时间必须为 UTC。"); }
-    private async Task ReloadTasksWhileBusyAsync()
-    {
-        var selected = Tasks.Where(task => task.IsSelected).Select(task => task.TaskId).ToHashSet();
-        var result = await Task.Run(() => DatabaseRuntimeGate.Run(_loadTasks));
-        Tasks.Clear();
-        foreach (var item in result.Items) { var task = new TodayInspectionTaskViewModel(item) { IsSelected = selected.Contains(item.TaskId) }; task.SelectionChanged += OnSelectionChanged; Tasks.Add(task); }
-        OnSelectionChanged();
-    }
+    private Task ReloadTasksWhileBusyAsync() => LoadTasksAsync();
     private void ClearSubmittedSession()
     {
         _currentPreview = null;

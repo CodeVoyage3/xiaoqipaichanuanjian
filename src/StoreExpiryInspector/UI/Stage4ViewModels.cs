@@ -1096,7 +1096,7 @@ public sealed class ShellViewModel : ViewModelBase
         };
         TodayInspection.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(TodayInspectionViewModel.IsBusy)) NotifyNavigationState();
+            if (args.PropertyName == nameof(TodayInspectionViewModel.IsActionBusy)) NotifyNavigationState();
         };
         Detail.PropertyChanged += (_, args) =>
         {
@@ -1211,7 +1211,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         if (History.IsEditBusy ||
             Import.IsLoading ||
-            TodayInspection.IsBusy ||
+            TodayInspection.IsActionBusy ||
             Detail.IsActionBusy ||
             (BackupRestore.IsLocked && page != ShellPage.BackupRestore) ||
             (BackupRestore.IsBusy && page != ShellPage.BackupRestore))
@@ -1248,7 +1248,7 @@ public sealed class ShellViewModel : ViewModelBase
         {
             _ = History.LoadAsync();
         }
-        if (enteredTodayInspection)
+        if (enteredTodayInspection && !TodayInspection.HasLoadedTasks)
         {
             _ = TodayInspection.LoadAsync();
         }
@@ -1430,7 +1430,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool CanNavigate => !History.IsEditBusy
         && !Import.IsLoading
-        && !TodayInspection.IsBusy
+        && !TodayInspection.IsActionBusy
         && !Detail.IsActionBusy
         && !IsDatabaseProtectionBlocking;
 

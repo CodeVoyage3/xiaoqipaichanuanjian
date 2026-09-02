@@ -1,5 +1,8 @@
 using System.Text.Json;
+using System.Data.Common;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
@@ -11,6 +14,24 @@ namespace StoreExpiryInspector.Tests;
 public sealed class InspectionTaskQueryTests
 {
     private static readonly DateTime SubmittedAtUtc = new(2026, 8, 27, 12, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public void OpenTaskListUsesThreeBatchReadsAndReturnsCanonicalCategoryName()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open()) AddOpenTask(seed, "BATCHED", ExpiryStageCalculator.Expired, new DateOnly(2026, 8, 28));
+        var interceptor = new CountingCommandInterceptor();
+        var options = new DbContextOptionsBuilder<StoreDbContext>()
+            .UseSqlite(new SqliteConnectionStringBuilder { DataSource = database.Path, ForeignKeys = true }.ToString())
+            .AddInterceptors(interceptor)
+            .Options;
+        using var context = new StoreDbContext(options);
+
+        var item = Assert.Single(new InspectionTaskQuery().SearchOpenTasks(context, new()).Items);
+
+        Assert.Equal(3, interceptor.ReaderCommandCount);
+        Assert.Equal("食品", item.CategoryName);
+    }
 
     [Fact]
     public void EmptyDatabaseDashboardIsZero()
@@ -901,4 +922,18 @@ public sealed class InspectionTaskQueryTests
         string InspectionItems,
         string InventoryAdjustments,
         string LifecycleEvents);
+
+    private sealed class CountingCommandInterceptor : DbCommandInterceptor
+    {
+        public int ReaderCommandCount { get; private set; }
+
+        public override InterceptionResult<DbDataReader> ReaderExecuting(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result)
+        {
+            ReaderCommandCount++;
+            return result;
+        }
+    }
 }
