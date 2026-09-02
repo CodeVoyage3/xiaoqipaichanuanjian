@@ -216,6 +216,14 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.DoesNotContain("Import.TrySelectFile", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionViewModel.cs")), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ReadOnlyDraftCheckboxUsesOneWayBinding()
+    {
+        var window = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+
+        Assert.Contains("<DataGridCheckBoxColumn Header=\"已有 Draft\" Binding=\"{Binding HasValidDraft, Mode=OneWay}\" IsReadOnly=\"True\" Width=\"80\" />", window, StringComparison.Ordinal);
+    }
+
     private static TodayInspectionViewModel Create(
         Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>? export = null,
         Func<string, InspectionPlanPreview>? preview = null,

@@ -2747,7 +2747,7 @@
                                             <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="72" ElementStyle="{StaticResource TableNumericTextStyle}" />
                                             <DataGridTextColumn Header="库存" Binding="{Binding EffectiveStockQty}" Width="72" ElementStyle="{StaticResource TableNumericTextStyle}" />
                                             <DataGridTextColumn Header="最近有效期" Binding="{Binding NearestExpiryDate, Converter={StaticResource DateOnlyDisplayConverter}}" Width="112" />
-                                            <DataGridCheckBoxColumn Header="已有 Draft" Binding="{Binding HasValidDraft}" IsReadOnly="True" Width="80" />
+                                            <DataGridCheckBoxColumn Header="已有 Draft" Binding="{Binding HasValidDraft, Mode=OneWay}" IsReadOnly="True" Width="80" />
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </StackPanel>
