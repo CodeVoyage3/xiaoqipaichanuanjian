@@ -280,3 +280,13 @@
 - 复用 Open XML 3.5.1 与 `ProductCategoryScopes`；同目录临时写入后不覆盖移动，不新增 ExportRecord、Schema、migration、依赖或第二套 Category 映射。
 - Sol 最终门禁：I01 3/3、相关回归 142/142、Release 767/767、build 0/0、EF 无漂移、migration=9；无 WPF、生产数据库访问或数据库业务写入。
 - 当前停止在 I01 技术验收完成；不创建或执行 I02～I04，不进入 Stage 8、Stage 9，等待产品经理单独批准 I02。
+
+## D-033｜V1-F03-I02 排查结果读取、陈旧校验与 Draft 应用
+
+- 状态：产品经理于 2026-09-02 单独批准 I02；全新 GPT-5.6 Terra（medium）实施并多轮返修后，Sol 独立技术验收通过。I03 未获批准。
+- I02 独立读取 I01 `inspection_plan_v1`，严格区分 blank/null、0、正整数与非法数量；行重排/删除允许，重复身份全部标错，显示字段不用于纠正系统身份。
+- 预览零写入并重读当前事实；确认事务内再次复检。Task/集合/更新时间、Inspection、身份、Attention、Stage、tracking、到货、MaxArrival、库存、Reconfirm、Draft 与 lifecycle 任一冲突均不得覆盖。
+- 确认只按显式目标 Task 调用既有 `InspectionDraftUseCase.SaveDraft`；缺失行不修改，blank 可 patch null，0/正数保持；多 Task 任一失败整批回滚，不自动 Reconfirm。
+- 现有 Schema 足够；无回导记录、ImportRecord/Issue、migration、ModelSnapshot、依赖、WPF 或正式 Inspection 逻辑。
+- Sol 最终门禁：I02 38/38、相关回归 213/213、Release 805/805、build 0/0、EF 无漂移、migration=9；未启动 WPF 或访问生产数据库。
+- 当前停止在 I02 技术验收完成；不创建或执行 I03/I04，不进入 Stage 8、Stage 9，等待产品经理单独批准 I03。
