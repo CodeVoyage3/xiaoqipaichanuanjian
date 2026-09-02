@@ -11,7 +11,11 @@ public sealed record ReminderNotification(
     int UpcomingDiscount50Count = 0,
     int UpcomingDiscount20Count = 0,
     int UpcomingWithdrawCount = 0,
-    int UpcomingExpiredCount = 0);
+    int UpcomingExpiredCount = 0,
+    int UpcomingDiscount50BatchCount = 0,
+    int UpcomingDiscount20BatchCount = 0,
+    int UpcomingWithdrawBatchCount = 0,
+    int UpcomingExpiredBatchCount = 0);
 
 public interface IReminderChannel
 {
@@ -63,7 +67,11 @@ public sealed class DailyReminderRuntimeCoordinator
                 CountPreReminderProducts(result, ExpiryStageCalculator.Discount50),
                 CountPreReminderProducts(result, ExpiryStageCalculator.Discount20),
                 CountPreReminderProducts(result, ExpiryStageCalculator.Withdraw),
-                CountPreReminderProducts(result, ExpiryStageCalculator.Expired));
+                CountPreReminderProducts(result, ExpiryStageCalculator.Expired),
+                CountPreReminderBatches(result, ExpiryStageCalculator.Discount50),
+                CountPreReminderBatches(result, ExpiryStageCalculator.Discount20),
+                CountPreReminderBatches(result, ExpiryStageCalculator.Withdraw),
+                CountPreReminderBatches(result, ExpiryStageCalculator.Expired));
             notificationAttempted = true;
             if (!_channel.TryShow(notification))
             {
@@ -97,4 +105,7 @@ public sealed class DailyReminderRuntimeCoordinator
         .Select(item => item.ProductId)
         .Distinct()
         .Count();
+
+    private static int CountPreReminderBatches(DailyReminderResult result, string stage) => result.PreReminderItems
+        .Count(item => item.TargetStage == stage);
 }

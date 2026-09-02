@@ -155,13 +155,12 @@ public sealed class DailyReminderUseCase
                 var days = batch.ShelfLifeUnit switch
                 {
                     "D" => batch.ShelfLifeValue,
-                    "M" => batch.ShelfLifeValue * 30,
-                    "Y" => batch.ShelfLifeValue * 365,
-                    _ => 0
+                    "M" => checked(batch.ShelfLifeValue * 30),
+                    "Y" => checked(batch.ShelfLifeValue * 365),
+                    _ => throw new ArgumentException("Invalid shelf life unit.")
                 };
-                var dates = days > 0
-                    ? ExpiryPolicyCalculator.CalculateStageDates(batch.PolicyCode!, batch.PolicyVersion!.Value, batch.ExpiryDate, days)
-                    : null;
+                var dates = ExpiryPolicyCalculator.CalculateStageDates(
+                    batch.PolicyCode!, batch.PolicyVersion!.Value, batch.ExpiryDate, days);
                 return dates is null ? Array.Empty<PreReminderCandidate>() :
                     new[]
                     {
