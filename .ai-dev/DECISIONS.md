@@ -253,10 +253,12 @@
 
 ## D-030｜V1-F02 提前 3 天预提醒
 
-- 状态：产品经理于 2026-09-02 单独批准 V1-F02；正式实现卡为 `.ai-dev/TASKS/V1-F02.md`，不授权 V1-F03、Stage 8、Stage 9 或其他功能。
+- 状态：产品经理于 2026-09-02 单独批准 V1-F02；实现、Sol 独立技术验收和用户真实 WPF GUI 验收均已通过，V1-F02 已完成归档；不授权 V1-F03、Stage 8、Stage 9 或其他功能。
 - 四节点 `ReminderDate = StageEffectiveDate - 3 个日历日`；候选窗口为 `ReminderDate <= BusinessDate < StageEffectiveDate`。正式节点到达前可按既有跨日每日提醒补入，到达后不得补发该节点提前提醒。
 - 预提醒以 `(BatchId, TargetStage)` 派生识别，不提前改变 Stage，不创建或伪造 ProductTask、Inspection、Revision、LifecycleEvent、HandledAttentionVersion 或其他正式业务事实。
 - 只有 Managed、批准 policy/version 1、匹配完成 ScopeBaseline、库存为正且 active 的 Batch 可进入；Excluded、Unresolved、应季搭配、赠品小样、规则未覆盖、库存 0 和 stopped Batch 零预提醒。
 - 正式 Task 与预提醒进入同一次 Windows 集中提醒；继续使用 `LastReminderDate`、日期回拨、通知成功登记、失败重试、托盘、scheduler、提醒设置和自启动权威，不建设第二套通知系统。
 - 当前 Schema 足够，migration 保持 9。若实施发现必须持久化节点发送历史或改变 Schema，立即停止并提交最小 Schema / migration / 旧库兼容方案，等待单独批准。
 - 使用全新 GPT-5.6 Terra（medium、标准速度）实施；Sol 独立技术验收，最终真实 WPF GUI 验收由用户本人执行。
+- 最终门禁：定向 88/88、Release 新鲜复跑 764/764、build 0 warning / 0 error、EF 无漂移、migration=9；用户确认仅预提醒、同日幂等及正式 Task + 预提醒集中展示均通过。
+- 用户明确旧正式数据后续不再使用；验收后 Fresh 将当前运行数据库替换为空库并移除隔离标记，旧数据旁置保留。V1-F02 关闭后停止，等待下一次单独批准。
