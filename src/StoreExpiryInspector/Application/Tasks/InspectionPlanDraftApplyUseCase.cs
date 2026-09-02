@@ -4,7 +4,9 @@ using StoreExpiryInspector.Infrastructure;
 
 namespace StoreExpiryInspector.Application.Tasks;
 
-public sealed record InspectionPlanPreview(InspectionPlanReadResult File, IReadOnlyList<long> ApplicableTaskIds, IReadOnlyDictionary<long, string> TaskReasons);
+public sealed record InspectionPlanPreviewSummary(int ProductCount, int TaskCount, int BatchCount, int FilledCount, int BlankCount, int ErrorCount);
+public sealed record InspectionPlanTaskPreview(long TaskId, bool IsApplicable, string? Reason);
+public sealed record InspectionPlanPreview(InspectionPlanReadResult File, InspectionPlanPreviewSummary Summary, IReadOnlyList<InspectionPlanTaskPreview> Tasks, IReadOnlyList<long> ApplicableTaskIds, IReadOnlyDictionary<long, string> TaskReasons);
 public sealed record ApplyInspectionPlanDraftRequest(InspectionPlanPreview Preview, IReadOnlyCollection<long> TaskIds, string InspectorName, DateOnly CheckDate, DateOnly BusinessDate, DateTime SavedAtUtc);
 public sealed record AppliedInspectionPlanDraft(long TaskId, long DraftId, bool Changed, InspectionDraftReadiness Readiness);
 public sealed record ApplyInspectionPlanDraftResult(bool Changed, IReadOnlyList<AppliedInspectionPlanDraft> Tasks);
@@ -19,7 +21,9 @@ public sealed class InspectionPlanDraftApplyUseCase
         ArgumentNullException.ThrowIfNull(context);
         var file = reader.Read(path);
         var reasons = Validate(context, file.Rows);
-        return new(file, reasons.Where(pair => pair.Value.Length == 0).Select(pair => pair.Key).Order().ToArray(), reasons);
+        var tasks = reasons.OrderBy(pair => pair.Key).Select(pair => new InspectionPlanTaskPreview(pair.Key, pair.Value.Length == 0, pair.Value.Length == 0 ? null : pair.Value)).ToArray();
+        var summary = new InspectionPlanPreviewSummary(file.Rows.Select(row => row.ProductId).Where(id => id is > 0).Distinct().Count(), tasks.Length, file.Rows.Select(row => row.BatchId).Where(id => id is > 0).Distinct().Count(), file.Rows.Count(row => row.CheckedQty is not null), file.Rows.Count(row => row.CheckedQty is null && row.Errors.All(error => !error.StartsWith("本次排查数量", StringComparison.Ordinal))), file.ErrorCount);
+        return new(file, summary, tasks, tasks.Where(task => task.IsApplicable).Select(task => task.TaskId).ToArray(), reasons);
     }
 
     public ApplyInspectionPlanDraftResult Apply(StoreDbContext context, ApplyInspectionPlanDraftRequest request)
@@ -66,9 +70,9 @@ public sealed class InspectionPlanDraftApplyUseCase
             var product = context.Products.AsNoTracking().SingleOrDefault(p => p.Id == task.ProductId);
             if (product is null || product.EffectiveStockQty <= 0 || product.IsStockZeroTerminated || product.ExpiryManagementStatus != ExpiryManagementStatus.Managed || product.PolicyVersion != ExpiryPolicies.Version1 || product.PolicyCode is not (ExpiryPolicies.Food or ExpiryPolicies.Pet or ExpiryPolicies.GeneralLong) || !context.ScopeBaselines.AsNoTracking().Any(b => b.IsCompleted && b.ScopeKey == product.CategoryCode && b.PolicyCode == product.PolicyCode && b.PolicyVersion == product.PolicyVersion)) { output[group.Key] = "Product 或 ScopeBaseline 当前状态不允许应用"; continue; }
             var items = context.TaskItems.AsNoTracking().Where(i => i.TaskId == task.Id).ToArray();
-            if (items.Length != row.TaskItemCount || task.UpdatedAtUtc != row.TaskUpdatedAtUtc || group.Any(r => r.TaskItemCount != row.TaskItemCount || r.TaskUpdatedAtUtc != row.TaskUpdatedAtUtc || r.ProductId != task.ProductId || r.EffectiveStockQty != product.EffectiveStockQty) || group.Any(r => !items.Any(i => i.Id == r.TaskItemId && i.ProductId == r.ProductId && i.BatchId == r.BatchId && i.AttentionVersion == r.AttentionVersion && i.Stage == r.Stage && !i.RequiresReconfirmation))) { output[group.Key] = "Task 快照已陈旧"; continue; }
+            if (items.Length != row.TaskItemCount || task.UpdatedAtUtc != row.TaskUpdatedAtUtc || items.Any(item => item.RequiresReconfirmation) || group.Any(r => r.TaskItemCount != row.TaskItemCount || r.TaskUpdatedAtUtc != row.TaskUpdatedAtUtc || r.ProductId != row.ProductId || r.ProductId != task.ProductId || r.EffectiveStockQty != row.EffectiveStockQty || r.EffectiveStockQty != product.EffectiveStockQty) || group.Any(r => !items.Any(i => i.Id == r.TaskItemId && i.ProductId == r.ProductId && i.BatchId == r.BatchId && i.AttentionVersion == r.AttentionVersion && i.Stage == r.Stage))) { output[group.Key] = "Task 快照已陈旧或需要重新确认"; continue; }
             var batches = context.Batches.AsNoTracking().Where(b => group.Select(r => r.BatchId).Contains(b.Id)).ToArray();
-            if (group.Any(r => !batches.Any(b => b.Id == r.BatchId && b.ProductId == task.ProductId && b.TrackingStatus == "active" && b.CurrentStage == r.Stage && b.AttentionVersion == r.AttentionVersion && b.CurrentArrivalQty == r.CurrentArrivalQty && b.MaxArrivalQty == r.MaxArrivalQty))) { output[group.Key] = "Batch 快照已陈旧"; continue; }
+            if (group.Any(r => !batches.Any(b => b.Id == r.BatchId && b.ProductId == task.ProductId && b.TrackingStatus == "active" && b.TrackingStatus == r.TrackingStatus && b.CurrentStage == r.Stage && b.AttentionVersion == r.AttentionVersion && b.CurrentArrivalQty == r.CurrentArrivalQty && b.MaxArrivalQty == r.MaxArrivalQty))) { output[group.Key] = "Batch 快照已陈旧"; continue; }
             var draft = context.Drafts.AsNoTracking().SingleOrDefault(d => d.TaskId == task.Id);
             if (draft?.IsInvalid == true) output[group.Key] = "Draft 已失效";
         }

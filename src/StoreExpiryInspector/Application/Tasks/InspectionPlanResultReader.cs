@@ -44,19 +44,27 @@ public sealed class InspectionPlanResultReader
         var worksheet = part.Worksheet ?? throw new InvalidDataException("Worksheet is required.");
         var rows = worksheet.GetFirstChild<SheetData>()?.Elements<Row>().ToArray() ?? [];
         if (rows.Length < 2) throw new InvalidDataException("Inspection plan contains no data rows.");
-        ValidateHeaders(rows[0]);
+        ValidateHeaders(rows[0], workbookPart);
         var result = rows.Skip(1).Select(row => ParseRow(row, workbookPart)).ToArray();
         if (result.Any(row => row.Errors.Any(error => error.StartsWith("格式版本", StringComparison.Ordinal))))
             throw new InvalidDataException("Inspection plan format version is missing, old, or mixed; re-export it.");
-        if (result.All(row => row.Errors.Count > 0)) throw new InvalidDataException("Inspection plan contains no usable data rows.");
+        MarkDuplicates(result);
         return new(result);
     }
 
-    private static void ValidateHeaders(Row row)
+    private static void ValidateHeaders(Row row, WorkbookPart workbook)
     {
-        var values = Cells(row, null);
+        var values = Cells(row, workbook);
         if (Headers.Where((header, index) => !string.Equals(values[index], header, StringComparison.Ordinal)).Any())
             throw new InvalidDataException("Inspection plan A:Y headers do not match inspection_plan_v1.");
+    }
+
+    private static void MarkDuplicates(IReadOnlyList<InspectionPlanRow> rows)
+    {
+        foreach (var duplicate in rows.Where(row => row.TaskItemId is > 0).GroupBy(row => row.TaskItemId).Where(group => group.Count() > 1))
+            foreach (var row in duplicate) ((List<string>)row.Errors).Add("TaskItemId 在文件中重复。");
+        foreach (var duplicate in rows.Where(row => row.BatchId is > 0).GroupBy(row => row.BatchId).Where(group => group.Count() > 1))
+            foreach (var row in duplicate) ((List<string>)row.Errors).Add("BatchId 在文件中重复。");
     }
 
     private static InspectionPlanRow ParseRow(Row row, WorkbookPart workbook)

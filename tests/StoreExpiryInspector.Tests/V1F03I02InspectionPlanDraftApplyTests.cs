@@ -34,9 +34,14 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
                 var workbook = document.WorkbookPart!;
                 var worksheet = workbook.WorksheetParts.Single().Worksheet ?? throw new InvalidOperationException();
                 var sheetData = worksheet.GetFirstChild<SheetData>() ?? throw new InvalidOperationException();
+                var strings = workbook.SharedStringTablePart ?? workbook.AddNewPart<SharedStringTablePart>();
+                strings.SharedStringTable ??= new SharedStringTable();
+                strings.SharedStringTable.AppendChild(new SharedStringItem(new Text("序号")));
+                var header = sheetData.Elements<Row>().First().Elements<Cell>().First();
+                header.DataType = CellValues.SharedString; header.CellValue = new CellValue("0"); header.InlineString = null;
                 var row = sheetData.Elements<Row>().Skip(1).Single();
                 row.Elements<Cell>().Single(cell => cell.CellReference == "L2").CellValue = new CellValue("0");
-                (workbook.Workbook ?? throw new InvalidOperationException()).Save(); worksheet.Save();
+                strings.SharedStringTable.Save(); (workbook.Workbook ?? throw new InvalidOperationException()).Save(); worksheet.Save();
             }
             var useCase = new InspectionPlanDraftApplyUseCase();
             var preview = useCase.Preview(context, path);
