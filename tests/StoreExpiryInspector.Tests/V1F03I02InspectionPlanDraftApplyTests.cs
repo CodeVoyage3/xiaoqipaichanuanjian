@@ -89,6 +89,15 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         fixture.Context.SaveChanges();
         Assert.False(new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path).Tasks.Single().IsApplicable);
     }
+
+    [Fact]
+    public void BlankClearsIncludedItemAndDeletedRowLeavesExistingDraftUntouched()
+    {
+        using var fixture = Fixture.Create(2); var task = fixture.Context.Tasks.Single(); var items = fixture.Context.TaskItems.OrderBy(item => item.Id).ToArray(); var draft = new InspectionDraft { TaskId = task.Id, InspectorName = "x", CheckDate = new(2026, 9, 2), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
+        fixture.Context.Drafts.Add(draft); fixture.Context.SaveChanges(); fixture.Context.DraftItems.AddRange(new InspectionDraftItem { DraftId = draft.Id, TaskId = task.Id, TaskItemId = items[0].Id, CheckedQty = 5, ConfirmedAttentionVersion = 2 }, new InspectionDraftItem { DraftId = draft.Id, TaskId = task.Id, TaskItemId = items[1].Id, CheckedQty = 6, ConfirmedAttentionVersion = 2 }); fixture.Context.SaveChanges();
+        DeleteSecondRow(fixture.Path); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); useCase.Apply(fixture.Context, new(preview, preview.ApplicableTaskIds, "x", new(2026, 9, 2), new(2026, 9, 2), new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc)));
+        Assert.Null(fixture.Context.DraftItems.Single(item => item.TaskItemId == items[0].Id).CheckedQty); Assert.Equal(6, fixture.Context.DraftItems.Single(item => item.TaskItemId == items[1].Id).CheckedQty);
+    }
     [Theory]
     [InlineData("0", true)]
     [InlineData("7", true)]
