@@ -116,6 +116,16 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         Assert.True(result.Changed); Assert.Equal(2, result.Tasks.Count); Assert.Equal(2, fixture.Context.Drafts.Count());
     }
 
+    [Fact]
+    public void SecondTaskSaveFailureRollsBackFirstTask()
+    {
+        using var fixture = Fixture.Create(); AddSecondTask(fixture); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); var tasks = fixture.Context.Tasks.OrderBy(task => task.Id).ToArray();
+        var corrupt = new InspectionDraft { TaskId = tasks[1].Id, InspectorName = "x", CheckDate = new(2026, 9, 2), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow }; fixture.Context.Drafts.Add(corrupt); fixture.Context.SaveChanges();
+        fixture.Context.DraftItems.Add(new InspectionDraftItem { DraftId = corrupt.Id, TaskId = tasks[1].Id, TaskItemId = fixture.Context.TaskItems.Single(item => item.TaskId == tasks[0].Id).Id, CheckedQty = 1, ConfirmedAttentionVersion = 2 }); fixture.Context.SaveChanges();
+        Assert.Throws<InvalidOperationException>(() => useCase.Apply(fixture.Context, new(preview, preview.ApplicableTaskIds, "检查员", new(2026, 9, 2), new(2026, 9, 2), new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc))));
+        Assert.DoesNotContain(fixture.Context.Drafts, draft => draft.TaskId == tasks[0].Id);
+    }
+
     private static void AddSecondTask(Fixture fixture)
     {
         var context = fixture.Context; var product = new Product { ProductCode = "SKU-SECOND", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 4 }; context.Products.Add(product); context.SaveChanges();
