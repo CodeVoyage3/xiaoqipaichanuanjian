@@ -10,7 +10,8 @@ public sealed record InspectionPlanRow(
     int? AttentionVersion, DateTime? TaskUpdatedAtUtc, int? TaskItemCount,
     string? TrackingStatus, string? Stage, int? CurrentArrivalQty, int? MaxArrivalQty,
     int? EffectiveStockQty, int? CheckedQty, string? ProductCode, string? ProductName,
-    string? BatchDisplay, IReadOnlyList<string> Errors);
+    string? BatchDisplay, IReadOnlyList<string> Errors,
+    string? ProductBarcode = null, string? ProductionDate = null, string? ExpiryDate = null);
 
 public sealed record InspectionPlanReadResult(IReadOnlyList<InspectionPlanRow> Rows)
 {
@@ -82,7 +83,8 @@ public sealed class InspectionPlanResultReader
         if (string.IsNullOrEmpty(values[20])) errors.Add("Batch当前状态 缺失。");
         if (string.IsNullOrEmpty(values[21])) errors.Add("Stage快照 缺失。");
         var checkedQty = Quantity(values[11], row, errors);
-        return new((int)(row.RowIndex?.Value ?? 0), taskId, taskItemId, productId, batchId, version, updated, taskCount, values[20], values[21], arrival, max, stock, checkedQty, values[1], values[3], values[6], errors);
+        return new((int)(row.RowIndex?.Value ?? 0), taskId, taskItemId, productId, batchId, version, updated, taskCount, values[20], values[21], arrival, max, stock, checkedQty, values[1], values[3], values[6], errors,
+            values[2], DisplayDate(values[5]), DisplayDate(values[6]));
     }
 
     private static string[] Cells(Row row, WorkbookPart? workbook)
@@ -113,4 +115,10 @@ public sealed class InspectionPlanResultReader
     private static int? Add(string name, List<string> errors) { errors.Add($"{name} 超出 Int32 范围。"); return null; }
     private static int? Quantity(string value, Row row, List<string> errors)
     { if (string.IsNullOrEmpty(value)) return null; if (!int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var quantity) || quantity < 0) errors.Add("本次排查数量必须是非负 Int32 整数。"); return errors.Any(e => e.StartsWith("本次排查数量", StringComparison.Ordinal)) ? null : quantity; }
+    private static string? DisplayDate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var serial)) return string.IsNullOrWhiteSpace(value) ? null : value;
+        try { return DateOnly.FromDateTime(DateTime.FromOADate(serial)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture); }
+        catch (ArgumentException) { return value; }
+    }
 }

@@ -26,9 +26,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
 
         Assert.Equal([1], exported);
         Assert.Equal(3, vm.PreviewRows.Count);
-        Assert.Equal("未填写", vm.PreviewRows[0].CheckedQtyText);
+        Assert.Equal(string.Empty, vm.PreviewRows[0].CheckedQtyText);
         Assert.Equal("0", vm.PreviewRows[1].CheckedQtyText);
         Assert.Equal("3", vm.PreviewRows[2].CheckedQtyText);
+        Assert.Equal("001", vm.PreviewRows[0].ProductBarcode);
+        Assert.Equal("2026-09-01", vm.PreviewRows[0].ProductionDate);
+        Assert.Equal("2026-09-30", vm.PreviewRows[0].ExpiryDate);
         Assert.Equal("行错误；陈旧/失效", vm.PreviewRows[2].StatusText);
         Assert.Contains("本次排查数量", vm.PreviewRows[2].Reason);
         Assert.Contains("Task 快照已陈旧", vm.PreviewRows[2].Reason);
@@ -50,7 +53,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public async Task DraftGateOnlySubmitsCompleteTasksAndRefreshesAfterConfirmation()
+    public async Task DraftGateKeepsEveryTaskOutOfI03UntilAllAreComplete()
     {
         var submissions = 0;
         var refreshes = 0;
@@ -85,17 +88,14 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         vm.CheckDateText = "2026-09-02";
         await vm.SaveDraftAsync();
         await vm.SubmitAsync();
-        await Task.Delay(20);
 
-        Assert.Equal([1], submittedTaskIds);
-        Assert.Empty(vm.CompleteTaskIds);
-        Assert.Equal("尚未保存草稿", vm.DraftStatusText);
-        Assert.False(vm.HasPreview);
-        Assert.Empty(vm.PreviewRows);
-        Assert.Equal(3, submissions);
-        Assert.Equal(2, confirmations);
-        Assert.Single(submittedAt.Distinct());
-        Assert.Equal(1, refreshes);
+        Assert.Null(submittedTaskIds);
+        Assert.Equal([1], vm.CompleteTaskIds);
+        Assert.Equal(0, submissions);
+        Assert.Equal(0, confirmations);
+        Assert.Empty(submittedAt);
+        Assert.Equal(0, refreshes);
+        Assert.Equal("仍有未完成排查项，请填写完整后提交。", vm.StatusText);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Equal([1], vm.CompleteTaskIds);
         vm.InspectorName = "新检查员";
         Assert.Empty(vm.CompleteTaskIds);
-        Assert.Contains("尚未保存", vm.DraftStatusText);
+        Assert.Contains("尚未处理", vm.DraftStatusText);
     }
 
     [Fact]
@@ -313,27 +313,64 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void TodayTaskGridUsesTheDenseVirtualizedEightColumnContract()
+    public void TodayTaskGridUsesTheSevenColumnVirtualizedSelectionContract()
     {
         var window = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
-        foreach (var header in new[] { "选择", "商品编码", "商品名称", "大类", "当前最高阶段", "批次数", "商品当前库存", "任务状态" })
+        var todayStart = window.IndexOf("<Grid Visibility=\"{Binding IsTodayInspectionVisible", StringComparison.Ordinal);
+        window = window[todayStart..window.IndexOf("IsImportVisible", todayStart, StringComparison.Ordinal)];
+        foreach (var header in new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "商品当前库存", "任务状态" })
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
         Assert.Contains("CellTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
-        Assert.Contains("<DataTrigger Binding=\"{Binding HighestStage}\" Value=\"expired\">", window, StringComparison.Ordinal);
-        Assert.Contains("Text=\"{Binding HighestStage, Converter={StaticResource StageLabelConverter}}\"", window, StringComparison.Ordinal);
         Assert.Contains("TableNumericCenterTextStyle", window, StringComparison.Ordinal);
         Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", window, StringComparison.Ordinal);
         Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", window, StringComparison.Ordinal);
-        Assert.Contains("Height=\"240\" MaxHeight=\"240\"", window, StringComparison.Ordinal);
-        Assert.Contains("<ScrollViewer VerticalScrollBarVisibility=\"Auto\" HorizontalScrollBarVisibility=\"Disabled\" CanContentScroll=\"True\">", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Height=\"240\" MaxHeight=\"240\"", window, StringComparison.Ordinal);
+        Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
+        Assert.Contains("SelectionUnit=\"Cell\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"商品编码\" Binding=\"{Binding ProductCode}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"批次数\"", window, StringComparison.Ordinal);
         Assert.Contains("<DataGridTemplateColumn Header=\"选择\" Width=\"52\">", window, StringComparison.Ordinal);
         Assert.Contains("CheckBox IsChecked=\"{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\"", window, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.Name=\"选择今日排查任务\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("<DataGridCheckBoxColumn Header=\"选择\"", window, StringComparison.Ordinal);
         Assert.Contains("TodayInspection.IsLoadingTasks", window, StringComparison.Ordinal);
         Assert.Equal("expired", new TodayInspectionTaskViewModel(new(1, 1, "商品", "SKU", null, "expired", 1, 1, Today, false)).HighestStage);
+    }
+
+    [Fact]
+    public async Task SubmitAppliesOnceThenRequiresConfirmationBeforeI03()
+    {
+        var applies = 0;
+        var submits = 0;
+        var confirmations = 0;
+        var vm = Create(
+            apply: _ => { applies++; return new(true, [new(1, 1, true, new(1, 1, 0, 0, true, true, true, true))]); },
+            submit: _ => { submits++; return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 1)], []); },
+            confirmSubmission: () => { confirmations++; return false; });
+        await vm.PreviewAsync("C:\\filled.xlsx");
+        vm.InspectorName = "检查员";
+
+        await vm.SubmitAsync();
+
+        Assert.Equal(1, applies);
+        Assert.Equal(1, confirmations);
+        Assert.Equal(0, submits);
+        Assert.Equal("已取消提交数据。", vm.StatusText);
+    }
+
+    [Fact]
+    public void ConfirmationWindowKeepsOnlyTheSixApprovedColumns()
+    {
+        var root = FindRepositoryRoot();
+        var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml"));
+        foreach (var header in new[] { "条码", "商品名称", "生产日期", "有效日期", "本次排查数量", "校验状态" })
+            Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
+        Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"{Binding Reason}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"原因\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("草稿", window, StringComparison.Ordinal);
     }
 
     private static TodayInspectionViewModel Create(
@@ -344,7 +381,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Func<IReadOnlyCollection<long>, Task>? refresh = null,
         Func<IReadOnlyList<OverStockConfirmation>, bool>? confirm = null,
         Func<InspectionTaskSearchResult>? loadTasks = null,
-        Func<DateTime>? utcNow = null) => new(
+        Func<DateTime>? utcNow = null,
+        Func<bool>? confirmSubmission = null) => new(
             loadTasks: loadTasks ?? (() => new([
                 new(1, 9, "商品 A", "A", "001", "expired", 2, 5, Today, false),
                 new(2, 10, "商品 B", "B", "002", "withdraw", 1, 4, Today, true)
@@ -355,6 +393,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             submit: submit ?? (_ => new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 101)], [])),
             refreshAfterSubmit: refresh ?? (_ => Task.CompletedTask),
             confirmOverStock: confirm,
+            confirmSubmission: confirmSubmission ?? (() => true),
             businessToday: () => Today,
             utcNow: utcNow);
 
@@ -366,7 +405,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     private static InspectionPlanRow Row(long taskId, int? checkedQty, IReadOnlyList<string>? errors = null) =>
-        new(2, taskId, taskId, 9, taskId, 1, DateTime.UtcNow, 1, "active", "expired", 1, 1, 5, checkedQty, "A", "商品 A", "2026-09-01", errors ?? []);
+        new(2, taskId, taskId, 9, taskId, 1, DateTime.UtcNow, 1, "active", "expired", 1, 1, 5, checkedQty, "A", "商品 A", "2026-09-30", errors ?? [], "001", "2026-09-01", "2026-09-30");
 
     private static string FindRepositoryRoot()
     {

@@ -28,7 +28,8 @@ public partial class MainWindow : Window
             confirmZeroInventory: ConfirmZeroInventory,
             confirmHistoryEdit: ConfirmHistoryEdit,
             confirmRestore: ConfirmRestore,
-            confirmTodayOverStock: ConfirmTodayOverStock);
+            confirmTodayOverStock: ConfirmTodayOverStock,
+            confirmTodaySubmission: ConfirmTodaySubmission);
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -231,7 +232,13 @@ public partial class MainWindow : Window
             DefaultExt = ".xlsx",
             AddExtension = false
         };
-        if (dialog.ShowDialog(this) == true) await shell.TodayInspection.PreviewAsync(dialog.FileName);
+        if (dialog.ShowDialog(this) != true) return;
+        await shell.TodayInspection.PreviewAsync(dialog.FileName);
+        if (shell.TodayInspection.HasPreview)
+        {
+            var confirmation = new TodayInspectionConfirmationWindow { Owner = this, DataContext = shell.TodayInspection };
+            confirmation.ShowDialog();
+        }
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
@@ -542,11 +549,20 @@ public partial class MainWindow : Window
             {
                 var productName = (DataContext as ShellViewModel)?.TodayInspection.Tasks
                     .SingleOrDefault(task => task.TaskId == item.TaskId)?.ProductName;
-                return $"{productName ?? "商品"}（Task {item.TaskId}）：当前库存 {item.EffectiveStockQty}，本次排查 {item.TotalCheckedQty}";
+                return $"{productName ?? "商品"}：当前库存 {item.EffectiveStockQty}，本次排查 {item.TotalCheckedQty}";
             })),
             "确认仍然提交",
             WpfDialogKind.Warning,
             nextAction: "选择“取消”返回检查；当前事实变化后需要重新确认。",
+            showCancel: true);
+
+    private bool ConfirmTodaySubmission() =>
+        WpfDialogService.Show(
+            this,
+            "确认提交",
+            "是否提交本次排查数据？提交后将生成正式排查记录，请确认数据无误。",
+            "确认提交",
+            WpfDialogKind.Warning,
             showCancel: true);
 
     private bool ConfirmRestore(LocalDatabaseBackupListItem backup) =>

@@ -995,7 +995,8 @@ public sealed class ShellViewModel : ViewModelBase
         Func<ReconfirmItemRequest, ReconfirmItemResult>? reconfirmItem = null,
         Func<ClearDraftRequest, ClearDraftResult>? clearDraft = null,
         Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>? adjustInventory = null,
-        Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmTodayOverStock = null)
+        Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmTodayOverStock = null,
+        Func<bool>? confirmTodaySubmission = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -1032,6 +1033,7 @@ public sealed class ShellViewModel : ViewModelBase
             submit: SubmitTodayInspection,
             refreshAfterSubmit: RefreshAfterTodayInspectionSubmitAsync,
             confirmOverStock: confirmTodayOverStock,
+            confirmSubmission: confirmTodaySubmission,
             logException: logger,
             businessToday: () => DateOnly.FromDateTime(DateTime.Today));
         BackupRestore = new DatabaseBackupRestoreViewModel(
