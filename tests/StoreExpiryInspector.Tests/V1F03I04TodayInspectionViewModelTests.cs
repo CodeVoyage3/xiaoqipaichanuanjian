@@ -29,8 +29,11 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Equal("未填写", vm.PreviewRows[0].CheckedQtyText);
         Assert.Equal("0", vm.PreviewRows[1].CheckedQtyText);
         Assert.Equal("3", vm.PreviewRows[2].CheckedQtyText);
-        Assert.Equal("行错误", vm.PreviewRows[2].StatusText);
+        Assert.Equal("行错误；陈旧/失效", vm.PreviewRows[2].StatusText);
+        Assert.Contains("本次排查数量", vm.PreviewRows[2].Reason);
+        Assert.Contains("Task 快照已陈旧", vm.PreviewRows[2].Reason);
         Assert.Contains("可应用 1", vm.PreviewSummaryText);
+        Assert.Contains("陈旧/失效 1", vm.PreviewSummaryText);
     }
 
     [Fact]
@@ -38,6 +41,9 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     {
         var submissions = 0;
         var refreshes = 0;
+        var confirmations = 0;
+        IReadOnlyCollection<long>? submittedTaskIds = null;
+        var submittedAt = new List<DateTime>();
         var vm = Create(
             preview: _ => Preview(applicable: [1, 2]),
             apply: _ => new(true,
@@ -49,12 +55,17 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             {
                 submissions++;
                 Assert.Equal([1], request.TaskIds);
+                submittedTaskIds = request.TaskIds;
+                submittedAt.Add(request.SubmittedAtUtc);
                 return submissions == 1
                     ? new(BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation, [], [new(1, 9, 5, 8)])
+                    : submissions == 2
+                    ? new(BulkInspectionSubmissionOutcome.OverStockConfirmationStale, [], [new(1, 9, 4, 8)])
                     : new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 101)], []);
             },
             refresh: _ => { refreshes++; return Task.CompletedTask; },
-            confirm: _ => true);
+            confirm: _ => { confirmations++; return true; },
+            utcNow: () => new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc));
 
         await vm.PreviewAsync("C:\\filled.xlsx");
         vm.InspectorName = "检查员";
@@ -63,9 +74,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await vm.SubmitAsync();
         await Task.Delay(20);
 
-        Assert.Equal([1], vm.CompleteTaskIds);
-        Assert.Contains("仍有未完成", vm.DraftStatusText);
-        Assert.Equal(2, submissions);
+        Assert.Equal([1], submittedTaskIds);
+        Assert.Empty(vm.CompleteTaskIds);
+        Assert.Equal("尚未保存草稿", vm.DraftStatusText);
+        Assert.Equal(3, submissions);
+        Assert.Equal(2, confirmations);
+        Assert.Single(submittedAt.Distinct());
         Assert.Equal(1, refreshes);
     }
 
@@ -84,24 +98,107 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("排查人必填", vm.StatusText);
     }
 
+    [Fact]
+    public async Task AllSelectionKeepsEveryLoadedTaskAndFormChangesInvalidateSavedDraft()
+    {
+        var items = Enumerable.Range(1, 501).Select(id => new InspectionTaskListItem(id, id, $"商品{id}", id.ToString(), null, "expired", 1, 1, Today, false)).ToArray();
+        var vm = Create(loadTasks: () => new(items, items.Length, 1, int.MaxValue), preview: _ => Preview([1]));
+        await vm.LoadAsync();
+        vm.SelectAllCommand.Execute(null);
+        Assert.Equal(501, vm.SelectedCount);
+        vm.ClearSelectionCommand.Execute(null);
+        vm.Tasks[500].IsSelected = true;
+        Assert.Equal(1, vm.SelectedCount);
+        await vm.PreviewAsync("C:\\filled.xlsx");
+        vm.InspectorName = "检查员";
+        await vm.SaveDraftAsync();
+        Assert.Equal([1], vm.CompleteTaskIds);
+        vm.InspectorName = "新检查员";
+        Assert.Empty(vm.CompleteTaskIds);
+        Assert.Contains("尚未保存", vm.DraftStatusText);
+    }
+
+    [Fact]
+    public async Task SubmissionFreezesUtcWaitsForRefreshAndCannotRepeat()
+    {
+        var utc = new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc);
+        var refresh = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = new List<DateTime>();
+        var vm = Create(
+            submit: request => { calls.Add(request.SubmittedAtUtc); return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 1)], []); },
+            refresh: _ => refresh.Task,
+            utcNow: () => utc);
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员"; await vm.SaveDraftAsync();
+        var submitting = vm.SubmitAsync();
+        await Task.Delay(20);
+        Assert.True(vm.IsBusy);
+        Assert.False(vm.SubmitCommand.CanExecute(null));
+        await vm.SubmitAsync();
+        Assert.Single(calls);
+        refresh.SetResult();
+        await submitting;
+        Assert.False(vm.SubmitCommand.CanExecute(null));
+        Assert.Equal([utc], calls);
+    }
+
+    [Fact]
+    public async Task RejectedOverStockConfirmationDoesNotSubmitAndRequiresAnotherPrompt()
+    {
+        var calls = 0;
+        var prompts = 0;
+        var vm = Create(
+            submit: _ => { calls++; return new(BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation, [], [new(1, 9, 5, 8)]); },
+            confirm: _ => { prompts++; return false; });
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员"; await vm.SaveDraftAsync();
+        await vm.SubmitAsync();
+        await vm.SubmitAsync();
+        Assert.Equal(2, calls);
+        Assert.Equal(2, prompts);
+        Assert.Contains("确认", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task ShellLoadsTodayTasksWithoutThePendingPageCapAndKeepsImportSeparate()
+    {
+        InspectionTaskSearchRequest? todayRequest = null;
+        var shell = new ShellViewModel(
+            dashboardLoader: () => new(0, 0, 0, 0, 0, []),
+            taskLoader: request =>
+            {
+                if (request.PageSize == int.MaxValue) todayRequest = request;
+                return new([], 0, request.Page, request.PageSize);
+            });
+        await shell.TodayInspection.LoadAsync();
+        var root = FindRepositoryRoot();
+        var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        Assert.Equal(int.MaxValue, todayRequest?.PageSize);
+        Assert.Contains("NavigationTodayInspectionButton", window, StringComparison.Ordinal);
+        Assert.Contains("NavigationImportButton", window, StringComparison.Ordinal);
+        Assert.Contains("Click=\"OpenTodayInspection_Click\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Import.TrySelectFile", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionViewModel.cs")), StringComparison.Ordinal);
+    }
+
     private static TodayInspectionViewModel Create(
         Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>? export = null,
         Func<string, InspectionPlanPreview>? preview = null,
         Func<ApplyInspectionPlanDraftRequest, ApplyInspectionPlanDraftResult>? apply = null,
         Func<BulkInspectionSubmissionRequest, BulkInspectionSubmissionResult>? submit = null,
         Func<IReadOnlyCollection<long>, Task>? refresh = null,
-        Func<IReadOnlyList<OverStockConfirmation>, bool>? confirm = null) => new(
-            loadTasks: () => new([
+        Func<IReadOnlyList<OverStockConfirmation>, bool>? confirm = null,
+        Func<InspectionTaskSearchResult>? loadTasks = null,
+        Func<DateTime>? utcNow = null) => new(
+            loadTasks: loadTasks ?? (() => new([
                 new(1, 9, "商品 A", "A", "001", "expired", 2, 5, Today, false),
                 new(2, 10, "商品 B", "B", "002", "withdraw", 1, 4, Today, true)
-            ], 2, 1, 50),
+            ], 2, 1, 50)),
             export: export ?? ((path, ids) => new(path, ids.Count, ids.Count)),
             preview: preview ?? (_ => Preview([1])),
             apply: apply ?? (_ => new(true, [new(1, 11, true, new(1, 1, 0, 0, true, true, true, true))])),
             submit: submit ?? (_ => new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 101)], [])),
             refreshAfterSubmit: refresh ?? (_ => Task.CompletedTask),
             confirmOverStock: confirm,
-            businessToday: () => Today);
+            businessToday: () => Today,
+            utcNow: utcNow);
 
     private static InspectionPlanPreview Preview(IReadOnlyList<long> applicable, IReadOnlyList<InspectionPlanRow>? rows = null, IReadOnlyDictionary<long, string>? reasons = null)
     {
@@ -112,4 +209,11 @@ public sealed class V1F03I04TodayInspectionViewModelTests
 
     private static InspectionPlanRow Row(long taskId, int? checkedQty, IReadOnlyList<string>? errors = null) =>
         new(2, taskId, taskId, 9, taskId, 1, DateTime.UtcNow, 1, "active", "expired", 1, 1, 5, checkedQty, "A", "商品 A", "2026-09-01", errors ?? []);
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "StoreExpiryInspector.slnx"))) return directory.FullName;
+        throw new DirectoryNotFoundException("无法定位 StoreExpiryInspector 仓库根目录。");
+    }
 }

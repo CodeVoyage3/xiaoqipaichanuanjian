@@ -1025,7 +1025,7 @@ public sealed class ShellViewModel : ViewModelBase
             logException: logException ?? LogImportException,
             utcNow: utcNow);
         TodayInspection = new TodayInspectionViewModel(
-            loadTasks: () => searchTasks(new InspectionTaskSearchRequest(PageSize: 500)),
+            loadTasks: () => searchTasks(new InspectionTaskSearchRequest(PageSize: int.MaxValue)),
             export: ExportTodayInspectionPlan,
             preview: PreviewTodayInspectionPlan,
             apply: ApplyTodayInspectionDraft,
@@ -1211,6 +1211,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         if (History.IsEditBusy ||
             Import.IsLoading ||
+            TodayInspection.IsBusy ||
             Detail.IsActionBusy ||
             (BackupRestore.IsLocked && page != ShellPage.BackupRestore) ||
             (BackupRestore.IsBusy && page != ShellPage.BackupRestore))
@@ -1403,11 +1404,9 @@ public sealed class ShellViewModel : ViewModelBase
 
     private async Task RefreshAfterTodayInspectionSubmitAsync(IReadOnlyCollection<long> taskIds)
     {
-        await Dashboard.LoadAsync();
-        await TodayInspection.LoadAsync();
-        await PendingTasks.LoadAsync();
-        await History.LoadAsync();
-        if (Detail.TaskId is long taskId && taskIds.Contains(taskId)) await Detail.LoadAsync(taskId);
+        var refreshes = new List<Task> { Dashboard.LoadAsync(), PendingTasks.LoadAsync(), History.LoadAsync() };
+        if (Detail.TaskId is long taskId && taskIds.Contains(taskId)) refreshes.Add(Detail.LoadAsync(taskId));
+        await Task.WhenAll(refreshes);
     }
 
     private static IReadOnlyList<LocalDatabaseBackupListItem> LoadBackups() =>

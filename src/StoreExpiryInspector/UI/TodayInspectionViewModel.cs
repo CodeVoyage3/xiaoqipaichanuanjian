@@ -46,8 +46,11 @@ public sealed class TodayInspectionPreviewRowViewModel(InspectionPlanRow row, st
     public string Product => string.IsNullOrWhiteSpace(row.ProductName) ? row.ProductCode ?? "—" : row.ProductName;
     public string Batch => row.BatchDisplay ?? "—";
     public string CheckedQtyText => row.CheckedQty?.ToString(CultureInfo.InvariantCulture) ?? "未填写";
-    public string StatusText => row.Errors.Count != 0 ? "行错误" : string.IsNullOrWhiteSpace(taskReason) ? (row.CheckedQty is null ? "未填写" : "可应用") : "不可应用";
-    public string Reason => row.Errors.Count != 0 ? string.Join("；", row.Errors) : taskReason;
+    public string StatusText => row.Errors.Count != 0
+        ? string.IsNullOrWhiteSpace(taskReason) ? "行错误" : "行错误；陈旧/失效"
+        : !string.IsNullOrWhiteSpace(taskReason) ? "陈旧/失效"
+        : row.CheckedQty is null ? "未填写" : row.CheckedQty == 0 ? "0 件" : "已填写正数";
+    public string Reason => string.Join("；", row.Errors.Append(taskReason).Where(value => !string.IsNullOrWhiteSpace(value)));
 }
 
 public sealed class TodayInspectionViewModel : ViewModelBase
@@ -61,6 +64,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private readonly Func<IReadOnlyList<OverStockConfirmation>, bool>? _confirmOverStock;
     private readonly Action<Exception>? _logException;
     private readonly Func<DateOnly> _businessToday;
+    private readonly Func<DateTime> _utcNow;
     private bool _isBusy;
     private string _statusText = "正在加载今日任务…";
     private string _inspectorName = string.Empty;
@@ -68,6 +72,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private InspectionPlanPreview? _currentPreview;
     private ApplyInspectionPlanDraftResult? _draftResult;
     private IReadOnlyList<OverStockConfirmation> _pendingConfirmations = Array.Empty<OverStockConfirmation>();
+    private SubmissionIntent? _submissionIntent;
 
     public TodayInspectionViewModel(
         Func<InspectionTaskSearchResult> loadTasks,
@@ -78,7 +83,8 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         Func<IReadOnlyCollection<long>, Task> refreshAfterSubmit,
         Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmOverStock = null,
         Action<Exception>? logException = null,
-        Func<DateOnly>? businessToday = null)
+        Func<DateOnly>? businessToday = null,
+        Func<DateTime>? utcNow = null)
     {
         _loadTasks = loadTasks;
         _export = export;
@@ -89,6 +95,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _confirmOverStock = confirmOverStock;
         _logException = logException;
         _businessToday = businessToday ?? (() => DateOnly.FromDateTime(DateTime.Today));
+        _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _checkDateText = _businessToday().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsBusy);
         SelectAllCommand = new RelayCommand(_ => SetSelection(true), _ => !IsBusy && Tasks.Count != 0);
@@ -115,9 +122,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public bool CanSaveDraft => _currentPreview?.ApplicableTaskIds.Count > 0 && IsFormValid;
     public bool IsFormValid => !string.IsNullOrWhiteSpace(InspectorName) && TryGetCheckDate(out _);
     public string StatusText { get => _statusText; private set { if (_statusText == value) return; _statusText = value; OnPropertyChanged(); } }
-    public string InspectorName { get => _inspectorName; set { if (_inspectorName == value) return; _inspectorName = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands(); } }
-    public string CheckDateText { get => _checkDateText; set { if (_checkDateText == value) return; _checkDateText = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands(); } }
-    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"涉及商品 {_currentPreview.Summary.ProductCount}，批次 {_currentPreview.Summary.BatchCount}，Task {_currentPreview.Summary.TaskCount}，可应用 {_currentPreview.ApplicableTaskIds.Count}，已填写 {_currentPreview.Summary.FilledCount}，未填写 {_currentPreview.Summary.BlankCount}，错误 {_currentPreview.Summary.ErrorCount}";
+    public string InspectorName { get => _inspectorName; set { if (_inspectorName == value) return; _inspectorName = value; InvalidateDraftOnFormChange(); OnPropertyChanged(); OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands(); } }
+    public string CheckDateText { get => _checkDateText; set { if (_checkDateText == value) return; _checkDateText = value; InvalidateDraftOnFormChange(); OnPropertyChanged(); OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands(); } }
+    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"涉及商品 {_currentPreview.Summary.ProductCount}，批次 {_currentPreview.Summary.BatchCount}，Task {_currentPreview.Summary.TaskCount}，可应用 {_currentPreview.ApplicableTaskIds.Count}，已填写 {_currentPreview.Summary.FilledCount}，未填写 {_currentPreview.Summary.BlankCount}，错误 {_currentPreview.Summary.ErrorCount}，陈旧/失效 {_currentPreview.Tasks.Count(task => !task.IsApplicable)}";
     public string DraftStatusText => _draftResult is null ? "尚未保存草稿" : CompleteTaskIds.Count == _draftResult.Tasks.Count ? "草稿已保存，所有本次 Task 已完成，可集中正式提交。" : "草稿已保存，仍有未完成排查项，未完成 Task 不会正式提交。";
 
     public async Task LoadAsync()
@@ -163,40 +170,60 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     {
         if (_currentPreview is null) { StatusText = "请先读取排查结果文件。"; return; }
         if (!TryGetCheckDate(out var checkDate) || string.IsNullOrWhiteSpace(InspectorName)) { StatusText = "排查人必填，排查日期必须为今天或更早的 yyyy-MM-dd。"; return; }
-        var draft = await RunAsync("保存待确认结果失败，请重新导出最新计划后重试", () => _apply(new(_currentPreview, _currentPreview.ApplicableTaskIds, InspectorName, checkDate, _businessToday(), DateTime.UtcNow)));
+        InvalidateSubmissionIntent();
+        var savedAtUtc = RequireUtcNow();
+        var draft = await RunAsync("保存待确认结果失败，请重新导出最新计划后重试", () => _apply(new(_currentPreview, _currentPreview.ApplicableTaskIds, InspectorName, checkDate, _businessToday(), savedAtUtc)));
         if (draft is null) return;
         _draftResult = draft;
-        _pendingConfirmations = Array.Empty<OverStockConfirmation>();
         StatusText = DraftStatusText;
         OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); RefreshCommands();
     }
 
     public async Task SubmitAsync()
     {
+        if (IsBusy) return;
         if (CompleteTaskIds.Count == 0) { StatusText = "仍有未完成排查项，暂无可集中正式提交的 Task。"; return; }
         if (!TryGetCheckDate(out var checkDate)) { StatusText = "排查日期必须为今天或更早的 yyyy-MM-dd。"; return; }
-        var request = new BulkInspectionSubmissionRequest(CompleteTaskIds, InspectorName, checkDate, _businessToday(), DateTime.UtcNow, _pendingConfirmations);
-        var result = await RunAsync("集中正式提交失败", () => _submit(request));
-        if (result is null) return;
-        if (result.Outcome is BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation or BulkInspectionSubmissionOutcome.OverStockConfirmationStale)
+        _submissionIntent ??= new(CompleteTaskIds, InspectorName, checkDate, _businessToday(), RequireUtcNow());
+        IsBusy = true;
+        try
         {
-            _pendingConfirmations = result.OverStockConfirmations;
-            StatusText = result.Outcome == BulkInspectionSubmissionOutcome.OverStockConfirmationStale ? "超库存事实已变化，请重新确认。" : "存在超库存排查项，请返回检查或确认仍然提交。";
-            OnPropertyChanged(nameof(OverStockText));
-            if (_confirmOverStock?.Invoke(_pendingConfirmations) == true) await SubmitAsync();
-            return;
+            while (true)
+            {
+                var intent = _submissionIntent;
+                var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _submit(new(intent.TaskIds, intent.InspectorName, intent.CheckDate, intent.BusinessDate, intent.SubmittedAtUtc, _pendingConfirmations))));
+                if (result.Outcome is BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation or BulkInspectionSubmissionOutcome.OverStockConfirmationStale)
+                {
+                    _pendingConfirmations = result.OverStockConfirmations;
+                    StatusText = result.Outcome == BulkInspectionSubmissionOutcome.OverStockConfirmationStale ? "超库存事实已变化，请重新确认。" : "存在超库存排查项，请返回检查或确认仍然提交。";
+                    OnPropertyChanged(nameof(OverStockText));
+                    if (_confirmOverStock?.Invoke(_pendingConfirmations) != true)
+                    {
+                        InvalidateSubmissionIntent();
+                        OnPropertyChanged(nameof(OverStockText));
+                        return;
+                    }
+                    continue;
+                }
+                StatusText = result.Outcome == BulkInspectionSubmissionOutcome.AlreadySubmitted ? "任务已提交过，正在刷新页面。" : "提交已成功，正在刷新页面。";
+                await RefreshAfterSubmitAsync(intent.TaskIds);
+                ClearSubmittedSession();
+                return;
+            }
         }
-        _pendingConfirmations = Array.Empty<OverStockConfirmation>();
-        StatusText = result.Outcome == BulkInspectionSubmissionOutcome.AlreadySubmitted ? "任务已提交过，正在刷新页面。" : "提交已成功，正在刷新页面。";
-        OnPropertyChanged(nameof(OverStockText));
-        _ = RefreshAfterSubmitAsync(CompleteTaskIds);
+        catch (Exception exception)
+        {
+            _logException?.Invoke(exception);
+            StatusText = "集中正式提交失败，请检查当前任务状态后重试。";
+        }
+        finally { IsBusy = false; }
     }
 
-    public string OverStockText => _pendingConfirmations.Count == 0 ? string.Empty : string.Join("；", _pendingConfirmations.Select(item => $"Task {item.TaskId}：库存 {item.EffectiveStockQty}，本次 {item.TotalCheckedQty}"));
+    public string OverStockText => _pendingConfirmations.Count == 0 ? string.Empty : string.Join("；", _pendingConfirmations.Select(item => $"Task {item.TaskId}/商品 {item.ProductId}：库存 {item.EffectiveStockQty}，本次 {item.TotalCheckedQty}"));
 
     private async Task RefreshAfterSubmitAsync(IReadOnlyCollection<long> taskIds)
     {
-        try { await _refreshAfterSubmit(taskIds); StatusText = "提交已成功，首页、今日排查、待办任务、详情和历史已刷新。"; }
+        try { await _refreshAfterSubmit(taskIds); await ReloadTasksWhileBusyAsync(); StatusText = "提交已成功，首页、今日排查、待办任务、详情和历史已刷新。"; }
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = "提交已成功，部分页面刷新失败，可手动刷新。"; }
     }
 
@@ -205,13 +232,26 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         if (IsBusy) return default;
         IsBusy = true;
         try { return await Task.Run(() => DatabaseRuntimeGate.Run(action)); }
-        catch (Exception exception) { _logException?.Invoke(exception); StatusText = $"{failure}：{exception.Message}"; return default; }
+        catch (Exception exception) { _logException?.Invoke(exception); StatusText = failure; return default; }
         finally { IsBusy = false; }
     }
 
     private bool TryGetCheckDate(out DateOnly date) => DateOnly.TryParseExact(CheckDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) && date != default && date <= _businessToday();
     private void SetSelection(bool selected) { foreach (var task in Tasks) task.IsSelected = selected; OnSelectionChanged(); }
     private void OnSelectionChanged() { OnPropertyChanged(nameof(SelectedCount)); RefreshCommands(); }
-    private void ResetSession() { _currentPreview = null; _draftResult = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); PreviewRows.Clear(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
+    private void ResetSession() { _currentPreview = null; _draftResult = null; InvalidateSubmissionIntent(); PreviewRows.Clear(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
+    private void InvalidateSubmissionIntent() { _submissionIntent = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); }
+    private void InvalidateDraftOnFormChange() { if (_draftResult is null) return; _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
+    private DateTime RequireUtcNow() { var value = _utcNow(); return value.Kind == DateTimeKind.Utc ? value : throw new InvalidOperationException("权威提交时间必须为 UTC。"); }
+    private async Task ReloadTasksWhileBusyAsync()
+    {
+        var selected = Tasks.Where(task => task.IsSelected).Select(task => task.TaskId).ToHashSet();
+        var result = await Task.Run(() => DatabaseRuntimeGate.Run(_loadTasks));
+        Tasks.Clear();
+        foreach (var item in result.Items) { var task = new TodayInspectionTaskViewModel(item) { IsSelected = selected.Contains(item.TaskId) }; task.SelectionChanged += OnSelectionChanged; Tasks.Add(task); }
+        OnSelectionChanged();
+    }
+    private void ClearSubmittedSession() { _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
+    private sealed record SubmissionIntent(IReadOnlyList<long> TaskIds, string InspectorName, DateOnly CheckDate, DateOnly BusinessDate, DateTime SubmittedAtUtc);
     private void RefreshCommands() { ReloadCommand.RaiseCanExecuteChanged(); SelectAllCommand.RaiseCanExecuteChanged(); ClearSelectionCommand.RaiseCanExecuteChanged(); ExportCommand.RaiseCanExecuteChanged(); PreviewCommand.RaiseCanExecuteChanged(); SaveDraftCommand.RaiseCanExecuteChanged(); SubmitCommand.RaiseCanExecuteChanged(); }
 }
