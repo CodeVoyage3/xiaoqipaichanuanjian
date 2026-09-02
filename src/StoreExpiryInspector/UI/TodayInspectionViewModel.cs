@@ -70,6 +70,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private bool _isLoadingTasks;
     private bool _isActionBusy;
     private bool _hasLoadedTasks;
+    private bool _isBulkSelecting;
     private string _statusText = "正在加载今日任务…";
     private string _inspectorName = string.Empty;
     private string _checkDateText;
@@ -266,8 +267,14 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     }
 
     private bool TryGetCheckDate(out DateOnly date) => DateOnly.TryParseExact(CheckDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) && date != default && date <= _businessToday();
-    private void SetSelection(bool selected) { foreach (var task in Tasks) task.IsSelected = selected; OnSelectionChanged(); }
-    private void OnSelectionChanged() { OnPropertyChanged(nameof(SelectedCount)); RefreshCommands(); }
+    private void SetSelection(bool selected)
+    {
+        _isBulkSelecting = true;
+        try { foreach (var task in Tasks) task.IsSelected = selected; }
+        finally { _isBulkSelecting = false; }
+        OnSelectionChanged();
+    }
+    private void OnSelectionChanged() { if (_isBulkSelecting) return; OnPropertyChanged(nameof(SelectedCount)); RefreshCommands(); }
     private void ResetSession() { _currentPreview = null; _draftResult = null; InvalidateSubmissionIntent(); PreviewRows.Clear(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
     private void InvalidateSubmissionIntent() { _submissionIntent = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); }
     private void InvalidateDraftOnFormChange() { if (_draftResult is null) return; _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }

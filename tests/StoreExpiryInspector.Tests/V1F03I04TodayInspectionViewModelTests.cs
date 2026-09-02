@@ -150,6 +150,25 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task BulkSelectionPublishesSelectedCountOncePerCommand()
+    {
+        var items = Enumerable.Range(1, 576).Select(id => new InspectionTaskListItem(id, id, $"商品{id}", id.ToString(), null, "expired", 1, 1, Today, false)).ToArray();
+        var vm = Create(loadTasks: () => new(items, items.Length, 1, int.MaxValue));
+        await vm.LoadAsync();
+        var changes = new List<string?>();
+        vm.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
+
+        vm.SelectAllCommand.Execute(null);
+        Assert.Equal(576, vm.SelectedCount);
+        Assert.Equal(1, changes.Count(name => name == nameof(TodayInspectionViewModel.SelectedCount)));
+
+        changes.Clear();
+        vm.ClearSelectionCommand.Execute(null);
+        Assert.Equal(0, vm.SelectedCount);
+        Assert.Equal(1, changes.Count(name => name == nameof(TodayInspectionViewModel.SelectedCount)));
+    }
+
+    [Fact]
     public async Task ShellDoesNotReloadLoadedTodayTasksButRefreshStillDoes()
     {
         var loads = 0;
@@ -309,6 +328,10 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", window, StringComparison.Ordinal);
         Assert.Contains("Height=\"240\" MaxHeight=\"240\"", window, StringComparison.Ordinal);
         Assert.Contains("<ScrollViewer VerticalScrollBarVisibility=\"Auto\" HorizontalScrollBarVisibility=\"Disabled\" CanContentScroll=\"True\">", window, StringComparison.Ordinal);
+        Assert.Contains("<DataGridTemplateColumn Header=\"选择\" Width=\"52\">", window, StringComparison.Ordinal);
+        Assert.Contains("CheckBox IsChecked=\"{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\"", window, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.Name=\"选择今日排查任务\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("<DataGridCheckBoxColumn Header=\"选择\"", window, StringComparison.Ordinal);
         Assert.Contains("TodayInspection.IsLoadingTasks", window, StringComparison.Ordinal);
         Assert.Equal("expired", new TodayInspectionTaskViewModel(new(1, 1, "商品", "SKU", null, "expired", 1, 1, Today, false)).HighestStage);
     }
