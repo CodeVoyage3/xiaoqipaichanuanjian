@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using StoreExpiryInspector.Application.Tasks;
 
@@ -17,7 +18,7 @@ public sealed class TodayInspectionTaskViewModel : ViewModelBase
     public string? ProductName => Item.ProductName;
     public string ProductCode => Item.ProductCode;
     public string? ProductBarcode => Item.ProductBarcode;
-    public string HighestStage => StageLabels.ToDisplay(Item.HighestStage);
+    public string HighestStage => Item.HighestStage;
     public string CategoryName => Item.CategoryName;
     public int PendingBatchCount => Item.PendingBatchCount;
     public int EffectiveStockQty => Item.EffectiveStockQty;
@@ -110,7 +111,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     }
 
     public IReadOnlyList<TodayInspectionTaskViewModel> Tasks { get; private set; } = Array.Empty<TodayInspectionTaskViewModel>();
-    public List<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
+    public ObservableCollection<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
     public RelayCommand ReloadCommand { get; }
     public RelayCommand SelectAllCommand { get; }
     public RelayCommand ClearSelectionCommand { get; }

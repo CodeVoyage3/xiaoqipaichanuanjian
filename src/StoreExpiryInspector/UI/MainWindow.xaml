@@ -2717,10 +2717,11 @@
 
                 <!-- 数据导入 -->
                 <Grid Visibility="{Binding IsTodayInspectionVisible, Converter={StaticResource BoolToVisibility}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True">
                     <Grid Margin="0,0,0,16">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Border Padding="16" Style="{StaticResource PageSectionBorderStyle}">
@@ -2743,17 +2744,17 @@
                             <Grid>
                                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                                     <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding TodayInspection.SelectedCount, StringFormat=已选择 {0} 项}" VerticalAlignment="Center" FontWeight="SemiBold" /><Button Grid.Column="1" Content="导出今日计划" Click="ExportTodayInspection_Click" Command="{Binding TodayInspection.ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="120" AutomationProperties.Name="导出今日排查计划" /></Grid>
-                                <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.Tasks}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Extended" MinHeight="180" AutomationProperties.Name="今日排查任务列表"
+                                <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.Tasks}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Extended" Height="240" MaxHeight="240" AutomationProperties.Name="今日排查任务列表"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <DataGrid.Columns>
                                             <DataGridCheckBoxColumn Header="选择" Binding="{Binding IsSelected, Mode=TwoWay}" Width="52" />
-                                            <DataGridTextColumn Header="商品编码" Binding="{Binding ProductCode}" Width="112" />
-                                            <DataGridTemplateColumn Header="商品名称" Width="2*" MinWidth="160"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                                            <DataGridTextColumn Header="大类" Binding="{Binding CategoryName}" Width="80" />
-                                            <DataGridTemplateColumn Header="当前最高阶段" CellTemplate="{StaticResource StageBadgeTemplate}" Width="104" />
-                                            <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="72" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
-                                            <DataGridTextColumn Header="商品当前库存" Binding="{Binding EffectiveStockQty}" Width="96" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
-                                            <DataGridTextColumn Header="任务状态" Binding="{Binding TaskStatus}" Width="88" />
+                                            <DataGridTextColumn Header="商品编码" Binding="{Binding ProductCode}" Width="104" />
+                                            <DataGridTemplateColumn Header="商品名称" Width="*"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="大类" Binding="{Binding CategoryName}" Width="76" />
+                                            <DataGridTemplateColumn Header="当前最高阶段" CellTemplate="{StaticResource StageBadgeTemplate}" Width="96" />
+                                            <DataGridTextColumn Header="批次数" Binding="{Binding PendingBatchCount}" Width="64" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
+                                            <DataGridTextColumn Header="商品当前库存" Binding="{Binding EffectiveStockQty}" Width="88" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
+                                            <DataGridTextColumn Header="任务状态" Binding="{Binding TaskStatus}" Width="80" />
                                         </DataGrid.Columns>
                                     </DataGrid>
                             </Grid>
@@ -2776,6 +2777,7 @@
                                 </StackPanel>
                         </Border>
                     </Grid>
+                    </ScrollViewer>
                 </Grid>
 
                 <Grid Visibility="{Binding IsImportVisible, Converter={StaticResource BoolToVisibility}}">

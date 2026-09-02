@@ -37,6 +37,19 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task PreviewRowsKeepTheirObservableItemsSourceContract()
+    {
+        var vm = Create(preview: _ => Preview([1], [Row(1, 1), Row(1, 0)]));
+        var notifications = 0;
+        ((System.Collections.Specialized.INotifyCollectionChanged)vm.PreviewRows).CollectionChanged += (_, _) => notifications++;
+
+        await vm.PreviewAsync("C:\\filled.xlsx");
+
+        Assert.Equal(2, vm.PreviewRows.Count);
+        Assert.True(notifications >= 2);
+    }
+
+    [Fact]
     public async Task DraftGateOnlySubmitsCompleteTasksAndRefreshesAfterConfirmation()
     {
         var submissions = 0;
@@ -289,10 +302,15 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
         Assert.Contains("CellTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
+        Assert.Contains("<DataTrigger Binding=\"{Binding HighestStage}\" Value=\"expired\">", window, StringComparison.Ordinal);
+        Assert.Contains("Text=\"{Binding HighestStage, Converter={StaticResource StageLabelConverter}}\"", window, StringComparison.Ordinal);
         Assert.Contains("TableNumericCenterTextStyle", window, StringComparison.Ordinal);
         Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", window, StringComparison.Ordinal);
         Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", window, StringComparison.Ordinal);
+        Assert.Contains("Height=\"240\" MaxHeight=\"240\"", window, StringComparison.Ordinal);
+        Assert.Contains("<ScrollViewer VerticalScrollBarVisibility=\"Auto\" HorizontalScrollBarVisibility=\"Disabled\" CanContentScroll=\"True\">", window, StringComparison.Ordinal);
         Assert.Contains("TodayInspection.IsLoadingTasks", window, StringComparison.Ordinal);
+        Assert.Equal("expired", new TodayInspectionTaskViewModel(new(1, 1, "商品", "SKU", null, "expired", 1, 1, Today, false)).HighestStage);
     }
 
     private static TodayInspectionViewModel Create(
