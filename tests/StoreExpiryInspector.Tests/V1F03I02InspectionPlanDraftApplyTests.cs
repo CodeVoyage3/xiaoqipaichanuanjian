@@ -98,6 +98,15 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         DeleteSecondRow(fixture.Path); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); useCase.Apply(fixture.Context, new(preview, preview.ApplicableTaskIds, "x", new(2026, 9, 2), new(2026, 9, 2), new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc)));
         Assert.Null(fixture.Context.DraftItems.Single(item => item.TaskItemId == items[0].Id).CheckedQty); Assert.Equal(6, fixture.Context.DraftItems.Single(item => item.TaskItemId == items[1].Id).CheckedQty);
     }
+
+    [Fact]
+    public void RepeatedApplyOfSamePreviewIsNoChange()
+    {
+        using var fixture = Fixture.Create(); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); var request = new ApplyInspectionPlanDraftRequest(preview, preview.ApplicableTaskIds, "检查员", new(2026, 9, 2), new(2026, 9, 2), new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc));
+        Assert.True(useCase.Apply(fixture.Context, request).Changed);
+        var replay = useCase.Apply(fixture.Context, request);
+        Assert.False(replay.Changed); Assert.All(replay.Tasks, task => Assert.False(task.Changed));
+    }
     [Theory]
     [InlineData("0", true)]
     [InlineData("7", true)]
