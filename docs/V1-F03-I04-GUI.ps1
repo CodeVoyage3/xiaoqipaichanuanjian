@@ -1,6 +1,6 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Enter', 'Start', 'Finish')]
+    [ValidateSet('Check', 'Enter', 'Start', 'Finish')]
     [string]$Action
 )
 
@@ -15,6 +15,12 @@ $protected = $runtime + '.v1f03i04-original'
 $completed = $runtime + '.v1f03i04-isolated'
 $markerName = '.v1f03i04-isolated.json'
 $exe = Join-Path $repo 'src\StoreExpiryInspector\bin\Release\net10.0-windows\StoreExpiryInspector.exe'
+
+if ($Action -eq 'Check') {
+    if (-not (Test-Path -LiteralPath $exe)) { throw 'Release EXE missing.' }
+    Write-Output 'ENTRY_CHECK_PASS'
+    return
+}
 
 function Assert-Stopped {
     if (@(Get-Process -Name StoreExpiryInspector -ErrorAction SilentlyContinue).Count -ne 0) {

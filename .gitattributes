@@ -1,0 +1,2 @@
+docs/*.cmd text eol=crlf
+docs/V1-F03-I04-GUI.ps1 text eol=lf
