@@ -27,7 +27,8 @@ public partial class MainWindow : Window
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
             confirmHistoryEdit: ConfirmHistoryEdit,
-            confirmRestore: ConfirmRestore);
+            confirmRestore: ConfirmRestore,
+            confirmTodayOverStock: ConfirmTodayOverStock);
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -80,6 +81,7 @@ public partial class MainWindow : Window
         NavigationTasksText.Visibility = textVisibility;
         NavigationHistoryText.Visibility = textVisibility;
         NavigationImportText.Visibility = textVisibility;
+        NavigationTodayInspectionText.Visibility = textVisibility;
         NavigationBackupText.Visibility = textVisibility;
         NavigationSettingsText.Visibility = textVisibility;
 
@@ -89,6 +91,7 @@ public partial class MainWindow : Window
             NavigationTasksButton,
             NavigationHistoryButton,
             NavigationImportButton,
+            NavigationTodayInspectionButton,
             NavigationBackupButton,
             NavigationSettingsButton
         })
@@ -199,6 +202,36 @@ public partial class MainWindow : Window
         }
 
         shell.Import.TrySelectFile(dialog.FileName);
+    }
+
+    private async void ExportTodayInspection_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ShellViewModel shell) return;
+        var dialog = new SaveFileDialog
+        {
+            Title = "导出今日排查计划",
+            Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
+            DefaultExt = ".xlsx",
+            AddExtension = true,
+            FileName = $"今日排查计划_{DateTime.Today:yyyyMMdd}.xlsx",
+            OverwritePrompt = false
+        };
+        if (dialog.ShowDialog(this) == true) await shell.TodayInspection.ExportAsync(dialog.FileName);
+    }
+
+    private async void OpenTodayInspection_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ShellViewModel shell) return;
+        var dialog = new OpenFileDialog
+        {
+            Title = "选择已填写的今日排查计划",
+            Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
+            CheckFileExists = true,
+            Multiselect = false,
+            DefaultExt = ".xlsx",
+            AddExtension = false
+        };
+        if (dialog.ShowDialog(this) == true) await shell.TodayInspection.PreviewAsync(dialog.FileName);
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
@@ -500,6 +533,21 @@ public partial class MainWindow : Window
             nextAction: $"只修改{batchLabel}，不改变商品库存或任务生命周期。保存后会保留修改记录。",
             showCancel: true);
     }
+
+    private bool ConfirmTodayOverStock(IReadOnlyList<OverStockConfirmation> confirmations) =>
+        WpfDialogService.Show(
+            this,
+            "确认超库存排查",
+            string.Join("\n", confirmations.Select(item =>
+            {
+                var productName = (DataContext as ShellViewModel)?.TodayInspection.Tasks
+                    .SingleOrDefault(task => task.TaskId == item.TaskId)?.ProductName;
+                return $"{productName ?? "商品"}（Task {item.TaskId}）：当前库存 {item.EffectiveStockQty}，本次排查 {item.TotalCheckedQty}";
+            })),
+            "确认仍然提交",
+            WpfDialogKind.Warning,
+            nextAction: "选择“取消”返回检查；当前事实变化后需要重新确认。",
+            showCancel: true);
 
     private bool ConfirmRestore(LocalDatabaseBackupListItem backup) =>
         WpfDialogService.Show(

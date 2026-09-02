@@ -21,6 +21,7 @@ public enum ShellPage
     PendingTasks,
     History,
     Import,
+    TodayInspection,
     BackupRestore,
     InspectionDetail
 }
@@ -993,7 +994,8 @@ public sealed class ShellViewModel : ViewModelBase
         Func<SaveDraftRequest, SaveDraftResult>? saveDraft = null,
         Func<ReconfirmItemRequest, ReconfirmItemResult>? reconfirmItem = null,
         Func<ClearDraftRequest, ClearDraftResult>? clearDraft = null,
-        Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>? adjustInventory = null)
+        Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>? adjustInventory = null,
+        Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmTodayOverStock = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -1022,6 +1024,16 @@ public sealed class ShellViewModel : ViewModelBase
             refreshPendingTasks: PendingTasks.LoadAsync,
             logException: logException ?? LogImportException,
             utcNow: utcNow);
+        TodayInspection = new TodayInspectionViewModel(
+            loadTasks: () => searchTasks(new InspectionTaskSearchRequest(PageSize: 500)),
+            export: ExportTodayInspectionPlan,
+            preview: PreviewTodayInspectionPlan,
+            apply: ApplyTodayInspectionDraft,
+            submit: SubmitTodayInspection,
+            refreshAfterSubmit: RefreshAfterTodayInspectionSubmitAsync,
+            confirmOverStock: confirmTodayOverStock,
+            logException: logger,
+            businessToday: () => DateOnly.FromDateTime(DateTime.Today));
         BackupRestore = new DatabaseBackupRestoreViewModel(
             loadBackups: backupLoader ?? LoadBackups,
             createBackup: backupCreator ?? CreateBackup,
@@ -1048,6 +1060,7 @@ public sealed class ShellViewModel : ViewModelBase
         ClearDashboardSearchCommand = new RelayCommand(_ => { _ = ClearDashboardSearchAsync(); }, _ => CanNavigate);
         NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => CanNavigate);
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => CanNavigate);
+        NavigateTodayInspectionCommand = new RelayCommand(_ => NavigateTo(ShellPage.TodayInspection), _ => CanNavigate);
         NavigateBackupRestoreCommand = new RelayCommand(_ => NavigateTo(ShellPage.BackupRestore), _ => CanNavigate);
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
         OpenDetailCommand = new RelayCommand(parameter =>
@@ -1081,6 +1094,10 @@ public sealed class ShellViewModel : ViewModelBase
                 NotifyNavigationState();
             }
         };
+        TodayInspection.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(TodayInspectionViewModel.IsBusy)) NotifyNavigationState();
+        };
         Detail.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(InspectionDetailViewModel.IsActionBusy))
@@ -1100,6 +1117,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public ImportViewModel Import { get; }
 
+    public TodayInspectionViewModel TodayInspection { get; }
+
     public DatabaseBackupRestoreViewModel BackupRestore { get; }
 
     public InspectionDetailViewModel Detail { get; }
@@ -1115,6 +1134,8 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand NavigateHistoryCommand { get; }
 
     public RelayCommand NavigateImportCommand { get; }
+
+    public RelayCommand NavigateTodayInspectionCommand { get; }
 
     public RelayCommand NavigateBackupRestoreCommand { get; }
 
@@ -1138,6 +1159,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsPendingTasksVisible));
             OnPropertyChanged(nameof(IsHistoryVisible));
             OnPropertyChanged(nameof(IsImportVisible));
+            OnPropertyChanged(nameof(IsTodayInspectionVisible));
             OnPropertyChanged(nameof(IsBackupRestoreVisible));
             OnPropertyChanged(nameof(IsInspectionDetailVisible));
             OnPropertyChanged(nameof(PageTitle));
@@ -1153,6 +1175,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsImportVisible => CurrentPage == ShellPage.Import;
 
+    public bool IsTodayInspectionVisible => CurrentPage == ShellPage.TodayInspection;
+
     public bool IsBackupRestoreVisible => CurrentPage == ShellPage.BackupRestore;
 
     public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
@@ -1163,6 +1187,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.PendingTasks => "待排查任务",
         ShellPage.History => "排查历史",
         ShellPage.Import => "数据导入",
+        ShellPage.TodayInspection => "今日排查",
         ShellPage.BackupRestore => "数据备份与恢复",
         ShellPage.InspectionDetail => "排查详情",
         _ => "效期排查"
@@ -1174,6 +1199,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
         ShellPage.History => "查看已完成的正式排查记录及修改留痕",
         ShellPage.Import => "导入最新的商品效期 Excel，更新商品与批次数据",
+        ShellPage.TodayInspection => "导出今日计划、回导结果并集中提交已完成排查",
         ShellPage.BackupRestore => "创建经过验证的本地备份，或从应用备份安全恢复",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
         _ => "查看当前数据状态"
@@ -1214,11 +1240,16 @@ public sealed class ShellViewModel : ViewModelBase
         }
 
         var enteredHistory = page == ShellPage.History && CurrentPage != ShellPage.History;
+        var enteredTodayInspection = page == ShellPage.TodayInspection && CurrentPage != ShellPage.TodayInspection;
         var enteredBackupRestore = page == ShellPage.BackupRestore && CurrentPage != ShellPage.BackupRestore;
         CurrentPage = page;
         if (enteredHistory)
         {
             _ = History.LoadAsync();
+        }
+        if (enteredTodayInspection)
+        {
+            _ = TodayInspection.LoadAsync();
         }
         if (enteredBackupRestore)
         {
@@ -1346,6 +1377,39 @@ public sealed class ShellViewModel : ViewModelBase
         return new InspectionSubmissionUseCase().Submit(context, request);
     }
 
+    private static TodayInspectionPlanExportResult ExportTodayInspectionPlan(string path, IReadOnlyCollection<long> taskIds)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new TodayInspectionPlanExportUseCase().Execute(context, new(path, taskIds));
+    }
+
+    private static InspectionPlanPreview PreviewTodayInspectionPlan(string path)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionPlanDraftApplyUseCase().Preview(context, path);
+    }
+
+    private static ApplyInspectionPlanDraftResult ApplyTodayInspectionDraft(ApplyInspectionPlanDraftRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new InspectionPlanDraftApplyUseCase().Apply(context, request);
+    }
+
+    private static BulkInspectionSubmissionResult SubmitTodayInspection(BulkInspectionSubmissionRequest request)
+    {
+        using var context = DatabaseInitializer.CreateContext();
+        return new BulkInspectionSubmissionUseCase().Submit(context, request);
+    }
+
+    private async Task RefreshAfterTodayInspectionSubmitAsync(IReadOnlyCollection<long> taskIds)
+    {
+        await Dashboard.LoadAsync();
+        await TodayInspection.LoadAsync();
+        await PendingTasks.LoadAsync();
+        await History.LoadAsync();
+        if (Detail.TaskId is long taskId && taskIds.Contains(taskId)) await Detail.LoadAsync(taskId);
+    }
+
     private static IReadOnlyList<LocalDatabaseBackupListItem> LoadBackups() =>
         new LocalDatabaseBackupQuery().List();
 
@@ -1363,6 +1427,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool CanNavigate => !History.IsEditBusy
         && !Import.IsLoading
+        && !TodayInspection.IsBusy
         && !Detail.IsActionBusy
         && !IsDatabaseProtectionBlocking;
 
@@ -1394,6 +1459,7 @@ public sealed class ShellViewModel : ViewModelBase
         ClearDashboardSearchCommand.RaiseCanExecuteChanged();
         NavigateHistoryCommand.RaiseCanExecuteChanged();
         NavigateImportCommand.RaiseCanExecuteChanged();
+        NavigateTodayInspectionCommand.RaiseCanExecuteChanged();
         NavigateBackupRestoreCommand.RaiseCanExecuteChanged();
         OpenDetailCommand.RaiseCanExecuteChanged();
     }
