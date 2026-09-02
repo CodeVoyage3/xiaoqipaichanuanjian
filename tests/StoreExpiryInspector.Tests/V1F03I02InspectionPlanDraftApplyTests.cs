@@ -160,6 +160,36 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
     }
 
     [Fact]
+    public void HiddenAndReorderedExcelRowsStillMatchByStableIdentity()
+    {
+        using var fixture = Fixture.Create();
+        AddSecondTask(fixture);
+        var expectedTaskIds = fixture.Context.Tasks.OrderBy(task => task.Id).Select(task => task.Id).ToArray();
+        using (var document = SpreadsheetDocument.Open(fixture.Path, true))
+        {
+            var workbook = document.WorkbookPart ?? throw new InvalidOperationException();
+            var sheet = workbook.WorksheetParts.Single().Worksheet ?? throw new InvalidOperationException();
+            var sheetData = sheet.GetFirstChild<SheetData>() ?? throw new InvalidOperationException();
+            var rows = sheetData.Elements<Row>().ToArray();
+            var header = rows[0];
+            var moved = rows[^1];
+            moved.Hidden = true;
+            moved.Remove();
+            sheetData.InsertAfter(moved, header);
+            (workbook.Workbook ?? throw new InvalidOperationException()).Save();
+            sheet.Save();
+        }
+
+        var useCase = new InspectionPlanDraftApplyUseCase();
+        var preview = useCase.Preview(fixture.Context, fixture.Path);
+
+        Assert.Equal(expectedTaskIds, preview.ApplicableTaskIds.Order());
+        Assert.Equal(expectedTaskIds, preview.File.Rows.Select(row => row.TaskId!.Value).Distinct());
+        Assert.Equal(expectedTaskIds, preview.File.Rows.Select(row => row.TaskId!.Value).Order());
+        Assert.All(preview.Tasks, task => Assert.True(task.IsApplicable));
+    }
+
+    [Fact]
     public void SecondTaskSaveFailureRollsBackFirstTask()
     {
         using var fixture = Fixture.Create(); AddSecondTask(fixture); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); var tasks = fixture.Context.Tasks.OrderBy(task => task.Id).ToArray();
