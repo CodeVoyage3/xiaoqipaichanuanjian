@@ -32,7 +32,7 @@ public sealed class InspectionPlanDraftApplyUseCase
         if (request.Preview is null || request.TaskIds is null || request.TaskIds.Count == 0 || request.TaskIds.Any(id => id <= 0) || request.TaskIds.Distinct().Count() != request.TaskIds.Count)
             throw new ArgumentException("Preview and unique positive TaskIds are required.", nameof(request));
         var inspector = request.InspectorName?.Trim();
-        if (string.IsNullOrEmpty(inspector) || inspector.Length > 200 || request.CheckDate > request.BusinessDate || request.SavedAtUtc.Kind != DateTimeKind.Utc)
+        if (string.IsNullOrEmpty(inspector) || inspector.Length > 200 || request.CheckDate == default || request.BusinessDate == default || request.CheckDate > request.BusinessDate || request.SavedAtUtc.Kind != DateTimeKind.Utc)
             throw new ArgumentException("InspectorName, dates, or SavedAtUtc are invalid.", nameof(request));
         var selected = request.TaskIds.Order().ToArray();
         if (selected.Any(id => !request.Preview.ApplicableTaskIds.Contains(id))) throw new ArgumentException("Every selected task must be applicable in this preview.", nameof(request));

@@ -62,6 +62,8 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], " ", date, date, utc)));
         Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], new string('x', 201), date, date, utc)));
         Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date.AddDays(1), date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", default, date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date, default, utc)));
         Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date, date, DateTime.SpecifyKind(utc, DateTimeKind.Local))));
         fixture.Context.Batches.Single().AttentionVersion++; fixture.Context.SaveChanges();
         Assert.Throws<InvalidOperationException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date, date, utc)));
