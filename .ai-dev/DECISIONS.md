@@ -301,3 +301,12 @@
 - 现有 Schema 足够；无 BulkSubmission 实体、migration、ModelSnapshot、依赖、WPF、Excel、Draft patch 或 Revision 变化。
 - Sol 最终门禁：I03 47/47、相关组合 165/165、额外生命周期 128/128、Release 852/852、build 0/0、EF 无漂移、migration=9；未启动 WPF 或访问生产数据库。
 - 当前停止在 I03 技术验收完成；不创建或执行 I04，不进入 Stage 8、Stage 9，等待产品经理单独批准 I04。
+
+## D-035｜V1-F03-I04 WPF 双入口技术验收
+
+- 状态：产品经理于 2026-09-02 单独批准 I04；全新 GPT-5.6 Terra（medium）实施并经 Sol 两轮退回返修，独立技术验收通过；等待用户真实 WPF GUI 验收，I04/F03 尚未最终 CLOSED。
+- WPF 新增独立“今日排查”入口，商品源“数据导入”保持独立；页面只编排 I01 导出、I02 Preview/Draft 和 I03 批量正式提交，不复制其业务权威。
+- blank/0/正数、错误/陈旧原因、排查人/日期、Draft incomplete、集中超库存确认与 stale 重确认均保持既有 Application 契约；成功后刷新首页、两个任务范围、详情与历史。
+- Sol 最终技术门禁：I04 9/9、关键 I01～I03/WPF/UIUX 245/245、V1-F01/F02/任务/提醒 148/148、Release 861/861、build 0/0、EF 无漂移、migration=9。
+- 无 schema、migration、ModelSnapshot、依赖、Reminder、商品源导入算法、Revision 或 Stage 8/9 变化；未启动 WPF 或访问生产数据库。在线 NuGet 漏洞源本轮 NU1900，不冒充成功审计。
+- 下一唯一门禁是用户本人在隔离环境执行真实 WPF GUI 验收；通过前不 push 最终验收状态、不建立 F03 最终收口、不进入 Stage 8。
