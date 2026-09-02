@@ -107,6 +107,22 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         var replay = useCase.Apply(fixture.Context, request);
         Assert.False(replay.Changed); Assert.All(replay.Tasks, task => Assert.False(task.Changed));
     }
+
+    [Fact]
+    public void TwoTasksApplyAtomically()
+    {
+        using var fixture = Fixture.Create(); AddSecondTask(fixture); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path);
+        var result = useCase.Apply(fixture.Context, new(preview, preview.ApplicableTaskIds, "检查员", new(2026, 9, 2), new(2026, 9, 2), new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc)));
+        Assert.True(result.Changed); Assert.Equal(2, result.Tasks.Count); Assert.Equal(2, fixture.Context.Drafts.Count());
+    }
+
+    private static void AddSecondTask(Fixture fixture)
+    {
+        var context = fixture.Context; var product = new Product { ProductCode = "SKU-SECOND", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 4 }; context.Products.Add(product); context.SaveChanges();
+        var batch = new Batch { ProductId = product.Id, ExpiryDate = new(2026, 10, 2), CurrentArrivalQty = 4, MaxArrivalQty = 4, TrackingStatus = "active", CurrentStage = ExpiryStageCalculator.Discount50, AttentionVersion = 2 }; context.Batches.Add(batch); context.SaveChanges();
+        var task = new ProductTask { ProductId = product.Id, Status = "open", HighestStage = ExpiryStageCalculator.Discount50, CreatedAtUtc = new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc), UpdatedAtUtc = new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc) }; context.Tasks.Add(task); context.SaveChanges(); context.TaskItems.Add(new ProductTaskItem { TaskId = task.Id, ProductId = product.Id, BatchId = batch.Id, Stage = ExpiryStageCalculator.Discount50, AttentionVersion = 2 }); context.SaveChanges();
+        File.Delete(fixture.Path); new TodayInspectionPlanExportUseCase().Execute(context, new(fixture.Path, context.Tasks.Select(value => value.Id).ToArray()));
+    }
     [Theory]
     [InlineData("0", true)]
     [InlineData("7", true)]
