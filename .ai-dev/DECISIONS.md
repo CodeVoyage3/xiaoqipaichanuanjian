@@ -290,3 +290,14 @@
 - 现有 Schema 足够；无回导记录、ImportRecord/Issue、migration、ModelSnapshot、依赖、WPF 或正式 Inspection 逻辑。
 - Sol 最终门禁：I02 38/38、相关回归 213/213、Release 805/805、build 0/0、EF 无漂移、migration=9；未启动 WPF 或访问生产数据库。
 - 当前停止在 I02 技术验收完成；不创建或执行 I03/I04，不进入 Stage 8、Stage 9，等待产品经理单独批准 I03。
+
+## D-034｜V1-F03-I03 多任务正式提交编排
+
+- 状态：产品经理于 2026-09-02 单独批准 I03；全新 GPT-5.6 Terra（medium）实施并返修后，Sol 独立技术验收通过。I04 未获批准。
+- 批量层只拥有全量预检、TaskId 稳定排序、单一外层事务、集中超库存确认和结果归并；所有正式落库逐 Task 复用既有 `InspectionSubmissionUseCase.Submit`。
+- 任一 Task 非法、warning、确认陈旧或第 N 个保存失败时整批回滚；0 件停止、正数继续、HandledAttentionVersion、Task completed、Draft 删除与历史结果保持单 Task 权威。
+- 超库存确认以 TaskId/ProductId/当前库存/当前排查合计完整集合绑定；漏项、多项或任一当前值变化均失效并零写入。
+- 全部目标同请求重放可返回 AlreadySubmitted；open/completed 混合或 Inspector/CheckDate/SubmittedAtUtc 签名不一致整体冲突，不处理剩余 open 子集。
+- 现有 Schema 足够；无 BulkSubmission 实体、migration、ModelSnapshot、依赖、WPF、Excel、Draft patch 或 Revision 变化。
+- Sol 最终门禁：I03 47/47、相关组合 165/165、额外生命周期 128/128、Release 852/852、build 0/0、EF 无漂移、migration=9；未启动 WPF 或访问生产数据库。
+- 当前停止在 I03 技术验收完成；不创建或执行 I04，不进入 Stage 8、Stage 9，等待产品经理单独批准 I04。
