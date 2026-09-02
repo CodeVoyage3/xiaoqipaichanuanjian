@@ -109,6 +109,29 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
     }
 
     [Fact]
+    public void DuplicateTaskItemAndBatchRowsMarkAllDuplicatesAndBlockTask()
+    {
+        using var fixture = Fixture.Create(2); var rows = fixture.Context.TaskItems.OrderBy(item => item.Id).ToArray(); MutateCell(fixture.Path, "O3", rows[0].Id.ToString()); MutateCell(fixture.Path, "Q3", rows[0].BatchId.ToString());
+        var preview = new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path);
+        Assert.False(preview.Tasks.Single().IsApplicable); Assert.All(preview.File.Rows, row => Assert.Contains(row.Errors, error => error.Contains("重复", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void TaskItemCollectionChangeBlocksPreview()
+    {
+        using var fixture = Fixture.Create(); var task = fixture.Context.Tasks.Single(); var product = fixture.Context.Products.Single(); var batch = new Batch { ProductId = product.Id, ExpiryDate = new DateOnly(2026, 10, 2), CurrentArrivalQty = 4, MaxArrivalQty = 4, TrackingStatus = "active", CurrentStage = ExpiryStageCalculator.Discount50, AttentionVersion = 2 }; fixture.Context.Batches.Add(batch); fixture.Context.SaveChanges(); fixture.Context.TaskItems.Add(new ProductTaskItem { TaskId = task.Id, ProductId = product.Id, BatchId = batch.Id, Stage = ExpiryStageCalculator.Discount50, AttentionVersion = 2 }); fixture.Context.SaveChanges();
+        Assert.False(new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path).Tasks.Single().IsApplicable);
+    }
+
+    [Fact]
+    public void CorruptWorkbookIsRejected()
+    {
+        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"i02-corrupt-{Guid.NewGuid():N}.xlsx");
+        try { File.WriteAllBytes(path, [1, 2, 3]); Assert.ThrowsAny<Exception>(() => new InspectionPlanResultReader().Read(path)); }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    [Fact]
     public void BlankClearsIncludedItemAndDeletedRowLeavesExistingDraftUntouched()
     {
         using var fixture = Fixture.Create(2); var task = fixture.Context.Tasks.Single(); var items = fixture.Context.TaskItems.OrderBy(item => item.Id).ToArray(); var draft = new InspectionDraft { TaskId = task.Id, InspectorName = "x", CheckDate = new(2026, 9, 2), CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
