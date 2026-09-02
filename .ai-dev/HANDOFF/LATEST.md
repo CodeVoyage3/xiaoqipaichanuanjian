@@ -2,11 +2,11 @@
 
 ## 当前任务与状态
 
-`V1-F03-I04｜WPF 双入口与端到端收口` 已由全新 GPT-5.6 Terra（medium）实施，并经 Sol 两轮退回返修与独立技术验收通过。
+`V1-F03-I04｜WPF 双入口与端到端收口` 的用户真实 GUI 验收已失败；当前进入严格限域的 GUI blocker repair。
 
-当前状态：`V1-F03-I04_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`
+当前状态：`V1-F03-I04_GUI_ACCEPTANCE_FAILED / BLOCKED / REPAIR_IN_PROGRESS`
 
-本轮没有启动 WPF、访问生产数据库、修改 Schema/依赖或进入 Stage 8、Stage 9。I04/F03 尚未最终 CLOSED。
+现场证据为 WPF 对只读 `TodayInspectionTaskViewModel.HasValidDraft` 建立默认 TwoWay 绑定而抛出未处理 `InvalidOperationException`；隔离库 `quick_check=ok`，open Task=576，migration=9。隔离会话继续保留，未执行结束/恢复脚本。I04/F03 尚未最终 CLOSED。
 
 ## 当前 Git
 
