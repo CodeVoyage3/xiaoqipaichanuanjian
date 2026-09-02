@@ -271,3 +271,12 @@
 - 未确认回导结果只存在当前 WPF 会话内，确认后只原子 patch 既有 Draft；正式提交通过薄外层事务编排复用既有 `InspectionSubmissionUseCase`，不建设平行 Inspection/生命周期逻辑。
 - 当前 Schema 足够，V1-F03 默认禁止 migration，数量保持 9。若必须跨重启持久化待确认预览、导出清单或回导批次，立即停止并提交 Schema 决策报告，未经新批准不得修改 ModelSnapshot 或借用 Import 表。
 - 下一唯一审批项为 `V1-F03-I01｜今日排查计划查询与 Excel 导出`；批准前不创建 Terra、不创建正式 I01 实施卡、不修改生产代码，不进入 I02～I04、Stage 8 或 Stage 9。
+
+## D-032｜V1-F03-I01 今日排查计划查询与 Excel 导出
+
+- 状态：产品经理于 2026-09-02 单独批准 I01；全新 GPT-5.6 Terra（medium）实施并返修后，Sol 独立技术验收通过。I02 未获批准。
+- 导出支持全部合法 open Managed Task 或精确 TaskId 集合；选中集合含任何重复、非正数、不存在或非法 Task 时整体拒绝，不静默导出部分结果。
+- 一批次一行，稳定顺序为 `ProductCode → TaskId → BatchId → TaskItemId`；A～L 为固定可见业务列，M～Y 隐藏保存格式版本、稳定主键、AttentionVersion、Task/TaskItem/Batch、库存与到货快照。
+- 复用 Open XML 3.5.1 与 `ProductCategoryScopes`；同目录临时写入后不覆盖移动，不新增 ExportRecord、Schema、migration、依赖或第二套 Category 映射。
+- Sol 最终门禁：I01 3/3、相关回归 142/142、Release 767/767、build 0/0、EF 无漂移、migration=9；无 WPF、生产数据库访问或数据库业务写入。
+- 当前停止在 I01 技术验收完成；不创建或执行 I02～I04，不进入 Stage 8、Stage 9，等待产品经理单独批准 I02。
