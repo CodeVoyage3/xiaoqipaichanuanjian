@@ -268,9 +268,16 @@
             <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
 
-        <Style x:Key="TableCenterColumnHeaderStyle"
+        <Style x:Key="TableGridColumnHeaderStyle"
                TargetType="DataGridColumnHeader"
                BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+            <Setter Property="BorderBrush" Value="{DynamicResource TableDividerBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+        </Style>
+
+        <Style x:Key="TableCenterColumnHeaderStyle"
+               TargetType="DataGridColumnHeader"
+               BasedOn="{StaticResource TableGridColumnHeaderStyle}">
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
 
@@ -2743,9 +2750,9 @@
                                 <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.Tasks}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell" AutomationProperties.Name="今日排查任务列表" GridLinesVisibility="All"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <DataGrid.Columns>
-                                            <DataGridTemplateColumn Header="选择" Width="52"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择今日排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                                            <DataGridTemplateColumn Header="商品名称" Width="*"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                                            <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="148" ElementStyle="{StaticResource TableCellTextStyle}" />
+                                            <DataGridTemplateColumn Header="选择" Width="52" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择今日排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="148" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
+                                            <DataGridTemplateColumn Header="商品名称" Width="*" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                             <DataGridTextColumn Header="大类" Binding="{Binding CategoryName}" Width="76" ElementStyle="{StaticResource TableCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                             <DataGridTemplateColumn Header="当前最高阶段" CellTemplate="{StaticResource StageBadgeTemplate}" Width="96" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                             <DataGridTextColumn Header="商品当前库存" Binding="{Binding EffectiveStockQty}" Width="88" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />

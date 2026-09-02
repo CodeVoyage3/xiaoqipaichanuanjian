@@ -67,7 +67,7 @@ public sealed class UIUXR02UiStaticAuditTests
         Assert.True(centeredHeaderStyleStart >= 0 && centeredHeaderStyleEnd > centeredHeaderStyleStart);
         var centeredHeaderStyle = window[centeredHeaderStyleStart..centeredHeaderStyleEnd];
         Assert.Contains("TargetType=\"DataGridColumnHeader\"", centeredHeaderStyle, StringComparison.Ordinal);
-        Assert.Contains("BasedOn=\"{StaticResource {x:Type DataGridColumnHeader}}\"", centeredHeaderStyle, StringComparison.Ordinal);
+        Assert.Contains("BasedOn=\"{StaticResource TableGridColumnHeaderStyle}\"", centeredHeaderStyle, StringComparison.Ordinal);
         Assert.Contains("<Setter Property=\"HorizontalContentAlignment\" Value=\"Center\" />", centeredHeaderStyle, StringComparison.Ordinal);
         var centeredNumericStyleStart = window.IndexOf("<Style x:Key=\"TableNumericCenterTextStyle\"", StringComparison.Ordinal);
         var centeredNumericStyleEnd = window.IndexOf("</Style>", centeredNumericStyleStart, StringComparison.Ordinal);

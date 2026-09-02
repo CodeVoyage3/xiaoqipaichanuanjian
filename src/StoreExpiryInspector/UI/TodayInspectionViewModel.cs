@@ -50,10 +50,9 @@ public sealed class TodayInspectionPreviewRowViewModel(InspectionPlanRow row, st
     public string ProductionDate => row.ProductionDate ?? string.Empty;
     public string ExpiryDate => row.ExpiryDate ?? row.BatchDisplay ?? string.Empty;
     public string CheckedQtyText => row.CheckedQty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-    public string StatusText => row.Errors.Count != 0
-        ? string.IsNullOrWhiteSpace(taskReason) ? "行错误" : "行错误；陈旧/失效"
-        : !string.IsNullOrWhiteSpace(taskReason) ? "陈旧/失效"
-        : row.CheckedQty is null ? "未填写" : row.CheckedQty == 0 ? "0 件" : "已填写正数";
+    public string StatusText => row.Errors.Count != 0 ? "数据错误"
+        : !string.IsNullOrWhiteSpace(taskReason) ? "需要重新导出"
+        : row.CheckedQty is null ? "未填写" : "可提交";
     public string Reason => string.Join("；", row.Errors.Append(taskReason).Where(value => !string.IsNullOrWhiteSpace(value)));
 }
 

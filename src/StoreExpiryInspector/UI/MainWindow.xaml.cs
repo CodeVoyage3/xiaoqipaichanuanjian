@@ -558,7 +558,7 @@ public partial class MainWindow : Window
 
     private bool ConfirmTodaySubmission() =>
         WpfDialogService.Show(
-            this,
+            OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this,
             "确认提交",
             "是否提交本次排查数据？提交后将生成正式排查记录，请确认数据无误。",
             "确认提交",
