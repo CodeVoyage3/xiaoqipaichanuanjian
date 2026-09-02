@@ -269,7 +269,7 @@ public sealed class BulkInspectionSubmissionUseCase
         }
 
         inspectorName = request.InspectorName?.Trim() ?? string.Empty;
-        if (inspectorName.Length == 0 || inspectorName.Length > 200 || request.CheckDate == default || request.BusinessDate == default || request.CheckDate > request.BusinessDate || request.SubmittedAtUtc.Kind != DateTimeKind.Utc)
+        if (inspectorName.Length == 0 || inspectorName.Length > 200 || request.CheckDate == default || request.BusinessDate == default || request.CheckDate > request.BusinessDate || request.SubmittedAtUtc == default || request.SubmittedAtUtc.Kind != DateTimeKind.Utc)
         {
             throw new ArgumentException("InspectorName, dates, or SubmittedAtUtc are invalid.", nameof(request));
         }
