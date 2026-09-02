@@ -1,9 +1,17 @@
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
+using StoreExpiryInspector.Domain;
 
 namespace StoreExpiryInspector.Application.Reminders;
 
-public sealed record ReminderNotification(int ItemCount, string HighestStage);
+public sealed record ReminderNotification(
+    int ItemCount,
+    string HighestStage,
+    int FormalTaskItemCount = 0,
+    int UpcomingDiscount50Count = 0,
+    int UpcomingDiscount20Count = 0,
+    int UpcomingWithdrawCount = 0,
+    int UpcomingExpiredCount = 0);
 
 public interface IReminderChannel
 {
@@ -46,9 +54,16 @@ public sealed class DailyReminderRuntimeCoordinator
                 return new(result.Status, false, false, false);
             }
 
+            var formalProductIds = result.Items.Select(item => item.ProductId).ToHashSet();
+            var preReminderProductIds = result.PreReminderItems.Select(item => item.ProductId).ToHashSet();
             var notification = new ReminderNotification(
-                result.Items.Count,
-                result.Items[0].HighestStage);
+                formalProductIds.Union(preReminderProductIds).Count(),
+                result.Items.FirstOrDefault()?.HighestStage ?? ExpiryStageCalculator.None,
+                formalProductIds.Count,
+                CountPreReminderProducts(result, ExpiryStageCalculator.Discount50),
+                CountPreReminderProducts(result, ExpiryStageCalculator.Discount20),
+                CountPreReminderProducts(result, ExpiryStageCalculator.Withdraw),
+                CountPreReminderProducts(result, ExpiryStageCalculator.Expired));
             notificationAttempted = true;
             if (!_channel.TryShow(notification))
             {
@@ -76,4 +91,10 @@ public sealed class DailyReminderRuntimeCoordinator
             return new("error", notificationAttempted, notificationSucceeded, false);
         }
     }
+
+    private static int CountPreReminderProducts(DailyReminderResult result, string stage) => result.PreReminderItems
+        .Where(item => item.TargetStage == stage)
+        .Select(item => item.ProductId)
+        .Distinct()
+        .Count();
 }

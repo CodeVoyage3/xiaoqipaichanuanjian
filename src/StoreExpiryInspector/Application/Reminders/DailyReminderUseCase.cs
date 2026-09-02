@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Tasks;
+using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 
 namespace StoreExpiryInspector.Application.Reminders;
@@ -17,7 +18,10 @@ public sealed record DailyReminderResult(
     string Status,
     DateOnly BusinessDate,
     int ReminderMinuteOfDay,
-    IReadOnlyList<ReminderCandidate> Items);
+    IReadOnlyList<ReminderCandidate> Items,
+    IReadOnlyList<PreReminderCandidate> PreReminderItems);
+
+public sealed record PreReminderCandidate(long BatchId, long ProductId, string TargetStage);
 
 public sealed class DailyReminderUseCase
 {
@@ -61,11 +65,13 @@ public sealed class DailyReminderUseCase
         }
 
         var items = _taskQuery.GetReminderCandidates(context);
+        var preReminderItems = GetPreReminderCandidates(context, businessDate);
         return new(
-            items.Count == 0 ? DailyReminderStatuses.NoItems : DailyReminderStatuses.Due,
+            items.Count == 0 && preReminderItems.Count == 0 ? DailyReminderStatuses.NoItems : DailyReminderStatuses.Due,
             businessDate,
             reminderMinuteOfDay,
-            items);
+            items,
+            preReminderItems);
     }
 
     public bool RecordSuccessfulReminder(
@@ -114,5 +120,62 @@ public sealed class DailyReminderUseCase
             status,
             businessDate,
             reminderMinuteOfDay,
-            Array.Empty<ReminderCandidate>());
+            Array.Empty<ReminderCandidate>(),
+            Array.Empty<PreReminderCandidate>());
+
+    private static IReadOnlyList<PreReminderCandidate> GetPreReminderCandidates(StoreDbContext context, DateOnly businessDate)
+    {
+        var batches = context.Batches
+            .AsNoTracking()
+            .Where(batch => batch.TrackingStatus == "active" &&
+                batch.Product.EffectiveStockQty > 0 &&
+                batch.Product.ExpiryManagementStatus == ExpiryManagementStatus.Managed &&
+                batch.Product.PolicyVersion == ExpiryPolicies.Version1 &&
+                (batch.Product.PolicyCode == ExpiryPolicies.Food ||
+                 batch.Product.PolicyCode == ExpiryPolicies.Pet ||
+                 batch.Product.PolicyCode == ExpiryPolicies.GeneralLong) &&
+                context.ScopeBaselines.Any(baseline => baseline.IsCompleted &&
+                    baseline.ScopeKey == batch.Product.CategoryCode &&
+                    baseline.PolicyCode == batch.Product.PolicyCode &&
+                    baseline.PolicyVersion == batch.Product.PolicyVersion))
+            .Select(batch => new
+            {
+                batch.Id,
+                batch.ProductId,
+                batch.ExpiryDate,
+                batch.ShelfLifeValue,
+                batch.ShelfLifeUnit,
+                batch.Product.PolicyCode,
+                batch.Product.PolicyVersion
+            })
+            .ToArray();
+
+        return batches.SelectMany(batch =>
+            {
+                var days = batch.ShelfLifeUnit switch
+                {
+                    "D" => batch.ShelfLifeValue,
+                    "M" => batch.ShelfLifeValue * 30,
+                    "Y" => batch.ShelfLifeValue * 365,
+                    _ => 0
+                };
+                var dates = days > 0
+                    ? ExpiryPolicyCalculator.CalculateStageDates(batch.PolicyCode!, batch.PolicyVersion!.Value, batch.ExpiryDate, days)
+                    : null;
+                return dates is null ? Array.Empty<PreReminderCandidate>() :
+                    new[]
+                    {
+                        Node(batch.Id, batch.ProductId, ExpiryStageCalculator.Discount50, dates.Discount50),
+                        Node(batch.Id, batch.ProductId, ExpiryStageCalculator.Discount20, dates.Discount20),
+                        Node(batch.Id, batch.ProductId, ExpiryStageCalculator.Withdraw, dates.Withdraw),
+                        Node(batch.Id, batch.ProductId, ExpiryStageCalculator.Expired, dates.Expired)
+                    }.Where(item => item is not null).Select(item => item!).ToArray();
+            })
+            .ToArray();
+
+        PreReminderCandidate? Node(long batchId, long productId, string stage, DateOnly effectiveDate) =>
+            effectiveDate.AddDays(-3) <= businessDate && businessDate < effectiveDate
+                ? new(batchId, productId, stage)
+                : null;
+    }
 }
