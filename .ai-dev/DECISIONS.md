@@ -262,3 +262,12 @@
 - 使用全新 GPT-5.6 Terra（medium、标准速度）实施；Sol 独立技术验收，最终真实 WPF GUI 验收由用户本人执行。
 - 最终门禁：定向 88/88、Release 新鲜复跑 764/764、build 0 warning / 0 error、EF 无漂移、migration=9；用户确认仅预提醒、同日幂等及正式 Task + 预提醒集中展示均通过。
 - 用户明确旧正式数据后续不再使用；验收后 Fresh 将当前运行数据库替换为空库并移除隔离标记，旧数据旁置保留。V1-F02 关闭后停止，等待下一次单独批准。
+
+## D-031｜V1-F03 实施拆分与 Schema 决策
+
+- 状态：产品经理于 2026-09-02 仅批准新 Sol 接任、V1-F03 分析和实施拆分；生产实现尚未批准。
+- V1-F03 固定拆为 I01 今日计划查询/Excel 导出、I02 结果读取/陈旧校验/Draft 应用、I03 多任务正式提交编排、I04 WPF 双入口/端到端收口；每卡单独批准并使用全新 GPT-5.6 Terra（medium），Sol 独立验收。
+- 导出文件以现有 Task/TaskItem/Product/Batch 主键、AttentionVersion、任务集合及库存/到货快照稳定定位；回导必须以当前数据库重读为准，行重排允许，删除/空白不视为 0，重复/非法/篡改/陈旧项不得自动应用。
+- 未确认回导结果只存在当前 WPF 会话内，确认后只原子 patch 既有 Draft；正式提交通过薄外层事务编排复用既有 `InspectionSubmissionUseCase`，不建设平行 Inspection/生命周期逻辑。
+- 当前 Schema 足够，V1-F03 默认禁止 migration，数量保持 9。若必须跨重启持久化待确认预览、导出清单或回导批次，立即停止并提交 Schema 决策报告，未经新批准不得修改 ModelSnapshot 或借用 Import 表。
+- 下一唯一审批项为 `V1-F03-I01｜今日排查计划查询与 Excel 导出`；批准前不创建 Terra、不创建正式 I01 实施卡、不修改生产代码，不进入 I02～I04、Stage 8 或 Stage 9。

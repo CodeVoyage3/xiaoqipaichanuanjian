@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 7 已正式完成总验收与收口
-- 状态：S7-T01～S7-T03、UIUX-R01～R03、V1-F01-I01～I04 及 V1-F02 已归档；V1-F01、V1-F02 已完成，Stage 8 尚未开始
+- 状态：S7-T01～S7-T03、UIUX-R01～R03、V1-F01-I01～I04 及 V1-F02 已归档；V1-F01、V1-F02 已完成；V1-F03 已完成实施拆分并等待 I01 单独批准；Stage 8 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -110,6 +110,7 @@
 - UIUX-R02 任务与最终验收：`.ai-dev/TASKS/UIUX-R02.md`、`.ai-dev/ACCEPTANCE/UIUX-R02.md`
 - UIUX-R03 任务与最终验收：`.ai-dev/TASKS/UIUX-R03.md`、`.ai-dev/ACCEPTANCE/UIUX-R03.md`
 - V1-F01 I01～I04 验收：`.ai-dev/ACCEPTANCE/V1-F01-I01.md`、`.ai-dev/ACCEPTANCE/V1-F01-I02.md`、`.ai-dev/ACCEPTANCE/V1-F01-I03.md`、`.ai-dev/ACCEPTANCE/V1-F01-I04.md`
+- V1-F03 功能总卡与实施拆分：`.ai-dev/TASKS/V1-F03.md`、`.ai-dev/ANALYSIS/V1-F03-IMPLEMENTATION-SPLIT.md`
 
 ## 下一步门禁
 
@@ -127,3 +128,4 @@
 - 最新 UI/UX 结论（2026-09-01）：UIUX-R03 剩余页面统一、全部返修、Sol 技术门禁、用户真实 WPF GUI 验收和正式数据库恢复均已闭环，UIUX-R03 正式归档。
 - V1-F02 最终结论（2026-09-02）：提前 3 天预提醒已完成并归档；Sol 定向 88/88、Release 新鲜复跑 764/764、build 0/0、EF 无漂移、migration=9。用户真实 WPF 确认仅预提醒四类各 1、同日未重复、正式 Task + 预提醒单次集中展示正确；Fresh 已安装空白运行库并移除隔离标记，旧数据旁置保留。不得自动进入 V1-F03、Stage 8 或 Stage 9。
 - V1-F01 最终结论（2026-09-02）：I01～I04 已按单卡授权全部完成并归档；最终 Release 751/751、build 0/0、EF 无漂移、migration=9，隔离 GUI 验收通过。不得据此自动进入 V1-F02、V1-F03 或 Stage 8。
+- V1-F03 当前结论（2026-09-02）：现有 Schema 足够，拟拆 I01 导出、I02 回导/Draft、I03 批量正式提交、I04 WPF 收口四卡；接任新鲜核验为 Release 764/764、build 0/0、EF 无漂移、migration=9；当前只批准拆分，下一唯一审批点为 I01，批准前不创建 Terra 或修改生产代码。

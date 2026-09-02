@@ -2,35 +2,59 @@
 
 ## 当前任务与状态
 
-`V1-F02｜效期节点提前 3 天预提醒` 已完成实现、Sol 独立技术验收、用户真实 WPF GUI 验收和空白运行库清理。
+`V1-F03｜今日排查计划导出 + Excel 排查结果回导 + 确认提交` 已完成本地事实审计、Schema 判断和最小实施拆分。
 
-当前状态：`V1-F02_ACCEPTED / CLOSED / WAITING_NEXT_APPROVAL`
+当前状态：`V1-F03_SPLIT_PROPOSED / WAITING_I01_APPROVAL`
+
+本轮没有创建 Terra，没有修改生产代码，没有进入 Stage 8、Stage 9 或其他功能。
 
 ## 当前 Git
 
-- 分支：`master`。
-- 开工治理提交：`61a057e41cff5f0a04e5489efc90c38ae2a28078`。
-- 实现提交：`ec5f897`、`2bd799b`。
-- 本交接所在治理提交将在 push 后成为 GitHub `main` 最新基线。
+- 分支：`master`，跟踪 `origin/main`。
+- 接任分析基线：`8fe9615f6781c9c76d27d95b0829a2d2edc31c21`；分析开始时 ahead/behind=`0/0`、工作区干净。
+- 本交接所在治理提交将在普通 push 后成为 GitHub `main` 最新基线。
 
-## V1-F02 最终事实
+## V1-F03 拆分结论
 
-- 四节点 `ReminderDate = StageEffectiveDate - 3 个日历日`，窗口为 `ReminderDate <= BusinessDate < StageEffectiveDate`。
-- 预提醒不提前改变 Stage，不创建或伪造 ProductTask、Inspection、Revision、LifecycleEvent、HandledAttentionVersion 或其他业务事实。
-- 只有 Managed、批准 policy/version 1、匹配完成 ScopeBaseline、库存为正且 active 的 Batch 可进入；Excluded / Unresolved 等非法范围零提醒。
-- 正式 Task 与预提醒只形成一次集中 Windows 通知；同日幂等、日期回拨、失败重试、scheduler、托盘、提醒时间和自启动继续复用 Stage 6 权威。
-- Schema 足够且未修改；migration 保持 9，无新增依赖或项目文件变化。
+实施顺序固定为四张最小卡：
 
-## 最终验收
+1. `V1-F03-I01｜今日排查计划查询与 Excel 导出`
+2. `V1-F03-I02｜排查结果读取、陈旧校验与 Draft 应用`
+3. `V1-F03-I03｜多任务正式提交编排`
+4. `V1-F03-I04｜WPF 双入口与端到端收口`
 
-- 定向回归 88/88；Release 新鲜完整复跑 764/764；build 0 warning / 0 error。
-- EF 无漂移；migration=9；`git diff --check` 通过。
-- 用户真实 WPF：仅预提醒四类各 1、总数 4、无假 Task；同日未重复；正式 Task + 四类预提醒只弹一次，总数 5、分区清楚。
-- 用户退出后 Fresh 回执通过：当前运行数据库已替换为全新空库，隔离标记已移除；旧数据旁置保留，不删除。应用进程在替换前为 0。
-- 详细证据：`.ai-dev/ACCEPTANCE/V1-F02.md`。
+详细契约：`.ai-dev/ANALYSIS/V1-F03-IMPLEMENTATION-SPLIT.md`；功能总卡：`.ai-dev/TASKS/V1-F03.md`；决策：`.ai-dev/DECISIONS.md` D-031。
 
-## 停点
+## 核心技术决策
 
-- V1-F02 已关闭，不得自动进入 V1-F03、Stage 8、Stage 9 或其他任务。
-- policy_version 继续固定为 1；migration 继续为 9。
-- 等待产品经理下一次单独批准。
+- 当前 Schema 足够，V1-F03 默认不新增 migration；migration 基线保持 9。
+- 导出稳定身份复用现有 `TaskId / TaskItemId / ProductId / BatchId / AttentionVersion` 和任务/库存/到货快照；不以商品名、条码或行号定位。
+- 回导解析成功只形成当前会话内的待确认结果，数据库零写入；确认后只原子 patch 既有 Draft。
+- 空白保持未完成，`0` 保持正式零值，正整数保持现场数量；删除行不应用，重复/非法/身份修改/陈旧项不自动应用。
+- 最终多任务提交只允许用薄外层事务调用现有 `InspectionSubmissionUseCase`；任何冲突整批回滚，不复制 Inspection、0 件停止、Task 完成或生命周期逻辑。
+- 商品源 Excel 导入与排查结果回导保持两个清晰入口；Excluded、Unresolved、非法 Managed lifecycle 零进入。
+
+## 本轮新鲜技术核验
+
+- Release restore/build 通过，build 0 warning / 0 error；restore 使用 `NuGetAudit=false`，不冒充在线漏洞审计。
+- Release 全量 764/764，通过 764、失败 0、跳过 0。
+- EF 无模型漂移；`--no-connect` migration 列表为 9 条，最后一条仍为 `20260901155124_AddPolicyAndBaselineFoundation`。
+- `git diff --check` 通过；`StoreExpiryInspector` 进程 0。
+- 未启动 WPF、未访问当前运行数据库；本轮测试只使用隔离临时数据库。
+
+## Schema 停机门禁
+
+若实现证明必须跨应用重启恢复未确认预览、持久化导出清单或回导批次，立即停止并提交 Schema 决策报告。未经产品经理新批准，不得新增 migration、修改 ModelSnapshot 或滥用 Import 表。
+
+## 下一唯一审批点
+
+等待产品经理明确批准：`V1-F03-I01｜今日排查计划查询与 Excel 导出`。
+
+批准前不得：
+
+- 创建 Terra 或任何实现代理；
+- 创建正式 I01 实施卡或修改生产代码；
+- 开始 I02～I04；
+- 进入 Stage 8、Stage 9 或其他功能。
+
+I01 获批后，Sol 必须在本话题创建一个全新的 GPT-5.6 Terra（medium，平台标准速度）只负责 I01；Terra 完成并停止后由 Sol 独立审查、测试和验收。
