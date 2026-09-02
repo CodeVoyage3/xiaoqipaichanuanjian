@@ -49,7 +49,7 @@ public sealed class InspectionPlanResultReader
         if (result.Any(row => row.Errors.Any(error => error.StartsWith("格式版本", StringComparison.Ordinal))))
             throw new InvalidDataException("Inspection plan format version is missing, old, or mixed; re-export it.");
         MarkDuplicates(result);
-        return new(result);
+        return new(result.OrderBy(row => row.ProductCode, StringComparer.Ordinal).ThenBy(row => row.TaskId).ThenBy(row => row.BatchId).ThenBy(row => row.TaskItemId).ToArray());
     }
 
     private static void ValidateHeaders(Row row, WorkbookPart workbook)

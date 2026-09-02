@@ -91,6 +91,23 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         Assert.False(new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path).Tasks.Single().IsApplicable);
     }
 
+    [Theory]
+    [InlineData("M2")]
+    [InlineData("M1")]
+    [InlineData("Y1")]
+    public void OldMixedOrInvalidSystemHeaderIsRejectedAtFileLevel(string cell)
+    {
+        using var fixture = Fixture.Create(2); MutateCell(fixture.Path, cell, "old_version");
+        Assert.Throws<InvalidDataException>(() => new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path));
+    }
+
+    [Fact]
+    public void ReaderRejectsRelativeAndMissingPaths()
+    {
+        using var fixture = Fixture.Create(); var reader = new InspectionPlanResultReader();
+        Assert.Throws<FileNotFoundException>(() => reader.Read("relative.xlsx")); Assert.Throws<FileNotFoundException>(() => reader.Read(System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid() + ".xlsx")));
+    }
+
     [Fact]
     public void BlankClearsIncludedItemAndDeletedRowLeavesExistingDraftUntouched()
     {
@@ -205,6 +222,12 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         using var document = SpreadsheetDocument.Open(path, true); var workbookPart = document.WorkbookPart ?? throw new InvalidOperationException(); var workbook = workbookPart.Workbook ?? throw new InvalidOperationException(); var worksheet = workbookPart.WorksheetParts.Single().Worksheet ?? throw new InvalidOperationException();
         var cell = (worksheet.GetFirstChild<SheetData>() ?? throw new InvalidOperationException()).Elements<Row>().Skip(1).Single().Elements<Cell>().Single(cell => cell.CellReference == reference);
         cell.CellValue = null; cell.DataType = CellValues.InlineString; cell.InlineString = new InlineString(new Text(value)); workbook.Save(); worksheet.Save();
+    }
+
+    private static void MutateCell(string path, string reference, string value)
+    {
+        using var document = SpreadsheetDocument.Open(path, true); var workbookPart = document.WorkbookPart ?? throw new InvalidOperationException(); var workbook = workbookPart.Workbook ?? throw new InvalidOperationException(); var worksheet = workbookPart.WorksheetParts.Single().Worksheet ?? throw new InvalidOperationException();
+        var cell = (worksheet.GetFirstChild<SheetData>() ?? throw new InvalidOperationException()).Elements<Row>().SelectMany(row => row.Elements<Cell>()).Single(cell => cell.CellReference == reference); cell.CellValue = null; cell.DataType = CellValues.InlineString; cell.InlineString = new InlineString(new Text(value)); workbook.Save(); worksheet.Save();
     }
 
     private static void DeleteSecondRow(string path)
