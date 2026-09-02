@@ -2,11 +2,11 @@
 
 ## 当前任务与状态
 
-`V1-F03-I04｜WPF 双入口与端到端收口` 的用户真实 GUI 验收曾因只读复选框绑定异常失败；严格限域修复及 Sol 独立技术复验已完成。
+`V1-F03-I04｜WPF 双入口与端到端收口` 第二轮用户真实 GUI 验收仍失败；当前进入严格限域的 GUI blocker repair R2。
 
-当前状态：`V1-F03-I04_TECHNICALLY_REPAIRED / GUI_ACCEPTANCE_FAILED / WAITING_USER_RETEST`
+当前状态：`V1-F03-I04_GUI_ACCEPTANCE_FAILED / BLOCKED / R2_REPAIR_IN_PROGRESS`
 
-现场证据为 WPF 对只读 `TodayInspectionTaskViewModel.HasValidDraft` 建立默认 TwoWay 绑定而抛出未处理 `InvalidOperationException`。修复已在权威 XAML 绑定处显式使用 OneWay；隔离库 `quick_check=ok`，open Task=576，migration=9。隔离会话继续保留，未执行结束/恢复脚本。I04/F03 尚未最终 CLOSED。
+第一轮 `HasValidDraft` 未处理异常已修复，第二轮没有新崩溃事件。当前阻断是每次进入无条件全量加载、UI 线程逐条发布 576 行、列表加载禁用整个 Shell 导航，以及任务表格字段/测量/虚拟化契约不满足门店可用性。隔离会话继续保留，未执行结束/恢复脚本。I04/F03 尚未最终 CLOSED。
 
 ## 当前 Git
 
