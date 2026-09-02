@@ -66,6 +66,29 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         Assert.Throws<InvalidOperationException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date, date, utc)));
         Assert.Empty(fixture.Context.Drafts); Assert.Empty(fixture.Context.Inspections);
     }
+
+    [Theory]
+    [InlineData("stopped")]
+    [InlineData("inspection")]
+    [InlineData("invalid-draft")]
+    [InlineData("excluded")]
+    [InlineData("unresolved")]
+    [InlineData("baseline")]
+    public void LifecycleDefencesMakePreviewInapplicable(string mutation)
+    {
+        using var fixture = Fixture.Create();
+        switch (mutation)
+        {
+            case "stopped": fixture.Context.Batches.Single().TrackingStatus = "stopped"; break;
+            case "inspection": fixture.Context.Inspections.Add(new Inspection { TaskId = fixture.Context.Tasks.Single().Id, ProductId = fixture.Context.Products.Single().Id, ProductCodeSnapshot = "x", InspectorName = "x", CheckDate = new(2026, 9, 2), SubmittedAtUtc = DateTime.UtcNow }); break;
+            case "invalid-draft": fixture.Context.Drafts.Add(new InspectionDraft { TaskId = fixture.Context.Tasks.Single().Id, IsInvalid = true }); break;
+            case "excluded": fixture.Context.Products.Single().ExpiryManagementStatus = ExpiryManagementStatus.Excluded; fixture.Context.Products.Single().PolicyCode = null; fixture.Context.Products.Single().PolicyVersion = null; break;
+            case "unresolved": fixture.Context.Products.Single().ExpiryManagementStatus = ExpiryManagementStatus.Unresolved; fixture.Context.Products.Single().PolicyCode = null; fixture.Context.Products.Single().PolicyVersion = null; break;
+            case "baseline": fixture.Context.ScopeBaselines.Single().IsCompleted = false; break;
+        }
+        fixture.Context.SaveChanges();
+        Assert.False(new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path).Tasks.Single().IsApplicable);
+    }
     [Theory]
     [InlineData("0", true)]
     [InlineData("7", true)]
