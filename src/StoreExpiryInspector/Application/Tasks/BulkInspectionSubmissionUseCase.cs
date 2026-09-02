@@ -12,7 +12,7 @@ public enum BulkInspectionSubmissionOutcome
     OverStockConfirmationStale
 }
 
-public sealed record OverStockConfirmation(long TaskId, int EffectiveStockQty, int TotalCheckedQty);
+public sealed record OverStockConfirmation(long TaskId, long ProductId, int EffectiveStockQty, int TotalCheckedQty);
 
 public sealed record BulkInspectionSubmissionRequest(
     IReadOnlyCollection<long> TaskIds,
@@ -51,6 +51,7 @@ public sealed class BulkInspectionSubmissionUseCase
         {
             context.ChangeTracker.Clear();
             var tasks = LoadAndValidate(context, taskIds, request, inspectorName);
+            ValidateConfirmationOwnership(tasks, confirmations);
             var completed = tasks.Where(task => task.Status == "completed").ToArray();
             if (completed.Length != 0)
             {
@@ -73,7 +74,7 @@ public sealed class BulkInspectionSubmissionUseCase
                 var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc));
                 if (result.RequiresOverStockConfirmation)
                 {
-                    warnings.Add(new(task.Id, result.EffectiveStockQty, result.TotalCheckedQty));
+                    warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
                 }
                 else if (result.Submitted && result.InspectionId is long inspectionId)
                 {
@@ -200,6 +201,17 @@ public sealed class BulkInspectionSubmissionUseCase
         }
     }
 
+    private static void ValidateConfirmationOwnership(IReadOnlyList<ProductTask> tasks, IReadOnlyList<OverStockConfirmation> confirmations)
+    {
+        foreach (var confirmation in confirmations)
+        {
+            if (tasks.Single(task => task.Id == confirmation.TaskId).ProductId != confirmation.ProductId)
+            {
+                throw new ArgumentException("Every over-stock confirmation must identify its requested task's current product.", nameof(confirmations));
+            }
+        }
+    }
+
     private static void ValidateOpenTask(ProductTask task, BulkInspectionSubmissionRequest request, string inspectorName)
     {
         if (task.Items.Count == 0 || task.Draft is null || task.Draft.IsInvalid || task.Draft.InvalidReason is not null || task.Draft.InvalidatedAtUtc is not null ||
@@ -275,7 +287,7 @@ public sealed class BulkInspectionSubmissionUseCase
         }
 
         var supplied = request.OverStockConfirmations ?? Array.Empty<OverStockConfirmation>();
-        if (supplied.Any(item => item is null || item.TaskId <= 0 || item.EffectiveStockQty < 0 || item.TotalCheckedQty < 0) || supplied.Select(item => item.TaskId).Distinct().Count() != supplied.Count || supplied.Any(item => !request.TaskIds.Contains(item.TaskId)))
+        if (supplied.Any(item => item is null || item.TaskId <= 0 || item.ProductId <= 0 || item.EffectiveStockQty < 0 || item.TotalCheckedQty < 0) || supplied.Select(item => item.TaskId).Distinct().Count() != supplied.Count || supplied.Any(item => !request.TaskIds.Contains(item.TaskId)))
         {
             throw new ArgumentException("Over-stock confirmations must be unique, complete positive task facts for requested tasks.", nameof(request));
         }

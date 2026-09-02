@@ -47,7 +47,7 @@ public sealed class BulkInspectionSubmissionUseCaseTests
         }
 
         using var confirmed = database.Open();
-        var result = Submit(confirmed, database.TaskIds, [new(database.TaskIds.Max(), 5, 6)]);
+        var result = Submit(confirmed, database.TaskIds, [new(database.TaskIds.Max(), database.ProductIds[^1], 5, 6)]);
         Assert.True(result.Submitted);
         Assert.Equal(2, confirmed.Inspections.Count());
     }
@@ -124,11 +124,15 @@ public sealed class BulkInspectionSubmissionUseCaseTests
     [InlineData("blank_inspector")]
     [InlineData("long_inspector")]
     [InlineData("default_date")]
+    [InlineData("default_business_date")]
     [InlineData("future_date")]
     [InlineData("default_utc")]
     [InlineData("local_utc")]
     [InlineData("duplicate_confirmation")]
     [InlineData("negative_confirmation")]
+    [InlineData("negative_total_confirmation")]
+    [InlineData("invalid_confirmation_product")]
+    [InlineData("wrong_confirmation_product")]
     [InlineData("outside_confirmation")]
     public void RequestGateRejectsInvalidWholeRequest(string mode)
     {
@@ -143,12 +147,16 @@ public sealed class BulkInspectionSubmissionUseCaseTests
             "blank_inspector" => new BulkInspectionSubmissionRequest([id], "  ", BusinessDate, BusinessDate, Utc),
             "long_inspector" => new BulkInspectionSubmissionRequest([id], new string('x', 201), BusinessDate, BusinessDate, Utc),
             "default_date" => new BulkInspectionSubmissionRequest([id], "Inspector", default, BusinessDate, Utc),
+            "default_business_date" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, default, Utc),
             "future_date" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate.AddDays(1), BusinessDate, Utc),
             "default_utc" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, DateTime.SpecifyKind(default, DateTimeKind.Utc)),
             "local_utc" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc.ToLocalTime()),
-            "duplicate_confirmation" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, 5, 1), new(id, 5, 1)]),
-            "negative_confirmation" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, -1, 1)]),
-            _ => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id + 100, 5, 1)])
+            "duplicate_confirmation" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, database.ProductIds[0], 5, 1), new(id, database.ProductIds[0], 5, 1)]),
+            "negative_confirmation" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, database.ProductIds[0], -1, 1)]),
+            "negative_total_confirmation" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, database.ProductIds[0], 1, -1)]),
+            "invalid_confirmation_product" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, 0, 5, 1)]),
+            "wrong_confirmation_product" => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id, 999, 5, 1)]),
+            _ => new BulkInspectionSubmissionRequest([id], "Inspector", BusinessDate, BusinessDate, Utc, [new(id + 100, database.ProductIds[0], 5, 1)])
         };
         Assert.Throws<ArgumentException>(() => new BulkInspectionSubmissionUseCase().Submit(context, request));
         Assert.Empty(context.Inspections);
@@ -160,6 +168,9 @@ public sealed class BulkInspectionSubmissionUseCaseTests
     [InlineData("missing_draft")]
     [InlineData("invalid_draft")]
     [InlineData("incomplete_draft")]
+    [InlineData("inspector_mismatch")]
+    [InlineData("check_date_mismatch")]
+    [InlineData("missing_quantity")]
     [InlineData("reconfirmation")]
     [InlineData("attention")]
     [InlineData("stage")]
@@ -169,6 +180,8 @@ public sealed class BulkInspectionSubmissionUseCaseTests
     [InlineData("ownership")]
     [InlineData("excluded")]
     [InlineData("unresolved")]
+    [InlineData("stock_zero_terminated")]
+    [InlineData("negative_stock")]
     [InlineData("invalid_policy")]
     [InlineData("no_baseline")]
     public void PrecheckRejectsCurrentLifecycleAndDraftViolationsBeforeSubmit(string mode)
@@ -177,12 +190,16 @@ public sealed class BulkInspectionSubmissionUseCaseTests
         using var setup = database.Open();
         if (mode == "ownership")
         {
-            using var transaction = setup.Database.BeginTransaction();
-            setup.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys = ON");
-            setup.Database.ExecuteSqlRaw("UPDATE task_items SET product_id = 999");
+            setup.Database.OpenConnection();
+            try
+            {
+                setup.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF");
+                setup.Database.ExecuteSqlRaw("UPDATE task_items SET product_id = 999");
+                setup.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON");
+            }
+            finally { setup.Database.CloseConnection(); }
             setup.ChangeTracker.Clear();
             Assert.Throws<InvalidOperationException>(() => Submit(setup, database.TaskIds));
-            transaction.Rollback();
             return;
         }
         var task = setup.Tasks.Single();
@@ -193,6 +210,9 @@ public sealed class BulkInspectionSubmissionUseCaseTests
             case "missing_draft": setup.DraftItems.RemoveRange(setup.DraftItems); setup.Drafts.RemoveRange(setup.Drafts); break;
             case "invalid_draft": var invalid = setup.Drafts.Single(); invalid.IsInvalid = true; invalid.InvalidReason = "invalid"; invalid.InvalidatedAtUtc = Utc; break;
             case "incomplete_draft": setup.DraftItems.Remove(setup.DraftItems.Single()); break;
+            case "inspector_mismatch": setup.Drafts.Single().InspectorName = "Other"; break;
+            case "check_date_mismatch": setup.Drafts.Single().CheckDate = BusinessDate.AddDays(-1); break;
+            case "missing_quantity": setup.DraftItems.Single().CheckedQty = null; break;
             case "reconfirmation": setup.TaskItems.Single().RequiresReconfirmation = true; break;
             case "attention": setup.Batches.Single().AttentionVersion = 2; break;
             case "stage": setup.Batches.Single().CurrentStage = ExpiryStageCalculator.Withdraw; break;
@@ -201,6 +221,8 @@ public sealed class BulkInspectionSubmissionUseCaseTests
             case "max_arrival": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE batches SET max_arrival_qty = -1"); break;
             case "excluded": var excluded = setup.Products.Single(); excluded.ExpiryManagementStatus = ExpiryManagementStatus.Excluded; excluded.PolicyCode = null; excluded.PolicyVersion = null; break;
             case "unresolved": var unresolved = setup.Products.Single(); unresolved.ExpiryManagementStatus = ExpiryManagementStatus.Unresolved; unresolved.PolicyCode = null; unresolved.PolicyVersion = null; break;
+            case "stock_zero_terminated": setup.Products.Single().IsStockZeroTerminated = true; break;
+            case "negative_stock": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE products SET effective_stock_qty = -1"); break;
             case "no_baseline": setup.ScopeBaselines.RemoveRange(setup.ScopeBaselines); break;
             case "invalid_policy": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE products SET policy_code = 'invalid'"); break;
         }
@@ -225,7 +247,7 @@ public sealed class BulkInspectionSubmissionUseCaseTests
 
         using (var stale = database.Open())
         {
-            var result = Submit(stale, database.TaskIds, [new(database.TaskIds[1], 5, 6)]);
+            var result = Submit(stale, database.TaskIds, [new(database.TaskIds[1], database.ProductIds[1], 5, 6)]);
             Assert.Equal(BulkInspectionSubmissionOutcome.OverStockConfirmationStale, result.Outcome);
             Assert.Equal(2, result.OverStockConfirmations.Count);
             Assert.Empty(stale.Inspections);
@@ -233,13 +255,13 @@ public sealed class BulkInspectionSubmissionUseCaseTests
 
         using (var extra = database.Open())
         {
-            var result = Submit(extra, database.TaskIds, [new(database.TaskIds[1], 5, 6), new(database.TaskIds[2], 5, 7), new(database.TaskIds[0], 5, 1)]);
+            var result = Submit(extra, database.TaskIds, [new(database.TaskIds[1], database.ProductIds[1], 5, 6), new(database.TaskIds[2], database.ProductIds[2], 5, 7), new(database.TaskIds[0], database.ProductIds[0], 5, 1)]);
             Assert.Equal(BulkInspectionSubmissionOutcome.OverStockConfirmationStale, result.Outcome);
             Assert.Empty(extra.Inspections);
         }
 
         using var confirmed = database.Open();
-        var success = Submit(confirmed, database.TaskIds, [new(database.TaskIds[1], 5, 6), new(database.TaskIds[2], 5, 7)]);
+        var success = Submit(confirmed, database.TaskIds, [new(database.TaskIds[1], database.ProductIds[1], 5, 6), new(database.TaskIds[2], database.ProductIds[2], 5, 7)]);
         Assert.True(success.Submitted);
         Assert.Equal(3, confirmed.Inspections.Count());
     }
@@ -259,8 +281,28 @@ public sealed class BulkInspectionSubmissionUseCaseTests
         using var stale = database.Open();
         var result = Submit(stale, database.TaskIds, confirmations);
         Assert.Equal(BulkInspectionSubmissionOutcome.OverStockConfirmationStale, result.Outcome);
-        Assert.Equal([new(database.TaskIds[0], 4, 6), new(database.TaskIds[1], 5, 8)], result.OverStockConfirmations);
+        Assert.Equal([new(database.TaskIds[0], database.ProductIds[0], 4, 6), new(database.TaskIds[1], database.ProductIds[1], 5, 8)], result.OverStockConfirmations);
         Assert.Empty(stale.Inspections);
+    }
+
+    [Fact]
+    public void OldConfirmationWhenNoTaskIsNowOverStockRollsBackAndReturnsNoWarnings()
+    {
+        using var database = CreateScenario(6);
+        IReadOnlyList<OverStockConfirmation> confirmations;
+        using (var context = database.Open()) confirmations = Submit(context, database.TaskIds).OverStockConfirmations;
+        using (var update = database.Open())
+        {
+            update.DraftItems.Single().CheckedQty = 3;
+            update.SaveChanges();
+        }
+        using var stale = database.Open();
+        var result = Submit(stale, database.TaskIds, confirmations);
+        Assert.Equal(BulkInspectionSubmissionOutcome.OverStockConfirmationStale, result.Outcome);
+        Assert.Empty(result.OverStockConfirmations);
+        Assert.Empty(stale.Inspections);
+        Assert.Equal("open", stale.Tasks.Single().Status);
+        Assert.Single(stale.Drafts);
     }
 
     [Fact]
@@ -269,7 +311,7 @@ public sealed class BulkInspectionSubmissionUseCaseTests
         using var database = CreateScenario(1);
         using var context = database.Open();
         _ = Submit(context, database.TaskIds);
-        Assert.Equal(BulkInspectionSubmissionOutcome.AlreadySubmitted, Submit(context, database.TaskIds, [new(database.TaskIds[0], 5, 1)]).Outcome);
+        Assert.Equal(BulkInspectionSubmissionOutcome.AlreadySubmitted, Submit(context, database.TaskIds, [new(database.TaskIds[0], database.ProductIds[0], 5, 1)]).Outcome);
         Assert.Throws<InvalidOperationException>(() => new BulkInspectionSubmissionUseCase().Submit(context, new(database.TaskIds, "Other", BusinessDate, BusinessDate, Utc)));
         Assert.Throws<InvalidOperationException>(() => new BulkInspectionSubmissionUseCase().Submit(context, new(database.TaskIds, "Inspector", BusinessDate.AddDays(-1), BusinessDate, Utc)));
         Assert.Throws<InvalidOperationException>(() => new BulkInspectionSubmissionUseCase().Submit(context, new(database.TaskIds, "Inspector", BusinessDate, BusinessDate, Utc.AddSeconds(1))));
@@ -322,11 +364,13 @@ public sealed class BulkInspectionSubmissionUseCaseTests
         context.SaveChanges();
 
         var taskIds = new List<long>();
+        var productIds = new List<long>();
         foreach (var (quantity, index) in quantities.Select((value, index) => (value, index)))
         {
             var product = new Product { ProductCode = $"BULK-{index}", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, EffectiveStockQty = 5, ExcelStockQty = 5, EffectiveStockSource = "excel", LifecycleGeneration = 1, CreatedAtUtc = Utc, UpdatedAtUtc = Utc };
             context.Products.Add(product);
             context.SaveChanges();
+            productIds.Add(product.Id);
             var task = new ProductTask { ProductId = product.Id, Status = "open", HighestStage = ExpiryStageCalculator.Discount50, CreatedAtUtc = Utc, UpdatedAtUtc = Utc };
             context.Tasks.Add(task);
             context.SaveChanges();
@@ -343,10 +387,10 @@ public sealed class BulkInspectionSubmissionUseCaseTests
             context.SaveChanges();
             taskIds.Add(task.Id);
         }
-        return new(database, taskIds.ToArray());
+        return new(database, taskIds.ToArray(), productIds.ToArray());
     }
 
-    private sealed record Scenario(SqliteTestDatabase Database, long[] TaskIds) : IDisposable
+    private sealed record Scenario(SqliteTestDatabase Database, long[] TaskIds, long[] ProductIds) : IDisposable
     {
         public StoreDbContext Open() => Database.Open();
         public void Dispose() => Database.Dispose();
