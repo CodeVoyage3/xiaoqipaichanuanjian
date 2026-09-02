@@ -2,12 +2,55 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
+using StoreExpiryInspector.Infrastructure;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
 
 public sealed class V1F03I02InspectionPlanDraftApplyTests
 {
+    [Theory]
+    [InlineData("O2")]
+    [InlineData("P2")]
+    [InlineData("Q2")]
+    [InlineData("R2")]
+    [InlineData("T2")]
+    [InlineData("U2")]
+    [InlineData("V2")]
+    [InlineData("W2")]
+    [InlineData("X2")]
+    [InlineData("Y2")]
+    public void HiddenSnapshotMutationMakesTaskInapplicable(string cellReference)
+    {
+        using var fixture = Fixture.Create();
+        Mutate(fixture.Path, cellReference, cellReference == "S2" ? "2026-09-02T08:00:01.0000000Z" : "999");
+        var preview = new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path);
+        Assert.False(preview.Tasks.Single().IsApplicable);
+        Assert.Empty(fixture.Context.Drafts);
+    }
+
+    [Fact]
+    public void ReconfirmationOnDeletedExcelRowStillBlocksPreviewWithoutWrites()
+    {
+        using var fixture = Fixture.Create(2);
+        DeleteSecondRow(fixture.Path);
+        fixture.Context.TaskItems.OrderBy(item => item.Id).Last().RequiresReconfirmation = true;
+        fixture.Context.SaveChanges();
+        var preview = new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path);
+        Assert.False(preview.Tasks.Single().IsApplicable);
+        Assert.Empty(fixture.Context.Drafts); Assert.Empty(fixture.Context.Inspections);
+    }
+
+    [Fact]
+    public void CompletedTaskAndInspectionMakePreviewInapplicableWithoutBusinessWrites()
+    {
+        using var fixture = Fixture.Create();
+        fixture.Context.Tasks.Single().Status = "completed"; fixture.Context.Tasks.Single().ClosedAtUtc = DateTime.UtcNow; fixture.Context.SaveChanges();
+        var before = (fixture.Context.Drafts.Count(), fixture.Context.Inspections.Count(), fixture.Context.TaskItems.Count(), fixture.Context.Batches.Count(), fixture.Context.Products.Count(), fixture.Context.Imports.Count());
+        var preview = new InspectionPlanDraftApplyUseCase().Preview(fixture.Context, fixture.Path);
+        Assert.False(preview.Tasks.Single().IsApplicable);
+        Assert.Equal(before, (fixture.Context.Drafts.Count(), fixture.Context.Inspections.Count(), fixture.Context.TaskItems.Count(), fixture.Context.Batches.Count(), fixture.Context.Products.Count(), fixture.Context.Imports.Count()));
+    }
     [Theory]
     [InlineData("0", true)]
     [InlineData("7", true)]
@@ -70,5 +113,34 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
             Assert.Equal("检查员", context.Drafts.Single().InspectorName);
         }
         finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    private static void Mutate(string path, string reference, string value)
+    {
+        using var document = SpreadsheetDocument.Open(path, true);
+        var cell = document.WorkbookPart!.WorksheetParts.Single().Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().Skip(1).Single().Elements<Cell>().Single(cell => cell.CellReference == reference);
+        cell.CellValue = null; cell.DataType = CellValues.InlineString; cell.InlineString = new InlineString(new Text(value)); document.WorkbookPart.Workbook.Save(); document.WorkbookPart.WorksheetParts.Single().Worksheet.Save();
+    }
+
+    private static void DeleteSecondRow(string path)
+    {
+        using var document = SpreadsheetDocument.Open(path, true); var sheet = document.WorkbookPart!.WorksheetParts.Single().Worksheet; sheet.GetFirstChild<SheetData>()!.Elements<Row>().Last().Remove(); document.WorkbookPart.Workbook.Save(); sheet.Save();
+    }
+
+    private sealed class Fixture : IDisposable
+    {
+        private Fixture(SqliteTestDatabase database, StoreDbContext context, string path) { Database = database; Context = context; Path = path; }
+        public SqliteTestDatabase Database { get; } public StoreDbContext Context { get; } public string Path { get; }
+        public static Fixture Create(int items = 1)
+        {
+            var database = SqliteTestDatabase.Create(); var context = database.Open(); var now = new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc);
+            var import = new ImportRecord { SourceFileName = "source.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = now, Status = "confirmed" }; context.Imports.Add(import); context.SaveChanges();
+            var product = new Product { ProductCode = "SKU-FIXTURE", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 4 }; context.Products.Add(product); context.SaveChanges();
+            context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, BusinessDate = new(2026, 9, 2), IsCompleted = true, CompletedAtUtc = now });
+            var task = new ProductTask { ProductId = product.Id, Status = "open", HighestStage = ExpiryStageCalculator.Discount50, CreatedAtUtc = now, UpdatedAtUtc = now }; context.Tasks.Add(task); context.SaveChanges();
+            for (var i = 0; i < items; i++) { var batch = new Batch { ProductId = product.Id, ExpiryDate = new DateOnly(2026, 10, 1).AddDays(i), CurrentArrivalQty = 4, MaxArrivalQty = 4, TrackingStatus = "active", CurrentStage = ExpiryStageCalculator.Discount50, AttentionVersion = 2 }; context.Batches.Add(batch); context.SaveChanges(); context.TaskItems.Add(new ProductTaskItem { TaskId = task.Id, ProductId = product.Id, BatchId = batch.Id, Stage = ExpiryStageCalculator.Discount50, AttentionVersion = 2, CreatedAtUtc = now, UpdatedAtUtc = now }); context.SaveChanges(); }
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"i02-{Guid.NewGuid():N}.xlsx"); new TodayInspectionPlanExportUseCase().Execute(context, new(path, [task.Id])); return new(database, context, path);
+        }
+        public void Dispose() { Context.Dispose(); Database.Dispose(); if (File.Exists(Path)) File.Delete(Path); }
     }
 }
