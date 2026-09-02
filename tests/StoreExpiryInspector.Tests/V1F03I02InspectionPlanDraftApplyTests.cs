@@ -51,6 +51,21 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         Assert.False(preview.Tasks.Single().IsApplicable);
         Assert.Equal(before, (fixture.Context.Drafts.Count(), fixture.Context.Inspections.Count(), fixture.Context.TaskItems.Count(), fixture.Context.Batches.Count(), fixture.Context.Products.Count(), fixture.Context.Imports.Count()));
     }
+
+    [Fact]
+    public void ApplyRejectsInvalidInputsAndSecondReadConflictWritesNothing()
+    {
+        using var fixture = Fixture.Create(); var useCase = new InspectionPlanDraftApplyUseCase(); var preview = useCase.Preview(fixture.Context, fixture.Path); var taskId = preview.ApplicableTaskIds.Single(); var date = new DateOnly(2026, 9, 2); var utc = new DateTime(2026, 9, 2, 8, 0, 0, DateTimeKind.Utc);
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [], "x", date, date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId, taskId], "x", date, date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], " ", date, date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], new string('x', 201), date, date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date.AddDays(1), date, utc)));
+        Assert.Throws<ArgumentException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date, date, DateTime.SpecifyKind(utc, DateTimeKind.Local))));
+        fixture.Context.Batches.Single().AttentionVersion++; fixture.Context.SaveChanges();
+        Assert.Throws<InvalidOperationException>(() => useCase.Apply(fixture.Context, new(preview, [taskId], "x", date, date, utc)));
+        Assert.Empty(fixture.Context.Drafts); Assert.Empty(fixture.Context.Inspections);
+    }
     [Theory]
     [InlineData("0", true)]
     [InlineData("7", true)]
