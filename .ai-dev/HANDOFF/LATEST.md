@@ -2,38 +2,31 @@
 
 ## 当前任务与状态
 
-`V1-UI-01｜导航、筛选与全局视觉降噪`：`TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。
+`V1-UI-01 GUI R1｜品牌区紧凑收口与筛选下拉中文显示`：`GUI_ACCEPTANCE_FAILED / REPAIR_REQUIRED / TASK_DEFINED`。
 
-这是 V1-F03 关闭后的新独立 UI 微调工作项，不属于 `V1-F03-I04-R11/R12`。V1-F03 与 I04 继续保持 `CLOSED`；Stage 8、Stage 9 均未启动。
+V1-UI-01 尚未关闭；本轮只返修用户真实 WPF 发现的两项问题。V1-F03/I04 继续 `CLOSED`，不创建 V1-UI-02，不启动 Stage 8/9。
 
-## Git 与实施
+## 当前 Git
 
-- GitHub `main` 开工基线：`453c95b00e040832c6705f04fb0d42c0e34c8a51`；刷新时本地与远端一致。
-- Sol 治理：`38fabb0`。
-- Terra 实现链：`6ae83ffc648e2b49cce034ac274edb94f0399396`、`c551df2dd0113e46d845c074bce9a5c622dcb780`、`ad72b6f0a8f04ce961febd60397ed531ea5f3e1f`；每次返修均使用全新 Terra，原 Terra 未复用。
-- 本轮 push 被当前安全策略拒绝，未绕过；`origin/main` 仍为 `453c95b`，本地提交尚未推送。
+- 2026-09-03 已重新 fetch GitHub `main`。
+- 本地 `HEAD` 与 `origin/main` 均为 `8202afb358631b63de820952dc0625b605c54a6b`，ahead/behind `0/0`；治理记录前工作区干净。
+- R1 唯一返修基线：`8202afb358631b63de820952dc0625b605c54a6b`。
+- R1 Task：`.ai-dev/TASKS/V1-UI-01-GUI-R1.md`。
 
-## 完整 diff 结论
+## 用户 GUI FAILED 事实
 
-- 生产差异仅为 `App.xaml`、`MainWindow.xaml`、`Stage4ViewModels.cs`；测试差异仅为 3 个对应既有测试文件。
-- 品牌文字删除、盾牌保留、折叠按钮右置；今日排查紧随待排查任务。
-- 阶段改为既有 canonical Stage 下拉；大类来自真实待排查任务数据并去重；搜索/阶段/大类取交集，清空、筛选后计数/空态/分页正确。
-- 普通/次级/链接按钮统一为中性灰阶，Focus 保留蓝色，Primary/Danger 保留语义状态；未重写全局 Theme，StageBadge 未改。
-- 无 Application、Domain、Infrastructure、Schema、ModelSnapshot、migration、dependency、`.csproj`、`.slnx` 差异，无冻结业务或 Stage 8/9 越界。
+1. 品牌文字已删除、盾牌与折叠功能正确，但折叠按钮锚定侧边栏最右缘，盾牌与按钮之间留白过大；目标为紧凑 `[盾牌] [折叠按钮]` 组。
+2. 阶段与大类 ComboBox 当前值显示 `StageFilterOption` / `CategoryFilterOption` 类型文本；必须显示中文 Label/CategoryName，筛选 Value 与业务逻辑不变。
 
-## Sol 独立新鲜证据
+## 冻结范围
 
-- V1-UI-01 / 查询 / UI 静态专项：67/67。
-- 相关 UI / ViewModel 回归：183/183。
-- I01～I04 精确回归：119/119。
-- Release 全量：894/894，0 失败、0 跳过。
-- Release build：0 warning / 0 error。
-- EF：无模型漂移；migration=9，最后一条 `20260901155124_AddPolicyAndBaselineFoundation`。
-- Schema / ModelSnapshot / dependency / project 无变化；`git diff --check` 通过。
-- 未启动或机械操作 WPF，未访问/修改正式数据库，应用进程 0。
+- 导航顺序、整体蓝色降噪、Search/Refresh/分页视觉、ComboBox 产品方案、三条件组合筛选、清空、计数、分页、StageBadge、Primary/Danger 均冻结。
+- I01～I04、Excel、ProductTask、Stage、Reminder、History/Revision、Backup/Restore、Tray、单实例、开机自启动及“应季搭配/赠品小样”规则冻结。
+- 禁止 Schema、ModelSnapshot、migration、dependency、`.csproj`、`.slnx`、Stage 8/9、在线升级变化。
 
-## 下一步唯一门禁
+## 下一步
 
-用户只验收本轮 4 点：品牌区与折叠箭头、导航顺序、阶段+大类+搜索组合筛选、全软件蓝色降噪与主次层级。
-
-不要求用户重验 I01～I04。收到用户 GUI 反馈前不关闭 V1-UI-01，不创建或启动 Stage 8/9。
+- 创建一名全新 GPT-5.6 Terra（reasoning medium、标准速度），不得复用 V1-UI-01 前三名 Terra。
+- Terra 只实施两项 GUI 增量问题，提交后停止且不 push。
+- Sol 独立审查并完成 R1 专项、V1-UI-01 回归、三条件筛选、Release 全量/build、EF/migration/冻结文件/Git 门禁。
+- 技术通过后状态恢复为 `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_RETEST`；用户只重验两项。
