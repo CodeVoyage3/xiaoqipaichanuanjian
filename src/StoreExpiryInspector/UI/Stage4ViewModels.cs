@@ -996,6 +996,7 @@ public sealed class ShellViewModel : ViewModelBase
         Func<ClearDraftRequest, ClearDraftResult>? clearDraft = null,
         Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>? adjustInventory = null,
         Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmTodayOverStock = null,
+        Func<ExpiredInventoryWarning, bool>? confirmTodayExpiredInventory = null,
         Func<bool>? confirmTodaySubmission = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
@@ -1033,6 +1034,7 @@ public sealed class ShellViewModel : ViewModelBase
             submit: SubmitTodayInspection,
             refreshAfterSubmit: RefreshAfterTodayInspectionSubmitAsync,
             confirmOverStock: confirmTodayOverStock,
+            confirmExpiredInventory: confirmTodayExpiredInventory,
             confirmSubmission: confirmTodaySubmission,
             logException: logger,
             businessToday: () => DateOnly.FromDateTime(DateTime.Today));

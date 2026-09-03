@@ -57,6 +57,8 @@ public sealed class TodayInspectionPreviewRowViewModel(InspectionPlanRow row, st
     public bool HasIssue => !string.IsNullOrWhiteSpace(Reason);
 }
 
+public sealed record ExpiredInventoryWarning(int BatchCount, int TotalCheckedQty);
+
 public sealed class TodayInspectionViewModel : ViewModelBase
 {
     private readonly Func<InspectionTaskSearchResult> _loadTasks;
@@ -66,6 +68,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private readonly Func<BulkInspectionSubmissionRequest, BulkInspectionSubmissionResult> _submit;
     private readonly Func<IReadOnlyCollection<long>, Task> _refreshAfterSubmit;
     private readonly Func<IReadOnlyList<OverStockConfirmation>, bool>? _confirmOverStock;
+    private readonly Func<ExpiredInventoryWarning, bool>? _confirmExpiredInventory;
     private readonly Func<bool>? _confirmSubmission;
     private readonly Action<Exception>? _logException;
     private readonly Func<DateOnly> _businessToday;
@@ -93,6 +96,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         Func<BulkInspectionSubmissionRequest, BulkInspectionSubmissionResult> submit,
         Func<IReadOnlyCollection<long>, Task> refreshAfterSubmit,
         Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmOverStock = null,
+        Func<ExpiredInventoryWarning, bool>? confirmExpiredInventory = null,
         Func<bool>? confirmSubmission = null,
         Action<Exception>? logException = null,
         Func<DateOnly>? businessToday = null,
@@ -105,6 +109,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _submit = submit;
         _refreshAfterSubmit = refreshAfterSubmit;
         _confirmOverStock = confirmOverStock;
+        _confirmExpiredInventory = confirmExpiredInventory;
         _confirmSubmission = confirmSubmission;
         _logException = logException;
         _businessToday = businessToday ?? (() => DateOnly.FromDateTime(DateTime.Today));
@@ -266,7 +271,12 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             return;
         }
         if (!IsFormValid || !TryGetCheckDate(out var checkDate)) { BlockSubmission("请完善排查人和排查日期。", string.Join("\n", new[] { InspectorNameError, CheckDateError }.Where(value => !string.IsNullOrEmpty(value)))); return; }
-        if (_confirmSubmission?.Invoke() != true) { StatusText = "已取消提交数据。"; return; }
+        var expiredInventory = GetExpiredInventoryWarning();
+        if (expiredInventory is not null && _confirmExpiredInventory is not null)
+        {
+            if (_confirmExpiredInventory(expiredInventory) != true) { StatusText = "请复核过期商品库存后再提交。"; return; }
+        }
+        else if (_confirmSubmission?.Invoke() != true) { StatusText = "已取消提交数据。"; return; }
         try { _submissionIntent ??= new(CompleteTaskIds, InspectorName, checkDate, _businessToday(), RequireUtcNow()); }
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = "提交数据失败，请检查当前状态后重试。"; return; }
         IsActionBusy = true;
@@ -304,6 +314,15 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     }
 
     public string OverStockText => _pendingConfirmations.Count == 0 ? string.Empty : string.Join("；", _pendingConfirmations.Select(item => $"商品 {item.ProductId}：库存 {item.EffectiveStockQty}，本次 {item.TotalCheckedQty}"));
+
+    private ExpiredInventoryWarning? GetExpiredInventoryWarning()
+    {
+        if (_currentPreview is null) return null;
+        var completeTaskIds = CompleteTaskIds.ToHashSet();
+        var rows = _currentPreview.File.Rows.Where(row => row.Stage == "expired" && row.CheckedQty > 0 &&
+            row.TaskId is long taskId && _currentPreview.ApplicableTaskIds.Contains(taskId) && completeTaskIds.Contains(taskId)).ToArray();
+        return rows.Length == 0 ? null : new(rows.Length, rows.Sum(row => row.CheckedQty!.Value));
+    }
 
     private async Task RefreshAfterSubmitAsync(IReadOnlyCollection<long> taskIds)
     {

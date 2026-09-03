@@ -426,7 +426,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
-        Assert.Contains("CellTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
+        Assert.Contains("ContentTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
+        Assert.Contains("HorizontalAlignment=\"Center\" VerticalAlignment=\"Center\"", window, StringComparison.Ordinal);
         Assert.Contains("TableNumericCenterTextStyle", window, StringComparison.Ordinal);
         Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", window, StringComparison.Ordinal);
         Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", window, StringComparison.Ordinal);
@@ -473,6 +474,63 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task ExpiredPositiveInventoryRequiresItsOwnWarningBeforeI03()
+    {
+        var submits = 0;
+        ExpiredInventoryWarning? warning = null;
+        var vm = Create(
+            submit: _ => { submits++; return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 1)], []); },
+            confirmExpiredInventory: value => { warning = value; return false; },
+            confirmSubmission: () => throw new InvalidOperationException("ordinary confirmation must be replaced"));
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员";
+
+        await vm.SubmitAsync();
+
+        Assert.Equal(new ExpiredInventoryWarning(1, 1), warning);
+        Assert.Equal(0, submits);
+        Assert.True(vm.HasPreview);
+    }
+
+    [Theory]
+    [InlineData(null, "expired")]
+    [InlineData(0, "expired")]
+    [InlineData(1, "withdraw")]
+    public async Task OnlyExpiredPositiveInventoryTriggersTheStrengthenedWarning(int? checkedQty, string stage)
+    {
+        var warnings = 0;
+        var submissions = 0;
+        var vm = Create(
+            preview: _ => Preview([1], [Row(1, checkedQty, stage: stage)]),
+            submit: _ => { submissions++; return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 1)], []); },
+            confirmExpiredInventory: _ => { warnings++; return true; },
+            confirmSubmission: () => false);
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员";
+
+        await vm.SubmitAsync();
+
+        Assert.Equal(0, warnings);
+        Assert.Equal(0, submissions);
+    }
+
+    [Fact]
+    public async Task ExpiredPositiveInventoryAggregatesBatchesAndContinuesOnlyAfterConfirmation()
+    {
+        var submissions = 0;
+        ExpiredInventoryWarning? warning = null;
+        var vm = Create(
+            preview: _ => Preview([1], [Row(1, 2), Row(1, 3)]),
+            submit: _ => { submissions++; return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 1)], []); },
+            confirmExpiredInventory: value => { warning = value; return true; },
+            confirmSubmission: () => throw new InvalidOperationException("ordinary confirmation must be replaced"));
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员";
+
+        await vm.SubmitAsync();
+
+        Assert.Equal(new ExpiredInventoryWarning(2, 5), warning);
+        Assert.Equal(1, submissions);
+    }
+
+    [Fact]
     public void ConfirmationWindowKeepsOnlyTheFiveDataColumnsAndRetainsExceptionExpression()
     {
         var root = FindRepositoryRoot();
@@ -512,7 +570,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Func<IReadOnlyList<OverStockConfirmation>, bool>? confirm = null,
         Func<InspectionTaskSearchResult>? loadTasks = null,
         Func<DateTime>? utcNow = null,
-        Func<bool>? confirmSubmission = null) => new(
+        Func<bool>? confirmSubmission = null,
+        Func<ExpiredInventoryWarning, bool>? confirmExpiredInventory = null) => new(
             loadTasks: loadTasks ?? (() => new([
                 new(1, 9, "商品 A", "A", "001", "expired", 2, 5, Today, false),
                 new(2, 10, "商品 B", "B", "002", "withdraw", 1, 4, Today, true)
@@ -523,6 +582,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             submit: submit ?? (_ => new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 101)], [])),
             refreshAfterSubmit: refresh ?? (_ => Task.CompletedTask),
             confirmOverStock: confirm,
+            confirmExpiredInventory: confirmExpiredInventory,
             confirmSubmission: confirmSubmission ?? (() => true),
             businessToday: () => Today,
             utcNow: utcNow);
@@ -534,8 +594,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         return new(new(rows), new(1, rows.Select(row => row.TaskId).Distinct().Count(), rows.Count, rows.Count(row => row.CheckedQty is not null), rows.Count(row => row.CheckedQty is null), rows.Sum(row => row.Errors.Count)), rows.Select(row => new InspectionPlanTaskPreview(row.TaskId!.Value, applicable.Contains(row.TaskId.Value), reasons.TryGetValue(row.TaskId.Value, out var reason) ? reason : null)).ToArray(), applicable, reasons);
     }
 
-    private static InspectionPlanRow Row(long taskId, int? checkedQty, IReadOnlyList<string>? errors = null) =>
-        new(2, taskId, taskId, 9, taskId, 1, DateTime.UtcNow, 1, "active", "expired", 1, 1, 5, checkedQty, "A", "商品 A", "2026-09-30", errors ?? [], "001", "2026-09-01", "2026-09-30");
+    private static InspectionPlanRow Row(long taskId, int? checkedQty, IReadOnlyList<string>? errors = null, string stage = "expired") =>
+        new(2, taskId, taskId, 9, taskId, 1, DateTime.UtcNow, 1, "active", stage, 1, 1, 5, checkedQty, "A", "商品 A", "2026-09-30", errors ?? [], "001", "2026-09-01", "2026-09-30");
 
     private static string FindRepositoryRoot()
     {

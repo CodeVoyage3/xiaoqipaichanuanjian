@@ -43,7 +43,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            ShellColumn.Width = new(compact ? 176 : 208);
+            ShellColumn.Width = new(224);
         }
         ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
         if (PendingTasksStandardGrid is not null && PendingTasksCompactGrid is not null)
@@ -563,6 +563,16 @@ public partial class MainWindow : Window
             "确认仍然提交",
             WpfDialogKind.Warning,
             nextAction: "选择“取消”返回检查；当前事实变化后需要重新确认。",
+            showCancel: true);
+
+    private bool ConfirmTodayExpiredInventory(ExpiredInventoryWarning warning) =>
+        WpfDialogService.Show(
+            OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this,
+            "检测到过期商品仍有库存",
+            $"检测到 {warning.BatchCount} 个过期批次仍填写正库存，合计 {warning.TotalCheckedQty}。请复核现场库存和填写值。",
+            "确认无误，继续提交",
+            WpfDialogKind.Warning,
+            nextAction: "选择“取消”返回检查；当前填写结果会保留。",
             showCancel: true);
 
     private bool ConfirmTodaySubmission() =>

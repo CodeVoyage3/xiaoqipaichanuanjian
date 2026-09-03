@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Excel;
+using StoreExpiryInspector.UI;
 
 namespace StoreExpiryInspector.Application.Tasks;
 
@@ -214,7 +215,7 @@ public sealed class TodayInspectionPlanExportUseCase
             var rowIndex = (uint)(index + 2);
             sheetData.Append(new Row(
                 NumberCell(1, rowIndex, index + 1), TextCell(2, rowIndex, row.ProductCode), TextCell(3, rowIndex, row.Barcode), TextCell(4, rowIndex, row.ProductName), TextCell(5, rowIndex, row.CategoryName),
-                DateCell(6, rowIndex, row.ProductionDate), DateCell(7, rowIndex, row.ExpiryDate), TextCell(8, rowIndex, row.Stage), NumberCell(9, rowIndex, row.CurrentArrivalQty), NumberCell(10, rowIndex, row.MaxArrivalQty), NumberCell(11, rowIndex, row.EffectiveStockQty), BlankCell(12, rowIndex),
+                DateCell(6, rowIndex, row.ProductionDate), DateCell(7, rowIndex, row.ExpiryDate), TextCell(8, rowIndex, StageLabels.ToDisplay(row.Stage)), NumberCell(9, rowIndex, row.CurrentArrivalQty), NumberCell(10, rowIndex, row.MaxArrivalQty), NumberCell(11, rowIndex, row.EffectiveStockQty), BlankCell(12, rowIndex),
                 TextCell(13, rowIndex, FormatVersion), TextCell(14, rowIndex, row.TaskId.ToString(CultureInfo.InvariantCulture)), TextCell(15, rowIndex, row.TaskItemId.ToString(CultureInfo.InvariantCulture)), TextCell(16, rowIndex, row.ProductId.ToString(CultureInfo.InvariantCulture)), TextCell(17, rowIndex, row.BatchId.ToString(CultureInfo.InvariantCulture)), NumberCell(18, rowIndex, row.AttentionVersion), TextCell(19, rowIndex, NormalizeUtc(row.TaskUpdatedAtUtc).ToString("O", CultureInfo.InvariantCulture)), NumberCell(20, rowIndex, row.TaskItemCount), TextCell(21, rowIndex, row.TrackingStatus), TextCell(22, rowIndex, row.Stage), NumberCell(23, rowIndex, row.CurrentArrivalQty), NumberCell(24, rowIndex, row.MaxArrivalQty), NumberCell(25, rowIndex, row.EffectiveStockQty)));
         }
 

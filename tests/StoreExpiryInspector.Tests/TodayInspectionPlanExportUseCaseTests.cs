@@ -24,6 +24,8 @@ public sealed class TodayInspectionPlanExportUseCaseTests
             AddSecondItem(seed, firstTaskId, new DateOnly(2026, 10, 4));
             secondTaskId = AddTask(seed, "0001", "000987", "第一商品", "pet", ExpiryPolicies.Pet, 7, new DateOnly(2026, 10, 3));
             unselectedTaskId = AddTask(seed, "0003", "000333", "未选择", "food", ExpiryPolicies.Food, 9, new DateOnly(2026, 10, 5));
+            SetStage(seed, firstTaskId, ExpiryStageCalculator.Expired);
+            SetStage(seed, secondTaskId, ExpiryStageCalculator.Withdraw);
             expectedRows = (from item in seed.TaskItems
                             join task in seed.Tasks on item.TaskId equals task.Id
                             join batch in seed.Batches on item.BatchId equals batch.Id
@@ -74,6 +76,10 @@ public sealed class TodayInspectionPlanExportUseCaseTests
         Assert.Equal(rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(14))), reversedRows);
         Assert.All(rows.Skip(1), row => Assert.Equal(CellValues.InlineString, row.Elements<Cell>().ElementAt(1).DataType!.Value));
         Assert.Equal("宠物", Text(rows[1].Elements<Cell>().ElementAt(4)));
+        Assert.Equal("收仓", Text(rows[1].Elements<Cell>().ElementAt(7)));
+        Assert.Equal("过期", Text(rows[2].Elements<Cell>().ElementAt(7)));
+        Assert.DoesNotContain(rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(7))), value => value is "expired" or "withdraw");
+        Assert.Empty(new InspectionPlanResultReader().Read(output).Rows.SelectMany(row => row.Errors));
         Assert.Null(rows[1].Elements<Cell>().ElementAt(5).CellValue);
         Assert.Equal(CellValues.Number, rows[1].Elements<Cell>().ElementAt(6).DataType!.Value);
         Assert.Equal((uint)1, rows[1].Elements<Cell>().ElementAt(6).StyleIndex!.Value);
@@ -209,6 +215,17 @@ public sealed class TodayInspectionPlanExportUseCaseTests
         context.Batches.Add(batch);
         context.SaveChanges();
         context.TaskItems.Add(new ProductTaskItem { TaskId = task.Id, ProductId = task.ProductId, BatchId = batch.Id, Stage = ExpiryStageCalculator.Discount50, AttentionVersion = 2 });
+        context.SaveChanges();
+    }
+
+    private static void SetStage(StoreDbContext context, long taskId, string stage)
+    {
+        context.Tasks.Single(value => value.Id == taskId).HighestStage = stage;
+        foreach (var item in context.TaskItems.Where(value => value.TaskId == taskId))
+        {
+            item.Stage = stage;
+            context.Batches.Single(batch => batch.Id == item.BatchId).CurrentStage = stage;
+        }
         context.SaveChanges();
     }
 

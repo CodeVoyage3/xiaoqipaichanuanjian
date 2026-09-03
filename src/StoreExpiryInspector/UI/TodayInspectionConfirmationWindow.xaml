@@ -12,11 +12,15 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
         <Style x:Key="ConfirmationInspectorTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="32"/><Setter Property="Padding" Value="8,0"/>
             <Style.Triggers><DataTrigger Binding="{Binding HasInspectorNameError}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/><Setter Property="BorderThickness" Value="2"/></DataTrigger></Style.Triggers>
         </Style>
         <Style x:Key="ConfirmationDatePickerStyle" TargetType="DatePicker">
+            <Setter Property="Height" Value="32"/><Setter Property="Padding" Value="6,0"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/><Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
             <Style.Triggers><DataTrigger Binding="{Binding HasCheckDateError}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/><Setter Property="BorderThickness" Value="2"/></DataTrigger></Style.Triggers>
         </Style>
+        <Style x:Key="ConfirmationCellTextStyle" TargetType="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style>
+        <Style x:Key="ConfirmationCellCenterTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ConfirmationCellTextStyle}"><Setter Property="HorizontalAlignment" Value="Center"/></Style>
     </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -32,11 +36,11 @@
                   VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"
                   AutomationProperties.Name="排查结果确认明细">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="150" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}"/>
+                <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="150" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellTextStyle}"/>
                 <DataGridTemplateColumn Header="商品名称" Width="*" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" VerticalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                <DataGridTextColumn Header="生产日期" Binding="{Binding ProductionDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"/>
-                <DataGridTextColumn Header="有效日期" Binding="{Binding ExpiryDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"/>
-                <DataGridTextColumn Header="本次排查数量" Binding="{Binding CheckedQtyText}" Width="110" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"/>
+                <DataGridTextColumn Header="生产日期" Binding="{Binding ProductionDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
+                <DataGridTextColumn Header="有效日期" Binding="{Binding ExpiryDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
+                <DataGridTextColumn Header="本次排查数量" Binding="{Binding CheckedQtyText}" Width="110" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
             </DataGrid.Columns>
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
