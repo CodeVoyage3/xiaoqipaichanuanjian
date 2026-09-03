@@ -354,6 +354,7 @@ public partial class MainWindow : Window
                 ToolTip = "选择每日提醒时间",
                 Content = new System.Windows.Shapes.Path { Data = (Geometry)FindResource("ClockIcon"), Stroke = (Brush)FindResource("SecondaryTextBrush"), StrokeThickness = 1.4, Width = 16, Height = 16 }
             };
+            AutomationProperties.SetName(pickerToggle, "打开提醒时间选择器");
             reminderTimeRow.Children.Add(pickerToggle);
             panel.Children.Add(reminderTimeRow);
             panel.Children.Add(timeValidation);
@@ -385,6 +386,8 @@ public partial class MainWindow : Window
             };
             ScrollViewer.SetVerticalScrollBarVisibility(hours, ScrollBarVisibility.Auto);
             ScrollViewer.SetVerticalScrollBarVisibility(minutes, ScrollBarVisibility.Auto);
+            AutomationProperties.SetName(hours, "提醒小时");
+            AutomationProperties.SetName(minutes, "提醒分钟");
             Grid.SetRow(hours, 1);
             Grid.SetRow(minutes, 1);
             Grid.SetColumn(minutes, 1);

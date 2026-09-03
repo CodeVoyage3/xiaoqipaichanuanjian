@@ -282,6 +282,9 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("HorizontalContentAlignmentProperty, HorizontalAlignment.Center", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Color.FromRgb(234, 240, 247)", codeBehind, StringComparison.Ordinal);
         Assert.Contains("SecondaryTextBrush", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.SetName(pickerToggle, \"打开提醒时间选择器\")", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.SetName(hours, \"提醒小时\")", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.SetName(minutes, \"提醒分钟\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("OpacityProperty, 0.55", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("dialog.Height = 460", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
