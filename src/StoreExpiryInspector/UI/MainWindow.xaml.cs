@@ -179,12 +179,12 @@ public partial class MainWindow : Window
         scrollViewer.ScrollToVerticalOffset(Math.Max(0, scrollViewer.VerticalOffset + top - (scrollViewer.ViewportHeight - item.ActualHeight) / 2));
     }, DispatcherPriority.Loaded);
 
-    private int? ShowReminderTimeDialog(int reminderMinuteOfDay)
+    private int? ShowReminderTimeDialog(Window owner, int reminderMinuteOfDay)
     {
         var pickerState = new ReminderTimePickerState(reminderMinuteOfDay);
         var dialog = new Window
         {
-            Owner = this,
+            Owner = owner,
             Title = "选择提醒时间",
             FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
             Language = XmlLanguage.GetLanguage("zh-CN"),
@@ -449,8 +449,7 @@ public partial class MainWindow : Window
             reminderTime.KeyDown += (_, key) => { if (key.Key == Key.Enter) { CommitText(); key.Handled = true; } };
             pickerToggle.Click += (_, _) =>
             {
-                if (!CommitText()) return;
-                if (ShowReminderTimeDialog(selectedReminderMinuteOfDay) is not int selectedMinute) return;
+                if (ShowReminderTimeDialog(dialog, selectedReminderMinuteOfDay) is not int selectedMinute) return;
                 selectedReminderMinuteOfDay = selectedMinute;
                 reminderTime.Text = ReminderSettingsUseCase.Format(selectedMinute);
                 timeValidation.Text = string.Empty;

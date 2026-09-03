@@ -269,6 +269,8 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("ReminderTimePickerState.Hours", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimePickerState.Minutes", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ShowReminderTimeDialog", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("private int? ShowReminderTimeDialog(Window owner, int reminderMinuteOfDay)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Owner = owner", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Title = \"选择提醒时间\"", codeBehind, StringComparison.Ordinal);
         Assert.Contains("return dialog.ShowDialog() == true ? pickerState.Confirm() : null", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay)", codeBehind, StringComparison.Ordinal);
@@ -304,6 +306,9 @@ public sealed class S6T04SettingsAndAutoStartTests
         var pickerBlock = codeBehind[codeBehind.IndexOf("private int? ShowReminderTimeDialog", StringComparison.Ordinal)..codeBehind.IndexOf("private async void Find_Executed", StringComparison.Ordinal)];
         Assert.DoesNotContain("DatabaseInitializer.CreateContext", pickerBlock, StringComparison.Ordinal);
         Assert.DoesNotContain("ReminderTimeChanged", pickerBlock, StringComparison.Ordinal);
+        var pickerClickBlock = codeBehind[codeBehind.IndexOf("pickerToggle.Click +=", StringComparison.Ordinal)..codeBehind.IndexOf("var autoStartCheckBox", StringComparison.Ordinal)];
+        Assert.Contains("ShowReminderTimeDialog(dialog, selectedReminderMinuteOfDay)", pickerClickBlock, StringComparison.Ordinal);
+        Assert.DoesNotContain("CommitText()", pickerClickBlock, StringComparison.Ordinal);
         var saveBlock = codeBehind[codeBehind.IndexOf("save.Click +=", StringComparison.Ordinal)..];
         Assert.True(saveBlock.IndexOf("if (!CommitText()) return;", StringComparison.Ordinal) < saveBlock.IndexOf("DatabaseInitializer.CreateContext", StringComparison.Ordinal));
         Assert.True(saveBlock.IndexOf("if (savedMinuteOfDay.HasValue)", StringComparison.Ordinal) < saveBlock.IndexOf("ReminderTimeChanged?.Invoke", StringComparison.Ordinal));
