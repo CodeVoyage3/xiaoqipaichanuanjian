@@ -311,11 +311,31 @@ public sealed class Stage4ViewModelTests
         vm.SearchText = "apple";
         await vm.SearchAsync();
         Assert.Equal(4, vm.TotalCount);
+
         vm.SelectedStage = "discount_50";
         await WaitFor(() => vm.TotalCount == 3);
+        Assert.Equal(new[] { "apple-50", "apple-50-general", "apple-50-duplicate-category" }, vm.Items.Select(item => item.ProductCode));
+
+        vm.SelectedStage = null;
+        await WaitFor(() => vm.TotalCount == 4);
         vm.SelectedCategory = "食品";
+        await WaitFor(() => vm.TotalCount == 3);
+        Assert.Equal(new[] { "apple-50", "apple-20", "apple-50-duplicate-category" }, vm.Items.Select(item => item.ProductCode));
+
+        vm.SearchText = string.Empty;
+        await vm.SearchAsync();
+        Assert.Equal(3, vm.TotalCount);
+        vm.SelectedStage = "discount_50";
         await WaitFor(() => vm.TotalCount == 2);
         Assert.Equal(new[] { "apple-50", "apple-50-duplicate-category" }, vm.Items.Select(item => item.ProductCode));
+
+        vm.SelectedCategory = null;
+        await WaitFor(() => vm.TotalCount == 4);
+        vm.SearchText = "apple";
+        await vm.SearchAsync();
+        Assert.Equal(3, vm.TotalCount);
+        vm.SelectedCategory = "食品";
+        await WaitFor(() => vm.TotalCount == 2);
 
         await vm.ClearFiltersAsync();
         Assert.Equal(string.Empty, vm.SearchText);
@@ -326,11 +346,57 @@ public sealed class Stage4ViewModelTests
     }
 
     [Fact]
+    public async Task PendingTasksFilteredPagingCountAndEmptyStateUseTheFinalIntersection()
+    {
+        var tasks = Enumerable.Range(1, 51)
+            .Select(index => TaskItem($"match-{index}", "discount_50", "食品", index))
+            .Append(TaskItem("other", "expired", "百货", 52))
+            .ToArray();
+        var vm = new PendingTasksViewModel(request =>
+        {
+            var filtered = tasks
+                .Where(item => string.IsNullOrEmpty(request.SearchText) || item.ProductCode.Contains(request.SearchText, StringComparison.Ordinal))
+                .Where(item => string.IsNullOrEmpty(request.Stage) || item.HighestStage == request.Stage)
+                .ToArray();
+            return new InspectionTaskSearchResult(filtered, filtered.Length, request.Page, request.PageSize);
+        });
+
+        await vm.LoadAsync();
+        vm.SelectedStage = "discount_50";
+        await WaitFor(() => vm.TotalCount == 51);
+        vm.SelectedCategory = "食品";
+        await WaitFor(() => vm.TotalPages == 2);
+        vm.SearchText = "match";
+        await vm.SearchAsync();
+        Assert.Equal(51, vm.TotalCount);
+        Assert.Equal(2, vm.TotalPages);
+        Assert.False(vm.HasEmptyResult);
+
+        await vm.GoToNextPageAsync();
+        Assert.Equal(2, vm.CurrentPage);
+        Assert.Single(vm.Items);
+
+        vm.SearchText = "missing";
+        await vm.SearchAsync();
+        Assert.Equal(1, vm.CurrentPage);
+        Assert.Equal(0, vm.TotalCount);
+        Assert.Equal(1, vm.TotalPages);
+        Assert.True(vm.IsFilterEmpty);
+    }
+
+    [Fact]
     public void PendingTaskUiUsesDropdownFiltersAndKeepsStageBadgeContract()
     {
         var root = FindRepositoryRoot();
+        var app = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "App.xaml"));
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         var stageBadge = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "StageBadgeResources.xaml"));
+        var ordinaryButton = StyleBlock(app, "<Style TargetType=\"Button\">");
+        var secondaryButton = StyleBlock(app, "<Style x:Key=\"SecondaryButtonStyle\"");
+        var linkButton = StyleBlock(app, "<Style x:Key=\"LinkButtonStyle\"");
+        var primaryButton = StyleBlock(app, "<Style x:Key=\"PrimaryButtonStyle\"");
+        var textBox = StyleBlock(app, "<Style TargetType=\"TextBox\">");
+        var comboBox = StyleBlock(app, "<Style TargetType=\"ComboBox\">");
 
         Assert.DoesNotContain("Text=\"门店效期排查软件\"", window, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"NavigationToggleButton\"\n                            Grid.Column=\"2\"", window, StringComparison.Ordinal);
@@ -340,6 +406,23 @@ public sealed class Stage4ViewModelTests
         Assert.Contains("PendingTasks.CategoryFilters", window, StringComparison.Ordinal);
         Assert.Contains("PendingFilterComboBoxStyle", window, StringComparison.Ordinal);
         Assert.Contains("FocusRingBrush", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("PendingSecondaryButtonStyle", window, StringComparison.Ordinal);
+        Assert.Contains("Style=\"{StaticResource SecondaryButtonStyle}\"", window, StringComparison.Ordinal);
+        Assert.Contains("Style=\"{StaticResource LinkButtonStyle}\"", window, StringComparison.Ordinal);
+        Assert.Contains("Value=\"#F3F4F6\"", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("Value=\"#E5E7EB\"", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("SecondaryTextBrush", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("FocusRingBrush", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("DisabledTextBrush", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("PrimaryTextBrush", secondaryButton, StringComparison.Ordinal);
+        Assert.Contains("BorderBrush", secondaryButton, StringComparison.Ordinal);
+        Assert.Contains("SecondaryTextBrush", linkButton, StringComparison.Ordinal);
+        Assert.Contains("PrimaryActionBrush", primaryButton, StringComparison.Ordinal);
+        Assert.Contains("PrimaryActionHoverBrush", primaryButton, StringComparison.Ordinal);
+        Assert.Contains("BorderBrush", textBox, StringComparison.Ordinal);
+        Assert.Contains("FocusVisualStyle", textBox, StringComparison.Ordinal);
+        Assert.Contains("BorderBrush", comboBox, StringComparison.Ordinal);
+        Assert.Contains("FocusVisualStyle", comboBox, StringComparison.Ordinal);
         Assert.Contains("#FDECEC", stageBadge, StringComparison.Ordinal);
         Assert.Contains("#FFF0E5", stageBadge, StringComparison.Ordinal);
     }
@@ -400,6 +483,14 @@ public sealed class Stage4ViewModelTests
         }
 
         Assert.True(condition());
+    }
+
+    private static string StyleBlock(string source, string marker)
+    {
+        var start = source.IndexOf(marker, StringComparison.Ordinal);
+        var end = source.IndexOf("</Style>", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start, $"未找到样式块：{marker}");
+        return source[start..end];
     }
 
     private static string FindRepositoryRoot()

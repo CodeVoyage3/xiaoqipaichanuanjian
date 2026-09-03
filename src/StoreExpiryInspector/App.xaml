@@ -90,11 +90,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#F0F5FC" />
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter TargetName="Chrome" Property="Background" Value="#F3F4F6" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#DDEBFF" />
+                                <Setter TargetName="Chrome" Property="Background" Value="#E5E7EB" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
@@ -102,6 +102,7 @@
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Chrome" Property="Opacity" Value="0.56" />
+                                <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -114,11 +115,21 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryActionHoverBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionHoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#123B79" />
+                    <Setter Property="BorderBrush" Value="#123B79" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryActionBrush}" />
-            <Setter Property="BorderBrush" Value="#8EB8FF" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         </Style>
 
         <Style x:Key="LinkButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -126,7 +137,7 @@
             <Setter Property="Padding" Value="4,0" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryActionBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
         </Style>
 
         <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

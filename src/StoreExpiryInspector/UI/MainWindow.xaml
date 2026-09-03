@@ -300,39 +300,6 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="PendingSecondaryButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Padding" Value="12,0" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisualStyle}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#F3F4F6" /><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" /></Trigger>
-                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#E5E7EB" /></Trigger>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" /><Setter TargetName="Chrome" Property="BorderThickness" Value="2" /></Trigger>
-                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.56" /></Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="PendingFilterLinkButtonStyle" TargetType="Button" BasedOn="{StaticResource PendingSecondaryButtonStyle}">
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="4,0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
-        </Style>
-
         <Style x:Key="PendingDataGridStyle"
                TargetType="DataGrid"
                BasedOn="{StaticResource {x:Type DataGrid}}">
@@ -1094,7 +1061,7 @@
                                        Visibility="{Binding PendingTasks.SearchText, Converter={StaticResource EmptyStringToVisibility}}" />
                             <Button Content="×"
                                     Command="{Binding PendingTasks.ClearFiltersCommand}"
-                                    Style="{StaticResource PendingFilterLinkButtonStyle}"
+                                    Style="{StaticResource LinkButtonStyle}"
                                     FontSize="18"
                                     Width="32"
                                     Height="32"
@@ -1109,7 +1076,7 @@
                         <Button Grid.Column="1"
                                     Content="搜索"
                                     Command="{Binding PendingTasks.SearchCommand}"
-                                    Style="{StaticResource PendingSecondaryButtonStyle}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Width="72"
                                     Height="42"
                                     Padding="8,0"
@@ -1159,11 +1126,11 @@
                                        VerticalAlignment="Center" />
                             <Button Content="清空筛选"
                                     Command="{Binding PendingTasks.ClearFiltersCommand}"
-                                    Style="{StaticResource PendingFilterLinkButtonStyle}"
+                                    Style="{StaticResource LinkButtonStyle}"
                                     Margin="12,0,0,0" />
                             <Button Content="刷新"
                                     Command="{Binding PendingTasks.RetryCommand}"
-                                    Style="{StaticResource PendingSecondaryButtonStyle}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     AutomationProperties.Name="刷新待排查任务"
                                     Width="72"
                                     Margin="12,0,0,0" />
@@ -1372,7 +1339,7 @@
                             <Button Content="‹  上一页"
                                     Command="{Binding PendingTasks.PreviousPageCommand}"
                                     IsEnabled="{Binding PendingTasks.CanGoPrevious}"
-                                    Style="{StaticResource PendingSecondaryButtonStyle}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Width="112" />
                             <TextBlock Text="{Binding PendingTasks.CurrentPage}"
                                        FontSize="14"
@@ -1386,7 +1353,7 @@
                             <Button Content="下一页  ›"
                                     Command="{Binding PendingTasks.NextPageCommand}"
                                     IsEnabled="{Binding PendingTasks.CanGoNext}"
-                                    Style="{StaticResource PendingSecondaryButtonStyle}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Width="112" />
                         </StackPanel>
                     </Grid>
