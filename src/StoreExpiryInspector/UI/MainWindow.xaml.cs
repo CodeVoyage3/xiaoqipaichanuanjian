@@ -300,16 +300,20 @@ public partial class MainWindow : Window
                 FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
                 Language = XmlLanguage.GetLanguage("zh-CN"),
                 Width = 460,
-                Height = 300,
+                Height = 420,
                 MinWidth = 420,
                 MinHeight = 280,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ShowInTaskbar = false,
-                Content = new StackPanel { Margin = new Thickness(24) }
+                Content = new Grid { Margin = new Thickness(24) }
             };
             AutomationProperties.SetName(dialog, "提醒设置");
-            var panel = (StackPanel)dialog.Content;
+            var root = (Grid)dialog.Content;
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition());
+            var panel = new StackPanel();
+            root.Children.Add(panel);
             panel.Children.Add(new TextBlock
             {
                 Text = "每日提醒时间",
@@ -340,14 +344,14 @@ public partial class MainWindow : Window
                 ToolTip = "请输入 HH:mm，或点击时钟选择",
                 Background = Brushes.White,
                 BorderBrush = (Brush)FindResource("BorderBrush"),
-                Padding = new Thickness(8, 4, 28, 4)
+                Padding = new Thickness(8, 4, 52, 4)
             };
             AutomationProperties.SetName(reminderTime, "每日提醒时间");
-            var reminderTimeRow = new Grid { Width = 120, HorizontalAlignment = HorizontalAlignment.Left };
+            var reminderTimeRow = new Grid { Width = 172, HorizontalAlignment = HorizontalAlignment.Left };
             reminderTimeRow.Children.Add(reminderTime);
             var pickerToggle = new Button
             {
-                Width = 28,
+                Width = 52,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
@@ -358,7 +362,7 @@ public partial class MainWindow : Window
             reminderTimeRow.Children.Add(pickerToggle);
             panel.Children.Add(reminderTimeRow);
             panel.Children.Add(timeValidation);
-            var timePicker = new Popup { PlacementTarget = reminderTimeRow, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
+            var timePicker = new Popup { PlacementTarget = reminderTimeRow, Placement = PlacementMode.Custom, StaysOpen = false, AllowsTransparency = true };
             var pickerBorder = new Border { Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = (Brush)FindResource("BorderBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5), Padding = new Thickness(8), Margin = new Thickness(0, 4, 0, 0) };
             var pickerGrid = new Grid();
             pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -437,7 +441,7 @@ public partial class MainWindow : Window
             minutes.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
             reminderTime.LostKeyboardFocus += (_, _) => CommitText();
             reminderTime.KeyDown += (_, key) => { if (key.Key == Key.Enter) { CommitText(); key.Handled = true; } };
-            pickerToggle.Click += (_, _) =>
+            void OpenPicker()
             {
                 pickerState.Open(selectedReminderMinuteOfDay);
                 ApplyPickerState();
@@ -445,6 +449,16 @@ public partial class MainWindow : Window
                 timePicker.IsOpen = true;
                 ScrollSelectedToCenter(hours);
                 ScrollSelectedToCenter(minutes);
+            }
+            pickerToggle.Click += (_, _) => OpenPicker();
+            reminderTime.PreviewMouseLeftButtonDown += (_, mouse) =>
+            {
+                var point = mouse.GetPosition(reminderTime);
+                if (point.X > reminderTime.GetRectFromCharacterIndex(reminderTime.Text.Length).Right + 6)
+                {
+                    OpenPicker();
+                    mouse.Handled = true;
+                }
             };
             pickerCancel.Click += (_, _) => ClosePicker();
             pickerConfirm.Click += (_, _) =>
@@ -502,6 +516,14 @@ public partial class MainWindow : Window
                 Style = (Style)FindResource("PrimaryButtonStyle")
             };
             AutomationProperties.SetName(save, "保存提醒设置");
+            timePicker.CustomPopupPlacementCallback = (popupSize, targetSize, _) =>
+            {
+                var anchor = reminderTimeRow.TranslatePoint(new Point(), dialog);
+                var saveTop = save.TranslatePoint(new Point(), dialog).Y;
+                var location = ReminderTimePopupPlacement.Calculate(
+                    popupSize, anchor, targetSize, new Size(dialog.ActualWidth, dialog.ActualHeight), saveTop);
+                return [new CustomPopupPlacement(new Point(location.X - anchor.X, location.Y - anchor.Y), PopupPrimaryAxis.Vertical)];
+            };
             int? savedMinuteOfDay = null;
             save.Click += (_, _) =>
             {
@@ -567,7 +589,8 @@ public partial class MainWindow : Window
             };
             buttons.Children.Add(cancel);
             buttons.Children.Add(save);
-            panel.Children.Add(buttons);
+            Grid.SetRow(buttons, 1);
+            root.Children.Add(buttons);
             dialog.Loaded += (_, _) =>
             {
                 reminderTime.Focus();
@@ -775,5 +798,25 @@ internal sealed class ReminderTimePickerState
         if (TryParse(value, out minuteOfDay)) return true;
         minuteOfDay = currentMinuteOfDay;
         return false;
+    }
+}
+
+internal static class ReminderTimePopupPlacement
+{
+    private const double Margin = 4;
+
+    public static Point Calculate(Size popupSize, Point anchor, Size targetSize, Size windowSize, double saveTop)
+    {
+        var x = Math.Clamp(anchor.X, 0, Math.Max(0, windowSize.Width - popupSize.Width));
+        var down = anchor.Y + targetSize.Height + Margin;
+        var bottomLimit = Math.Min(windowSize.Height, saveTop - Margin);
+        if (down + popupSize.Height <= bottomLimit)
+        {
+            return new Point(x, down);
+        }
+
+        var up = anchor.Y - popupSize.Height - Margin;
+        var maxY = Math.Max(0, bottomLimit - popupSize.Height);
+        return new Point(x, Math.Clamp(up, 0, maxY));
     }
 }
