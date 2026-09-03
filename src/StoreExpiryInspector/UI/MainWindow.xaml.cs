@@ -279,6 +279,8 @@ public partial class MainWindow : Window
 
         try
         {
+            const double ClosedSettingsHeight = 300;
+            const double OpenSettingsHeight = 420;
             var settings = new ReminderSettingsUseCase();
             int reminderMinuteOfDay;
             using (var context = DatabaseInitializer.CreateContext())
@@ -300,7 +302,7 @@ public partial class MainWindow : Window
                 FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
                 Language = XmlLanguage.GetLanguage("zh-CN"),
                 Width = 460,
-                Height = 420,
+                Height = ClosedSettingsHeight,
                 MinWidth = 420,
                 MinHeight = 280,
                 ResizeMode = ResizeMode.NoResize,
@@ -443,6 +445,8 @@ public partial class MainWindow : Window
             reminderTime.KeyDown += (_, key) => { if (key.Key == Key.Enter) { CommitText(); key.Handled = true; } };
             void OpenPicker()
             {
+                dialog.Height = OpenSettingsHeight;
+                dialog.UpdateLayout();
                 pickerState.Open(selectedReminderMinuteOfDay);
                 ApplyPickerState();
                 pickerWasConfirmed = false;
@@ -469,7 +473,11 @@ public partial class MainWindow : Window
                 pickerWasConfirmed = true;
                 timePicker.IsOpen = false;
             };
-            timePicker.Closed += (_, _) => { if (!pickerWasConfirmed) pickerState.Cancel(); };
+            timePicker.Closed += (_, _) =>
+            {
+                if (!pickerWasConfirmed) pickerState.Cancel();
+                dialog.Height = ClosedSettingsHeight;
+            };
             pickerBorder.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape) { ClosePicker(); key.Handled = true; } };
             dialog.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape && timePicker.IsOpen) { ClosePicker(); key.Handled = true; } };
             var autoStartCheckBox = new CheckBox

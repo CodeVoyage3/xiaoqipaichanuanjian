@@ -298,6 +298,10 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("Width = 52", codeBehind, StringComparison.Ordinal);
         Assert.Contains("MaxWidth = 180, MaxHeight = 208", codeBehind, StringComparison.Ordinal);
         Assert.Contains("VerticalAlignment = VerticalAlignment.Bottom", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("const double ClosedSettingsHeight = 300", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("const double OpenSettingsHeight = 420", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("dialog.Height = OpenSettingsHeight", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("dialog.Height = ClosedSettingsHeight", codeBehind, StringComparison.Ordinal);
         Assert.Contains("pickerBorder.PreviewKeyDown", codeBehind, StringComparison.Ordinal);
         Assert.Contains("每天在该时间集中提醒，修改后立即重新安排提醒。", codeBehind, StringComparison.Ordinal);
         Assert.Contains("timeValidation", codeBehind, StringComparison.Ordinal);
