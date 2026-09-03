@@ -186,4 +186,7 @@ $receipt = [ordered]@{
     AutoStartRestored = $true
 }
 $receipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'restore-result.json') -Encoding UTF8
+$archivedManifestPath = Join-Path $evidence ("environment-restored-{0}.json" -f $manifest.Token)
+if (Test-Path -LiteralPath $archivedManifestPath) { throw '验收清单归档目标已存在；保留现场并反馈。' }
+Move-Item -LiteralPath $manifestPath -Destination $archivedManifestPath
 $receipt | ConvertTo-Json
