@@ -139,7 +139,9 @@ public sealed class UIUXR03UiStaticAuditTests
         foreach (var token in new[]
         {
             "AutomationProperties.SetName(dialog, \"提醒设置\")",
-            "每日提醒时间，点击选择", "Enumerable.Range(0, 24)", "Enumerable.Range(0, 60)",
+            "AutomationProperties.SetName(reminderTime, \"每日提醒时间\")",
+            "AutomationProperties.SetName(pickerToggle, \"打开提醒时间选择器\")",
+            "new Popup", "请输入有效时间（00:00–23:59）", "Enumerable.Range(0, 24)", "Enumerable.Range(0, 60)",
             "WpfDialogService.Show(", "WpfDialogKind.Danger", "DangerButtonStyle"
         })
         {
