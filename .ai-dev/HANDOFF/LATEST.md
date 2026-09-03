@@ -2,18 +2,26 @@
 
 ## 当前任务与状态
 
-`V1-F03-I04｜WPF 双入口与端到端收口` GUI R10 Settings Footer 紧凑收口已完成并通过 Sol 独立技术复验，等待用户只重验 2 点。
+`V1-F03-I04｜WPF 双入口与端到端收口`：`CLOSED`。
 
-当前状态：`GUI_R10_SETTINGS_FOOTER_TECHNICALLY_ACCEPTED / GUI_ACCEPTANCE_FAILED / WAITING_USER_RETEST`
+`V1-F03｜今日排查计划导出 + Excel 排查结果回导 + 确认提交`：`CLOSED`。
 
-用户已确认 R9 时间输入、明确文本按钮和独立模态时间选择小窗通过；R10 只消除设置窗 Footer 上方大块空白，其余 R5～R9/I04 能力全部冻结。I04/F03 尚未最终 CLOSED。
+用户本人真实 WPF GUI：`PASSED`。当前已无 V1-F03 GUI blocker，V1-F03 已正式归档。
 
 ## 当前 Git
 
-- 分支：`master`；GUI blocker 治理、修复与技术验收按授权普通 push `master:main`，用户 GUI 通过后才允许最终收口。
+- 分支：`master`；V1-F03 最终归档按授权普通 push `master:main`。
 - I04 批准前 GitHub 基线：`50fbc80fdaa9817f53a900691e6b14c152fc32ae`。
 - I04 开工治理：`6a4cf8a`；原实现/返修：`a14eed7`、`d784f6f`、`39db873`；第一轮 GUI blocker：`c532583`、`e2f1b21`；R2 治理/修复：`ff85a27`、`2b1d021`、`62879a7`、`32c757d`、`b0e3f7c`；上一轮治理/返修：`4525eb3`、`a845737`、`c65fe5a`、`147eef4`；11 项治理/返修：`701bcc8`、`ed3c218`、`2366dde`；R3 治理/返修：`372fd4a`、`cd26879`、`55b0cf8`、`1da4667`；R4 治理/返修：`f4a585b`、`a988d14`、`bf9e896`、`a360aca`；R5 治理/实现/补正：`2ad9c64`、`8ffffea`、`b537387`；R6 治理/实现/补正：`067bcd0`、`f4fbf14`、`12c0954`、`b3b302b`、`c8f1e07`、`cf44e38`；R7 治理/实现/补正：`66b4980`、`1b5585f`、`3d15492`、`1102b8b`；R8 治理/实现/补正：`18c4428`、`8c0e825`、`91930e4`；R9 治理/实现/补正：`1bc41de`、`76ef405`、`75a4093`；R10 治理/实现：`cae5def`、`f4d4614`。
 - 当前验收文档提交以 `git rev-parse HEAD` 为准。
+
+## V1-F03 最终收口（2026-09-03）
+
+- I01 今日排查查询/Excel 导出、I02 Result Reader/stale 校验/Draft Application、I03 Bulk Submission orchestration 均已技术验收。
+- I04 WPF 双入口与端到端闭环的 Sol 技术结论为 `TECHNICALLY_ACCEPTED`；用户本人真实 WPF GUI 最终结论为 `PASSED`，两类证据分别记录。
+- R10 Settings Footer、R9 时间输入与独立模态小窗、R6 StageBadge、R5 排查结果确认窗口及前序 R1～R8 已修复项均通过；当前无已知 GUI blocker。
+- 最近正式技术基线：Release 891/891、Release build 0 warning / 0 error、EF 无漂移、migration=9、无 Schema/依赖/项目文件变化、`git diff --check` 通过。
+- `V1-F03-I04` 与 `V1-F03` 均已 `CLOSED`；正式归档见 `.ai-dev/STAGES/V1-F03-CLOSEOUT.md`。
 
 ## I04 已交付
 
@@ -31,7 +39,7 @@
 - Footer 保持右对齐、“取消 / 保存”语义与样式不变；内容间距 22px，窗口底部安全边距 18px。
 - R9 可编辑时间输入、88×32“选择时间”按钮、独立模态小窗及 Reminder/自启动业务无差异；相对 R10 治理基线只有 1 个 UI 文件和 1 个既有测试文件有差异。
 - Sol 新鲜 R10/Settings/UIUX 27/27；Settings/Reminder 74/74；I01～I04/UIUX 122/122；Release 全量 891/891；离线 restore 后 Release build 0 warning / 0 error。
-- EF 无漂移，migration=9；`git diff --check` 通过。未启动 WPF、未访问生产数据库，应用进程 0。本节不替代用户真实 GUI 验收。
+- EF 无漂移，migration=9；`git diff --check` 通过。未启动 WPF、未访问生产数据库，应用进程 0。用户后续真实 GUI 验收已 `PASSED`。
 
 ## GUI R9 独立时间选择小窗与 Sol 独立新鲜验收（2026-09-03）
 
@@ -86,7 +94,7 @@
 - 确认表新增中文“当前阶段”轻量 Badge，最终六列为条码、商品名称、当前阶段、生产日期、有效日期、本次排查数量；阶段只复用 Preview canonical 映射，未恢复校验状态。
 - 相对 R4 基线仅 3 个 UI 生产文件和 1 个 I04 测试文件有差异；I01～I03、大类筛选业务、Schema、项目与依赖均未改。
 - Sol 新鲜 R4/I04 29/29；I01～I04/WPF/UIUX 137/137；相关业务回归 401/401；Release 全量 883/883；Release build 0 warning / 0 error。
-- EF 无漂移，migration=9；`git diff --check` 通过。未启动 WPF、未访问生产数据库，应用进程 0。本节不替代用户真实 GUI 重验，当前 GUI 结论仍为 FAILED。
+- EF 无漂移，migration=9；`git diff --check` 通过。未启动 WPF、未访问生产数据库，应用进程 0。当轮 GUI 结论为 FAILED；最终结论已由文首归档覆盖。
 
 ## GUI 重验 R3 增量返修与 Sol 独立新鲜验收（2026-09-03）
 
@@ -96,7 +104,7 @@
 - I03 前新增基于 canonical `expired` 的过期正库存强化警告；空白/0/其他 Stage 不触发，返回检查不调用 I03，确认后才继续；既有超库存/stale/失效门禁未削弱。
 - Sol 新鲜 R3/I01/I04 32/32；I01～I04/WPF/UIUX 组合 98/98；相关业务回归 440/440；Release 全量 883/883；离线 Release build 0 warning / 0 error。
 - EF 无漂移，migration=9；无 Schema、项目、依赖差异，`git diff --check` 通过。在线漏洞源 NU1900，未冒充在线审计成功。
-- 未启动 WPF、未访问生产数据库，应用进程 0。本节不替代用户真实 GUI 重验，当前 GUI 结论仍为 FAILED。
+- 未启动 WPF、未访问生产数据库，应用进程 0。当轮 GUI 结论为 FAILED；最终结论已由文首归档覆盖。
 
 ## GUI 重验剩余问题返修与 Sol 独立新鲜验收（2026-09-03）
 
@@ -108,7 +116,7 @@
 - Submitted/AlreadySubmitted 后仍通过权威 reload 刷新 Today；completed Task 立即消失，只有填写结果但未正式提交的 Task 保留。
 - Sol 新鲜专项 73/73，相关 ProductTask/生命周期/Reminder/导入/历史/UIUX 回归 449/449，Release 全量 877/877；build 0 warning / 0 error。
 - EF 无漂移，migration=9；无 Schema、项目、依赖差异，`git diff --check` 通过。在线漏洞源 NU1900，未冒充审计成功。
-- 未启动 WPF、未访问生产数据库，应用进程 0。本节不替代用户真实 GUI 重验，当前 GUI 结论仍为 FAILED。
+- 未启动 WPF、未访问生产数据库，应用进程 0。当轮 GUI 结论为 FAILED；最终结论已由文首归档覆盖。
 
 ## GUI blocker repair 与 Sol 独立新鲜验收
 
@@ -137,15 +145,15 @@
 - Sol 新鲜专项 110/110，ProductTask/生命周期/Reminder 158/158，Release 全量 871/871；Release build 0 warning / 0 error。
 - EF 无漂移，migration=9；无 Schema、依赖、项目文件变化，`git diff --check` 通过；WPF 未启动、生产数据库未访问、应用进程 0。在线 NuGet 漏洞源 NU1900，未冒充在线审计成功。
 
-完整证据：`.ai-dev/ACCEPTANCE/V1-F03-I04.md`；当前冻结契约：`.ai-dev/TASKS/V1-F03-I04-GUI-R10-SETTINGS-FOOTER.md`；R9 与前序契约继续保留于 `.ai-dev/TASKS/V1-F03-I04*.md`；决策：`.ai-dev/DECISIONS.md` D-035。
+完整证据：`.ai-dev/ACCEPTANCE/V1-F03-I04.md`；最终归档：`.ai-dev/STAGES/V1-F03-CLOSEOUT.md`；R1～R10 历史契约保留于 `.ai-dev/TASKS/V1-F03-I04*.md`；决策：`.ai-dev/DECISIONS.md` D-035～D-036。
 
-## 下一唯一门禁
+## 后续门禁
 
-由用户本人在隔离环境只重验 R10 两点：一、设置窗 Footer 上方不再有大块无意义空白；二、R9 的时间输入、“选择时间”按钮和独立小窗仍正常显示。其余内容不再重新验收。两点均通过后才允许讨论 I04/F03 最终收口。
+V1-F03 已正式归档。后续任何 UI 小微调不得继续追加 R11/R12，必须在用户新的 Codex 话题中定义为新的工作项。
 
-GUI 通过前不得：
+未经用户另行批准不得：
 
-- 将 I04 或 V1-F03 标记 CLOSED；
-- 建立 V1-F03 总体最终收口记录；
-- 进入 Stage 8、Stage 9 或其他功能；
+- 创建或开始 Stage 8 Task；
+- 创建或开始 Stage 9 Task；
+- 实施在线升级或新的 UI 微调；
 - 修改 Schema、Reminder、商品源导入或 I01～I03 业务算法。

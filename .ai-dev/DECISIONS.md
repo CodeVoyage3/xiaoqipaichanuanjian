@@ -304,9 +304,16 @@
 
 ## D-035｜V1-F03-I04 WPF 双入口技术验收
 
-- 状态：产品经理于 2026-09-02 单独批准 I04；全新 GPT-5.6 Terra（medium）实施并经 Sol 两轮退回返修，独立技术验收通过；等待用户真实 WPF GUI 验收，I04/F03 尚未最终 CLOSED。
+- 状态：产品经理于 2026-09-02 单独批准 I04；全新 GPT-5.6 Terra（medium）实施并经 Sol 独立技术验收及 R1～R10 增量返修，用户本人于 2026-09-03 完成真实 WPF GUI 验收并明确 `PASSED`；I04 已 `CLOSED`。
 - WPF 新增独立“今日排查”入口，商品源“数据导入”保持独立；页面只编排 I01 导出、I02 Preview/Draft 和 I03 批量正式提交，不复制其业务权威。
 - blank/0/正数、错误/陈旧原因、排查人/日期、Draft incomplete、集中超库存确认与 stale 重确认均保持既有 Application 契约；成功后刷新首页、两个任务范围、详情与历史。
 - Sol 最终技术门禁：I04 9/9、关键 I01～I03/WPF/UIUX 245/245、V1-F01/F02/任务/提醒 148/148、Release 861/861、build 0/0、EF 无漂移、migration=9。
 - 无 schema、migration、ModelSnapshot、依赖、Reminder、商品源导入算法、Revision 或 Stage 8/9 变化；未启动 WPF 或访问生产数据库。在线 NuGet 漏洞源本轮 NU1900，不冒充成功审计。
-- 下一唯一门禁是用户本人在隔离环境执行真实 WPF GUI 验收；通过前不 push 最终验收状态、不建立 F03 最终收口、不进入 Stage 8。
+- 用户 GUI 结论与 Sol 技术结论独立记录；当前无已知 GUI blocker。本关闭不授权 Stage 8、Stage 9、在线升级或继续追加 R11/R12。
+
+## D-036｜V1-F03 最终收口
+
+- 状态：I01～I03 核心规则均已技术验收；I04 最终技术验收与用户真实 WPF GUI 验收均已通过，`V1-F03` 于 2026-09-03 正式 `CLOSED`。
+- 最终闭环覆盖今日排查查询与 Excel 导出、Result Reader/stale 校验/Draft Application、Bulk Submission orchestration，以及 WPF 双入口、确认提交、权威刷新和历史可见。
+- 最近正式技术证据为 Release 891/891、Release build 0 warning / 0 error、EF 无模型漂移、migration=9、无 Schema/依赖/项目文件变化、`git diff --check` 通过。
+- 后续 UI 小微调不得追加到 I04 R1～R10 链；必须由用户在新的 Codex 话题中定义为新工作项。Stage 8、Stage 9 均未开始且必须另行批准。
