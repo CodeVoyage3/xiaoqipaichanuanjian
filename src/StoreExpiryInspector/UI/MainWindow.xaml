@@ -20,7 +20,10 @@
         <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find" />
     </Window.InputBindings>
     <Window.Resources>
-        <ui:StageLabelConverter x:Key="StageLabelConverter" />
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="StageBadgeResources.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <ui:DateOnlyDisplayConverter x:Key="DateOnlyDisplayConverter" />
         <ui:UtcDateTimeDisplayConverter x:Key="UtcDateTimeDisplayConverter" />
         <ui:Stage4BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -46,48 +49,6 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-
-        <DataTemplate x:Key="StageBadgeTemplate">
-            <Border Padding="8,2"
-                    Height="26"
-                    HorizontalAlignment="Left"
-                    CornerRadius="4"
-                    BorderThickness="1">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="#F1F5F9" />
-                        <Setter Property="BorderBrush" Value="#CBD5E1" />
-                        <Setter Property="TextElement.Foreground" Value="#475569" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HighestStage}" Value="expired">
-                                <Setter Property="Background" Value="#FDECEC" />
-                                <Setter Property="BorderBrush" Value="#E5A3A8" />
-                                <Setter Property="TextElement.Foreground" Value="#A4262C" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding HighestStage}" Value="withdraw">
-                                <Setter Property="Background" Value="#FFF0E5" />
-                                <Setter Property="BorderBrush" Value="#F2B58B" />
-                                <Setter Property="TextElement.Foreground" Value="#9A3412" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding HighestStage}" Value="discount_20">
-                                <Setter Property="Background" Value="#FFF8D6" />
-                                <Setter Property="BorderBrush" Value="#E5CE70" />
-                                <Setter Property="TextElement.Foreground" Value="#7A5900" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding HighestStage}" Value="discount_50">
-                                <Setter Property="Background" Value="#EAF2FF" />
-                                <Setter Property="BorderBrush" Value="#9FC1F5" />
-                                <Setter Property="TextElement.Foreground" Value="#1D4ED8" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <TextBlock Text="{Binding HighestStage, Converter={StaticResource StageLabelConverter}}"
-                           FontSize="12"
-                           FontWeight="SemiBold"
-                           VerticalAlignment="Center" />
-            </Border>
-        </DataTemplate>
 
         <DataTemplate x:Key="DetailStageBadgeTemplate">
             <Border Padding="8,2"
@@ -508,6 +469,7 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid x:Name="ShellRoot"

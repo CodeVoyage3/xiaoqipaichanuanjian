@@ -49,6 +49,7 @@ public sealed class TodayInspectionPreviewRowViewModel(InspectionPlanRow row, st
     public string ProductBarcode => row.ProductBarcode ?? "—";
     public string ProductName => string.IsNullOrWhiteSpace(row.ProductName) ? row.ProductCode ?? "—" : row.ProductName;
     public string CurrentStage => StageLabels.ToDisplay(row.Stage);
+    public string HighestStage => row.Stage ?? "none";
     public string ProductionDate => row.ProductionDate ?? string.Empty;
     public string ExpiryDate => row.ExpiryDate ?? row.BatchDisplay ?? string.Empty;
     public string CheckedQtyText => row.CheckedQty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;

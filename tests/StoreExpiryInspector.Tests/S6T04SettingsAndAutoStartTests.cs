@@ -44,6 +44,20 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Equal((8, 5), (picker.Hour, picker.Minute));
     }
 
+    [Theory]
+    [InlineData("9:30", 570)]
+    [InlineData("09:30", 570)]
+    [InlineData("23:59", 1439)]
+    [InlineData("", -1)]
+    [InlineData("24:00", -1)]
+    [InlineData("9:3", -1)]
+    public void R6DirectTimeInputNormalizesOnlyValidValues(string value, int expected)
+    {
+        var valid = ReminderTimePickerState.TryParse(value, out var minute);
+        Assert.Equal(expected >= 0, valid);
+        if (valid) Assert.Equal(expected, minute);
+    }
+
     [Fact]
     public void ValidTimeSavesAndReloadsFromExistingSettings()
     {
@@ -257,7 +271,10 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("pickerCancel", codeBehind, StringComparison.Ordinal);
         Assert.Contains("pickerConfirm", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay)", codeBehind, StringComparison.Ordinal);
-        Assert.DoesNotContain("reminderTime.Text", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ReminderTimePickerState.TryParse", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("请输入有效时间（00:00–23:59）", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("new Popup", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("dialog.Height = 460", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimeChanged?.Invoke", codeBehind, StringComparison.Ordinal);
         Assert.Contains("_reminderScheduler?.Reschedule", app, StringComparison.Ordinal);

@@ -623,8 +623,9 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("<Grid.RowDefinitions><RowDefinition Height=\"32\"/><RowDefinition Height=\"Auto\"/></Grid.RowDefinitions>", window, StringComparison.Ordinal);
         Assert.Contains("Grid.Row=\"1\" Grid.Column=\"1\" Text=\"{Binding InspectorNameError}\"", window, StringComparison.Ordinal);
         Assert.Contains("Grid.Row=\"1\" Grid.Column=\"3\" Text=\"{Binding CheckDateError}\"", window, StringComparison.Ordinal);
-        Assert.Contains("ConfirmationStageBadgeStyle", window, StringComparison.Ordinal);
-        Assert.Contains("<Border Style=\"{StaticResource ConfirmationStageBadgeStyle}\"><TextBlock Text=\"{Binding CurrentStage}\"/></Border>", window, StringComparison.Ordinal);
+        Assert.Contains("ContentTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("ConfirmationStageBadgeStyle", window, StringComparison.Ordinal);
+        Assert.Contains("StageBadgeResources.xaml", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml")), StringComparison.Ordinal);
         Assert.Equal("过期", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "expired"), string.Empty).CurrentStage);
         Assert.Equal("收仓", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "withdraw"), string.Empty).CurrentStage);
     }
