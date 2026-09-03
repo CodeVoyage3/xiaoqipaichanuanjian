@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：V1-F03 已正式完成总验收与收口；独立 UI 微调工作项 V1-UI-01 GUI R1 已完成 Sol 技术复验
-- 状态：V1-F01、V1-F02、V1-F03 均已完成归档；V1-UI-01 为 `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_RETEST`；Stage 8 尚未开始，Stage 9 尚未开始
+- 当前阶段：V1-F03 与独立 UI 微调工作项 V1-UI-01 均已正式完成总验收与收口
+- 状态：V1-F01、V1-F02、V1-F03、V1-UI-01 均已完成归档；V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`；Stage 8 尚未开始，Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -133,4 +133,4 @@
 - V1-F02 最终结论（2026-09-02）：提前 3 天预提醒已完成并归档；Sol 定向 88/88、Release 新鲜复跑 764/764、build 0/0、EF 无漂移、migration=9。用户真实 WPF 确认仅预提醒四类各 1、同日未重复、正式 Task + 预提醒单次集中展示正确；Fresh 已安装空白运行库并移除隔离标记，旧数据旁置保留。不得自动进入 V1-F03、Stage 8 或 Stage 9。
 - V1-F01 最终结论（2026-09-02）：I01～I04 已按单卡授权全部完成并归档；最终 Release 751/751、build 0/0、EF 无漂移、migration=9，隔离 GUI 验收通过。不得据此自动进入 V1-F02、V1-F03 或 Stage 8。
 - V1-F03 最终结论（2026-09-03）：I01～I03 核心规则已技术验收；I04 经 R1～R10 修复后 Sol 技术验收通过，用户本人真实 WPF GUI 最终验收 `PASSED`。最近 Release 891/891、build 0/0、EF 无漂移、migration=9；V1-F03-I04 与 V1-F03 均已 `CLOSED`。Stage 8、Stage 9 尚未开始，后续工作等待用户在新的 Codex 话题中另行批准。
-- V1-UI-01 当前结论（2026-09-03）：用户真实 WPF 发现的品牌区留白和 ComboBox Option 类型名两项 GUI 问题已由全新 Terra 在 `0bec6f1` 最小返修。Sol 新鲜 R1 专项 67/67、相关 UI/ViewModel 183/183、Release 894/894、build 0/0、EF 无漂移、migration=9，完整 diff 仅 1 个 XAML 与 1 个测试文件，无范围越界。当前为 `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_RETEST`；用户只重验两项，V1-F03 继续 `CLOSED`，Stage 8/9 未启动。
+- V1-UI-01 最终结论（2026-09-03）：用户真实 WPF 首轮已通过导航顺序、整体蓝色降噪、Search/Refresh/分页中性视觉、ComboBox 产品方案、三条件组合筛选、清空、计数/空态/分页、StageBadge 与 Primary/Danger 语义；GUI R1 后又明确确认品牌区紧凑布局及阶段/大类中文 display 两项重验 `PASSED`。结合 Sol 既有新鲜技术门禁，V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`。V1-F03/I04 继续 `CLOSED`；Stage 8/9 与在线升级均未启动，下一阶段等待用户另行批准。
