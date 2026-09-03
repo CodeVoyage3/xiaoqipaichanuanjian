@@ -2,17 +2,17 @@
 
 ## 当前任务与状态
 
-`V1-F03-I04｜WPF 双入口与端到端收口` GUI R8 Reminder TimePicker 最终阻断修复已完成并通过 Sol 独立技术复验，等待用户只重验 2 项。
+`V1-F03-I04｜WPF 双入口与端到端收口` GUI R9 Reminder 独立时间选择小窗已完成并通过 Sol 独立技术复验，等待用户只重验 3 点。
 
-当前状态：`GUI_R8_TIMEPICKER_TECHNICALLY_ACCEPTED / GUI_ACCEPTANCE_FAILED / WAITING_USER_RETEST`
+当前状态：`GUI_R9_TIME_DIALOG_TECHNICALLY_ACCEPTED / GUI_ACCEPTANCE_FAILED / WAITING_USER_RETEST`
 
-用户真实 WPF 录像确认 R7 失败；R8 只收敛右侧完整按钮热区与 Popup 不改变窗口尺寸/不遮挡保存，其余 R6/R7/I04 能力全部冻结。I04/F03 尚未最终 CLOSED。
+用户真实 WPF GUI 确认 R8 失败；R9 已废弃 Reminder 自定义 Popup，替换为可编辑输入框、明确文本按钮和独立模态时间选择小窗，其余 R5～R8/I04 能力全部冻结。I04/F03 尚未最终 CLOSED。
 
 ## 当前 Git
 
 - 分支：`master`；GUI blocker 治理、修复与技术验收按授权普通 push `master:main`，用户 GUI 通过后才允许最终收口。
 - I04 批准前 GitHub 基线：`50fbc80fdaa9817f53a900691e6b14c152fc32ae`。
-- I04 开工治理：`6a4cf8a`；原实现/返修：`a14eed7`、`d784f6f`、`39db873`；第一轮 GUI blocker：`c532583`、`e2f1b21`；R2 治理/修复：`ff85a27`、`2b1d021`、`62879a7`、`32c757d`、`b0e3f7c`；上一轮治理/返修：`4525eb3`、`a845737`、`c65fe5a`、`147eef4`；11 项治理/返修：`701bcc8`、`ed3c218`、`2366dde`；R3 治理/返修：`372fd4a`、`cd26879`、`55b0cf8`、`1da4667`；R4 治理/返修：`f4a585b`、`a988d14`、`bf9e896`、`a360aca`；R5 治理/实现/补正：`2ad9c64`、`8ffffea`、`b537387`；R6 治理/实现/补正：`067bcd0`、`f4fbf14`、`12c0954`、`b3b302b`、`c8f1e07`、`cf44e38`；R7 治理/实现/补正：`66b4980`、`1b5585f`、`3d15492`、`1102b8b`；R8 治理/实现/补正：`18c4428`、`8c0e825`、`91930e4`。
+- I04 开工治理：`6a4cf8a`；原实现/返修：`a14eed7`、`d784f6f`、`39db873`；第一轮 GUI blocker：`c532583`、`e2f1b21`；R2 治理/修复：`ff85a27`、`2b1d021`、`62879a7`、`32c757d`、`b0e3f7c`；上一轮治理/返修：`4525eb3`、`a845737`、`c65fe5a`、`147eef4`；11 项治理/返修：`701bcc8`、`ed3c218`、`2366dde`；R3 治理/返修：`372fd4a`、`cd26879`、`55b0cf8`、`1da4667`；R4 治理/返修：`f4a585b`、`a988d14`、`bf9e896`、`a360aca`；R5 治理/实现/补正：`2ad9c64`、`8ffffea`、`b537387`；R6 治理/实现/补正：`067bcd0`、`f4fbf14`、`12c0954`、`b3b302b`、`c8f1e07`、`cf44e38`；R7 治理/实现/补正：`66b4980`、`1b5585f`、`3d15492`、`1102b8b`；R8 治理/实现/补正：`18c4428`、`8c0e825`、`91930e4`；R9 治理/实现/补正：`1bc41de`、`76ef405`、`75a4093`。
 - 当前验收文档提交以 `git rev-parse HEAD` 为准。
 
 ## I04 已交付
@@ -24,6 +24,15 @@
 - 超库存集中显示商品/库存/排查合计，确认/stale 重试绑定同一当前事实与 UTC 提交意图。
 - Submitted/AlreadySubmitted 等待刷新首页、今日任务、原任务、详情和历史；成功后清除旧会话，局部刷新失败不反转提交结果。
 - 无 Schema、migration、依赖、Reminder、商品源导入算法、Revision、Stage 8/9 或全局 UI 重构。
+
+## GUI R9 独立时间选择小窗与 Sol 独立新鲜验收（2026-09-03）
+
+- 设置页保留直接输入与既有格式/非法门禁；右侧为明确的 88×32“选择时间”次级按钮，不再使用时钟小图标热点。
+- 按钮打开以提醒设置窗为 Owner 的独立紧凑模态 Window“选择提醒时间”；小时/分钟完整范围、滚轮、点击、键盘导航、当前定位、取消与确定均保留。
+- 非法编辑文本不阻断打开小窗；取消不修改，确定只格式化回填待保存值，不创建 DbContext、不直接保存或 Reschedule。最终权威仍是设置页“保存”→既有 UseCase→既有成功事件。
+- 旧 Popup、CustomPlacement、屏幕/DPI定位、保存避让和图标触发逻辑已删除；相对 R9 基线只有 1 个 UI 文件和 2 个既有测试文件有差异，无冻结业务、Schema、migration、依赖、项目或全局主题变化。
+- Sol 新鲜 R9/Settings/UIUX 27/27；Settings/Reminder 73/73；I01～I04/UIUX 123/123；Release 全量 891/891；Release build 0 warning / 0 error。
+- EF 无漂移，migration=9；`git diff --check` 通过。未启动 WPF、未访问生产数据库，应用进程 0。本节不替代用户真实 GUI 验收。
 
 ## GUI R8 TimePicker 阻断修复与 Sol 独立新鲜验收（2026-09-03）
 
@@ -120,11 +129,11 @@
 - Sol 新鲜专项 110/110，ProductTask/生命周期/Reminder 158/158，Release 全量 871/871；Release build 0 warning / 0 error。
 - EF 无漂移，migration=9；无 Schema、依赖、项目文件变化，`git diff --check` 通过；WPF 未启动、生产数据库未访问、应用进程 0。在线 NuGet 漏洞源 NU1900，未冒充在线审计成功。
 
-完整证据：`.ai-dev/ACCEPTANCE/V1-F03-I04.md`；当前冻结契约：`.ai-dev/TASKS/V1-F03-I04-GUI-R8-TIMEPICKER-BLOCKER.md`；前序契约继续保留于 `.ai-dev/TASKS/V1-F03-I04*.md`；决策：`.ai-dev/DECISIONS.md` D-035。
+完整证据：`.ai-dev/ACCEPTANCE/V1-F03-I04.md`；当前冻结契约：`.ai-dev/TASKS/V1-F03-I04-GUI-R9-TIME-DIALOG.md`；前序契约继续保留于 `.ai-dev/TASKS/V1-F03-I04*.md`；决策：`.ai-dev/DECISIONS.md` D-035。
 
 ## 下一唯一门禁
 
-由用户本人在隔离环境只重验 R8 两项：一、右侧时间选择按钮是否是明显、好点的完整按钮热区；二、Popup 打开后设置窗口尺寸不变、“保存”始终可见且不被覆盖、窗口底部不被推出屏幕。其余内容不再重新验收。两项均通过后才允许讨论 I04/F03 最终收口。
+由用户本人在隔离环境只重验 R9 三点：一、设置页仍可直接输入且右侧明确显示“选择时间”；二、按钮打开独立紧凑小窗，不再出现 Popup 覆盖/定位问题；三、小窗确定正确回填设置页，再点击设置页“保存”可正常保存。其余内容不再重新验收。三点均通过后才允许讨论 I04/F03 最终收口。
 
 GUI 通过前不得：
 
