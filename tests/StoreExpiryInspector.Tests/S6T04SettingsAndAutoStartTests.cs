@@ -231,6 +231,11 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("Click=\"Settings_Click\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("设置将在后续阶段开放", window, StringComparison.Ordinal);
         Assert.Contains("每日提醒时间", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Enumerable.Range(0, 24)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Enumerable.Range(0, 60)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ScrollIntoView", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ReminderSettingsUseCase.Format(hours.SelectedIndex * 60 + minutes.SelectedIndex)", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("reminderTime.Text", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimeChanged?.Invoke", codeBehind, StringComparison.Ordinal);
         Assert.Contains("_reminderScheduler?.Reschedule", app, StringComparison.Ordinal);

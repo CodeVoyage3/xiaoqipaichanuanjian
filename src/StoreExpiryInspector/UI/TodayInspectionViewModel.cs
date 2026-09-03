@@ -170,10 +170,15 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public string CheckDateError { get => _checkDateError; private set { if (_checkDateError == value) return; _checkDateError = value; OnPropertyChanged(); } }
     public bool HasInspectorNameError => !string.IsNullOrEmpty(InspectorNameError);
     public bool HasCheckDateError => !string.IsNullOrEmpty(CheckDateError);
-    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"涉及商品 {_currentPreview.Summary.ProductCount}，批次 {_currentPreview.Summary.BatchCount}，可应用 {_currentPreview.ApplicableTaskIds.Count}，已填写 {_currentPreview.Summary.FilledCount}，未填写 {_currentPreview.Summary.BlankCount}，错误 {_currentPreview.Summary.ErrorCount}，陈旧/失效 {_currentPreview.Tasks.Count(task => !task.IsApplicable)}";
+    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"本次共 {_currentPreview.Summary.ProductCount} 个商品 / {_currentPreview.Summary.BatchCount} 个批次，{_currentPreview.ApplicableTaskIds.Count} 条可提交";
     public string DraftStatusText => _draftResult is null ? "尚未处理排查结果" : CompleteTaskIds.Count == _draftResult.Tasks.Count ? "排查结果已填写完整，可以提交数据。" : "仍有未完成排查项，请填写完整后提交。";
     public bool HasPreviewIssues => PreviewRows.Any(row => row.HasIssue);
-    public string PreviewIssueText => HasPreviewIssues ? "发现异常或陈旧数据：请查看浅红行的提示原因，重新导出最新计划后再提交。" : string.Empty;
+    public string PreviewIssueText => _currentPreview is null ? string.Empty : string.Join("　", new[]
+    {
+        _currentPreview.Summary.BlankCount > 0 ? $"未填写 {_currentPreview.Summary.BlankCount} 条" : null,
+        _currentPreview.Summary.ErrorCount > 0 ? $"错误 {_currentPreview.Summary.ErrorCount} 条" : null,
+        _currentPreview.Tasks.Count(task => !task.IsApplicable) is var stale && stale > 0 ? $"陈旧/失效 {stale} 条" : null
+    }.Where(text => text is not null));
     public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
     public event Action<string>? SubmissionBlocked;
     public event Action<string>? PreviewFailed;

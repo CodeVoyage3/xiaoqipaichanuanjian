@@ -312,17 +312,53 @@ public partial class MainWindow : Window
                 FontSize = 13,
                 Margin = new Thickness(0, 6, 0, 10)
             });
-            var reminderTime = new TextBox
+            var selectedHour = reminderMinuteOfDay / 60;
+            var selectedMinute = reminderMinuteOfDay % 60;
+            var reminderTime = new Button
             {
-                Text = ReminderSettingsUseCase.Format(reminderMinuteOfDay),
                 Width = 120,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                MaxLength = 5,
-                ToolTip = "请输入 HH:mm，例如 09:30",
-                Style = (Style)FindResource("PageTextBoxStyle")
+                Content = ReminderSettingsUseCase.Format(reminderMinuteOfDay),
+                ToolTip = "点击选择每日提醒时间",
+                Style = (Style)FindResource("SecondaryButtonStyle")
             };
-            AutomationProperties.SetName(reminderTime, "每日提醒时间，格式 HH:mm");
+            AutomationProperties.SetName(reminderTime, "每日提醒时间，点击选择");
             panel.Children.Add(reminderTime);
+            var timePicker = new Grid
+            {
+                Visibility = Visibility.Collapsed,
+                Background = (Brush)FindResource("SurfaceBrush"),
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+            timePicker.ColumnDefinitions.Add(new ColumnDefinition());
+            timePicker.ColumnDefinitions.Add(new ColumnDefinition());
+            var hours = new ListBox
+            {
+                ItemsSource = Enumerable.Range(0, 24).Select(value => value.ToString("00")).ToArray(),
+                SelectedIndex = selectedHour,
+                Height = 132,
+                Margin = new Thickness(0, 0, 6, 0)
+            };
+            var minutes = new ListBox
+            {
+                ItemsSource = Enumerable.Range(0, 60).Select(value => value.ToString("00")).ToArray(),
+                SelectedIndex = selectedMinute,
+                Height = 132
+            };
+            Grid.SetColumn(minutes, 1);
+            timePicker.Children.Add(hours);
+            timePicker.Children.Add(minutes);
+            panel.Children.Add(timePicker);
+            reminderTime.Click += (_, _) =>
+            {
+                timePicker.Visibility = timePicker.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+                dialog.Height = timePicker.Visibility == Visibility.Visible ? 440 : 300;
+                if (timePicker.Visibility == Visibility.Visible)
+                {
+                    hours.ScrollIntoView(hours.SelectedItem);
+                    minutes.ScrollIntoView(minutes.SelectedItem);
+                }
+            };
             var autoStartCheckBox = new CheckBox
             {
                 Content = "开机自启动（仅当前 Windows 用户）",
@@ -374,7 +410,7 @@ public partial class MainWindow : Window
                 try
                 {
                     using var context = DatabaseInitializer.CreateContext();
-                    result = settings.SaveReminderTime(context, reminderTime.Text);
+                    result = settings.SaveReminderTime(context, ReminderSettingsUseCase.Format(hours.SelectedIndex * 60 + minutes.SelectedIndex));
                 }
                 catch (Exception exception)
                 {
@@ -386,11 +422,11 @@ public partial class MainWindow : Window
                 {
                     validation.Text = result.Message;
                     reminderTime.Focus();
-                    reminderTime.SelectAll();
                     return;
                 }
 
                 savedMinuteOfDay = savedMinute;
+                reminderTime.Content = ReminderSettingsUseCase.Format(savedMinute);
                 if (!autoStartState.Succeeded)
                 {
                     WpfDialogService.Show(
@@ -435,7 +471,6 @@ public partial class MainWindow : Window
             dialog.Loaded += (_, _) =>
             {
                 reminderTime.Focus();
-                reminderTime.SelectAll();
             };
             dialog.ShowDialog();
             if (savedMinuteOfDay.HasValue)

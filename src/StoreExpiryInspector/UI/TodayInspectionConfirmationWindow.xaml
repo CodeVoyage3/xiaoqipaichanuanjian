@@ -28,11 +28,11 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <StackPanel>
             <TextBlock Text="排查结果确认" FontSize="20" FontWeight="SemiBold"/>
-            <TextBlock Text="{Binding PreviewSummaryText}" Margin="0,6,0,0" TextWrapping="Wrap"/>
-            <TextBlock Text="{Binding StatusText}" Margin="0,6,0,0" TextWrapping="Wrap"/>
-            <TextBlock Text="{Binding PreviewIssueText}" Margin="0,6,0,0" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding PreviewSummaryText}" Margin="0,4,0,0" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding StatusText}" Margin="0,3,0,0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding PreviewIssueText}" Margin="0,4,0,0" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
         </StackPanel>
-        <DataGrid Grid.Row="1" Margin="0,12" ItemsSource="{Binding PreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
+        <DataGrid Grid.Row="1" Margin="0,8" MaxHeight="280" VerticalAlignment="Top" ItemsSource="{Binding PreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
                   GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}" HeadersVisibility="Column" SelectionUnit="Cell" SelectionMode="Single"
                   EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"
@@ -52,10 +52,10 @@
                 </Style>
             </DataGrid.RowStyle>
         </DataGrid>
-        <Grid Grid.Row="2" Margin="0,0,0,12"><Grid.RowDefinitions><RowDefinition Height="32"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="180"/><ColumnDefinition Width="72"/><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Grid Grid.Row="2" Margin="0,0,0,8"><Grid.RowDefinitions><RowDefinition Height="32"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="180"/><ColumnDefinition Width="72"/><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <TextBlock Text="排查人" VerticalAlignment="Center"/><TextBox Grid.Column="1" Style="{StaticResource ConfirmationInspectorTextBoxStyle}" Text="{Binding InspectorName, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" VerticalContentAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="排查人"/>
             <TextBlock Grid.Column="2" Text="排查日期" Margin="12,0,0,0" VerticalAlignment="Center"/><DatePicker Grid.Column="3" Style="{StaticResource ConfirmationDatePickerStyle}" SelectedDate="{Binding CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayDateEnd="{Binding CheckDateMaxValue, Mode=OneWay}" SelectedDateFormat="Short" VerticalAlignment="Center" AutomationProperties.Name="排查日期"/>
-            <TextBlock Grid.Column="4" Text="不可晚于今天" Margin="12,0" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="4" Text="不晚于今天" Margin="12,0" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InspectorNameError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/><TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding CheckDateError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/>
         </Grid>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">

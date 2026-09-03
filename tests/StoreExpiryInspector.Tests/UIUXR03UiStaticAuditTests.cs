@@ -139,7 +139,7 @@ public sealed class UIUXR03UiStaticAuditTests
         foreach (var token in new[]
         {
             "AutomationProperties.SetName(dialog, \"提醒设置\")",
-            "每日提醒时间，格式 HH:mm", "Style = (Style)FindResource(\"PageTextBoxStyle\")",
+            "每日提醒时间，点击选择", "Enumerable.Range(0, 24)", "Enumerable.Range(0, 60)",
             "WpfDialogService.Show(", "WpfDialogKind.Danger", "DangerButtonStyle"
         })
         {

@@ -38,8 +38,21 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("Task 快照已陈旧", vm.PreviewRows[2].Reason);
         Assert.Equal("数据错误", vm.PreviewRows[3].StatusText);
         Assert.Contains("本次排查数量", vm.PreviewRows[3].Reason);
-        Assert.Contains("可应用 1", vm.PreviewSummaryText);
-        Assert.Contains("陈旧/失效 2", vm.PreviewSummaryText);
+        Assert.Equal("本次共 1 个商品 / 4 个批次，1 条可提交", vm.PreviewSummaryText);
+        Assert.Contains("未填写 1 条", vm.PreviewIssueText);
+        Assert.Contains("错误 1 条", vm.PreviewIssueText);
+        Assert.Contains("陈旧/失效 2 条", vm.PreviewIssueText);
+    }
+
+    [Fact]
+    public async Task CleanPreviewOmitsZeroIssueSummaries()
+    {
+        var vm = Create(preview: _ => Preview([1], [Row(1, 1)]));
+
+        await vm.PreviewAsync("C:\\filled.xlsx");
+
+        Assert.Equal("本次共 1 个商品 / 1 个批次，1 条可提交", vm.PreviewSummaryText);
+        Assert.Equal(string.Empty, vm.PreviewIssueText);
     }
 
     [Fact]
@@ -563,6 +576,9 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip\" Value=\"{Binding Reason}\"", window, StringComparison.Ordinal);
         Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
+        Assert.Contains("MaxHeight=\"280\"", window, StringComparison.Ordinal);
+        Assert.Contains("VerticalAlignment=\"Top\"", window, StringComparison.Ordinal);
+        Assert.Contains("Text=\"不晚于今天\"", window, StringComparison.Ordinal);
         Assert.Contains("HasIssue", window, StringComparison.Ordinal);
         Assert.Contains("DatePicker", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmationInspectorTextBoxStyle", window, StringComparison.Ordinal);
