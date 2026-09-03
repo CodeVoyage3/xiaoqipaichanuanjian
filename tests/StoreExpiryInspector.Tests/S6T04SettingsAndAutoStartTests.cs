@@ -286,6 +286,9 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.DoesNotContain("dialog.Height = 460", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimeChanged?.Invoke", codeBehind, StringComparison.Ordinal);
+        var saveBlock = codeBehind[codeBehind.IndexOf("save.Click +=", StringComparison.Ordinal)..];
+        Assert.True(saveBlock.IndexOf("if (!CommitText()) return;", StringComparison.Ordinal) < saveBlock.IndexOf("DatabaseInitializer.CreateContext", StringComparison.Ordinal));
+        Assert.True(saveBlock.IndexOf("if (savedMinuteOfDay.HasValue)", StringComparison.Ordinal) < saveBlock.IndexOf("ReminderTimeChanged?.Invoke", StringComparison.Ordinal));
         Assert.Contains("_reminderScheduler?.Reschedule", app, StringComparison.Ordinal);
         Assert.DoesNotContain("Stage 7", codeBehind, StringComparison.OrdinalIgnoreCase);
     }

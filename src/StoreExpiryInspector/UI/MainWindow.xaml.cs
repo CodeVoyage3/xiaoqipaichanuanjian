@@ -502,11 +502,11 @@ public partial class MainWindow : Window
             int? savedMinuteOfDay = null;
             save.Click += (_, _) =>
             {
+                if (!CommitText()) return;
                 ReminderTimeSaveResult result;
                 try
                 {
                     using var context = DatabaseInitializer.CreateContext();
-                    if (!CommitText()) return;
                     result = settings.SaveReminderTime(context, ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay));
                 }
                 catch (Exception exception)
