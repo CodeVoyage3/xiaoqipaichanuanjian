@@ -63,7 +63,12 @@ public sealed class S8T01PerformanceBaselineTests
         MeasurePath(measures, databasePath, "dashboard", context => query.Dashboard(context));
         MeasurePath(measures, databasePath, "open_first_page", context => query.SearchOpenTasks(context, new()));
         MeasurePath(measures, databasePath, "open_deep_page", context => query.SearchOpenTasks(context, new(Page: 1000)));
-        MeasurePath(measures, databasePath, "open_search", context => query.SearchOpenTasks(context, new(SearchText: "S8-OPEN-00001")));
+        MeasurePath(measures, databasePath, "open_search", context =>
+        {
+            var result = query.SearchOpenTasks(context, new(SearchText: "S8-OPEN-00003"));
+            Assert.Equal(1, result.TotalCount);
+            return result;
+        }, condition: "hit_count=1");
         MeasurePath(measures, databasePath, "open_stage", context => query.SearchOpenTasks(context, new(Stage: "expired")));
         MeasurePath(measures, databasePath, "pending_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1, true));
         MeasurePath(measures, databasePath, "pending_search_stage_category_memory_filter", context => PendingMemoryFilter(query, context, "S8-OPEN", "expired", "食品", 1, true));
@@ -162,7 +167,7 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.Equal(0L, (long)verify.ExecuteScalar()!);
     }
 
-    private static void MeasurePath(List<Measure> target, string path, string name, Func<StoreDbContext, object> action, string? root = null)
+    private static void MeasurePath(List<Measure> target, string path, string name, Func<StoreDbContext, object> action, string? root = null, string? condition = null)
     {
         var watch = Stopwatch.StartNew();
         var captures = new List<CapturedCommand>();
@@ -179,7 +184,7 @@ public sealed class S8T01PerformanceBaselineTests
                 samples.Add(sampleWatch.Elapsed.TotalMilliseconds); captures.AddRange(interceptor.Commands);
             }
             var ordered = samples.Order().ToArray();
-            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], captures.Count / 3, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures), "warm=1; measured=3; cold=process-start not measured", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
+            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], captures.Count / 3, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures), $"warm=1; measured=3; cold=process-start not measured; {condition}".TrimEnd(';', ' '), null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
         }
         catch (Exception exception) { target.Add(FailedMeasure(name, exception, watch.Elapsed, captures, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures))); }
         finally { watch.Stop(); }
