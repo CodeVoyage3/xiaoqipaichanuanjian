@@ -2,31 +2,39 @@
 
 ## 当前任务与状态
 
-`V1-UI-01 GUI R1｜品牌区紧凑收口与筛选下拉中文显示`：`GUI_ACCEPTANCE_FAILED / REPAIR_REQUIRED / TASK_DEFINED`。
+`V1-UI-01 GUI R1｜品牌区紧凑收口与筛选下拉中文显示`：`TECHNICALLY_ACCEPTED / WAITING_USER_GUI_RETEST`。
 
-V1-UI-01 尚未关闭；本轮只返修用户真实 WPF 发现的两项问题。V1-F03/I04 继续 `CLOSED`，不创建 V1-UI-02，不启动 Stage 8/9。
+V1-UI-01 尚未关闭。V1-F03/I04 继续 `CLOSED`；未创建 V1-UI-02，未启动 Stage 8/9。
 
-## 当前 Git
+## Git 与实施
 
-- 2026-09-03 已重新 fetch GitHub `main`。
-- 本地 `HEAD` 与 `origin/main` 均为 `8202afb358631b63de820952dc0625b605c54a6b`，ahead/behind `0/0`；治理记录前工作区干净。
-- R1 唯一返修基线：`8202afb358631b63de820952dc0625b605c54a6b`。
-- R1 Task：`.ai-dev/TASKS/V1-UI-01-GUI-R1.md`。
+- 2026-09-03 R1 开工前重新 fetch；当时本地与 `origin/main` 均为 `8202afb358631b63de820952dc0625b605c54a6b`，ahead/behind `0/0`。
+- GUI FAILED / R1 Task 治理提交：`7eb1f9f`，已普通推送到 GitHub `main`。
+- 全新 Terra 实现：`0bec6f1fe5e51fca234512c16eb63eb580e54fe8`；提交后停止，未 push。
+- R1 Task：`.ai-dev/TASKS/V1-UI-01-GUI-R1.md`；Acceptance：`.ai-dev/ACCEPTANCE/V1-UI-01.md`。
 
-## 用户 GUI FAILED 事实
+## 根因与修复
 
-1. 品牌文字已删除、盾牌与折叠功能正确，但折叠按钮锚定侧边栏最右缘，盾牌与按钮之间留白过大；目标为紧凑 `[盾牌] [折叠按钮]` 组。
-2. 阶段与大类 ComboBox 当前值显示 `StageFilterOption` / `CategoryFilterOption` 类型文本；必须显示中文 Label/CategoryName，筛选 Value 与业务逻辑不变。
+- 品牌区原 32 / `*` / 32 三列把盾牌和折叠按钮推向两端；R1 改为连续两列并左对齐，形成紧凑 `[盾牌] [折叠按钮]` 组。品牌文字仍不存在，侧栏宽度、命令、Tooltip、Automation 与折叠行为未改。
+- 定制 ComboBox 模板直接呈现选中 Option 对象，原 `DisplayMemberPath` 未使选中内容稳定使用中文字段；R1 改为显式 `ItemTemplate → Label`。
+- `SelectedValuePath="CanonicalStage"` 与 `SelectedValuePath="CategoryName"` 保持不变；大类仍来自真实任务数据，查询、去重、组合筛选、清空、计数和分页无变化。
 
-## 冻结范围
+## Sol 完整 diff 与新鲜证据
 
-- 导航顺序、整体蓝色降噪、Search/Refresh/分页视觉、ComboBox 产品方案、三条件组合筛选、清空、计数、分页、StageBadge、Primary/Danger 均冻结。
-- I01～I04、Excel、ProductTask、Stage、Reminder、History/Revision、Backup/Restore、Tray、单实例、开机自启动及“应季搭配/赠品小样”规则冻结。
-- 禁止 Schema、ModelSnapshot、migration、dependency、`.csproj`、`.slnx`、Stage 8/9、在线升级变化。
+- `7eb1f9f..0bec6f1` 仅修改 `MainWindow.xaml` 与 `Stage4ViewModelTests.cs`，23 增/9 删。
+- R1 / 查询 / UI 静态专项：67/67。
+- V1-UI-01 相关 UI / ViewModel：183/183；三条件组合筛选继续通过。
+- Release 全量：894/894，0 失败、0 跳过。
+- Release build：0 warning / 0 error。
+- EF 无模型漂移；migration=9，最后一条 `20260901155124_AddPolicyAndBaselineFoundation`。
+- 无 Schema、ModelSnapshot、dependency、`.csproj`、`.slnx`、App.xaml、ViewModel、Application、Domain、Infrastructure 或冻结业务差异；`git diff --check` 通过。
+- 未启动或机械操作 WPF，未访问/修改正式数据库，应用进程 0。
 
-## 下一步
+## 下一步唯一门禁
 
-- 创建一名全新 GPT-5.6 Terra（reasoning medium、标准速度），不得复用 V1-UI-01 前三名 Terra。
-- Terra 只实施两项 GUI 增量问题，提交后停止且不 push。
-- Sol 独立审查并完成 R1 专项、V1-UI-01 回归、三条件筛选、Release 全量/build、EF/migration/冻结文件/Git 门禁。
-- 技术通过后状态恢复为 `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_RETEST`；用户只重验两项。
+用户只重验：
+
+1. 盾牌与折叠按钮是否紧凑自然、不再有明显空洞感；
+2. 阶段与大类当前值及展开项是否显示中文业务文案、不再出现 Option 类型名。
+
+用户通过前不得写 GUI `PASSED` 或 `CLOSED`，不得启动 Stage 8/9。
