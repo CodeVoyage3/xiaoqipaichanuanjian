@@ -597,7 +597,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle\" HorizontalAlignment=\"Stretch\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", mainWindow, StringComparison.Ordinal);
-        Assert.Contains("<ToggleButton.Template><ControlTemplate TargetType=\"ToggleButton\"><ContentPresenter /></ControlTemplate></ToggleButton.Template>", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("<ToggleButton.Template><ControlTemplate TargetType=\"ToggleButton\"><Border Background=\"{TemplateBinding Background}\"><ContentPresenter /></Border></ControlTemplate></ToggleButton.Template>", mainWindow, StringComparison.Ordinal);
         Assert.Contains("Trigger SourceName=\"PART_DropDownToggle\" Property=\"IsPressed\" Value=\"True\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("IsHitTestVisible=\"False\" Content=\"{TemplateBinding SelectionBoxItem}\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_Popup", mainWindow, StringComparison.Ordinal);
