@@ -307,6 +307,7 @@ public sealed class Stage4ViewModelTests
 
         await vm.LoadAsync();
         Assert.Equal(new[] { "全部大类", "宠物", "百货", "食品" }, vm.CategoryFilters.Select(option => option.Label));
+        Assert.Equal(new string?[] { null, "宠物", "百货", "食品" }, vm.CategoryFilters.Select(option => option.CategoryName));
 
         vm.SearchText = "apple";
         await vm.SearchAsync();
@@ -400,11 +401,23 @@ public sealed class Stage4ViewModelTests
         var comboBox = StyleBlock(app, "<Style TargetType=\"ComboBox\">");
 
         Assert.DoesNotContain("Text=\"门店效期排查软件\"", window, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"NavigationToggleButton\"\n                            Grid.Column=\"2\"", window, StringComparison.Ordinal);
+        var brandAreaStart = window.IndexOf("x:Name=\"NavigationBrandArea\"", StringComparison.Ordinal);
+        var brandAreaEnd = window.IndexOf("</Grid>", brandAreaStart, StringComparison.Ordinal);
+        var brandArea = window[brandAreaStart..brandAreaEnd];
+        Assert.Contains("HorizontalAlignment=\"Left\"", brandArea, StringComparison.Ordinal);
+        Assert.DoesNotContain("<ColumnDefinition Width=\"*\" />", brandArea, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"NavigationToggleButton\"\n                            Grid.Column=\"1\"", brandArea, StringComparison.Ordinal);
+        Assert.Contains("<Border Grid.Column=\"0\"", brandArea, StringComparison.Ordinal);
+        Assert.Contains("ShieldIcon", brandArea, StringComparison.Ordinal);
         Assert.True(window.IndexOf("NavigationTasksButton", StringComparison.Ordinal) < window.IndexOf("NavigationTodayInspectionButton", StringComparison.Ordinal));
         Assert.True(window.IndexOf("NavigationTodayInspectionButton", StringComparison.Ordinal) < window.IndexOf("NavigationHistoryButton", StringComparison.Ordinal));
         Assert.Contains("PendingTasks.StageFilters", window, StringComparison.Ordinal);
         Assert.Contains("PendingTasks.CategoryFilters", window, StringComparison.Ordinal);
+        Assert.Equal(2, window.Split("Text=\"{Binding Label}\"").Length - 1);
+        Assert.Contains("SelectionBoxItemTemplate", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("DisplayMemberPath=\"Label\"", window, StringComparison.Ordinal);
+        Assert.Contains("SelectedValuePath=\"CanonicalStage\"", window, StringComparison.Ordinal);
+        Assert.Contains("SelectedValuePath=\"CategoryName\"", window, StringComparison.Ordinal);
         Assert.Contains("PendingFilterComboBoxStyle", window, StringComparison.Ordinal);
         Assert.Contains("FocusRingBrush", window, StringComparison.Ordinal);
         Assert.DoesNotContain("PendingSecondaryButtonStyle", window, StringComparison.Ordinal);
