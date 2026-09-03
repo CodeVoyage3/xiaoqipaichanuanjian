@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Data.Common;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Runtime.InteropServices;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -34,6 +35,7 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), DatabaseInitializer.GetDefaultDatabasePath(), root));
         Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(root, "app.db"), DatabaseInitializer.GetDefaultBackupDirectory()));
         Assert.Throws<ArgumentException>(() => ValidateRoot(Environment.CurrentDirectory, Path.Combine(Environment.CurrentDirectory, "S8-T01.db"), root));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), Path.Combine(Path.GetTempPath(), "S8-T01.db"), Path.Combine(Path.GetTempPath(), "S8-T01-snapshot")));
     }
 
     [Fact]
@@ -50,7 +52,8 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.Equal(BatchCount, before.Batches);
         Assert.Equal(InspectionCount, before.Inspections);
         Assert.Equal(InspectionCount, before.InspectionItems);
-        AssertIntegrity(databasePath);
+        var databaseVerificationBefore = Verify(databasePath);
+        Assert.True(databaseVerificationBefore.IntegrityOk); Assert.Equal(0, databaseVerificationBefore.ForeignKeyViolations); Assert.Equal(9, databaseVerificationBefore.MigrationCount);
 
         var measures = new List<Measure>();
         var query = new InspectionTaskQuery();
@@ -68,18 +71,32 @@ public sealed class S8T01PerformanceBaselineTests
         MeasurePath(measures, databasePath, "history_list", context => history.List(context));
         MeasurePath(measures, databasePath, "history_detail", context => history.GetDetail(context, 3));
         MeasurePath(measures, databasePath, "history_revision", context => history.GetItemRevisions(context, 3, 3));
-        MeasurePath(measures, databasePath, "product_task_aggregator_no_change", context => new ProductTaskAggregator().Aggregate(context, new(3, [new(3, "expired", 1, false)], new DateTime(2026, 9, 3, 0, 0, 0, DateTimeKind.Utc))));
+        MeasurePath(measures, databasePath, "product_task_aggregator_no_change", context =>
+        {
+            var result = new ProductTaskAggregator().Aggregate(context, new(3, [new(3, "expired", 1, false)], new DateTime(2026, 9, 3, 0, 0, 0, DateTimeKind.Utc)));
+            Assert.False(result.Changed);
+            return result;
+        }, root);
         MeasurePath(measures, databasePath, "reminder_and_pre_reminder", context => new DailyReminderUseCase(query).Evaluate(context, new DateTime(2026, 9, 3, 12, 0, 0)));
+        PreImportSnapshotResult? snapshot = null;
         var snapshotWatch = Stopwatch.StartNew();
-        var snapshot = new PreImportSnapshotService().Create(databasePath, backupDirectory);
-        snapshotWatch.Stop();
-        Assert.True(snapshot.CanProceed, snapshot.Code);
-        measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService", snapshot.Metadata?.SnapshotPath, Environment.WorkingSet, GC.GetTotalAllocatedBytes()));
+        try { snapshot = new PreImportSnapshotService().Create(databasePath, backupDirectory); }
+        catch (Exception exception) { measures.Add(FailedMeasure("sqlite_backupdatabase_snapshot", exception, snapshotWatch.Elapsed, [])); }
+        finally { snapshotWatch.Stop(); }
+        if (snapshot is not null)
+            measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", snapshot.CanProceed ? null : snapshot.Code, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
 
         var after = ReadCounts(databasePath);
-        Assert.Equal(before, after);
-        AssertIntegrity(databasePath);
-        var result = new Evidence(Environment.GetEnvironmentVariable("S8_T01_COMMIT") ?? "not_proven", root, databasePath, new FileInfo(databasePath).Length, before, after, measures, Indexes(databasePath), Plans(databasePath), DateTime.UtcNow, Environment.OSVersion.VersionString, Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "not_proven", Environment.Version.ToString(), typeof(SqliteConnection).Assembly.GetName().Version?.ToString() ?? "not_proven", Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, snapshot.Metadata?.SnapshotPath, snapshot.Metadata?.Sha256);
+        AssertCountsEqual(before, after);
+        var databaseVerificationAfter = Verify(databasePath);
+        Assert.True(databaseVerificationAfter.IntegrityOk); Assert.Equal(0, databaseVerificationAfter.ForeignKeyViolations); Assert.Equal(9, databaseVerificationAfter.MigrationCount);
+        var fingerprintBefore = Fingerprint(before);
+        var fingerprintAfter = Fingerprint(after);
+        Assert.Equal(fingerprintBefore, fingerprintAfter);
+        var excludedReminderCandidates = ScalarSql(databasePath, "SELECT COUNT(*) FROM tasks t JOIN products p ON p.id=t.product_id WHERE t.status='open' AND p.expiry_management_status='excluded'");
+        Assert.Equal(0, excludedReminderCandidates);
+        var snapshotVerification = snapshot?.Metadata is null ? null : Verify(snapshot.Metadata.SnapshotPath);
+        var result = new Evidence(Environment.GetEnvironmentVariable("S8_T01_COMMIT") ?? "not_proven", root, databasePath, new FileInfo(databasePath).Length, FileHash(databasePath), databaseVerificationAfter, before, after, fingerprintBefore, fingerprintAfter, measures, Indexes(databasePath), BuildDiagnostics(measures), "direct_SQL_eligibility=0; formal reminder path recorded above (may be blocked by too_many_SQL_variables)", DateTime.UtcNow, RuntimeInformation.OSDescription, Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "not_proven", Environment.Version.ToString(), SqliteVersion(databasePath), typeof(SqliteConnection).Assembly.GetName().Version?.ToString() ?? "not_proven", Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, "fixed_seed=S8-T01-20260903; iterations=3; warm=1; cold=process_start_not_measured", snapshot?.Metadata?.SnapshotPath, snapshot?.Metadata?.Sha256, snapshot?.Metadata?.FileSize, snapshotVerification);
         var json = Path.Combine(root, "S8-T01-baseline.json");
         File.WriteAllText(json, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"S8-T01 JSON: {json}");
@@ -139,38 +156,88 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.Equal(0L, (long)verify.ExecuteScalar()!);
     }
 
-    private static void MeasurePath(List<Measure> target, string path, string name, Func<StoreDbContext, object> action)
+    private static void MeasurePath(List<Measure> target, string path, string name, Func<StoreDbContext, object> action, string? root = null)
     {
+        var watch = Stopwatch.StartNew();
+        var captures = new List<CapturedCommand>();
         try
         {
-            using (var warm = Open(path)) _ = action(warm);
-            var samples = new List<double>(); var commands = new List<string>();
+            using (var warm = Open(path)) _ = action(warm); // Interceptor starts only after warm-up.
+            var samples = new List<double>();
             for (var i = 0; i < 3; i++)
             {
                 var interceptor = new Capture();
                 var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true }.ToString()).AddInterceptors(interceptor).Options;
                 using var context = new StoreDbContext(options);
-                var watch = Stopwatch.StartNew(); _ = action(context); watch.Stop(); samples.Add(watch.Elapsed.TotalMilliseconds); commands.AddRange(interceptor.Commands);
+                var sampleWatch = Stopwatch.StartNew(); _ = action(context); sampleWatch.Stop();
+                samples.Add(sampleWatch.Elapsed.TotalMilliseconds); captures.AddRange(interceptor.Commands);
             }
             var ordered = samples.Order().ToArray();
-            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], commands.Count / 3, commands.Distinct().Take(8).ToArray(), "warm=1; measured=3; cold=process-start not measured", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes()));
+            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], captures.Count / 3, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures), "warm=1; measured=3; cold=process-start not measured", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
         }
-        catch (Exception exception) { target.Add(new(name, [], 0, 0, 0, [], $"blocker={exception.GetType().Name}: {exception.Message}", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes())); }
+        catch (Exception exception) { target.Add(FailedMeasure(name, exception, watch.Elapsed, captures, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures))); }
+        finally { watch.Stop(); }
     }
 
     private static Counts ReadCounts(string path)
     {
         using var connection = new SqliteConnection($"Data Source={path};Foreign Keys=True"); connection.Open();
-        return new(Scalar(connection, "batches"), Scalar(connection, "inspections"), Scalar(connection, "inspection_items"));
+        return new(new Dictionary<string, long>(StringComparer.Ordinal)
+        {
+            ["products"] = Scalar(connection, "products"), ["batches"] = Scalar(connection, "batches"), ["tasks"] = Scalar(connection, "tasks"), ["task_items"] = Scalar(connection, "task_items"), ["drafts"] = Scalar(connection, "drafts"), ["draft_items"] = Scalar(connection, "draft_items"), ["inspections"] = Scalar(connection, "inspections"), ["inspection_items"] = Scalar(connection, "inspection_items"), ["revisions"] = Scalar(connection, "inspection_item_revisions"), ["scope_baselines"] = Scalar(connection, "scope_baselines")
+        });
     }
     private static long Scalar(SqliteConnection c, string table) { using var cmd = c.CreateCommand(); cmd.CommandText = $"SELECT COUNT(*) FROM {table}"; return (long)cmd.ExecuteScalar()!; }
-    private static void AssertIntegrity(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = "PRAGMA integrity_check;"; Assert.Equal("ok", (string)x.ExecuteScalar()!); x.CommandText = "PRAGMA foreign_key_check;"; using var r = x.ExecuteReader(); Assert.False(r.Read()); r.Close(); x.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory"; Assert.Equal(9L, (long)x.ExecuteScalar()!); }
+    private static void AssertCountsEqual(Counts before, Counts after) { foreach (var pair in before.Tables) Assert.Equal(pair.Value, after.Tables[pair.Key]); }
+    private static Verification Verify(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = "PRAGMA integrity_check;"; var integrity = string.Equals("ok", x.ExecuteScalar()?.ToString(), StringComparison.OrdinalIgnoreCase); x.CommandText = "PRAGMA foreign_key_check;"; using var r = x.ExecuteReader(); var fk = 0; while (r.Read()) fk++; r.Close(); x.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory"; return new(integrity, fk, Convert.ToInt32(x.ExecuteScalar())); }
     private static string[] Indexes(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = "SELECT name FROM sqlite_master WHERE type='index' ORDER BY name"; using var r = x.ExecuteReader(); var rows = new List<string>(); while (r.Read()) rows.Add(r.GetString(0)); return rows.ToArray(); }
-    private static string[] Plans(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); var sql = new[] { "SELECT t.id FROM tasks t JOIN products p ON t.product_id=p.id WHERE t.status='open'", "SELECT i.id FROM inspections i JOIN tasks t ON i.task_id=t.id WHERE t.status='completed' ORDER BY i.submitted_at_utc DESC", "SELECT b.id FROM batches b JOIN products p ON b.product_id=p.id WHERE b.tracking_status='active' AND p.effective_stock_qty>0" }; return sql.SelectMany(statement => { using var x = c.CreateCommand(); x.CommandText = "EXPLAIN QUERY PLAN " + statement; using var r = x.ExecuteReader(); var rows = new List<string>(); while (r.Read()) rows.Add($"{statement} => {r.GetString(3)}"); return rows; }).ToArray(); }
     private static void Execute(SqliteConnection c, SqliteTransaction t, string sql) { using var cmd = c.CreateCommand(); cmd.Transaction = t; cmd.CommandText = sql; cmd.ExecuteNonQuery(); }
 
-    private sealed class Capture : DbCommandInterceptor { public List<string> Commands { get; } = []; public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData data, InterceptionResult<DbDataReader> result) { Commands.Add(command.CommandText); return result; } }
-    private sealed record Counts(long Batches, long Inspections, long InspectionItems);
-    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<string> Sql, string Conditions, string? Artifact, long WorkingSetBytes, long ManagedAllocatedBytes);
-    private sealed record Evidence(string SourceCommit, string Root, string DatabasePath, long DatabaseBytes, Counts Before, Counts After, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, IReadOnlyList<string> QueryPlans, DateTime CreatedUtc, string OsDescription, string CpuIdentifier, string DotNet, string SqliteProviderVersion, int LogicalProcessors, long TotalAvailableMemoryBytes, string? SnapshotPath, string? SnapshotSha256);
+    private static long ScalarSql(string path, string sql) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = sql; return Convert.ToInt64(x.ExecuteScalar()); }
+    private static string Fingerprint(Counts counts) => HashText(string.Join(";", counts.Tables.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={pair.Value}")));
+    private static string FileHash(string path) { using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant(); }
+    private static string HashText(string text) => Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+    private static string SqliteVersion(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); return c.ServerVersion; }
+    private static Measure FailedMeasure(string name, Exception exception, TimeSpan elapsed, IReadOnlyList<CapturedCommand> captures, IReadOnlyList<CommandEvidence>? evidence = null) => new(name, [], elapsed.TotalMilliseconds, elapsed.TotalMilliseconds, captures.Count, evidence ?? [], "warm=1; measured=3; cold=process-start not measured", $"{Classify(exception)}; type={exception.GetType().FullName}; message={exception.Message}; elapsed_ms={elapsed.TotalMilliseconds:F3}", Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", captures);
+    private static string Classify(Exception exception) => exception is OutOfMemoryException ? "oom" : exception is TimeoutException || exception.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ? "timeout" : exception is SqliteException && exception.Message.Contains("locked", StringComparison.OrdinalIgnoreCase) ? "lock" : exception is SqliteException && exception.Message.Contains("too many SQL variables", StringComparison.OrdinalIgnoreCase) ? "too_many_sql_variables" : "crash_or_error";
+    private static IReadOnlyList<CommandEvidence> CreateCommandEvidence(string databasePath, string root, IReadOnlyList<CapturedCommand> commands) => commands.Select((command, index) =>
+    {
+        var hash = HashText(command.Sql);
+        string? artifact = null; var inline = command.Sql;
+        if (command.Sql.Length > 1000) { artifact = Path.Combine(root, $"S8-T01-command-{index:D4}-{hash[..12]}.sql"); File.WriteAllText(artifact, command.Sql); inline = null; }
+        return new CommandEvidence(command.Kind, command.Sql.Length, hash, command.Parameters, inline, artifact, Explain(databasePath, command));
+    }).ToArray();
+    private static IReadOnlyList<string> Explain(string path, CapturedCommand command)
+    {
+        if (!command.Sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase)) return [];
+        try
+        {
+            using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = "EXPLAIN QUERY PLAN " + command.Sql;
+            foreach (var parameter in command.Parameters) x.Parameters.AddWithValue(parameter.Name, (object?)parameter.Value ?? DBNull.Value);
+            using var r = x.ExecuteReader(); var plan = new List<string>(); while (r.Read()) plan.Add(r.GetString(3)); return plan;
+        }
+        catch (Exception exception) { return [$"ExplainError: {exception.GetType().Name}: {exception.Message}"]; }
+    }
+    private static Diagnostics BuildDiagnostics(IEnumerable<Measure> measures)
+    {
+        var plans = measures.SelectMany(measure => measure.Commands).SelectMany(command => command.Plan).ToArray();
+        return new(plans.Any(plan => plan.Contains("SCAN", StringComparison.OrdinalIgnoreCase)), plans.Any(plan => plan.Contains("TEMP B-TREE", StringComparison.OrdinalIgnoreCase)), "not_proven", "observed: canonical query materializes headers/items; see command evidence", "observed: PendingTasksViewModel shape uses PageSize=int.MaxValue then Where in memory", measures.Any(measure => measure.Blocker?.Contains("timeout", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("lock", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("crash", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("oom", StringComparison.OrdinalIgnoreCase) == true));
+    }
+    private sealed class Capture : DbCommandInterceptor
+    {
+        public List<CapturedCommand> Commands { get; } = [];
+        private void Add(DbCommand command, string kind) => Commands.Add(new(kind, command.CommandText, command.Parameters.Cast<DbParameter>().Select(parameter => new CapturedParameter(parameter.ParameterName, parameter.DbType.ToString(), parameter.Value is DBNull ? null : parameter.Value?.ToString())).ToArray()));
+        public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData data, InterceptionResult<DbDataReader> result) { Add(command, "reader"); return result; }
+        public override InterceptionResult<object> ScalarExecuting(DbCommand command, CommandEventData data, InterceptionResult<object> result) { Add(command, "scalar"); return result; }
+        public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData data, InterceptionResult<int> result) { Add(command, "nonquery"); return result; }
+        public override void CommandFailed(DbCommand command, CommandErrorEventData data) => Add(command, "failed");
+    }
+    private sealed record Counts(IReadOnlyDictionary<string, long> Tables) { public long Batches => Tables["batches"]; public long Inspections => Tables["inspections"]; public long InspectionItems => Tables["inspection_items"]; }
+    private sealed record CapturedParameter(string Name, string DbType, string? Value);
+    private sealed record CapturedCommand(string Kind, string Sql, IReadOnlyList<CapturedParameter> Parameters);
+    private sealed record CommandEvidence(string Kind, int SqlLength, string SqlSha256, IReadOnlyList<CapturedParameter> Parameters, string? Sql, string? ArtifactPath, IReadOnlyList<string> Plan);
+    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<CommandEvidence> Commands, string Conditions, string? Blocker, long WorkingSetBytes, long ManagedAllocatedBytes, string MemoryKind, string AllocationDelta, IReadOnlyList<CapturedCommand> CapturedCommands);
+    private sealed record Diagnostics(bool FullScan, bool TempBTree, string NPlusOne, string OverMaterialization, string InMemoryFiltering, bool Timeout, bool Lock, bool Crash, bool Oom);
+    private sealed record Verification(bool IntegrityOk, int ForeignKeyViolations, int MigrationCount);
+    private sealed record Evidence(string SourceCommit, string Root, string DatabasePath, long DatabaseBytes, string DatabaseSha256, Verification DatabaseVerification, Counts Before, Counts After, string LogicalFingerprintBefore, string LogicalFingerprintAfter, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, Diagnostics Diagnostics, string ExcludedReminderCheck, DateTime CreatedUtc, string OsDescription, string CpuIdentifier, string DotNet, string SqliteVersion, string SqliteProviderVersion, int LogicalProcessors, long TotalAvailableMemoryBytes, string Conditions, string? SnapshotPath, string? SnapshotSha256, long? SnapshotBytes, Verification? SnapshotVerification);
 }
