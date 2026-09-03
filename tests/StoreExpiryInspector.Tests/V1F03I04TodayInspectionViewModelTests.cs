@@ -566,6 +566,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("PART_Button", window, StringComparison.Ordinal);
         Assert.Contains("PART_Popup", window, StringComparison.Ordinal);
         Assert.Contains("PART_Calendar", window, StringComparison.Ordinal);
+        Assert.Contains("PART_Button\" Width=\"30\" HorizontalAlignment=\"Right\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", window, StringComparison.Ordinal);
         Assert.Contains("CornerRadius=\"5\"", window, StringComparison.Ordinal);
         Assert.Contains("IsMouseOver", window, StringComparison.Ordinal);
         Assert.Contains("IsKeyboardFocusWithin", window, StringComparison.Ordinal);
@@ -583,11 +584,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("请确认文件未被移动或删除后重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
         Assert.Contains("confirmTodayExpiredInventory: ConfirmTodayExpiredInventory", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("cancelText: \"返回检查\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
+        Assert.Contains("选择“返回检查”保留当前填写结果。", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("string cancelText = \"取消\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
-        Assert.Equal(2, Count(File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), "ShellColumn.Width = new(224)"));
+        Assert.Equal(2, Count(File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), "ShellColumn.Width = new(208)"));
         Assert.Contains("MinWidth=\"128\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("PART_DropDownToggle\" Width=\"28\" HorizontalAlignment=\"Right\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_Popup", mainWindow, StringComparison.Ordinal);
         Assert.Contains("CornerRadius=\"5\"", mainWindow, StringComparison.Ordinal);
     }

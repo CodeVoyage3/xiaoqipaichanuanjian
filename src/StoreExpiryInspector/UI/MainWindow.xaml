@@ -306,7 +306,7 @@
                             <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
                                 <Grid>
                                     <ContentPresenter Margin="8,0,28,0" VerticalAlignment="Center" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
-                                    <ToggleButton x:Name="PART_DropDownToggle" Width="28" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                    <ToggleButton x:Name="PART_DropDownToggle" Width="28" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                                         <Path Data="M 0,0 L 8,0 L 4,5 Z" Fill="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </ToggleButton>
                                 </Grid>

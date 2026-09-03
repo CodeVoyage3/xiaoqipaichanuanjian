@@ -44,7 +44,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            ShellColumn.Width = new(224);
+            ShellColumn.Width = new(208);
         }
         ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
         if (PendingTasksStandardGrid is not null && PendingTasksCompactGrid is not null)
@@ -67,14 +67,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        var compact = ActualWidth < 1280;
         if (_isNavigationCollapsed)
         {
             ShellColumn.Width = new GridLength(72);
         }
         else
         {
-            ShellColumn.Width = new(224);
+            ShellColumn.Width = new(208);
         }
         var textVisibility = _isNavigationCollapsed
             ? Visibility.Collapsed
@@ -573,7 +572,7 @@ public partial class MainWindow : Window
             $"检测到 {warning.BatchCount} 个过期批次仍填写正库存，合计 {warning.TotalCheckedQty} 件。请复核现场库存和填写值。",
             "确认无误，继续提交",
             WpfDialogKind.Warning,
-            nextAction: "选择“取消”返回检查；当前填写结果会保留。",
+            nextAction: "选择“返回检查”保留当前填写结果。",
             showCancel: true,
             cancelText: "返回检查");
 
