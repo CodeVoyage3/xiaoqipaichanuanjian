@@ -2,17 +2,17 @@
 
 ## 当前任务与状态
 
-`V1-F03-I04｜WPF 双入口与端到端收口` GUI 重验 R3 增量返修已完成并通过 Sol 独立技术复验，等待用户再次重验。
+`V1-F03-I04｜WPF 双入口与端到端收口` GUI 重验 R4 增量返修已完成并通过 Sol 独立技术复验，等待用户再次重验。
 
-当前状态：`GUI_RETEST_R3_REPAIR_TECHNICALLY_ACCEPTED / GUI_ACCEPTANCE_FAILED / WAITING_USER_RETEST`
+当前状态：`GUI_RETEST_R4_REPAIR_TECHNICALLY_ACCEPTED / GUI_ACCEPTANCE_FAILED / WAITING_USER_RETEST`
 
-R3 只收敛用户最新确认的 9 项增量：Shell 品牌区、StageBadge/五列表格对齐、大类 ComboBox/DatePicker 视觉、真实 Excel 中文阶段与“总库存”契约，以及“过期批次仍有正库存”强化提交警告。此前六列表、筛选、500+、导出/回导/提交修复均仅防回归。I04/F03 尚未最终 CLOSED。
+用户最新真实 GUI 回执确认 R3 大部分通过；R4 只收敛 4 项：大类 ComboBox 全区域点击、Today 商品名称垂直居中、确认窗字段标签/日历图标，以及新增中文“当前阶段”列。其余 R3 能力仅防回归。I04/F03 尚未最终 CLOSED。
 
 ## 当前 Git
 
 - 分支：`master`；GUI blocker 治理、修复与技术验收按授权普通 push `master:main`，用户 GUI 通过后才允许最终收口。
 - I04 批准前 GitHub 基线：`50fbc80fdaa9817f53a900691e6b14c152fc32ae`。
-- I04 开工治理：`6a4cf8a`；原实现/返修：`a14eed7`、`d784f6f`、`39db873`；第一轮 GUI blocker：`c532583`、`e2f1b21`；R2 治理/修复：`ff85a27`、`2b1d021`、`62879a7`、`32c757d`、`b0e3f7c`；上一轮治理/返修：`4525eb3`、`a845737`、`c65fe5a`、`147eef4`；11 项治理/返修：`701bcc8`、`ed3c218`、`2366dde`；R3 治理/返修：`372fd4a`、`cd26879`、`55b0cf8`、`1da4667`。
+- I04 开工治理：`6a4cf8a`；原实现/返修：`a14eed7`、`d784f6f`、`39db873`；第一轮 GUI blocker：`c532583`、`e2f1b21`；R2 治理/修复：`ff85a27`、`2b1d021`、`62879a7`、`32c757d`、`b0e3f7c`；上一轮治理/返修：`4525eb3`、`a845737`、`c65fe5a`、`147eef4`；11 项治理/返修：`701bcc8`、`ed3c218`、`2366dde`；R3 治理/返修：`372fd4a`、`cd26879`、`55b0cf8`、`1da4667`；R4 治理/返修：`f4a585b`、`a988d14`、`bf9e896`、`a360aca`。
 - 当前验收文档提交以 `git rev-parse HEAD` 为准。
 
 ## I04 已交付
@@ -24,6 +24,15 @@ R3 只收敛用户最新确认的 9 项增量：Shell 品牌区、StageBadge/五
 - 超库存集中显示商品/库存/排查合计，确认/stale 重试绑定同一当前事实与 UTC 提交意图。
 - Submitted/AlreadySubmitted 等待刷新首页、今日任务、原任务、详情和历史；成功后清除旧会话，局部刷新失败不反转提交结果。
 - 无 Schema、migration、依赖、Reminder、商品源导入算法、Revision、Stage 8/9 或全局 UI 重构。
+
+## GUI 重验 R4 增量返修与 Sol 独立新鲜验收（2026-09-03）
+
+- 大类 ComboBox 的完整透明 ToggleButton 根区域统一接收点击，并保留原筛选/选择权威；Today 商品名称与同行其他字段真正垂直居中。
+- 确认窗排查人/日期标签与对应控件居中，错误文案使用独立行；真正 WPF DatePicker 复用既有清晰 `CalendarIcon`，默认今天/禁止未来日期不变。
+- 确认表新增中文“当前阶段”轻量 Badge，最终六列为条码、商品名称、当前阶段、生产日期、有效日期、本次排查数量；阶段只复用 Preview canonical 映射，未恢复校验状态。
+- 相对 R4 基线仅 3 个 UI 生产文件和 1 个 I04 测试文件有差异；I01～I03、大类筛选业务、Schema、项目与依赖均未改。
+- Sol 新鲜 R4/I04 29/29；I01～I04/WPF/UIUX 137/137；相关业务回归 401/401；Release 全量 883/883；Release build 0 warning / 0 error。
+- EF 无漂移，migration=9；`git diff --check` 通过。未启动 WPF、未访问生产数据库，应用进程 0。本节不替代用户真实 GUI 重验，当前 GUI 结论仍为 FAILED。
 
 ## GUI 重验 R3 增量返修与 Sol 独立新鲜验收（2026-09-03）
 
@@ -74,11 +83,11 @@ R3 只收敛用户最新确认的 9 项增量：Shell 品牌区、StageBadge/五
 - Sol 新鲜专项 110/110，ProductTask/生命周期/Reminder 158/158，Release 全量 871/871；Release build 0 warning / 0 error。
 - EF 无漂移，migration=9；无 Schema、依赖、项目文件变化，`git diff --check` 通过；WPF 未启动、生产数据库未访问、应用进程 0。在线 NuGet 漏洞源 NU1900，未冒充在线审计成功。
 
-完整证据：`.ai-dev/ACCEPTANCE/V1-F03-I04.md`；当前冻结契约：`.ai-dev/TASKS/V1-F03-I04-GUI-RETEST-R3-REPAIR.md`；前序契约继续保留于 `.ai-dev/TASKS/V1-F03-I04*.md`；决策：`.ai-dev/DECISIONS.md` D-035。
+完整证据：`.ai-dev/ACCEPTANCE/V1-F03-I04.md`；当前冻结契约：`.ai-dev/TASKS/V1-F03-I04-GUI-RETEST-R4-REPAIR.md`；前序契约继续保留于 `.ai-dev/TASKS/V1-F03-I04*.md`；决策：`.ai-dev/DECISIONS.md` D-035。
 
 ## 下一唯一门禁
 
-由用户本人重开保留的隔离环境，只重验 R3 增量：左上品牌完整对齐；Today StageBadge 居中；大类下拉视觉且筛选逻辑不回归；新导出 Excel 使用中文阶段与“总库存”且无合并单元格；确认表五列垂直居中；DatePicker 视觉/日历/默认今天/禁止未来日期；过期正库存警告的“返回检查”与“确认无误，继续提交”。GUI 全部通过后才允许讨论 I04/F03 最终收口。
+由用户本人重开保留的隔离环境，只重验 R4 四项：点击大类 ComboBox 任意可见位置均能展开；Today 商品名称与同行字段垂直居中；确认窗排查人/日期标签居中且日历图标清晰可点击；确认表出现中文“当前阶段”并保持六列可用。其余已通过项只观察明显回归。GUI 全部通过后才允许讨论 I04/F03 最终收口。
 
 GUI 通过前不得：
 
