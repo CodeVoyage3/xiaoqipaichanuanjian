@@ -10,6 +10,7 @@ using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Backups;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Tasks;
+using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
 
@@ -69,15 +70,7 @@ public sealed record StageFilterOption(string Label, string? CanonicalStage)
 
 public static class StageLabels
 {
-    public static string ToDisplay(string? stage) => stage switch
-    {
-        "expired" => "过期",
-        "withdraw" => "收仓",
-        "discount_20" => "2折",
-        "discount_50" => "5折",
-        "none" => "正常",
-        _ => string.IsNullOrWhiteSpace(stage) ? "—" : stage
-    };
+    public static string ToDisplay(string? stage) => ExpiryStageCalculator.ToDisplay(stage);
 }
 
 public sealed class StageLabelConverter : IValueConverter

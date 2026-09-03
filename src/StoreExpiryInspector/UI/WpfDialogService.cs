@@ -65,7 +65,8 @@ internal static class WpfDialogService
         string confirmText,
         WpfDialogKind kind,
         string? nextAction = null,
-        bool showCancel = true)
+        bool showCancel = true,
+        string cancelText = "取消")
     {
         var dialog = new Window
         {
@@ -129,7 +130,7 @@ internal static class WpfDialogService
         };
         var cancel = new Button
         {
-            Content = "取消",
+            Content = cancelText,
             IsCancel = true,
             IsDefault = true,
             Width = 88,
@@ -137,7 +138,7 @@ internal static class WpfDialogService
             Margin = new Thickness(0, 0, 8, 0),
             Style = FindStyle(owner, "SecondaryButtonStyle")
         };
-        AutomationProperties.SetName(cancel, $"取消{title}");
+        AutomationProperties.SetName(cancel, $"{cancelText}{title}");
 
         var confirm = new Button
         {

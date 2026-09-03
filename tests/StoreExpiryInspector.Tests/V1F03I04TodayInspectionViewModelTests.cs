@@ -531,6 +531,20 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task ExpiredInventoryWarningAggregatesPastInt32WithoutOverflow()
+    {
+        ExpiredInventoryWarning? warning = null;
+        var vm = Create(
+            preview: _ => Preview([1], [Row(1, int.MaxValue), Row(1, int.MaxValue)]),
+            confirmExpiredInventory: value => { warning = value; return false; });
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员";
+
+        await vm.SubmitAsync();
+
+        Assert.Equal(new ExpiredInventoryWarning(2, 4_294_967_294L), warning);
+    }
+
+    [Fact]
     public void ConfirmationWindowKeepsOnlyTheFiveDataColumnsAndRetainsExceptionExpression()
     {
         var root = FindRepositoryRoot();
@@ -548,6 +562,14 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("DatePicker", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmationInspectorTextBoxStyle", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmationDatePickerStyle", window, StringComparison.Ordinal);
+        Assert.Contains("PART_TextBox", window, StringComparison.Ordinal);
+        Assert.Contains("PART_Button", window, StringComparison.Ordinal);
+        Assert.Contains("PART_Popup", window, StringComparison.Ordinal);
+        Assert.Contains("PART_Calendar", window, StringComparison.Ordinal);
+        Assert.Contains("CornerRadius=\"5\"", window, StringComparison.Ordinal);
+        Assert.Contains("IsMouseOver", window, StringComparison.Ordinal);
+        Assert.Contains("IsKeyboardFocusWithin", window, StringComparison.Ordinal);
+        Assert.Contains("Validation.HasError", window, StringComparison.Ordinal);
         Assert.Contains("HasInspectorNameError", window, StringComparison.Ordinal);
         Assert.Contains("HasCheckDateError", window, StringComparison.Ordinal);
         Assert.Contains("BorderBrush\" Value=\"{DynamicResource DangerBrush}\"", window, StringComparison.Ordinal);
@@ -559,6 +581,15 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("Text=\"大类\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PreviewFailed += ShowTodayPreviewFailure", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("请确认文件未被移动或删除后重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
+        Assert.Contains("confirmTodayExpiredInventory: ConfirmTodayExpiredInventory", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
+        Assert.Contains("cancelText: \"返回检查\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
+        Assert.Contains("string cancelText = \"取消\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
+        Assert.Equal(2, Count(File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), "ShellColumn.Width = new(224)"));
+        Assert.Contains("MinWidth=\"128\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("PART_DropDownToggle", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("PART_Popup", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("CornerRadius=\"5\"", mainWindow, StringComparison.Ordinal);
     }
 
     private static TodayInspectionViewModel Create(
@@ -603,6 +634,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             if (File.Exists(Path.Combine(directory.FullName, "StoreExpiryInspector.slnx"))) return directory.FullName;
         throw new DirectoryNotFoundException("无法定位 StoreExpiryInspector 仓库根目录。");
     }
+
+    private static int Count(string value, string marker) => value.Split(marker, StringSplitOptions.None).Length - 1;
 
     private static async Task WaitUntil(Func<bool> condition)
     {

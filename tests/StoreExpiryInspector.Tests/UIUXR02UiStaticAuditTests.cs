@@ -19,7 +19,7 @@ public sealed class UIUXR02UiStaticAuditTests
         }
 
         Assert.Contains("ShellColumn\" Width=\"208\"", window, StringComparison.Ordinal);
-        Assert.Contains("ShellColumn.Width = new(compact ? 176 : 208)", codeBehind, StringComparison.Ordinal);
+        Assert.Equal(2, Count(codeBehind, "ShellColumn.Width = new(224)"));
         Assert.Contains("<Setter Property=\"Height\" Value=\"72\" />", window, StringComparison.Ordinal);
         Assert.Contains("Height=\"72\"", window, StringComparison.Ordinal);
         Assert.Contains("PendingTasksStandardGrid", window, StringComparison.Ordinal);

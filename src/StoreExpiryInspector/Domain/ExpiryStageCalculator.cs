@@ -10,6 +10,16 @@ public static class ExpiryStageCalculator
     public const string Withdraw = "withdraw";
     public const string Expired = "expired";
 
+    public static string ToDisplay(string? stage) => stage switch
+    {
+        Expired => "过期",
+        Withdraw => "收仓",
+        Discount20 => "2折",
+        Discount50 => "5折",
+        None => "正常",
+        _ => string.IsNullOrWhiteSpace(stage) ? "—" : stage
+    };
+
     public static int GetStagePriority(string stage) => stage switch
     {
         None => 0,

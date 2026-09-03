@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using StoreExpiryInspector.Application.Tasks;
+using StoreExpiryInspector.Domain;
 
 namespace StoreExpiryInspector.UI;
 
@@ -57,7 +58,7 @@ public sealed class TodayInspectionPreviewRowViewModel(InspectionPlanRow row, st
     public bool HasIssue => !string.IsNullOrWhiteSpace(Reason);
 }
 
-public sealed record ExpiredInventoryWarning(int BatchCount, int TotalCheckedQty);
+public sealed record ExpiredInventoryWarning(int BatchCount, long TotalCheckedQty);
 
 public sealed class TodayInspectionViewModel : ViewModelBase
 {
@@ -319,9 +320,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     {
         if (_currentPreview is null) return null;
         var completeTaskIds = CompleteTaskIds.ToHashSet();
-        var rows = _currentPreview.File.Rows.Where(row => row.Stage == "expired" && row.CheckedQty > 0 &&
+        var rows = _currentPreview.File.Rows.Where(row => row.Stage == ExpiryStageCalculator.Expired && row.CheckedQty > 0 &&
             row.TaskId is long taskId && _currentPreview.ApplicableTaskIds.Contains(taskId) && completeTaskIds.Contains(taskId)).ToArray();
-        return rows.Length == 0 ? null : new(rows.Length, rows.Sum(row => row.CheckedQty!.Value));
+        return rows.Length == 0 ? null : new(rows.Length, rows.Sum(row => (long)row.CheckedQty!.Value));
     }
 
     private async Task RefreshAfterSubmitAsync(IReadOnlyCollection<long> taskIds)

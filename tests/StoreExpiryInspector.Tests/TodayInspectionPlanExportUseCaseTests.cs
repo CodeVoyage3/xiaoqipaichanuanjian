@@ -80,6 +80,7 @@ public sealed class TodayInspectionPlanExportUseCaseTests
         Assert.Equal("过期", Text(rows[2].Elements<Cell>().ElementAt(7)));
         Assert.DoesNotContain(rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(7))), value => value is "expired" or "withdraw");
         Assert.Empty(new InspectionPlanResultReader().Read(output).Rows.SelectMany(row => row.Errors));
+        Assert.DoesNotContain("StoreExpiryInspector.UI", File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "Application", "Tasks", "TodayInspectionPlanExportUseCase.cs")), StringComparison.Ordinal);
         Assert.Null(rows[1].Elements<Cell>().ElementAt(5).CellValue);
         Assert.Equal(CellValues.Number, rows[1].Elements<Cell>().ElementAt(6).DataType!.Value);
         Assert.Equal((uint)1, rows[1].Elements<Cell>().ElementAt(6).StyleIndex!.Value);
@@ -230,6 +231,12 @@ public sealed class TodayInspectionPlanExportUseCaseTests
     }
 
     private static string Text(Cell cell) => cell.InlineString?.Text?.Text ?? cell.CellValue?.Text ?? string.Empty;
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "StoreExpiryInspector.slnx"))) return directory.FullName;
+        throw new DirectoryNotFoundException("无法定位 StoreExpiryInspector 仓库根目录。");
+    }
     private static string Snapshot(StoreDbContext context) => string.Join("|", context.Products.Count(), context.Batches.Count(), context.Tasks.Count(), context.TaskItems.Count(), context.Drafts.Count(), context.Inspections.Count(), context.LifecycleEvents.Count());
     private static readonly DateTime Utc = new(2026, 9, 2, 1, 2, 3, DateTimeKind.Utc);
     private sealed record ExportExpected(long TaskId, long TaskItemId, long ProductId, long BatchId, int AttentionVersion, DateTime TaskUpdatedAtUtc, int TaskItemCount, string TrackingStatus, string Stage, int CurrentArrivalQty, int MaxArrivalQty, int EffectiveStockQty);

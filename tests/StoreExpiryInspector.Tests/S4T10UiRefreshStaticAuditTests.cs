@@ -105,7 +105,7 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("Text=\"搜索商品名称 / 商品条码 / 商品编码\"", window, StringComparison.Ordinal);
         Assert.Equal(2, Count(window, "Text=\"搜索商品名称 / 商品条码 / 商品编码\""));
         Assert.Contains("ShellColumn\" Width=\"208\"", window, StringComparison.Ordinal);
-        Assert.Contains("ShellColumn.Width = new(compact ? 176 : 208)", codeBehind, StringComparison.Ordinal);
+        Assert.Equal(2, Count(codeBehind, "ShellColumn.Width = new(224)"));
         Assert.DoesNotContain("M 12,16 L 12,3", app, StringComparison.Ordinal);
         Assert.Contains("<PathGeometry x:Key=\"ImportIcon\"", app, StringComparison.Ordinal);
         Assert.Contains("M 12,14 L 12,3 M 7,8 L 12,3 L 17,8 M 4,16 L 4,21 L 20,21 L 20,16", app, StringComparison.Ordinal);

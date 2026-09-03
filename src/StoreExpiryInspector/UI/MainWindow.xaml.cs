@@ -29,6 +29,7 @@ public partial class MainWindow : Window
             confirmHistoryEdit: ConfirmHistoryEdit,
             confirmRestore: ConfirmRestore,
             confirmTodayOverStock: ConfirmTodayOverStock,
+            confirmTodayExpiredInventory: ConfirmTodayExpiredInventory,
             confirmTodaySubmission: ConfirmTodaySubmission);
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
@@ -73,7 +74,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            ShellColumn.Width = new(compact ? 176 : 208);
+            ShellColumn.Width = new(224);
         }
         var textVisibility = _isNavigationCollapsed
             ? Visibility.Collapsed
@@ -569,11 +570,12 @@ public partial class MainWindow : Window
         WpfDialogService.Show(
             OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this,
             "检测到过期商品仍有库存",
-            $"检测到 {warning.BatchCount} 个过期批次仍填写正库存，合计 {warning.TotalCheckedQty}。请复核现场库存和填写值。",
+            $"检测到 {warning.BatchCount} 个过期批次仍填写正库存，合计 {warning.TotalCheckedQty} 件。请复核现场库存和填写值。",
             "确认无误，继续提交",
             WpfDialogKind.Warning,
             nextAction: "选择“取消”返回检查；当前填写结果会保留。",
-            showCancel: true);
+            showCancel: true,
+            cancelText: "返回检查");
 
     private bool ConfirmTodaySubmission() =>
         WpfDialogService.Show(
