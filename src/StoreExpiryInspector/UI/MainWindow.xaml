@@ -305,9 +305,11 @@
                         <Grid>
                             <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
                                 <Grid>
-                                    <ContentPresenter Margin="8,0,28,0" VerticalAlignment="Center" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
-                                    <ToggleButton x:Name="PART_DropDownToggle" Width="28" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                                        <Path Data="M 0,0 L 8,0 L 4,5 Z" Fill="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <ToggleButton x:Name="PART_DropDownToggle" HorizontalAlignment="Stretch" Background="Transparent" BorderThickness="0" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                        <Grid>
+                                            <ContentPresenter Margin="8,0,28,0" VerticalAlignment="Center" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
+                                            <Path Data="M 0,0 L 8,0 L 4,5 Z" Fill="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                        </Grid>
                                     </ToggleButton>
                                 </Grid>
                             </Border>
@@ -2790,7 +2792,7 @@
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn Header="选择" Width="52" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择今日排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                             <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="148" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
-                                            <DataGridTemplateColumn Header="商品名称" Width="*" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="商品名称" Width="*" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                             <DataGridTextColumn Header="大类" Binding="{Binding CategoryName}" Width="76" ElementStyle="{StaticResource TableCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                             <DataGridTemplateColumn Header="当前最高阶段" Width="96" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><ContentControl Content="{Binding}" ContentTemplate="{StaticResource StageBadgeTemplate}" HorizontalAlignment="Center" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                             <DataGridTextColumn Header="总库存" Binding="{Binding EffectiveStockQty}" Width="88" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />

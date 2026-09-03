@@ -426,6 +426,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"{Binding ProductName}\" VerticalAlignment=\"Center\"", window, StringComparison.Ordinal);
         Assert.Contains("ContentTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
         Assert.Contains("HorizontalAlignment=\"Center\" VerticalAlignment=\"Center\"", window, StringComparison.Ordinal);
         Assert.Contains("TableNumericCenterTextStyle", window, StringComparison.Ordinal);
@@ -545,12 +546,16 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void ConfirmationWindowKeepsOnlyTheFiveDataColumnsAndRetainsExceptionExpression()
+    public void R4ConfirmationWindowUsesSixBusinessColumnsAndRetainsExceptionExpression()
     {
         var root = FindRepositoryRoot();
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml"));
-        foreach (var header in new[] { "条码", "商品名称", "生产日期", "有效日期", "本次排查数量" })
+        var headers = new[] { "条码", "商品名称", "当前阶段", "生产日期", "有效日期", "本次排查数量" };
+        foreach (var header in headers)
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
+        Assert.True(headers.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal))
+            .Zip(headers.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
+            .All(value => value));
         Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
         Assert.Contains("Height=\"520\"", window, StringComparison.Ordinal);
         Assert.Contains("MinHeight=\"440\"", window, StringComparison.Ordinal);
@@ -566,7 +571,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("PART_Button", window, StringComparison.Ordinal);
         Assert.Contains("PART_Popup", window, StringComparison.Ordinal);
         Assert.Contains("PART_Calendar", window, StringComparison.Ordinal);
-        Assert.Contains("PART_Button\" Width=\"30\" HorizontalAlignment=\"Right\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", window, StringComparison.Ordinal);
+        Assert.Contains("PART_Button\" Width=\"30\" HorizontalAlignment=\"Right\" Background=\"Transparent\" BorderThickness=\"0\" Padding=\"0\" Focusable=\"False\"", window, StringComparison.Ordinal);
+        Assert.Contains("Width=\"16\" Height=\"16\" Stretch=\"Uniform\"", window, StringComparison.Ordinal);
         Assert.Contains("CornerRadius=\"5\"", window, StringComparison.Ordinal);
         Assert.Contains("IsMouseOver", window, StringComparison.Ordinal);
         Assert.Contains("IsKeyboardFocusWithin", window, StringComparison.Ordinal);
@@ -590,9 +596,14 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("MinWidth=\"128\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle", mainWindow, StringComparison.Ordinal);
-        Assert.Contains("PART_DropDownToggle\" Width=\"28\" HorizontalAlignment=\"Right\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("PART_DropDownToggle\" HorizontalAlignment=\"Stretch\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("IsHitTestVisible=\"False\" Content=\"{TemplateBinding SelectionBoxItem}\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_Popup", mainWindow, StringComparison.Ordinal);
         Assert.Contains("CornerRadius=\"5\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("<TextBlock Text=\"排查人\" VerticalAlignment=\"Center\"/>", window, StringComparison.Ordinal);
+        Assert.Contains("<TextBlock Text=\"排查日期\" VerticalAlignment=\"Center\"/>", window, StringComparison.Ordinal);
+        Assert.Equal("过期", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "expired"), string.Empty).CurrentStage);
+        Assert.Equal("收仓", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "withdraw"), string.Empty).CurrentStage);
     }
 
     private static TodayInspectionViewModel Create(
