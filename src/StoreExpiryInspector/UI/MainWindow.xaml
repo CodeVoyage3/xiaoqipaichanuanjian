@@ -306,6 +306,7 @@
                             <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
                                 <Grid>
                                     <ToggleButton x:Name="PART_DropDownToggle" HorizontalAlignment="Stretch" Background="Transparent" BorderThickness="0" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                        <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><ContentPresenter /></ControlTemplate></ToggleButton.Template>
                                         <Grid>
                                             <ContentPresenter Margin="8,0,28,0" VerticalAlignment="Center" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
                                             <Path Data="M 0,0 L 8,0 L 4,5 Z" Fill="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center" />
@@ -319,6 +320,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
+                            <Trigger SourceName="PART_DropDownToggle" Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" /><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" /></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

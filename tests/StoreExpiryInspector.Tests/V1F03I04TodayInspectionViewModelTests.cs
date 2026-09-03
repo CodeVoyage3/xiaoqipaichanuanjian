@@ -572,7 +572,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("PART_Popup", window, StringComparison.Ordinal);
         Assert.Contains("PART_Calendar", window, StringComparison.Ordinal);
         Assert.Contains("PART_Button\" Width=\"30\" HorizontalAlignment=\"Right\" Background=\"Transparent\" BorderThickness=\"0\" Padding=\"0\" Focusable=\"False\"", window, StringComparison.Ordinal);
-        Assert.Contains("Width=\"16\" Height=\"16\" Stretch=\"Uniform\"", window, StringComparison.Ordinal);
+        Assert.Contains("Data=\"{StaticResource CalendarIcon}\" Width=\"16\" Height=\"16\" Stretch=\"Uniform\"", window, StringComparison.Ordinal);
         Assert.Contains("CornerRadius=\"5\"", window, StringComparison.Ordinal);
         Assert.Contains("IsMouseOver", window, StringComparison.Ordinal);
         Assert.Contains("IsKeyboardFocusWithin", window, StringComparison.Ordinal);
@@ -597,11 +597,16 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle\" HorizontalAlignment=\"Stretch\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("<ToggleButton.Template><ControlTemplate TargetType=\"ToggleButton\"><ContentPresenter /></ControlTemplate></ToggleButton.Template>", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Trigger SourceName=\"PART_DropDownToggle\" Property=\"IsPressed\" Value=\"True\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("IsHitTestVisible=\"False\" Content=\"{TemplateBinding SelectionBoxItem}\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_Popup", mainWindow, StringComparison.Ordinal);
         Assert.Contains("CornerRadius=\"5\"", mainWindow, StringComparison.Ordinal);
-        Assert.Contains("<TextBlock Text=\"排查人\" VerticalAlignment=\"Center\"/>", window, StringComparison.Ordinal);
-        Assert.Contains("<TextBlock Text=\"排查日期\" VerticalAlignment=\"Center\"/>", window, StringComparison.Ordinal);
+        Assert.Contains("<Grid.RowDefinitions><RowDefinition Height=\"32\"/><RowDefinition Height=\"Auto\"/></Grid.RowDefinitions>", window, StringComparison.Ordinal);
+        Assert.Contains("Grid.Row=\"1\" Grid.Column=\"1\" Text=\"{Binding InspectorNameError}\"", window, StringComparison.Ordinal);
+        Assert.Contains("Grid.Row=\"1\" Grid.Column=\"3\" Text=\"{Binding CheckDateError}\"", window, StringComparison.Ordinal);
+        Assert.Contains("ConfirmationStageBadgeStyle", window, StringComparison.Ordinal);
+        Assert.Contains("<Border Style=\"{StaticResource ConfirmationStageBadgeStyle}\"><TextBlock Text=\"{Binding CurrentStage}\"/></Border>", window, StringComparison.Ordinal);
         Assert.Equal("过期", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "expired"), string.Empty).CurrentStage);
         Assert.Equal("收仓", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "withdraw"), string.Empty).CurrentStage);
     }
