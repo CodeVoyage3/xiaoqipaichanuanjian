@@ -299,12 +299,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
 
         await shell.NavigateToAsync(ShellPage.TodayInspection);
         await WaitUntil(() => shell.TodayInspection.HasLoadedTasks);
+        var loadsAfterFirstVisit = loads;
         await shell.NavigateToAsync(ShellPage.Dashboard);
         await shell.NavigateToAsync(ShellPage.TodayInspection);
-        Assert.Equal(1, loads);
+        Assert.Equal(loadsAfterFirstVisit, loads);
 
         await shell.TodayInspection.LoadAsync();
-        Assert.Equal(2, loads);
+        Assert.Equal(loadsAfterFirstVisit + 1, loads);
     }
 
     [Fact]
@@ -611,7 +612,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("选择“返回检查”保留当前填写结果。", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("string cancelText = \"取消\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
         Assert.Equal(2, Count(File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), "ShellColumn.Width = new(208)"));
-        Assert.Contains("MinWidth=\"128\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"NavigationToggleButton\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Grid.Column=\"2\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PART_DropDownToggle\" HorizontalAlignment=\"Stretch\" Background=\"Transparent\" BorderThickness=\"0\" Focusable=\"False\"", mainWindow, StringComparison.Ordinal);

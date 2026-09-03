@@ -169,7 +169,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
@@ -280,17 +280,57 @@
                             </Popup>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
-                            <Trigger SourceName="PART_DropDownToggle" Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" /><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" /></Trigger>
+                            <Trigger SourceName="PART_DropDownToggle" Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#EEF0F3" /><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" /></Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" /></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" /></Trigger>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" /></Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PendingFilterComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource TodayCategoryComboBoxStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" /></Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" /></Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PendingSecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisualStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#F3F4F6" /><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}" /></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#E5E7EB" /></Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" /><Setter TargetName="Chrome" Property="BorderThickness" Value="2" /></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.56" /></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PendingFilterLinkButtonStyle" TargetType="Button" BasedOn="{StaticResource PendingSecondaryButtonStyle}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="4,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
         </Style>
 
         <Style x:Key="PendingDataGridStyle"
@@ -494,13 +534,14 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                    <Grid x:Name="NavigationBrandArea" Margin="12,20,12,20">
+                <Grid x:Name="NavigationBrandArea" Margin="12,20,12,20">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="32" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button x:Name="NavigationToggleButton"
+                            Grid.Column="2"
                             Content="‹"
                             Click="ToggleNavigation_Click"
                             Style="{StaticResource LinkButtonStyle}"
@@ -509,7 +550,7 @@
                             Padding="0"
                             ToolTip="收起导航"
                             AutomationProperties.Name="收起或展开导航" />
-                    <Border Grid.Column="1"
+                    <Border Grid.Column="0"
                             Width="32"
                             Height="32"
                             Background="{DynamicResource PrimaryActionBrush}"
@@ -520,15 +561,7 @@
                               Stretch="Uniform"
                               Margin="7" />
                     </Border>
-                    <TextBlock x:Name="NavigationBrandText"
-                               Grid.Column="2"
-                               Margin="8,0,0,0"
-                               MinWidth="128"
-                               Text="门店效期排查软件"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               TextWrapping="NoWrap"
-                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="NavigationBrandText" Grid.Column="1" Visibility="Collapsed" />
                 </Grid>
 
                 <StackPanel Grid.Row="1" Margin="12,0,12,0">
@@ -560,6 +593,19 @@
                             <TextBlock x:Name="NavigationTasksText" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Button x:Name="NavigationTodayInspectionButton"
+                            AutomationProperties.Name="今日排查"
+                            ToolTip="今日排查"
+                            Command="{Binding NavigateTodayInspectionCommand}"
+                            Tag="{Binding IsTodayInspectionVisible}"
+                            Style="{StaticResource NavButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource ClipboardIcon}"
+                                  Style="{StaticResource NavIconPathStyle}"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock x:Name="NavigationTodayInspectionText" Text="今日排查" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="NavigationHistoryButton"
                             AutomationProperties.Name="排查历史"
                             ToolTip="排查历史"
@@ -586,19 +632,6 @@
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
                             <TextBlock x:Name="NavigationImportText" Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="NavigationTodayInspectionButton"
-                            AutomationProperties.Name="今日排查"
-                            ToolTip="今日排查"
-                            Command="{Binding NavigateTodayInspectionCommand}"
-                            Tag="{Binding IsTodayInspectionVisible}"
-                            Style="{StaticResource NavButtonStyle}">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource ClipboardIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                            <TextBlock x:Name="NavigationTodayInspectionText" Text="今日排查" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="NavigationBackupButton"
@@ -1061,7 +1094,7 @@
                                        Visibility="{Binding PendingTasks.SearchText, Converter={StaticResource EmptyStringToVisibility}}" />
                             <Button Content="×"
                                     Command="{Binding PendingTasks.ClearFiltersCommand}"
-                                    Style="{StaticResource LinkButtonStyle}"
+                                    Style="{StaticResource PendingFilterLinkButtonStyle}"
                                     FontSize="18"
                                     Width="32"
                                     Height="32"
@@ -1069,14 +1102,14 @@
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
                                     Margin="0,0,6,0"
-                                    ToolTip="清空搜索和阶段筛选"
-                                    AutomationProperties.Name="清空搜索和阶段筛选"
+                                    ToolTip="清空筛选"
+                                    AutomationProperties.Name="清空筛选"
                                     Visibility="{Binding PendingTasks.IsFilterActive, Converter={StaticResource BoolToVisibility}}" />
                         </Grid>
                         <Button Grid.Column="1"
                                     Content="搜索"
                                     Command="{Binding PendingTasks.SearchCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Style="{StaticResource PendingSecondaryButtonStyle}"
                                     Width="72"
                                     Height="42"
                                     Padding="8,0"
@@ -1087,55 +1120,24 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Margin="0,0,0,8">
-                        <ListBox ItemsSource="{Binding PendingTasks.StageFilters}"
-                                 SelectedValuePath="CanonicalStage"
-                                 SelectedIndex="0"
-                                 SelectedValue="{Binding PendingTasks.SelectedStage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 HorizontalContentAlignment="Left"
-                                 Margin="0,0,24,0"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-                                        <Border Background="#F1F5F9"
-                                                CornerRadius="8"
-                                                Padding="6,1"
-                                                Margin="8,0,0,0"
-                                                MinWidth="24">
-                                            <TextBlock x:Name="StageCountText"
-                                                       Text="0"
-                                                       FontSize="12"
-                                                       HorizontalAlignment="Center"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        </Border>
-                                    </StackPanel>
-                                    <DataTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding CanonicalStage}" Value="{x:Null}">
-                                            <Setter TargetName="StageCountText" Property="Text" Value="{Binding DataContext.Dashboard.OpenTaskCount, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CanonicalStage}" Value="expired">
-                                            <Setter TargetName="StageCountText" Property="Text" Value="{Binding DataContext.Dashboard.ExpiredCount, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CanonicalStage}" Value="withdraw">
-                                            <Setter TargetName="StageCountText" Property="Text" Value="{Binding DataContext.Dashboard.WithdrawCount, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CanonicalStage}" Value="discount_20">
-                                            <Setter TargetName="StageCountText" Property="Text" Value="{Binding DataContext.Dashboard.Discount20Count, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CanonicalStage}" Value="discount_50">
-                                            <Setter TargetName="StageCountText" Property="Text" Value="{Binding DataContext.Dashboard.Discount50Count, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                        </DataTrigger>
-                                    </DataTemplate.Triggers>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="阶段" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox ItemsSource="{Binding PendingTasks.StageFilters}"
+                                      DisplayMemberPath="Label"
+                                      SelectedValuePath="CanonicalStage"
+                                      SelectedValue="{Binding PendingTasks.SelectedStage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource PendingFilterComboBoxStyle}"
+                                      Width="128"
+                                      AutomationProperties.Name="按阶段筛选待排查任务" />
+                            <TextBlock Text="大类" VerticalAlignment="Center" Margin="20,0,8,0" />
+                            <ComboBox ItemsSource="{Binding PendingTasks.CategoryFilters}"
+                                      DisplayMemberPath="Label"
+                                      SelectedValuePath="CategoryName"
+                                      SelectedValue="{Binding PendingTasks.SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource PendingFilterComboBoxStyle}"
+                                      Width="144"
+                                      AutomationProperties.Name="按大类筛选待排查任务" />
+                        </StackPanel>
                         <TextBlock Text="{Binding PendingTasks.TotalCount, StringFormat=共 {0} 个商品}"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center"
@@ -1157,11 +1159,11 @@
                                        VerticalAlignment="Center" />
                             <Button Content="清空筛选"
                                     Command="{Binding PendingTasks.ClearFiltersCommand}"
-                                    Style="{StaticResource LinkButtonStyle}"
+                                    Style="{StaticResource PendingFilterLinkButtonStyle}"
                                     Margin="12,0,0,0" />
                             <Button Content="刷新"
                                     Command="{Binding PendingTasks.RetryCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Style="{StaticResource PendingSecondaryButtonStyle}"
                                     AutomationProperties.Name="刷新待排查任务"
                                     Width="72"
                                     Margin="12,0,0,0" />
@@ -1370,7 +1372,7 @@
                             <Button Content="‹  上一页"
                                     Command="{Binding PendingTasks.PreviousPageCommand}"
                                     IsEnabled="{Binding PendingTasks.CanGoPrevious}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Style="{StaticResource PendingSecondaryButtonStyle}"
                                     Width="112" />
                             <TextBlock Text="{Binding PendingTasks.CurrentPage}"
                                        FontSize="14"
@@ -1384,7 +1386,7 @@
                             <Button Content="下一页  ›"
                                     Command="{Binding PendingTasks.NextPageCommand}"
                                     IsEnabled="{Binding PendingTasks.CanGoNext}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Style="{StaticResource PendingSecondaryButtonStyle}"
                                     Width="112" />
                         </StackPanel>
                     </Grid>

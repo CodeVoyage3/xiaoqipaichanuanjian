@@ -161,9 +161,9 @@ public sealed class Stage4ViewModelTests
         await vm.SearchAsync();
 
         Assert.Equal(50, vm.PageSize);
-        Assert.Equal(2, requests.Count);
+        Assert.Equal(3, requests.Count);
         Assert.Equal("商品编码", requests[^1].SearchText);
-        Assert.Equal(50, requests[^1].PageSize);
+        Assert.Equal(int.MaxValue, requests[^1].PageSize);
         Assert.Equal(1, requests[^1].Page);
         Assert.Single(vm.Items);
     }
@@ -186,7 +186,7 @@ public sealed class Stage4ViewModelTests
 
         Assert.Equal(
             new[] { "商品名称", "SKU-001", "690000000001" },
-            requests.TakeLast(3).Select(request => request.SearchText));
+            requests.Where(request => request.SearchText is not null).Select(request => request.SearchText));
         Assert.Empty(vm.Items);
     }
 
@@ -202,7 +202,7 @@ public sealed class Stage4ViewModelTests
 
         await vm.LoadAsync();
         vm.SelectedStage = "discount_20";
-        await WaitForRequestCount(requests, 2);
+        await WaitForRequestCount(requests, 3);
 
         Assert.Equal("discount_20", requests[^1].Stage);
         Assert.Equal(1, requests[^1].Page);
@@ -261,8 +261,9 @@ public sealed class Stage4ViewModelTests
     [Fact]
     public async Task PendingTasksPaginationStopsAtBothBoundaries()
     {
+        var tasks = Enumerable.Range(1, 101).Select(index => TaskItem($"page-{index}", "discount_50", "食品", index)).ToArray();
         var vm = new PendingTasksViewModel(request =>
-            new InspectionTaskSearchResult(Array.Empty<InspectionTaskListItem>(), 101, request.Page, request.PageSize));
+            new InspectionTaskSearchResult(tasks, tasks.Length, request.Page, request.PageSize));
 
         await vm.LoadAsync();
         Assert.Equal(1, vm.CurrentPage);
@@ -282,6 +283,65 @@ public sealed class Stage4ViewModelTests
         await vm.GoToPreviousPageAsync();
         await vm.GoToPreviousPageAsync();
         Assert.Equal(1, vm.CurrentPage);
+    }
+
+    [Fact]
+    public async Task PendingTasksCategoriesAreDistinctAndAllFiltersIntersect()
+    {
+        var tasks = new[]
+        {
+            TaskItem("apple-50", "discount_50", "食品", 1),
+            TaskItem("apple-20", "discount_20", "食品", 2),
+            TaskItem("apple-50-general", "discount_50", "百货", 3),
+            TaskItem("pet-50", "discount_50", "宠物", 4),
+            TaskItem("apple-50-duplicate-category", "discount_50", "食品", 5)
+        };
+        var vm = new PendingTasksViewModel(request =>
+        {
+            var filtered = tasks
+                .Where(item => string.IsNullOrEmpty(request.SearchText) || item.ProductCode.Contains(request.SearchText, StringComparison.Ordinal))
+                .Where(item => string.IsNullOrEmpty(request.Stage) || item.HighestStage == request.Stage)
+                .ToArray();
+            return new InspectionTaskSearchResult(filtered, filtered.Length, request.Page, request.PageSize);
+        });
+
+        await vm.LoadAsync();
+        Assert.Equal(new[] { "全部大类", "宠物", "百货", "食品" }, vm.CategoryFilters.Select(option => option.Label));
+
+        vm.SearchText = "apple";
+        await vm.SearchAsync();
+        Assert.Equal(4, vm.TotalCount);
+        vm.SelectedStage = "discount_50";
+        await WaitFor(() => vm.TotalCount == 3);
+        vm.SelectedCategory = "食品";
+        await WaitFor(() => vm.TotalCount == 2);
+        Assert.Equal(new[] { "apple-50", "apple-50-duplicate-category" }, vm.Items.Select(item => item.ProductCode));
+
+        await vm.ClearFiltersAsync();
+        Assert.Equal(string.Empty, vm.SearchText);
+        Assert.Null(vm.SelectedStage);
+        Assert.Null(vm.SelectedCategory);
+        Assert.Equal(1, vm.CurrentPage);
+        Assert.Equal(5, vm.TotalCount);
+    }
+
+    [Fact]
+    public void PendingTaskUiUsesDropdownFiltersAndKeepsStageBadgeContract()
+    {
+        var root = FindRepositoryRoot();
+        var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        var stageBadge = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "StageBadgeResources.xaml"));
+
+        Assert.DoesNotContain("Text=\"门店效期排查软件\"", window, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"NavigationToggleButton\"\n                            Grid.Column=\"2\"", window, StringComparison.Ordinal);
+        Assert.True(window.IndexOf("NavigationTasksButton", StringComparison.Ordinal) < window.IndexOf("NavigationTodayInspectionButton", StringComparison.Ordinal));
+        Assert.True(window.IndexOf("NavigationTodayInspectionButton", StringComparison.Ordinal) < window.IndexOf("NavigationHistoryButton", StringComparison.Ordinal));
+        Assert.Contains("PendingTasks.StageFilters", window, StringComparison.Ordinal);
+        Assert.Contains("PendingTasks.CategoryFilters", window, StringComparison.Ordinal);
+        Assert.Contains("PendingFilterComboBoxStyle", window, StringComparison.Ordinal);
+        Assert.Contains("FocusRingBrush", window, StringComparison.Ordinal);
+        Assert.Contains("#FDECEC", stageBadge, StringComparison.Ordinal);
+        Assert.Contains("#FFF0E5", stageBadge, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -307,8 +367,8 @@ public sealed class Stage4ViewModelTests
         await Task.WhenAll(shell.Dashboard.LoadAsync(), shell.PendingTasks.LoadAsync());
     }
 
-    private static InspectionTaskListItem TaskItem(string code, string stage) => new(
-        1,
+    private static InspectionTaskListItem TaskItem(string code, string stage, string category = "", long taskId = 1) => new(
+        taskId,
         1,
         "测试商品",
         code,
@@ -317,7 +377,8 @@ public sealed class Stage4ViewModelTests
         2,
         10,
         new DateOnly(2026, 8, 28),
-        false);
+        false,
+        category);
 
     private static async Task WaitForRequestCount(
         List<InspectionTaskSearchRequest> requests,
@@ -329,5 +390,26 @@ public sealed class Stage4ViewModelTests
         }
 
         Assert.Equal(expected, requests.Count);
+    }
+
+    private static async Task WaitFor(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 100 && !condition(); attempt++)
+        {
+            await Task.Delay(1);
+        }
+
+        Assert.True(condition());
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Repository root was not found.");
     }
 }

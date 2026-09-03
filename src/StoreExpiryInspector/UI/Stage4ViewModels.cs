@@ -68,6 +68,8 @@ public sealed record StageFilterOption(string Label, string? CanonicalStage)
     });
 }
 
+public sealed record CategoryFilterOption(string Label, string? CategoryName);
+
 public static class StageLabels
 {
     public static string ToDisplay(string? stage) => ExpiryStageCalculator.ToDisplay(stage);
@@ -639,6 +641,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
     private string _errorMessage = string.Empty;
     private string _searchText = string.Empty;
     private string? _selectedStage;
+    private string? _selectedCategory;
     private int _currentPage = 1;
     private int _totalCount;
     private int _totalPages = 1;
@@ -660,6 +663,8 @@ public sealed class PendingTasksViewModel : ViewModelBase
     public ObservableCollection<InspectionTaskListItem> Items { get; } = [];
 
     public IReadOnlyList<StageFilterOption> StageFilters => StageFilterOption.All;
+
+    public ObservableCollection<CategoryFilterOption> CategoryFilters { get; } = [];
 
     public RelayCommand SearchCommand { get; }
 
@@ -786,6 +791,26 @@ public sealed class PendingTasksViewModel : ViewModelBase
         }
     }
 
+    public string? SelectedCategory
+    {
+        get => _selectedCategory;
+        set
+        {
+            if (string.Equals(_selectedCategory, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _selectedCategory = value;
+            CurrentPage = 1;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsFilterActive));
+            OnPropertyChanged(nameof(IsFilterEmpty));
+            OnPropertyChanged(nameof(IsDatabaseEmpty));
+            _ = LoadAsync();
+        }
+    }
+
     public int CurrentPage
     {
         get => _currentPage;
@@ -851,7 +876,8 @@ public sealed class PendingTasksViewModel : ViewModelBase
     public bool HasSearchText => !string.IsNullOrEmpty(SearchText);
 
     public bool IsFilterActive => !string.IsNullOrWhiteSpace(SearchText)
-        || !string.IsNullOrWhiteSpace(SelectedStage);
+        || !string.IsNullOrWhiteSpace(SelectedStage)
+        || !string.IsNullOrWhiteSpace(SelectedCategory);
 
     public bool HasEmptyResult => HasLoadedResult && !HasError && !IsLoading && TotalCount == 0;
 
@@ -867,13 +893,15 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
     public async Task ClearFiltersAsync()
     {
-        var changed = !string.IsNullOrEmpty(_searchText) || _selectedStage is not null || CurrentPage != 1;
+        var changed = !string.IsNullOrEmpty(_searchText) || _selectedStage is not null || _selectedCategory is not null || CurrentPage != 1;
         _searchText = string.Empty;
         _selectedStage = null;
+        _selectedCategory = null;
         CurrentPage = 1;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(HasSearchText));
         OnPropertyChanged(nameof(SelectedStage));
+        OnPropertyChanged(nameof(SelectedCategory));
         OnPropertyChanged(nameof(IsFilterActive));
         OnPropertyChanged(nameof(IsFilterEmpty));
         OnPropertyChanged(nameof(IsDatabaseEmpty));
@@ -885,11 +913,6 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
     public async Task LoadAsync()
     {
-        var request = new InspectionTaskSearchRequest(
-            SearchText,
-            SelectedStage,
-            CurrentPage,
-            FixedPageSize);
         var version = Interlocked.Increment(ref _loadVersion);
         IsLoading = true;
         HasError = false;
@@ -897,21 +920,36 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
         try
         {
-            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _searchTasks(request)));
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() =>
+            {
+                var allTasks = _searchTasks(new InspectionTaskSearchRequest(PageSize: int.MaxValue));
+                var filteredTasks = string.IsNullOrWhiteSpace(SearchText) && string.IsNullOrEmpty(SelectedStage)
+                    ? allTasks
+                    : _searchTasks(new InspectionTaskSearchRequest(SearchText, SelectedStage, PageSize: int.MaxValue));
+                return (allTasks.Items, filteredTasks.Items);
+            }));
             if (version != _loadVersion)
             {
                 return;
             }
 
+            UpdateCategoryFilters(result.Item1);
+            var filteredItems = string.IsNullOrEmpty(SelectedCategory)
+                ? result.Item2
+                : result.Item2.Where(item => string.Equals(item.CategoryName, SelectedCategory, StringComparison.Ordinal)).ToArray();
+            TotalCount = filteredItems.Count;
+            TotalPages = Math.Max(1, (TotalCount + FixedPageSize - 1) / FixedPageSize);
+            if (CurrentPage > TotalPages)
+            {
+                CurrentPage = TotalPages;
+            }
+
             Items.Clear();
-            foreach (var item in result.Items)
+            foreach (var item in filteredItems.Skip((CurrentPage - 1) * FixedPageSize).Take(FixedPageSize))
             {
                 Items.Add(item);
             }
 
-            CurrentPage = result.Page;
-            TotalCount = result.TotalCount;
-            TotalPages = Math.Max(1, (result.TotalCount + FixedPageSize - 1) / FixedPageSize);
             HasLoadedResult = true;
         }
         catch (Exception exception)
@@ -956,6 +994,34 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
         CurrentPage++;
         await LoadAsync();
+    }
+
+    private void UpdateCategoryFilters(IReadOnlyList<InspectionTaskListItem> allTasks)
+    {
+        var categories = allTasks
+            .Select(item => item.CategoryName)
+            .Where(category => !string.IsNullOrWhiteSpace(category))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(category => category, StringComparer.Ordinal)
+            .ToArray();
+        if (CategoryFilters.Select(option => option.CategoryName).SequenceEqual(categories.Prepend<string?>(null)))
+        {
+            return;
+        }
+
+        CategoryFilters.Clear();
+        CategoryFilters.Add(new CategoryFilterOption("全部大类", null));
+        foreach (var category in categories)
+        {
+            CategoryFilters.Add(new CategoryFilterOption(category, category));
+        }
+
+        OnPropertyChanged(nameof(CategoryFilters));
+        if (_selectedCategory is not null && !categories.Contains(_selectedCategory, StringComparer.Ordinal))
+        {
+            _selectedCategory = null;
+            OnPropertyChanged(nameof(SelectedCategory));
+        }
     }
 }
 
