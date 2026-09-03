@@ -288,6 +288,12 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.DoesNotContain("OpenSettingsHeight", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("ClosedSettingsHeight", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("dialog.Height =", codeBehind, StringComparison.Ordinal);
+        var settingsBlock = codeBehind[codeBehind.IndexOf("private void Settings_Click", StringComparison.Ordinal)..codeBehind.IndexOf("private void ReturnFromOverStockButton_IsVisibleChanged", StringComparison.Ordinal)];
+        Assert.Contains("SizeToContent = SizeToContent.Height", settingsBlock, StringComparison.Ordinal);
+        Assert.Contains("Margin = new Thickness(24, 24, 24, 18)", settingsBlock, StringComparison.Ordinal);
+        Assert.Equal(2, settingsBlock.Split("root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });", StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain("root.RowDefinitions.Add(new RowDefinition());", settingsBlock, StringComparison.Ordinal);
+        Assert.Contains("Margin = new Thickness(0, 22, 0, 0)", settingsBlock, StringComparison.Ordinal);
         Assert.Contains("每天在该时间集中提醒，修改后立即重新安排提醒。", codeBehind, StringComparison.Ordinal);
         Assert.Contains("timeValidation", codeBehind, StringComparison.Ordinal);
         Assert.Contains("settingsValidation", codeBehind, StringComparison.Ordinal);

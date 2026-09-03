@@ -369,18 +369,17 @@ public partial class MainWindow : Window
                 FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
                 Language = XmlLanguage.GetLanguage("zh-CN"),
                 Width = 460,
-                Height = 300,
                 MinWidth = 420,
-                MinHeight = 280,
+                SizeToContent = SizeToContent.Height,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ShowInTaskbar = false,
-                Content = new Grid { Margin = new Thickness(24) }
+                Content = new Grid { Margin = new Thickness(24, 24, 24, 18) }
             };
             AutomationProperties.SetName(dialog, "提醒设置");
             var root = (Grid)dialog.Content;
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition());
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var panel = new StackPanel();
             root.Children.Add(panel);
             panel.Children.Add(new TextBlock
@@ -480,7 +479,7 @@ public partial class MainWindow : Window
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 18, 0, 0)
+                Margin = new Thickness(0, 22, 0, 0)
             };
             var cancel = new Button
             {
