@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：V1-F03 与独立 UI 微调工作项 V1-UI-01 均已正式完成总验收与收口
-- 状态：V1-F01、V1-F02、V1-F03、V1-UI-01 均已完成归档；V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`；Stage 8 尚未开始，Stage 9 尚未开始
+- 当前阶段：Stage 8｜性能与稳定性
+- 状态：Stage 8 已启动，`S8-T01｜高规模数据基线与性能压测基座` 为当前唯一任务；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -10,6 +10,8 @@
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- Stage 8 于 2026-09-03 在重新 fetch 后从 `master == origin/main == 1e41876bfa9c203a88cf53955867f0c3dd639e84` 启动；S8-T01 Task / Acceptance 已建立，目标为完全隔离的 100,000 Batch / 300,000 Inspection 历史压测基座。当前尚无 S8-T01 实现或实测证据，不预设毫秒 SLA，不创建 S8-T02。
 
 - 单一 .NET 10 WPF 应用与测试项目；I01 已新增 policy / scope / batch baseline 持久化底座，当前 migration 为 9 条。
 - Stage 2：固定模板只读解析、局部增量规划、确认守卫、安全快照、原子导入、Workbook 保留与最新 Import 撤销资格。

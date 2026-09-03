@@ -2,32 +2,26 @@
 
 ## 当前任务与状态
 
-`V1-UI-01｜导航、筛选与全局视觉降噪`：`GUI_ACCEPTANCE_PASSED / CLOSED`。
+- Stage 8 已获用户明确批准并正式启动：`IN_PROGRESS / S8-T01_CURRENT`。
+- 当前唯一任务：`S8-T01｜高规模数据基线与性能压测基座`，已建立 Task 与 Acceptance，等待全新 GPT-5.6 Terra 实施。
+- V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 继续保持 `CLOSED`；V1-UI-01 为 `GUI_ACCEPTANCE_PASSED`。
+- Stage 9 与在线升级未启动。
 
-V1-F03 与 V1-F03-I04 继续保持 `CLOSED`。Stage 8、Stage 9、在线升级均未启动；当前下一阶段为“等待用户另行批准”。
+## Git 与开工基线
 
-## Git 与交付
+- 2026-09-03 已重新 fetch GitHub `main`；建档前 `master == origin/main == 1e41876bfa9c203a88cf53955867f0c3dd639e84`，ahead/behind `0/0`，工作区干净。
+- 最近已归档技术基线为 Release 894/894、Release build 0 warning / 0 error、EF 无模型漂移、migration=9，最后一条 `20260901155124_AddPolicyAndBaselineFoundation`；尚未作为 S8-T01 新鲜复跑证据。
 
-- 2026-09-03 收口前重新 fetch GitHub `main`；当时本地 `HEAD` 与 `origin/main` 均为 `b7cd6ea266a564b9f9edf1ee926ff78a1ac92f0f`，ahead/behind `0/0`，工作区干净。
-- V1-UI-01 原实现、共享视觉返修、GUI R1 实现与技术验收均已普通推送到 `main`。
-- GUI R1 实现：`0bec6f1fe5e51fca234512c16eb63eb580e54fe8`。
-- 最终 Acceptance：`.ai-dev/ACCEPTANCE/V1-UI-01.md`；R1 Task：`.ai-dev/TASKS/V1-UI-01-GUI-R1.md`。
+## S8-T01 边界
 
-## 技术证据
+- 目标为完全隔离、可重复生成并核对 100,000 Batch / 300,000 Inspection 历史的 SQLite 压测环境。
+- 必测 Dashboard、待排查首载/分页/搜索/Stage/大类/组合、任务详情、今日排查、历史列表/详情/Revision、ProductTask、Reminder 与大库 snapshot。
+- 记录 median 与 p95/max、实际 SQL、command count、query plan、索引及 full scan/N+1/materialization/内存筛选/timeout/lock/crash/OOM。
+- 本卡先测量，不优化；不新增索引、migration、Schema、依赖，不修改生产业务或全局 UI。
+- 不访问或修改正式数据库；所有生成、查询和 snapshot 只能位于带 S8-T01 marker 的唯一临时目录。
 
-- GUI R1 完整实现 diff 仅修改 `MainWindow.xaml` 与 `Stage4ViewModelTests.cs`。
-- R1 / 查询 / UI 静态专项 67/67；相关 UI / ViewModel 183/183；Release 全量 894/894。
-- Release build 0 warning / 0 error；EF 无模型漂移；migration=9，最后一条 `20260901155124_AddPolicyAndBaselineFoundation`。
-- 无 Schema、ModelSnapshot、dependency、`.csproj`、`.slnx` 或冻结业务变化；`git diff --check` 通过。
+## 停止门禁
 
-## 用户真实 WPF 最终验收
-
-- 首轮已通过并冻结：今日排查导航位置、整体蓝色降噪、Search/Refresh/分页中性视觉、阶段与大类 ComboBox 产品方案、三条件组合筛选、清空、筛选后计数/空态/分页、StageBadge、Primary/Danger 语义。
-- GUI R1 重验 1：盾牌与折叠按钮紧凑布局通过，不再有明显空洞感。
-- GUI R1 重验 2：阶段/大类当前值及展开项中文业务文案通过，不再出现 Option 类型文本。
-- 用户明确最终结论：`PASSED`。V1-UI-01 正式关闭。
-
-## 后续门禁
-
-- 本次关闭不授权自动进入 Stage 8、Stage 9、在线升级或其他后续任务。
-- 未经用户新的明确批准，不创建 Stage 8/9 Task，不实施新的生产变更。
+- S8-T01 完成并经 Sol 独立验收后停止，不自动创建 S8-T02。
+- S8-T02～T06 仅在 Stage 文档中作为候选方向；当前没有正式 Task 或实施授权。
+- 不启动 Stage 9，不实施在线升级。
