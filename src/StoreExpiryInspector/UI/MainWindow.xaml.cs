@@ -23,13 +23,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         ApplyNavigationLayout();
-        DataContext = new ShellViewModel(
+        var shell = new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
             confirmHistoryEdit: ConfirmHistoryEdit,
             confirmRestore: ConfirmRestore,
             confirmTodayOverStock: ConfirmTodayOverStock,
             confirmTodaySubmission: ConfirmTodaySubmission);
+        shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
+        DataContext = shell;
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -243,6 +245,10 @@ public partial class MainWindow : Window
             confirmation.ShowDialog();
         }
     }
+
+    private void ShowTodayPreviewFailure(string message) => WpfDialogService.Show(
+        this, "暂时无法读取", message, "知道了", WpfDialogKind.Warning,
+        "请检查文件后重新导出最新计划，再导入结果。", false);
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {

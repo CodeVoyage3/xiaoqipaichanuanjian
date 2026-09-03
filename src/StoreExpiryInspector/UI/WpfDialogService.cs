@@ -52,9 +52,9 @@ internal static class WpfDialogService
             var info = select ? new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") : new ProcessStartInfo(path) { UseShellExecute = true };
             Process.Start(info);
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            Show(null, "无法打开", select ? "无法打开所在文件夹，请确认文件仍存在。" : "无法打开文件，请确认文件仍存在。", "知道了", WpfDialogKind.Error, exception.Message, false);
+            Show(null, "无法打开", select ? "无法打开所在文件夹，请确认文件仍存在。" : "无法打开文件，请确认文件仍存在。", "知道了", WpfDialogKind.Error, "请确认文件未被移动或删除后重试。", false);
         }
     }
 

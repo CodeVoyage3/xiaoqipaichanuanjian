@@ -2738,6 +2738,7 @@
                                         <TextBlock Text="正在加载今日任务…" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryTextBrush}" Visibility="{Binding TodayInspection.IsLoadingTasks, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                        <TextBlock Text="大类" VerticalAlignment="Center" Margin="0,0,6,0" />
                                         <ComboBox ItemsSource="{Binding TodayInspection.Categories}" SelectedItem="{Binding TodayInspection.SelectedCategory, Mode=TwoWay}" Width="112" Margin="0,0,8,0" AutomationProperties.Name="按大类筛选今日排查任务" />
                                         <Button Content="全选" Command="{Binding TodayInspection.SelectAllCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" Margin="0,0,8,0" AutomationProperties.Name="全选今日排查任务" />
                                         <Button Content="取消全选" Command="{Binding TodayInspection.ClearSelectionCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="88" Margin="0,0,8,0" AutomationProperties.Name="取消全选今日排查任务" />

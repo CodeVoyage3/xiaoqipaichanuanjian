@@ -161,12 +161,15 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public DateTime CheckDateMaxValue => _businessToday().ToDateTime(TimeOnly.MinValue);
     public string InspectorNameError { get => _inspectorNameError; private set { if (_inspectorNameError == value) return; _inspectorNameError = value; OnPropertyChanged(); } }
     public string CheckDateError { get => _checkDateError; private set { if (_checkDateError == value) return; _checkDateError = value; OnPropertyChanged(); } }
+    public bool HasInspectorNameError => !string.IsNullOrEmpty(InspectorNameError);
+    public bool HasCheckDateError => !string.IsNullOrEmpty(CheckDateError);
     public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"涉及商品 {_currentPreview.Summary.ProductCount}，批次 {_currentPreview.Summary.BatchCount}，可应用 {_currentPreview.ApplicableTaskIds.Count}，已填写 {_currentPreview.Summary.FilledCount}，未填写 {_currentPreview.Summary.BlankCount}，错误 {_currentPreview.Summary.ErrorCount}，陈旧/失效 {_currentPreview.Tasks.Count(task => !task.IsApplicable)}";
     public string DraftStatusText => _draftResult is null ? "尚未处理排查结果" : CompleteTaskIds.Count == _draftResult.Tasks.Count ? "排查结果已填写完整，可以提交数据。" : "仍有未完成排查项，请填写完整后提交。";
     public bool HasPreviewIssues => PreviewRows.Any(row => row.HasIssue);
     public string PreviewIssueText => HasPreviewIssues ? "发现异常或陈旧数据：请查看浅红行的提示原因，重新导出最新计划后再提交。" : string.Empty;
     public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
     public event Action<string>? SubmissionBlocked;
+    public event Action<string>? PreviewFailed;
 
     public async Task LoadAsync()
     {
@@ -213,7 +216,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     {
         ResetSession();
         var preview = await RunAsync("读取排查结果文件失败", () => _preview(path));
-        if (preview is null) return;
+        if (preview is null) { PreviewFailed?.Invoke("无法读取排查结果文件。请确认选择的是最新的今日排查计划，并重新导出后再试。"); return; }
         _currentPreview = preview;
         PreviewRows.Clear();
         foreach (var row in _currentPreview.File.Rows)
@@ -233,6 +236,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public async Task SaveDraftAsync()
     {
         if (_currentPreview is null) { BlockSubmission("请先读取排查结果文件。", "请先选择并读取已填写的排查计划。"); return; }
+        ValidateForm();
         if (!IsFormValid || !TryGetCheckDate(out var checkDate)) { BlockSubmission("请完善排查人和排查日期。", string.Join("\n", new[] { InspectorNameError, CheckDateError }.Where(value => !string.IsNullOrEmpty(value)))); return; }
         InvalidateSubmissionIntent();
         DateTime savedAtUtc;
@@ -353,6 +357,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     {
         InspectorNameError = string.IsNullOrWhiteSpace(InspectorName) ? "请输入排查人" : string.Empty;
         CheckDateError = _checkDateValue is null ? "请选择排查日期" : _checkDateValue.Value.Date > CheckDateMaxValue.Date ? "排查日期不能晚于今天" : string.Empty;
+        OnPropertyChanged(nameof(HasInspectorNameError)); OnPropertyChanged(nameof(HasCheckDateError));
         OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands();
     }
     private void BlockSubmission(string status, string reason) { StatusText = status; SubmissionBlocked?.Invoke(reason); }

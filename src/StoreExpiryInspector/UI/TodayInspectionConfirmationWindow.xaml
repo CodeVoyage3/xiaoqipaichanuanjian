@@ -11,6 +11,12 @@
         <Style x:Key="ConfirmationGridCenterHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ConfirmationGridHeaderStyle}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
+        <Style x:Key="ConfirmationInspectorTextBoxStyle" TargetType="TextBox">
+            <Style.Triggers><DataTrigger Binding="{Binding HasInspectorNameError}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/><Setter Property="BorderThickness" Value="2"/></DataTrigger></Style.Triggers>
+        </Style>
+        <Style x:Key="ConfirmationDatePickerStyle" TargetType="DatePicker">
+            <Style.Triggers><DataTrigger Binding="{Binding HasCheckDateError}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/><Setter Property="BorderThickness" Value="2"/></DataTrigger></Style.Triggers>
+        </Style>
     </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -40,8 +46,8 @@
             </DataGrid.RowStyle>
         </DataGrid>
         <Grid Grid.Row="2" Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="180"/><ColumnDefinition Width="72"/><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <StackPanel><TextBlock Text="排查人"/><TextBlock Text="{Binding InspectorNameError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/></StackPanel><TextBox Grid.Column="1" Text="{Binding InspectorName, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" VerticalContentAlignment="Center" AutomationProperties.Name="排查人"/>
-            <StackPanel Grid.Column="2" Margin="12,0,0,0"><TextBlock Text="排查日期"/><TextBlock Text="{Binding CheckDateError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/></StackPanel><DatePicker Grid.Column="3" SelectedDate="{Binding CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayDateEnd="{Binding CheckDateMaxValue, Mode=OneWay}" SelectedDateFormat="Short" AutomationProperties.Name="排查日期"/>
+            <StackPanel><TextBlock Text="排查人"/><TextBlock Text="{Binding InspectorNameError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/></StackPanel><TextBox Grid.Column="1" Style="{StaticResource ConfirmationInspectorTextBoxStyle}" Text="{Binding InspectorName, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" VerticalContentAlignment="Center" AutomationProperties.Name="排查人"/>
+            <StackPanel Grid.Column="2" Margin="12,0,0,0"><TextBlock Text="排查日期"/><TextBlock Text="{Binding CheckDateError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/></StackPanel><DatePicker Grid.Column="3" Style="{StaticResource ConfirmationDatePickerStyle}" SelectedDate="{Binding CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayDateEnd="{Binding CheckDateMaxValue, Mode=OneWay}" SelectedDateFormat="Short" AutomationProperties.Name="排查日期"/>
             <TextBlock Grid.Column="4" Text="不可晚于今天" Margin="12,0" VerticalAlignment="Center"/>
         </Grid>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">

@@ -119,6 +119,21 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task FirstSubmitWithDefaultDateMarksEmptyInspectorAndRaisesBusinessBlocker()
+    {
+        var vm = Create();
+        string? blocker = null;
+        vm.SubmissionBlocked += message => blocker = message;
+        await vm.PreviewAsync("C:\\filled.xlsx");
+        await vm.SubmitAsync();
+
+        Assert.Equal(Today.ToDateTime(TimeOnly.MinValue), vm.CheckDateValue);
+        Assert.True(vm.HasInspectorNameError);
+        Assert.Equal("请输入排查人", vm.InspectorNameError);
+        Assert.Contains("请输入排查人", blocker);
+    }
+
+    [Fact]
     public async Task AllSelectionKeepsEveryLoadedTaskAndFormChangesInvalidateSavedDraft()
     {
         var items = Enumerable.Range(1, 501).Select(id => new InspectionTaskListItem(id, id, $"商品{id}", id.ToString(), null, "expired", 1, 1, Today, false)).ToArray();
@@ -191,6 +206,37 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await vm.ExportAsync("C:\\B.xlsx");
         Assert.Equal("C:\\A.xlsx", vm.LatestExportResult?.OutputPath);
         Assert.Equal("导出今日排查计划失败", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task ConsecutiveSuccessfulExportsKeepOnlyTheLatestPathAndSelection()
+    {
+        var calls = new List<IReadOnlyCollection<long>>();
+        var vm = Create(export: (path, ids) => { calls.Add(ids); return new(path, ids.Count, ids.Count + 1); });
+        await vm.LoadAsync();
+        vm.Tasks[0].IsSelected = true;
+        await vm.ExportAsync("C:\\A.xlsx");
+        vm.Tasks[0].IsSelected = false;
+        vm.Tasks[1].IsSelected = true;
+        await vm.ExportAsync("C:\\B.xlsx");
+
+        Assert.Equal(new long[] { 1 }, calls[0]);
+        Assert.Equal(new long[] { 2 }, calls[1]);
+        Assert.Equal("C:\\B.xlsx", vm.LatestExportResult?.OutputPath);
+        Assert.Equal(1, vm.LatestExportResult?.TaskCount);
+    }
+
+    [Fact]
+    public async Task PreviewFailureRaisesSafeBusinessBlockerWithoutExceptionText()
+    {
+        var vm = Create(preview: _ => throw new InvalidDataException("internal parser stack detail"));
+        string? message = null;
+        vm.PreviewFailed += value => message = value;
+        await vm.PreviewAsync("C:\\bad.xlsx");
+
+        Assert.Equal("读取排查结果文件失败", vm.StatusText);
+        Assert.Contains("无法读取排查结果文件", message);
+        Assert.DoesNotContain("internal parser", message);
     }
 
     [Fact]
@@ -442,10 +488,19 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
         Assert.Contains("HasIssue", window, StringComparison.Ordinal);
         Assert.Contains("DatePicker", window, StringComparison.Ordinal);
+        Assert.Contains("ConfirmationInspectorTextBoxStyle", window, StringComparison.Ordinal);
+        Assert.Contains("ConfirmationDatePickerStyle", window, StringComparison.Ordinal);
+        Assert.Contains("HasInspectorNameError", window, StringComparison.Ordinal);
+        Assert.Contains("HasCheckDateError", window, StringComparison.Ordinal);
+        Assert.Contains("BorderBrush\" Value=\"{DynamicResource DangerBrush}\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"校验状态\"", window, StringComparison.Ordinal);
         Assert.Contains("OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"原因\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("草稿", window, StringComparison.Ordinal);
+        var mainWindow = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        Assert.Contains("Text=\"大类\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("PreviewFailed += ShowTodayPreviewFailure", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
+        Assert.Contains("请确认文件未被移动或删除后重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
     }
 
     private static TodayInspectionViewModel Create(
