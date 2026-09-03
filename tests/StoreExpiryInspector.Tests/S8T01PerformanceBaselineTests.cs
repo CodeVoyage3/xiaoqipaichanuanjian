@@ -27,6 +27,16 @@ public sealed class S8T01PerformanceBaselineTests
     }
 
     [Fact]
+    public void S8T01PathGuardRejectsProductionAndUnsafeRoots()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T01", "S8-T01-guard");
+        Assert.Throws<ArgumentException>(() => ValidateRoot("relative", "relative.db", root));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), DatabaseInitializer.GetDefaultDatabasePath(), root));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(root, "app.db"), DatabaseInitializer.GetDefaultBackupDirectory()));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(Environment.CurrentDirectory, Path.Combine(Environment.CurrentDirectory, "S8-T01.db"), root));
+    }
+
+    [Fact]
     [Trait("Category", "S8-T01")]
     public void MeasuresIsolated100kBatch300kInspectionBaseline()
     {
@@ -69,7 +79,7 @@ public sealed class S8T01PerformanceBaselineTests
         var after = ReadCounts(databasePath);
         Assert.Equal(before, after);
         AssertIntegrity(databasePath);
-        var result = new Evidence(root, databasePath, new FileInfo(databasePath).Length, before, after, measures, Indexes(databasePath), Plans(databasePath), DateTime.UtcNow, Environment.Version.ToString(), Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, snapshot.Metadata?.SnapshotPath, snapshot.Metadata?.Sha256);
+        var result = new Evidence(Environment.GetEnvironmentVariable("S8_T01_COMMIT") ?? "not_proven", root, databasePath, new FileInfo(databasePath).Length, before, after, measures, Indexes(databasePath), Plans(databasePath), DateTime.UtcNow, Environment.OSVersion.VersionString, Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "not_proven", Environment.Version.ToString(), typeof(SqliteConnection).Assembly.GetName().Version?.ToString() ?? "not_proven", Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, snapshot.Metadata?.SnapshotPath, snapshot.Metadata?.Sha256);
         var json = Path.Combine(root, "S8-T01-baseline.json");
         File.WriteAllText(json, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"S8-T01 JSON: {json}");
@@ -80,8 +90,18 @@ public sealed class S8T01PerformanceBaselineTests
     {
         var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T01", $"S8-T01-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
-        Assert.True(Path.IsPathFullyQualified(root) && root.Contains("S8-T01-", StringComparison.Ordinal) && !root.StartsWith(Environment.CurrentDirectory, StringComparison.OrdinalIgnoreCase));
+        ValidateRoot(root, Path.Combine(root, "S8-T01-app.db"), Path.Combine(root, "S8-T01-snapshot"));
         return root;
+    }
+
+    private static void ValidateRoot(string root, string databasePath, string backupPath)
+    {
+        if (!Path.IsPathFullyQualified(root) || !Path.IsPathFullyQualified(databasePath) || !Path.IsPathFullyQualified(backupPath) ||
+            !root.Contains("StoreExpiryInspectorS8T01", StringComparison.OrdinalIgnoreCase) || !root.Contains("S8-T01-", StringComparison.OrdinalIgnoreCase) ||
+            root.StartsWith(Environment.CurrentDirectory, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Path.GetFullPath(databasePath), DatabaseInitializer.GetDefaultDatabasePath(), StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Path.GetFullPath(backupPath), DatabaseInitializer.GetDefaultBackupDirectory(), StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("S8-T01 requires a uniquely marked TEMP root.");
     }
 
     private static StoreDbContext Open(string path) => DatabaseInitializer.CreateContext(path);
@@ -152,5 +172,5 @@ public sealed class S8T01PerformanceBaselineTests
     private sealed class Capture : DbCommandInterceptor { public List<string> Commands { get; } = []; public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData data, InterceptionResult<DbDataReader> result) { Commands.Add(command.CommandText); return result; } }
     private sealed record Counts(long Batches, long Inspections, long InspectionItems);
     private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<string> Sql, string Conditions, string? Artifact, long WorkingSetBytes, long ManagedAllocatedBytes);
-    private sealed record Evidence(string Root, string DatabasePath, long DatabaseBytes, Counts Before, Counts After, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, IReadOnlyList<string> QueryPlans, DateTime CreatedUtc, string DotNet, int LogicalProcessors, long TotalAvailableMemoryBytes, string? SnapshotPath, string? SnapshotSha256);
+    private sealed record Evidence(string SourceCommit, string Root, string DatabasePath, long DatabaseBytes, Counts Before, Counts After, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, IReadOnlyList<string> QueryPlans, DateTime CreatedUtc, string OsDescription, string CpuIdentifier, string DotNet, string SqliteProviderVersion, int LogicalProcessors, long TotalAvailableMemoryBytes, string? SnapshotPath, string? SnapshotSha256);
 }
