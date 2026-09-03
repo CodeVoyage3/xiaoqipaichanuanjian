@@ -5,7 +5,7 @@
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize" UseLayoutRounding="True" SnapsToDevicePixels="True">
     <Window.Resources>
         <Style x:Key="ConfirmationGridHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-            <Setter Property="BorderBrush" Value="{DynamicResource TableDividerBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
         <Style x:Key="ConfirmationGridCenterHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ConfirmationGridHeaderStyle}">
@@ -18,9 +18,10 @@
             <TextBlock Text="排查结果确认" FontSize="20" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding PreviewSummaryText}" Margin="0,6,0,0" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding StatusText}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding PreviewIssueText}" Margin="0,6,0,0" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap"/>
         </StackPanel>
         <DataGrid Grid.Row="1" Margin="0,12" ItemsSource="{Binding PreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
-                  GridLinesVisibility="All" HeadersVisibility="Column" SelectionUnit="Cell" SelectionMode="Single"
+                  GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}" HeadersVisibility="Column" SelectionUnit="Cell" SelectionMode="Single"
                   EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"
                   AutomationProperties.Name="排查结果确认明细">
@@ -30,13 +31,18 @@
                 <DataGridTextColumn Header="生产日期" Binding="{Binding ProductionDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"/>
                 <DataGridTextColumn Header="有效日期" Binding="{Binding ExpiryDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"/>
                 <DataGridTextColumn Header="本次排查数量" Binding="{Binding CheckedQtyText}" Width="110" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"/>
-                <DataGridTemplateColumn Header="校验状态" Width="118" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding StatusText}" ToolTip="{Binding Reason}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
             </DataGrid.Columns>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="ToolTip" Value="{Binding Reason}"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding HasIssue}" Value="True"><Setter Property="Background" Value="#FFFDE7E7"/></DataTrigger></Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
         </DataGrid>
         <Grid Grid.Row="2" Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="180"/><ColumnDefinition Width="72"/><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <TextBlock Text="排查人" VerticalAlignment="Center"/><TextBox Grid.Column="1" Text="{Binding InspectorName, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" VerticalContentAlignment="Center" AutomationProperties.Name="排查人"/>
-            <TextBlock Grid.Column="2" Text="排查日期" Margin="12,0,0,0" VerticalAlignment="Center"/><TextBox Grid.Column="3" Text="{Binding CheckDateText, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" AutomationProperties.Name="排查日期，yyyy-MM-dd"/>
-            <TextBlock Grid.Column="4" Text="日期不得晚于今天" Margin="12,0" VerticalAlignment="Center"/>
+            <StackPanel><TextBlock Text="排查人"/><TextBlock Text="{Binding InspectorNameError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/></StackPanel><TextBox Grid.Column="1" Text="{Binding InspectorName, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" VerticalContentAlignment="Center" AutomationProperties.Name="排查人"/>
+            <StackPanel Grid.Column="2" Margin="12,0,0,0"><TextBlock Text="排查日期"/><TextBlock Text="{Binding CheckDateError}" Foreground="{DynamicResource DangerBrush}" FontSize="12"/></StackPanel><DatePicker Grid.Column="3" SelectedDate="{Binding CheckDateValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayDateEnd="{Binding CheckDateMaxValue, Mode=OneWay}" SelectedDateFormat="Short" AutomationProperties.Name="排查日期"/>
+            <TextBlock Grid.Column="4" Text="不可晚于今天" Margin="12,0" VerticalAlignment="Center"/>
         </Grid>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="取消" IsCancel="True" Width="88" Margin="0,0,8,0"/>

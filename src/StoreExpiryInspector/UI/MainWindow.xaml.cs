@@ -214,10 +214,13 @@ public partial class MainWindow : Window
             Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
             DefaultExt = ".xlsx",
             AddExtension = true,
-            FileName = $"今日排查计划_{DateTime.Today:yyyyMMdd}.xlsx",
+            FileName = $"今日排查计划_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
             OverwritePrompt = false
         };
-        if (dialog.ShowDialog(this) == true) await shell.TodayInspection.ExportAsync(dialog.FileName);
+        if (dialog.ShowDialog(this) != true) return;
+        await shell.TodayInspection.ExportAsync(dialog.FileName);
+        if (shell.TodayInspection.LatestExportResult is { } result && result.OutputPath == dialog.FileName)
+            WpfDialogService.ShowExportSuccess(this, result);
     }
 
     private async void OpenTodayInspection_Click(object sender, RoutedEventArgs e)

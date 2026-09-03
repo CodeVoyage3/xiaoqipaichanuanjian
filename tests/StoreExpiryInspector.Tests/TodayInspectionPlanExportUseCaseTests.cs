@@ -69,7 +69,7 @@ public sealed class TodayInspectionPlanExportUseCaseTests
         using var reversedDocument = SpreadsheetDocument.Open(reversedOutput, false);
         var reversedSheet = ((WorksheetPart)reversedDocument.WorkbookPart!.GetPartById(reversedDocument.WorkbookPart.Workbook!.Sheets!.Elements<Sheet>().Single().Id!)).Worksheet!;
         var reversedRows = reversedSheet.GetFirstChild<SheetData>()!.Elements<Row>().Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(14))).ToArray();
-        Assert.Equal(new[] { "序号", "商品编码", "条码", "商品名称", "大类", "生产日期", "有效日期", "当前阶段", "当前批次累计到货", "历史累计到货最大值", "商品当前库存", "本次排查数量", "格式版本", "TaskId", "TaskItemId", "ProductId", "BatchId", "AttentionVersion", "Task更新时间UTC", "TaskItem总数", "Batch当前状态", "Stage快照", "当前批次累计到货快照", "历史累计到货最大值快照", "商品当前库存快照" }, rows[0].Elements<Cell>().Select(Text).ToArray());
+        Assert.Equal(new[] { "序号", "商品编码", "条码", "商品名称", "大类", "生产日期", "有效日期", "当前阶段", "当前批次累计到货", "历史累计到货最大值", "总库存", "本次排查数量", "格式版本", "TaskId", "TaskItemId", "ProductId", "BatchId", "AttentionVersion", "Task更新时间UTC", "TaskItem总数", "Batch当前状态", "Stage快照", "当前批次累计到货快照", "历史累计到货最大值快照", "商品当前库存快照" }, rows[0].Elements<Cell>().Select(Text).ToArray());
         Assert.Equal(new[] { "0001", "0002", "0002" }, rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(1))).ToArray());
         Assert.Equal(rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(14))), reversedRows);
         Assert.All(rows.Skip(1), row => Assert.Equal(CellValues.InlineString, row.Elements<Cell>().ElementAt(1).DataType!.Value));

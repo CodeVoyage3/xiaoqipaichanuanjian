@@ -3,6 +3,8 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Markup;
+using System.Diagnostics;
+using StoreExpiryInspector.Application.Tasks;
 
 namespace StoreExpiryInspector.UI;
 
@@ -16,6 +18,46 @@ internal enum WpfDialogKind
 
 internal static class WpfDialogService
 {
+    public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
+    {
+        var dialog = new Window
+        {
+            Owner = owner, Title = "导出成功", Width = 560, MinWidth = 500, SizeToContent = SizeToContent.Height,
+            FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"), Language = XmlLanguage.GetLanguage("zh-CN"),
+            ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
+            Background = FindBrush(owner, "SurfaceBrush")
+        };
+        var panel = new StackPanel { Margin = new Thickness(24) };
+        panel.Children.Add(new TextBlock { Text = "导出成功", FontSize = 18, FontWeight = FontWeights.SemiBold });
+        panel.Children.Add(new TextBlock { Text = $"商品/任务数量：{result.TaskCount}\n批次数：{result.RowCount}\n完整路径：{result.OutputPath}", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
+        buttons.Children.Add(OpenButton("打开文件", () => Open(result.OutputPath, false), owner));
+        buttons.Children.Add(OpenButton("打开所在文件夹", () => Open(result.OutputPath, true), owner));
+        var close = new Button { Content = "确定", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "PrimaryButtonStyle") };
+        close.Click += (_, _) => dialog.DialogResult = true;
+        buttons.Children.Add(close); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => close.Focus(); dialog.ShowDialog();
+    }
+
+    private static Button OpenButton(string text, Action action, Window owner)
+    {
+        var button = new Button { Content = text, Width = text.Length > 4 ? 120 : 96, Height = 36, Margin = new Thickness(0, 0, 8, 0), Style = FindStyle(owner, "SecondaryButtonStyle") };
+        button.Click += (_, _) => action();
+        return button;
+    }
+
+    private static void Open(string path, bool select)
+    {
+        try
+        {
+            var info = select ? new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") : new ProcessStartInfo(path) { UseShellExecute = true };
+            Process.Start(info);
+        }
+        catch (Exception exception)
+        {
+            Show(null, "无法打开", select ? "无法打开所在文件夹，请确认文件仍存在。" : "无法打开文件，请确认文件仍存在。", "知道了", WpfDialogKind.Error, exception.Message, false);
+        }
+    }
+
     public static bool Show(
         Window? owner,
         string title,

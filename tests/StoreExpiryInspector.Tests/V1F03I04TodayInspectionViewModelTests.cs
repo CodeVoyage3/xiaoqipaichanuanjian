@@ -109,11 +109,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await vm.PreviewAsync("C:\\filled.xlsx");
         vm.CheckDateText = "2026-09-03";
         await vm.SaveDraftAsync();
+        Assert.Equal("排查日期不能晚于今天", vm.CheckDateError);
         vm.CheckDateText = "2026-09-02";
         await vm.SaveDraftAsync();
 
         Assert.Equal(0, applies);
-        Assert.Contains("排查人必填", vm.StatusText);
+        Assert.Contains("请完善排查人", vm.StatusText);
+        Assert.Equal("请输入排查人", vm.InspectorNameError);
     }
 
     [Fact]
@@ -150,6 +152,59 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Equal(576, vm.Tasks.Count);
         Assert.Equal(576, vm.SelectedCount);
         Assert.Equal(1, changes.Count(name => name == nameof(TodayInspectionViewModel.Tasks)));
+    }
+
+    [Fact]
+    public async Task CategoryFilterKeepsTaskIdentityAndLimitsBulkSelectionToVisibleTasks()
+    {
+        var items = new[]
+        {
+            new InspectionTaskListItem(1, 1, "食品", "A", null, "expired", 1, 1, Today, false, "食品"),
+            new InspectionTaskListItem(2, 2, "宠物", "B", null, "withdraw", 1, 1, Today, false, "宠物"),
+            new InspectionTaskListItem(3, 3, "食品二", "C", null, "expired", 1, 1, Today, false, "食品")
+        };
+        IReadOnlyCollection<long>? exported = null;
+        var vm = Create(loadTasks: () => new(items, items.Length, 1, int.MaxValue), export: (_, ids) => { exported = ids; return new("C:\\plan.xlsx", ids.Count, ids.Count); });
+        await vm.LoadAsync();
+
+        Assert.Equal(new[] { "全部", "宠物", "食品" }, vm.Categories);
+        vm.SelectedCategory = "食品";
+        vm.SelectAllCommand.Execute(null);
+        Assert.Equal(new long[] { 1, 3 }, vm.VisibleTasks.Where(task => task.IsSelected).Select(task => task.TaskId));
+        vm.SelectedCategory = "宠物";
+        Assert.False(vm.VisibleTasks.Single().IsSelected);
+        vm.VisibleTasks.Single().IsSelected = true;
+        await vm.ExportAsync("C:\\plan.xlsx");
+
+        Assert.Equal(new long[] { 1, 2, 3 }, exported!.OrderBy(id => id));
+        vm.ClearSelectionCommand.Execute(null);
+        Assert.Equal(new long[] { 1, 3 }, vm.Tasks.Where(task => task.IsSelected).Select(task => task.TaskId));
+    }
+
+    [Fact]
+    public async Task LatestExportOnlyChangesAfterEachSuccessfulResult()
+    {
+        var count = 0;
+        var vm = Create(export: (_, ids) => ++count == 1 ? new("C:\\A.xlsx", ids.Count, 3) : throw new IOException());
+        await vm.LoadAsync(); vm.Tasks[0].IsSelected = true;
+        await vm.ExportAsync("C:\\A.xlsx");
+        await vm.ExportAsync("C:\\B.xlsx");
+        Assert.Equal("C:\\A.xlsx", vm.LatestExportResult?.OutputPath);
+        Assert.Equal("导出今日排查计划失败", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task SubmittedTasksDisappearOnlyAfterAuthoritativeReload()
+    {
+        var completed = false;
+        var item = new InspectionTaskListItem(1, 1, "商品", "A", null, "expired", 1, 1, Today, false, "食品");
+        var vm = Create(
+            loadTasks: () => completed ? new([], 0, 1, int.MaxValue) : new([item], 1, 1, int.MaxValue),
+            submit: _ => { completed = true; return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 1)], []); });
+        await vm.LoadAsync();
+        await vm.PreviewAsync("C:\\filled.xlsx"); vm.InspectorName = "检查员";
+        await vm.SubmitAsync();
+        Assert.Empty(vm.Tasks);
     }
 
     [Fact]
@@ -316,12 +371,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void TodayTaskGridUsesTheSevenColumnVirtualizedSelectionContract()
+    public void TodayTaskGridUsesTheSixColumnVirtualizedSelectionContract()
     {
         var allWindow = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         var todayStart = allWindow.IndexOf("<Grid Visibility=\"{Binding IsTodayInspectionVisible", StringComparison.Ordinal);
         var window = allWindow[todayStart..allWindow.IndexOf("IsImportVisible", todayStart, StringComparison.Ordinal)];
-        foreach (var header in new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "商品当前库存", "任务状态" })
+        foreach (var header in new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "总库存" })
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
@@ -334,11 +389,14 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("SelectionUnit=\"Cell\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"商品编码\" Binding=\"{Binding ProductCode}\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"批次数\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"任务状态\"", window, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding TodayInspection.VisibleTasks}\"", window, StringComparison.Ordinal);
+        Assert.Contains("TodayInspection.Categories", window, StringComparison.Ordinal);
         Assert.Contains("TableGridColumnHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", allWindow, StringComparison.Ordinal);
-        Assert.True(new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "商品当前库存", "任务状态" }
+        Assert.True(new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "总库存" }
             .Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal))
-            .Zip(new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "商品当前库存", "任务状态" }.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
+            .Zip(new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "总库存" }.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
             .All(value => value));
         Assert.Contains("CheckBox IsChecked=\"{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\"", window, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.Name=\"选择今日排查任务\"", window, StringComparison.Ordinal);
@@ -369,18 +427,22 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void ConfirmationWindowKeepsOnlyTheSixApprovedColumns()
+    public void ConfirmationWindowKeepsOnlyTheFiveDataColumnsAndRetainsExceptionExpression()
     {
         var root = FindRepositoryRoot();
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml"));
-        foreach (var header in new[] { "条码", "商品名称", "生产日期", "有效日期", "本次排查数量", "校验状态" })
+        foreach (var header in new[] { "条码", "商品名称", "生产日期", "有效日期", "本次排查数量" })
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
         Assert.Contains("Height=\"520\"", window, StringComparison.Ordinal);
         Assert.Contains("MinHeight=\"440\"", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmationGridHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", window, StringComparison.Ordinal);
-        Assert.Contains("ToolTip=\"{Binding Reason}\"", window, StringComparison.Ordinal);
+        Assert.Contains("ToolTip\" Value=\"{Binding Reason}\"", window, StringComparison.Ordinal);
+        Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
+        Assert.Contains("HasIssue", window, StringComparison.Ordinal);
+        Assert.Contains("DatePicker", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"校验状态\"", window, StringComparison.Ordinal);
         Assert.Contains("OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"原因\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("草稿", window, StringComparison.Ordinal);
