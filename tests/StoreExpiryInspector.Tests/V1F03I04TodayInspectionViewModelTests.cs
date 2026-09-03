@@ -570,14 +570,16 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             .Zip(headers.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
             .All(value => value));
         Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
-        Assert.Contains("Height=\"520\"", window, StringComparison.Ordinal);
-        Assert.Contains("MinHeight=\"440\"", window, StringComparison.Ordinal);
+        Assert.Contains("SizeToContent=\"Height\"", window, StringComparison.Ordinal);
+        Assert.Contains("MaxHeight=\"520\"", window, StringComparison.Ordinal);
+        Assert.Contains("SizeToContent = System.Windows.SizeToContent.Manual", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("ConfirmationGridHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip\" Value=\"{Binding Reason}\"", window, StringComparison.Ordinal);
         Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
         Assert.Contains("MaxHeight=\"280\"", window, StringComparison.Ordinal);
         Assert.Contains("VerticalAlignment=\"Top\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("<RowDefinition Height=\"*\"/>", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"不晚于今天\"", window, StringComparison.Ordinal);
         Assert.Contains("HasIssue", window, StringComparison.Ordinal);
         Assert.Contains("DatePicker", window, StringComparison.Ordinal);

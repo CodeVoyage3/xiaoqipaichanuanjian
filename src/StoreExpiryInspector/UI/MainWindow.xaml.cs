@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Markup;
@@ -169,6 +170,16 @@ public partial class MainWindow : Window
         return null;
     }
 
+    private static void ScrollSelectedToCenter(ListBox listBox) => listBox.Dispatcher.BeginInvoke(() =>
+    {
+        listBox.UpdateLayout();
+        if (listBox.SelectedItem is null || FindVisualChild<ScrollViewer>(listBox) is not { } scrollViewer ||
+            listBox.ItemContainerGenerator.ContainerFromIndex(listBox.SelectedIndex) is not FrameworkElement item)
+            return;
+        var top = item.TransformToAncestor(scrollViewer).Transform(new Point()).Y;
+        scrollViewer.ScrollToVerticalOffset(Math.Max(0, scrollViewer.VerticalOffset + top - (scrollViewer.ViewportHeight - item.ActualHeight) / 2));
+    }, DispatcherPriority.Loaded);
+
     private async void Find_Executed(object sender, ExecutedRoutedEventArgs e)
     {
         if (DataContext is ShellViewModel shell)
@@ -312,8 +323,8 @@ public partial class MainWindow : Window
                 FontSize = 13,
                 Margin = new Thickness(0, 6, 0, 10)
             });
-            var selectedHour = reminderMinuteOfDay / 60;
-            var selectedMinute = reminderMinuteOfDay % 60;
+            var pickerState = new ReminderTimePickerState(reminderMinuteOfDay);
+            var selectedReminderMinuteOfDay = reminderMinuteOfDay;
             var reminderTime = new Button
             {
                 Width = 120,
@@ -324,40 +335,81 @@ public partial class MainWindow : Window
             };
             AutomationProperties.SetName(reminderTime, "每日提醒时间，点击选择");
             panel.Children.Add(reminderTime);
-            var timePicker = new Grid
+            var timePicker = new Border
             {
                 Visibility = Visibility.Collapsed,
                 Background = (Brush)FindResource("SurfaceBrush"),
+                BorderBrush = (Brush)FindResource("BorderBrush"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(10),
                 Margin = new Thickness(0, 8, 0, 0)
             };
-            timePicker.ColumnDefinitions.Add(new ColumnDefinition());
-            timePicker.ColumnDefinitions.Add(new ColumnDefinition());
+            var pickerGrid = new Grid();
+            pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            pickerGrid.RowDefinitions.Add(new RowDefinition());
+            pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            pickerGrid.Children.Add(new TextBlock { Text = "小时", FontWeight = FontWeights.SemiBold });
+            var minuteLabel = new TextBlock { Text = "分钟", FontWeight = FontWeights.SemiBold };
+            Grid.SetColumn(minuteLabel, 1);
+            pickerGrid.Children.Add(minuteLabel);
             var hours = new ListBox
             {
-                ItemsSource = Enumerable.Range(0, 24).Select(value => value.ToString("00")).ToArray(),
-                SelectedIndex = selectedHour,
+                ItemsSource = ReminderTimePickerState.Hours,
+                SelectedIndex = pickerState.Hour,
                 Height = 132,
-                Margin = new Thickness(0, 0, 6, 0)
+                Margin = new Thickness(0, 4, 6, 0)
             };
             var minutes = new ListBox
             {
-                ItemsSource = Enumerable.Range(0, 60).Select(value => value.ToString("00")).ToArray(),
-                SelectedIndex = selectedMinute,
-                Height = 132
+                ItemsSource = ReminderTimePickerState.Minutes,
+                SelectedIndex = pickerState.Minute,
+                Height = 132,
+                Margin = new Thickness(0, 4, 0, 0)
             };
+            ScrollViewer.SetVerticalScrollBarVisibility(hours, ScrollBarVisibility.Auto);
+            ScrollViewer.SetVerticalScrollBarVisibility(minutes, ScrollBarVisibility.Auto);
+            Grid.SetRow(hours, 1);
+            Grid.SetRow(minutes, 1);
             Grid.SetColumn(minutes, 1);
-            timePicker.Children.Add(hours);
-            timePicker.Children.Add(minutes);
+            pickerGrid.Children.Add(hours);
+            pickerGrid.Children.Add(minutes);
+            var pickerButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
+            var pickerCancel = new Button { Content = "取消", Width = 64, Margin = new Thickness(0, 0, 8, 0), Style = (Style)FindResource("SecondaryButtonStyle") };
+            var pickerConfirm = new Button { Content = "确定", Width = 64, Style = (Style)FindResource("PrimaryButtonStyle") };
+            pickerButtons.Children.Add(pickerCancel);
+            pickerButtons.Children.Add(pickerConfirm);
+            Grid.SetRow(pickerButtons, 2);
+            Grid.SetColumnSpan(pickerButtons, 2);
+            pickerGrid.Children.Add(pickerButtons);
+            timePicker.Child = pickerGrid;
+            timePicker.Resources.Add(typeof(ScrollBar), new Style(typeof(ScrollBar)) { Setters = { new Setter(OpacityProperty, 0.55) } });
             panel.Children.Add(timePicker);
+            void ApplyPickerState()
+            {
+                hours.SelectedIndex = pickerState.Hour;
+                minutes.SelectedIndex = pickerState.Minute;
+            }
+            hours.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
+            minutes.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
             reminderTime.Click += (_, _) =>
             {
-                timePicker.Visibility = timePicker.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
-                dialog.Height = timePicker.Visibility == Visibility.Visible ? 440 : 300;
-                if (timePicker.Visibility == Visibility.Visible)
-                {
-                    hours.ScrollIntoView(hours.SelectedItem);
-                    minutes.ScrollIntoView(minutes.SelectedItem);
-                }
+                pickerState.Open(selectedReminderMinuteOfDay);
+                ApplyPickerState();
+                timePicker.Visibility = Visibility.Visible;
+                dialog.Height = 460;
+                ScrollSelectedToCenter(hours);
+                ScrollSelectedToCenter(minutes);
+            };
+            pickerCancel.Click += (_, _) => { pickerState.Cancel(); ApplyPickerState(); timePicker.Visibility = Visibility.Collapsed; dialog.Height = 300; };
+            pickerConfirm.Click += (_, _) =>
+            {
+                selectedReminderMinuteOfDay = pickerState.Confirm();
+                reminderTime.Content = ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay);
+                timePicker.Visibility = Visibility.Collapsed;
+                dialog.Height = 300;
             };
             var autoStartCheckBox = new CheckBox
             {
@@ -410,7 +462,7 @@ public partial class MainWindow : Window
                 try
                 {
                     using var context = DatabaseInitializer.CreateContext();
-                    result = settings.SaveReminderTime(context, ReminderSettingsUseCase.Format(hours.SelectedIndex * 60 + minutes.SelectedIndex));
+                    result = settings.SaveReminderTime(context, ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay));
                 }
                 catch (Exception exception)
                 {
@@ -630,4 +682,36 @@ public partial class MainWindow : Window
             nextAction: "当前数据将被该备份替换。\n恢复前会自动创建保护备份。恢复完成后应用将退出，请重新打开。\n恢复完成后无法在当前操作中直接撤销。",
             showCancel: true);
 
+}
+
+internal sealed class ReminderTimePickerState
+{
+    public static IReadOnlyList<string> Hours { get; } = Enumerable.Range(0, 24).Select(value => value.ToString("00")).ToArray();
+    public static IReadOnlyList<string> Minutes { get; } = Enumerable.Range(0, 60).Select(value => value.ToString("00")).ToArray();
+
+    private int _openedMinuteOfDay;
+
+    public ReminderTimePickerState(int reminderMinuteOfDay) => Open(reminderMinuteOfDay);
+
+    public int Hour { get; private set; }
+
+    public int Minute { get; private set; }
+
+    public void Open(int reminderMinuteOfDay)
+    {
+        if (reminderMinuteOfDay is < 0 or >= 24 * 60) throw new ArgumentOutOfRangeException(nameof(reminderMinuteOfDay));
+        _openedMinuteOfDay = reminderMinuteOfDay;
+        Hour = reminderMinuteOfDay / 60;
+        Minute = reminderMinuteOfDay % 60;
+    }
+
+    public void Select(int hour, int minute)
+    {
+        if (hour is >= 0 and < 24) Hour = hour;
+        if (minute is >= 0 and < 60) Minute = minute;
+    }
+
+    public void Cancel() => Open(_openedMinuteOfDay);
+
+    public int Confirm() => Hour * 60 + Minute;
 }

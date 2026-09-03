@@ -9,6 +9,7 @@ public partial class TodayInspectionConfirmationWindow : Window
     public TodayInspectionConfirmationWindow()
     {
         InitializeComponent();
+        Loaded += (_, _) => SizeToContent = System.Windows.SizeToContent.Manual;
         Closed += (_, _) =>
         {
             if (_viewModel is not null) _viewModel.SubmissionBlocked -= ShowSubmissionBlocked;

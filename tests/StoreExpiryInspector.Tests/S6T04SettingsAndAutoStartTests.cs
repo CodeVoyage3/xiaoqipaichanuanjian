@@ -4,6 +4,7 @@ using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
+using StoreExpiryInspector.UI;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -22,6 +23,25 @@ public sealed class S6T04SettingsAndAutoStartTests
 
         Assert.Equal(600, minute);
         Assert.Equal("10:00", ReminderSettingsUseCase.Format(minute));
+    }
+
+    [Fact]
+    public void ReminderTimePickerKeepsDraftSelectionUntilExplicitConfirm()
+    {
+        var picker = new ReminderTimePickerState(13 * 60 + 25);
+
+        Assert.Equal(Enumerable.Range(0, 24).Select(value => value.ToString("00")), ReminderTimePickerState.Hours);
+        Assert.Equal(Enumerable.Range(0, 60).Select(value => value.ToString("00")), ReminderTimePickerState.Minutes);
+        Assert.Equal((13, 25), (picker.Hour, picker.Minute));
+
+        picker.Select(8, 5);
+        picker.Cancel();
+        Assert.Equal((13, 25), (picker.Hour, picker.Minute));
+
+        picker.Select(8, 5);
+        Assert.Equal("08:05", ReminderSettingsUseCase.Format(picker.Confirm()));
+        picker.Open(8 * 60 + 5);
+        Assert.Equal((8, 5), (picker.Hour, picker.Minute));
     }
 
     [Fact]
@@ -231,10 +251,12 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("Click=\"Settings_Click\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("设置将在后续阶段开放", window, StringComparison.Ordinal);
         Assert.Contains("每日提醒时间", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("Enumerable.Range(0, 24)", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("Enumerable.Range(0, 60)", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ScrollIntoView", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ReminderSettingsUseCase.Format(hours.SelectedIndex * 60 + minutes.SelectedIndex)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ReminderTimePickerState.Hours", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ReminderTimePickerState.Minutes", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ScrollSelectedToCenter", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("pickerCancel", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("pickerConfirm", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay)", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("reminderTime.Text", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimeChanged?.Invoke", codeBehind, StringComparison.Ordinal);
