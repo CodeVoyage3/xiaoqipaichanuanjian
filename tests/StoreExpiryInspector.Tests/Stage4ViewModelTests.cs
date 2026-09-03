@@ -395,6 +395,7 @@ public sealed class Stage4ViewModelTests
         var secondaryButton = StyleBlock(app, "<Style x:Key=\"SecondaryButtonStyle\"");
         var linkButton = StyleBlock(app, "<Style x:Key=\"LinkButtonStyle\"");
         var primaryButton = StyleBlock(app, "<Style x:Key=\"PrimaryButtonStyle\"");
+        var dangerButton = StyleBlock(app, "<Style x:Key=\"DangerButtonStyle\"");
         var textBox = StyleBlock(app, "<Style TargetType=\"TextBox\">");
         var comboBox = StyleBlock(app, "<Style TargetType=\"ComboBox\">");
 
@@ -419,6 +420,15 @@ public sealed class Stage4ViewModelTests
         Assert.Contains("SecondaryTextBrush", linkButton, StringComparison.Ordinal);
         Assert.Contains("PrimaryActionBrush", primaryButton, StringComparison.Ordinal);
         Assert.Contains("PrimaryActionHoverBrush", primaryButton, StringComparison.Ordinal);
+        Assert.Contains("Property=\"Tag\" Value=\"Primary\"", primaryButton, StringComparison.Ordinal);
+        Assert.Contains("Property=\"Tag\" Value=\"Danger\"", dangerButton, StringComparison.Ordinal);
+        Assert.True(ordinaryButton.IndexOf("Value=\"#E5E7EB\"", StringComparison.Ordinal) < ordinaryButton.IndexOf("Value=\"{DynamicResource PrimaryActionHoverBrush}\"", StringComparison.Ordinal));
+        Assert.Contains("<Condition Property=\"Tag\" Value=\"Primary\" />", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("<Setter TargetName=\"Chrome\" Property=\"Background\" Value=\"{DynamicResource PrimaryActionHoverBrush}\" />", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("<Setter TargetName=\"Chrome\" Property=\"Background\" Value=\"#123B79\" />", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("<Condition Property=\"Tag\" Value=\"Danger\" />", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("<Setter TargetName=\"Chrome\" Property=\"Background\" Value=\"#8F1D15\" />", ordinaryButton, StringComparison.Ordinal);
+        Assert.Contains("<Setter TargetName=\"Chrome\" Property=\"Background\" Value=\"#721710\" />", ordinaryButton, StringComparison.Ordinal);
         Assert.Contains("BorderBrush", textBox, StringComparison.Ordinal);
         Assert.Contains("FocusVisualStyle", textBox, StringComparison.Ordinal);
         Assert.Contains("BorderBrush", comboBox, StringComparison.Ordinal);
