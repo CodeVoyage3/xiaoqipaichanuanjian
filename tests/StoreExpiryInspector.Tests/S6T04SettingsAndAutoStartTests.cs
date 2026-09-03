@@ -46,19 +46,20 @@ public sealed class S6T04SettingsAndAutoStartTests
     }
 
     [Fact]
-    public void R7PopupPlacementUsesAvailableSpaceWithoutCoveringSave()
+    public void R8PopupPlacementUsesScreenBoundsWithoutCoveringSave()
     {
         var popup = new Size(180, 190);
-        var target = new Size(172, 32);
-        var window = new Size(460, 420);
+        var visibleWindow = new Rect(100, 200, 460, 300);
 
-        var below = ReminderTimePopupPlacement.Calculate(popup, new Point(24, 90), target, window, 350);
-        var above = ReminderTimePopupPlacement.Calculate(popup, new Point(24, 240), target, window, 350);
+        var below = ReminderTimePopupPlacement.Calculate(popup, new Rect(124, 230, 38, 32), visibleWindow, 510);
+        var above = ReminderTimePopupPlacement.Calculate(popup, new Rect(124, 360, 38, 32), visibleWindow, 450);
 
-        Assert.Equal(126, below.Y);
-        Assert.True(below.Y + popup.Height <= 346);
-        Assert.Equal(46, above.Y);
-        Assert.True(above.Y + popup.Height <= 346);
+        Assert.Equal(266, below.Y);
+        Assert.InRange(below.X, visibleWindow.Left, visibleWindow.Right - popup.Width);
+        Assert.True(below.Y + popup.Height <= 506);
+        Assert.True(above.Y < 360);
+        Assert.True(above.Y >= visibleWindow.Top);
+        Assert.True(above.Y + popup.Height <= 446);
     }
 
     [Theory]
@@ -294,14 +295,21 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("Placement = PlacementMode.Custom", codeBehind, StringComparison.Ordinal);
         Assert.Contains("CustomPopupPlacementCallback", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimePopupPlacement.Calculate", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("reminderTime.PreviewMouseLeftButtonDown", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("Width = 52", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("reminderTime.PreviewMouseLeftButtonDown", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("PlacementTarget = pickerToggle", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Width = 38", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Height = 32", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("UIElement.IsMouseOverProperty", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ButtonBase.IsPressedProperty", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("UIElement.IsKeyboardFocusedProperty", codeBehind, StringComparison.Ordinal);
         Assert.Contains("MaxWidth = 180, MaxHeight = 208", codeBehind, StringComparison.Ordinal);
         Assert.Contains("VerticalAlignment = VerticalAlignment.Bottom", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("const double ClosedSettingsHeight = 300", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("const double OpenSettingsHeight = 420", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("dialog.Height = OpenSettingsHeight", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("dialog.Height = ClosedSettingsHeight", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("OpenSettingsHeight", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("ClosedSettingsHeight", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("dialog.Height =", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("VisualTreeHelper.GetDpi(root)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("GetScreenBounds(pickerToggle, dpi)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("GetScreenBounds(root, dpi)", codeBehind, StringComparison.Ordinal);
         Assert.Contains("pickerBorder.PreviewKeyDown", codeBehind, StringComparison.Ordinal);
         Assert.Contains("每天在该时间集中提醒，修改后立即重新安排提醒。", codeBehind, StringComparison.Ordinal);
         Assert.Contains("timeValidation", codeBehind, StringComparison.Ordinal);

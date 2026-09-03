@@ -180,6 +180,11 @@ public partial class MainWindow : Window
         scrollViewer.ScrollToVerticalOffset(Math.Max(0, scrollViewer.VerticalOffset + top - (scrollViewer.ViewportHeight - item.ActualHeight) / 2));
     }, DispatcherPriority.Loaded);
 
+    private static Rect GetScreenBounds(FrameworkElement element, DpiScale dpi) =>
+        new(element.PointToScreen(new Point()), new Size(
+            element.ActualWidth * dpi.DpiScaleX,
+            element.ActualHeight * dpi.DpiScaleY));
+
     private async void Find_Executed(object sender, ExecutedRoutedEventArgs e)
     {
         if (DataContext is ShellViewModel shell)
@@ -279,8 +284,6 @@ public partial class MainWindow : Window
 
         try
         {
-            const double ClosedSettingsHeight = 300;
-            const double OpenSettingsHeight = 420;
             var settings = new ReminderSettingsUseCase();
             int reminderMinuteOfDay;
             using (var context = DatabaseInitializer.CreateContext())
@@ -302,7 +305,7 @@ public partial class MainWindow : Window
                 FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
                 Language = XmlLanguage.GetLanguage("zh-CN"),
                 Width = 460,
-                Height = ClosedSettingsHeight,
+                Height = 300,
                 MinWidth = 420,
                 MinHeight = 280,
                 ResizeMode = ResizeMode.NoResize,
@@ -340,23 +343,31 @@ public partial class MainWindow : Window
             };
             var reminderTime = new TextBox
             {
-                Width = 120,
-                HorizontalAlignment = HorizontalAlignment.Left,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 Text = ReminderSettingsUseCase.Format(reminderMinuteOfDay),
                 ToolTip = "请输入 HH:mm，或点击时钟选择",
                 Background = Brushes.White,
                 BorderBrush = (Brush)FindResource("BorderBrush"),
-                Padding = new Thickness(8, 4, 52, 4)
+                Height = 32,
+                Padding = new Thickness(8, 4, 42, 4)
             };
             AutomationProperties.SetName(reminderTime, "每日提醒时间");
-            var reminderTimeRow = new Grid { Width = 172, HorizontalAlignment = HorizontalAlignment.Left };
+            var reminderTimeRow = new Grid { Width = 160, Height = 32, HorizontalAlignment = HorizontalAlignment.Left };
             reminderTimeRow.Children.Add(reminderTime);
+            var pickerToggleStyle = new Style(typeof(Button));
+            pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            pickerToggleStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
+            pickerToggleStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            pickerToggleStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
+            pickerToggleStyle.Triggers.Add(new Trigger { Property = UIElement.IsMouseOverProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(241, 245, 249))) } });
+            pickerToggleStyle.Triggers.Add(new Trigger { Property = ButtonBase.IsPressedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(226, 232, 240))) } });
+            pickerToggleStyle.Triggers.Add(new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true, Setters = { new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(100, 116, 139))) } });
             var pickerToggle = new Button
             {
-                Width = 52,
+                Width = 38,
+                Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Right,
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
+                Style = pickerToggleStyle,
                 ToolTip = "选择每日提醒时间",
                 Content = new System.Windows.Shapes.Path { Data = (Geometry)FindResource("ClockIcon"), Stroke = (Brush)FindResource("SecondaryTextBrush"), StrokeThickness = 1.4, Width = 16, Height = 16 }
             };
@@ -364,7 +375,7 @@ public partial class MainWindow : Window
             reminderTimeRow.Children.Add(pickerToggle);
             panel.Children.Add(reminderTimeRow);
             panel.Children.Add(timeValidation);
-            var timePicker = new Popup { PlacementTarget = reminderTimeRow, Placement = PlacementMode.Custom, StaysOpen = false, AllowsTransparency = true };
+            var timePicker = new Popup { PlacementTarget = pickerToggle, Placement = PlacementMode.Custom, StaysOpen = false, AllowsTransparency = true };
             var pickerBorder = new Border { Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = (Brush)FindResource("BorderBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5), Padding = new Thickness(8), Margin = new Thickness(0, 4, 0, 0), MaxWidth = 180, MaxHeight = 208 };
             var pickerGrid = new Grid();
             pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -445,8 +456,6 @@ public partial class MainWindow : Window
             reminderTime.KeyDown += (_, key) => { if (key.Key == Key.Enter) { CommitText(); key.Handled = true; } };
             void OpenPicker()
             {
-                dialog.Height = OpenSettingsHeight;
-                dialog.UpdateLayout();
                 pickerState.Open(selectedReminderMinuteOfDay);
                 ApplyPickerState();
                 pickerWasConfirmed = false;
@@ -455,15 +464,6 @@ public partial class MainWindow : Window
                 ScrollSelectedToCenter(minutes);
             }
             pickerToggle.Click += (_, _) => OpenPicker();
-            reminderTime.PreviewMouseLeftButtonDown += (_, mouse) =>
-            {
-                var point = mouse.GetPosition(reminderTime);
-                if (point.X > reminderTime.GetRectFromCharacterIndex(reminderTime.Text.Length).Right + 6)
-                {
-                    OpenPicker();
-                    mouse.Handled = true;
-                }
-            };
             pickerCancel.Click += (_, _) => ClosePicker();
             pickerConfirm.Click += (_, _) =>
             {
@@ -476,7 +476,6 @@ public partial class MainWindow : Window
             timePicker.Closed += (_, _) =>
             {
                 if (!pickerWasConfirmed) pickerState.Cancel();
-                dialog.Height = ClosedSettingsHeight;
             };
             pickerBorder.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape) { ClosePicker(); key.Handled = true; } };
             dialog.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape && timePicker.IsOpen) { ClosePicker(); key.Handled = true; } };
@@ -527,11 +526,13 @@ public partial class MainWindow : Window
             AutomationProperties.SetName(save, "保存提醒设置");
             timePicker.CustomPopupPlacementCallback = (popupSize, targetSize, _) =>
             {
-                var anchor = reminderTimeRow.TranslatePoint(new Point(), dialog);
-                var saveTop = save.TranslatePoint(new Point(), dialog).Y;
+                var dpi = VisualTreeHelper.GetDpi(root);
+                var anchor = GetScreenBounds(pickerToggle, dpi);
+                var visibleWindow = GetScreenBounds(root, dpi);
+                var saveTop = save.PointToScreen(new Point()).Y;
                 var location = ReminderTimePopupPlacement.Calculate(
-                    popupSize, anchor, targetSize, new Size(dialog.ActualWidth, dialog.ActualHeight), saveTop);
-                return [new CustomPopupPlacement(new Point(location.X - anchor.X, location.Y - anchor.Y), PopupPrimaryAxis.Vertical)];
+                    new Size(popupSize.Width * dpi.DpiScaleX, popupSize.Height * dpi.DpiScaleY), anchor, visibleWindow, saveTop);
+                return [new CustomPopupPlacement(new Point((location.X - anchor.X) / dpi.DpiScaleX, (location.Y - anchor.Y) / dpi.DpiScaleY), PopupPrimaryAxis.Vertical)];
             };
             int? savedMinuteOfDay = null;
             save.Click += (_, _) =>
@@ -814,18 +815,18 @@ internal static class ReminderTimePopupPlacement
 {
     private const double Margin = 4;
 
-    public static Point Calculate(Size popupSize, Point anchor, Size targetSize, Size windowSize, double saveTop)
+    public static Point Calculate(Size popupSize, Rect anchor, Rect visibleWindow, double saveTop)
     {
-        var x = Math.Clamp(anchor.X, 0, Math.Max(0, windowSize.Width - popupSize.Width));
-        var down = anchor.Y + targetSize.Height + Margin;
-        var bottomLimit = Math.Min(windowSize.Height, saveTop - Margin);
+        var x = Math.Clamp(anchor.Left, visibleWindow.Left, Math.Max(visibleWindow.Left, visibleWindow.Right - popupSize.Width));
+        var down = anchor.Bottom + Margin;
+        var bottomLimit = Math.Min(visibleWindow.Bottom, saveTop - Margin);
         if (down + popupSize.Height <= bottomLimit)
         {
             return new Point(x, down);
         }
 
-        var up = anchor.Y - popupSize.Height - Margin;
-        var maxY = Math.Max(0, bottomLimit - popupSize.Height);
-        return new Point(x, Math.Clamp(up, 0, maxY));
+        var up = anchor.Top - popupSize.Height - Margin;
+        var maxY = Math.Max(visibleWindow.Top, bottomLimit - popupSize.Height);
+        return new Point(x, Math.Clamp(up, visibleWindow.Top, maxY));
     }
 }
