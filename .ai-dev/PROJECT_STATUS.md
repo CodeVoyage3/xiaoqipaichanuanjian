@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：V1-F03 已正式完成总验收与收口
-- 状态：V1-F01、V1-F02、V1-F03 均已完成归档；V1-F03-I04 Sol 技术验收与用户真实 WPF GUI 验收均已通过；Stage 8 尚未开始，Stage 9 尚未开始
+- 当前阶段：V1-F03 已正式完成总验收与收口；独立 UI 微调工作项 V1-UI-01 已批准并完成 Task 定义
+- 状态：V1-F01、V1-F02、V1-F03 均已完成归档；V1-UI-01 为 `APPROVED / TASK_DEFINED / WAITING_TERRA_IMPLEMENTATION`；Stage 8 尚未开始，Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -114,6 +114,7 @@
 - V1-F03 功能总卡与实施拆分：`.ai-dev/TASKS/V1-F03.md`、`.ai-dev/ANALYSIS/V1-F03-IMPLEMENTATION-SPLIT.md`
 - V1-F03 I01～I04 验收：`.ai-dev/ACCEPTANCE/V1-F03-I01.md`、`.ai-dev/ACCEPTANCE/V1-F03-I02.md`、`.ai-dev/ACCEPTANCE/V1-F03-I03.md`、`.ai-dev/ACCEPTANCE/V1-F03-I04.md`
 - V1-F03 最终归档：`.ai-dev/STAGES/V1-F03-CLOSEOUT.md`
+- V1-UI-01 Task / Acceptance：`.ai-dev/TASKS/V1-UI-01.md`、`.ai-dev/ACCEPTANCE/V1-UI-01.md`
 
 ## 下一步门禁
 
@@ -132,3 +133,4 @@
 - V1-F02 最终结论（2026-09-02）：提前 3 天预提醒已完成并归档；Sol 定向 88/88、Release 新鲜复跑 764/764、build 0/0、EF 无漂移、migration=9。用户真实 WPF 确认仅预提醒四类各 1、同日未重复、正式 Task + 预提醒单次集中展示正确；Fresh 已安装空白运行库并移除隔离标记，旧数据旁置保留。不得自动进入 V1-F03、Stage 8 或 Stage 9。
 - V1-F01 最终结论（2026-09-02）：I01～I04 已按单卡授权全部完成并归档；最终 Release 751/751、build 0/0、EF 无漂移、migration=9，隔离 GUI 验收通过。不得据此自动进入 V1-F02、V1-F03 或 Stage 8。
 - V1-F03 最终结论（2026-09-03）：I01～I03 核心规则已技术验收；I04 经 R1～R10 修复后 Sol 技术验收通过，用户本人真实 WPF GUI 最终验收 `PASSED`。最近 Release 891/891、build 0/0、EF 无漂移、migration=9；V1-F03-I04 与 V1-F03 均已 `CLOSED`。Stage 8、Stage 9 尚未开始，后续工作等待用户在新的 Codex 话题中另行批准。
+- V1-UI-01 当前结论（2026-09-03）：用户已在新的 Codex 话题中正式批准独立 UI 微调卡“导航、筛选与全局视觉降噪”；Task/Acceptance 已定义，等待全新 Terra（medium）实施。该卡不重开或追加 V1-F03-I04，不改变 V1-F03 `CLOSED` 状态，不启动 Stage 8/9。
