@@ -299,6 +299,9 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("PlacementTarget = pickerToggle", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Width = 38", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Height = 32", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, (Brush)FindResource(\"SurfaceBrush\")))", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("pickerToggleStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 0, 0, 0)))", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent))", codeBehind, StringComparison.Ordinal);
         Assert.Contains("UIElement.IsMouseOverProperty", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ButtonBase.IsPressedProperty", codeBehind, StringComparison.Ordinal);
         Assert.Contains("UIElement.IsKeyboardFocusedProperty", codeBehind, StringComparison.Ordinal);

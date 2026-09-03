@@ -355,9 +355,9 @@ public partial class MainWindow : Window
             var reminderTimeRow = new Grid { Width = 160, Height = 32, HorizontalAlignment = HorizontalAlignment.Left };
             reminderTimeRow.Children.Add(reminderTime);
             var pickerToggleStyle = new Style(typeof(Button));
-            pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-            pickerToggleStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
-            pickerToggleStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, (Brush)FindResource("SurfaceBrush")));
+            pickerToggleStyle.Setters.Add(new Setter(Control.BorderBrushProperty, (Brush)FindResource("BorderBrush")));
+            pickerToggleStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 0, 0, 0)));
             pickerToggleStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
             pickerToggleStyle.Triggers.Add(new Trigger { Property = UIElement.IsMouseOverProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(241, 245, 249))) } });
             pickerToggleStyle.Triggers.Add(new Trigger { Property = ButtonBase.IsPressedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(226, 232, 240))) } });
