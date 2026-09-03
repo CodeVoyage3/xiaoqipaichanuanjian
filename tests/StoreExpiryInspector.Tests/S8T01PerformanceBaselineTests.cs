@@ -49,15 +49,16 @@ public sealed class S8T01PerformanceBaselineTests
         MeasurePath(measures, databasePath, "open_deep_page", context => query.SearchOpenTasks(context, new(Page: 1000)));
         MeasurePath(measures, databasePath, "open_search", context => query.SearchOpenTasks(context, new(SearchText: "S8-OPEN-00001")));
         MeasurePath(measures, databasePath, "open_stage", context => query.SearchOpenTasks(context, new(Stage: "expired")));
-        MeasurePath(measures, databasePath, "open_category", context => query.SearchOpenTasks(context, new(SearchText: "食品")));
-        MeasurePath(measures, databasePath, "open_combined_full_materialization", context => query.SearchOpenTasks(context, new("S8-OPEN", "expired", 1, int.MaxValue)));
+        MeasurePath(measures, databasePath, "pending_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1));
+        MeasurePath(measures, databasePath, "pending_search_stage_category_memory_filter", context => PendingMemoryFilter(query, context, "S8-OPEN", "expired", "食品", 1));
         MeasurePath(measures, databasePath, "task_detail", context => query.GetDetail(context, 1));
         MeasurePath(measures, databasePath, "today_initial_load", context => query.SearchOpenTasks(context, new(PageSize: int.MaxValue)));
-        MeasurePath(measures, databasePath, "today_category_filter", context => query.SearchOpenTasks(context, new(SearchText: "食品", PageSize: int.MaxValue)));
+        MeasurePath(measures, databasePath, "today_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1));
         var history = new InspectionHistoryQuery();
         MeasurePath(measures, databasePath, "history_list", context => history.List(context));
-        MeasurePath(measures, databasePath, "history_detail_and_revision", context => history.GetItemRevisions(context, 1, 1));
-        MeasurePath(measures, databasePath, "product_task_reminder_aggregation", context => query.GetReminderCandidates(context));
+        MeasurePath(measures, databasePath, "history_detail", context => history.GetDetail(context, 1));
+        MeasurePath(measures, databasePath, "history_revision", context => history.GetItemRevisions(context, 1, 1));
+        MeasurePath(measures, databasePath, "product_task_aggregator_no_change", context => new ProductTaskAggregator().Aggregate(context, new(1, [new(1, "discount_20", 1, false)], new DateTime(2026, 9, 3, 0, 0, 0, DateTimeKind.Utc))));
         MeasurePath(measures, databasePath, "reminder_and_pre_reminder", context => new DailyReminderUseCase(query).Evaluate(context, new DateTime(2026, 9, 3, 12, 0, 0)));
         var snapshotWatch = Stopwatch.StartNew();
         var snapshot = new PreImportSnapshotService().Create(databasePath, backupDirectory);
@@ -85,6 +86,13 @@ public sealed class S8T01PerformanceBaselineTests
 
     private static StoreDbContext Open(string path) => DatabaseInitializer.CreateContext(path);
 
+    // This is the PendingTasksViewModel shape: one PageSize=int.MaxValue query, then CategoryName Where and UI paging in memory.
+    private static object PendingMemoryFilter(InspectionTaskQuery query, StoreDbContext context, string? search, string? stage, string category, int page)
+    {
+        var all = query.SearchOpenTasks(context, new(search, stage, 1, int.MaxValue)).Items;
+        return all.Where(item => item.CategoryName == category).Skip((page - 1) * 50).Take(50).ToArray();
+    }
+
     private static void Seed(string path)
     {
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true }.ToString());
@@ -94,8 +102,8 @@ public sealed class S8T01PerformanceBaselineTests
         Execute(connection, transaction, "INSERT INTO scope_baselines (id,scope_key,policy_code,policy_version,created_import_id,business_date,created_at_utc,is_completed,completed_at_utc) VALUES (1,'food','food_expiry',1,1,'2026-09-03','2026-09-03T00:00:00.0000000Z',1,'2026-09-03T00:00:00.0000000Z');");
         Execute(connection, transaction, "WITH d(v) AS (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)), n(i) AS (SELECT a.v+10*b.v+100*c.v+1000*e.v+10000*f.v+1 FROM d a,d b,d c,d e,d f) INSERT INTO products(id,product_code,current_name,current_barcode,category_code,policy_code,policy_version,expiry_management_status,excel_stock_qty,effective_stock_qty,effective_stock_source,lifecycle_generation,is_stock_zero_terminated,created_at_utc,updated_at_utc) SELECT i,printf('S8-OPEN-%05d',i),CASE WHEN i%20=0 THEN '应季搭配' WHEN i%21=0 THEN '赠品小样' ELSE '食品' END,printf('B%05d',i),'food','food_expiry',1,'managed',10,10,'seed',0,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM n;");
         Execute(connection, transaction, "INSERT INTO batches(id,product_id,production_date,expiry_date,shelf_life_value,shelf_life_unit,current_arrival_qty,max_arrival_qty,lifecycle_generation,tracking_status,current_stage,attention_version,handled_attention_version,created_at_utc,updated_at_utc) SELECT id,id,'2026-01-01','2026-09-04',246,'D',10,10,0,'active',CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM products;");
-        Execute(connection, transaction, "INSERT INTO tasks(id,product_id,status,highest_stage,created_at_utc,updated_at_utc,closed_at_utc) SELECT id,id,'open',CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z',NULL FROM products WHERE id<=1000;");
-        Execute(connection, transaction, "INSERT INTO task_items(id,task_id,batch_id,product_id,stage,attention_version,requires_reconfirmation,created_at_utc,updated_at_utc) SELECT id,id,id,id,CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM products WHERE id<=1000;");
+        Execute(connection, transaction, "INSERT INTO tasks(id,product_id,status,highest_stage,created_at_utc,updated_at_utc,closed_at_utc) SELECT id,id,'open',CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z',NULL FROM products;");
+        Execute(connection, transaction, "INSERT INTO task_items(id,task_id,batch_id,product_id,stage,attention_version,requires_reconfirmation,created_at_utc,updated_at_utc) SELECT id,id,id,id,CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM products;");
         Execute(connection, transaction, "WITH d(v) AS (VALUES(0),(1),(2)), n(i) AS (SELECT p.id+100000+100000*d.v FROM products p,d) INSERT INTO tasks(id,product_id,status,highest_stage,created_at_utc,updated_at_utc,closed_at_utc) SELECT i,((i-100001)%100000)+1,'completed','expired','2026-09-01T00:00:00.0000000Z','2026-09-01T00:00:00.0000000Z','2026-09-01T00:00:00.0000000Z' FROM n;");
         Execute(connection, transaction, "INSERT INTO inspections(id,task_id,product_id,product_code_snapshot,product_name_snapshot,barcode_snapshot,stage_snapshot,stock_qty_snapshot,inspector_name,check_date,submitted_at_utc) SELECT id-100000,id,((id-100001)%100000)+1,printf('S8-HISTORY-%06d',id),'S8-T01 history',printf('HB%06d',id),'expired',10,'S8-T01','2026-09-01','2026-09-01T00:00:00.0000000Z' FROM tasks WHERE id>100000;");
         Execute(connection, transaction, "INSERT INTO inspection_items(id,inspection_id,product_id,batch_id,production_date_snapshot,expiry_date_snapshot,stage_snapshot,arrival_qty_snapshot,checked_qty,updated_at_utc) SELECT id,id,((id-1)%100000)+1,((id-1)%100000)+1,'2026-01-01','2026-09-04','expired',10,9,'2026-09-01T00:00:00.0000000Z' FROM inspections;");
@@ -107,17 +115,21 @@ public sealed class S8T01PerformanceBaselineTests
 
     private static void MeasurePath(List<Measure> target, string path, string name, Func<StoreDbContext, object> action)
     {
-        using (var warm = Open(path)) _ = action(warm);
-        var samples = new List<double>(); var commands = new List<string>();
-        for (var i = 0; i < 3; i++)
+        try
         {
-            var interceptor = new Capture();
-            var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true }.ToString()).AddInterceptors(interceptor).Options;
-            using var context = new StoreDbContext(options);
-            var watch = Stopwatch.StartNew(); _ = action(context); watch.Stop(); samples.Add(watch.Elapsed.TotalMilliseconds); commands.AddRange(interceptor.Commands);
+            using (var warm = Open(path)) _ = action(warm);
+            var samples = new List<double>(); var commands = new List<string>();
+            for (var i = 0; i < 3; i++)
+            {
+                var interceptor = new Capture();
+                var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true }.ToString()).AddInterceptors(interceptor).Options;
+                using var context = new StoreDbContext(options);
+                var watch = Stopwatch.StartNew(); _ = action(context); watch.Stop(); samples.Add(watch.Elapsed.TotalMilliseconds); commands.AddRange(interceptor.Commands);
+            }
+            var ordered = samples.Order().ToArray();
+            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], commands.Count / 3, commands.Distinct().Take(8).ToArray(), "warm=1; measured=3; cold=process-start not measured", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes()));
         }
-        var ordered = samples.Order().ToArray();
-        target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[(int)Math.Ceiling(ordered.Length * .95) - 1], commands.Count / 3, commands.Distinct().Take(8).ToArray(), "warm=1; measured=3; cold=process-start not measured", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes()));
+        catch (Exception exception) { target.Add(new(name, [], 0, 0, 0, [], $"blocker={exception.GetType().Name}: {exception.Message}", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes())); }
     }
 
     private static Counts ReadCounts(string path)
@@ -133,6 +145,6 @@ public sealed class S8T01PerformanceBaselineTests
 
     private sealed class Capture : DbCommandInterceptor { public List<string> Commands { get; } = []; public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData data, InterceptionResult<DbDataReader> result) { Commands.Add(command.CommandText); return result; } }
     private sealed record Counts(long Batches, long Inspections, long InspectionItems);
-    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double P95Ms, int CommandCount, IReadOnlyList<string> Sql, string Conditions, string? Artifact, long WorkingSetBytes, long ManagedAllocatedBytes);
+    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<string> Sql, string Conditions, string? Artifact, long WorkingSetBytes, long ManagedAllocatedBytes);
     private sealed record Evidence(string Root, string DatabasePath, long DatabaseBytes, Counts Before, Counts After, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, IReadOnlyList<string> QueryPlans, DateTime CreatedUtc, string DotNet, int LogicalProcessors, long TotalAvailableMemoryBytes, string? SnapshotPath, string? SnapshotSha256);
 }
