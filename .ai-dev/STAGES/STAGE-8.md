@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T01_CURRENT`。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T01_CLOSED / WAITING_S8-T02_APPROVAL`。
 
 ## 开工事实
 
@@ -17,8 +17,9 @@
 
 ## 当前正式任务
 
-- `S8-T01｜高规模数据基线与性能压测基座`：已定义，Acceptance 已建立，等待全新 GPT-5.6 Terra 实施。
-- S8-T01 只建立隔离数据、测量工具和基线证据；不优化生产代码，不新增索引、migration、Schema 或依赖。
+- `S8-T01｜高规模数据基线与性能压测基座`：已由全新 GPT-5.6 Terra 实施，Sol 独立技术验收通过并关闭。
+- S8-T01 已真实生成并核对 100,000 Batch / 300,000 Inspection；只建立隔离数据、测量工具和基线证据，没有优化生产代码或新增索引、migration、Schema、依赖。
+- 当前停止，等待用户是否批准并正式定义 S8-T02；不得把下列候选方向视为实施授权。
 
 ## 后续候选规划（尚未创建 Task）
 
@@ -44,4 +45,3 @@
 - 每张 Stage 8 正式 Task 使用一个全新 GPT-5.6 Terra（reasoning medium、标准速度）；不得复用旧阶段或旧卡 Terra。
 - Terra 只实现当前 Task，提交后停止，不 push，不创建后续 Task。
 - 用户只承担确有必要的真实 GUI 验收；Stage 8 优先使用自动化、终端、SQLite、日志和压测证据。
-

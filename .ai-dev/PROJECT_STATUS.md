@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 已启动，`S8-T01｜高规模数据基线与性能压测基座` 为当前唯一任务；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 状态：Stage 8 已启动，`S8-T01｜高规模数据基线与性能压测基座` 已技术验收关闭，当前等待 S8-T02 是否获批；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -11,7 +11,7 @@
 
 ## 当前交付事实
 
-- Stage 8 于 2026-09-03 在重新 fetch 后从 `master == origin/main == 1e41876bfa9c203a88cf53955867f0c3dd639e84` 启动；S8-T01 Task / Acceptance 已建立，目标为完全隔离的 100,000 Batch / 300,000 Inspection 历史压测基座。当前尚无 S8-T01 实现或实测证据，不预设毫秒 SLA，不创建 S8-T02。
+- Stage 8 于 2026-09-03 在重新 fetch 后从 `master == origin/main == 1e41876bfa9c203a88cf53955867f0c3dd639e84` 启动。S8-T01 已真实生成并核对隔离的 100,000 Batch / 300,000 Inspection 历史压测库；高规模专项 1/1、Release 897/897、build 0/0、EF 无漂移、migration=9。100k 下 Dashboard、无搜索待排查/今日排查、Reminder 等路径暴露 `too many SQL variables` 阻断；本卡已技术验收关闭，不预设毫秒 SLA，不创建 S8-T02。
 
 - 单一 .NET 10 WPF 应用与测试项目；I01 已新增 policy / scope / batch baseline 持久化底座，当前 migration 为 9 条。
 - Stage 2：固定模板只读解析、局部增量规划、确认守卫、安全快照、原子导入、Workbook 保留与最新 Import 撤销资格。
@@ -119,6 +119,8 @@
 - V1-UI-01 Task / Acceptance：`.ai-dev/TASKS/V1-UI-01.md`、`.ai-dev/ACCEPTANCE/V1-UI-01.md`
 
 ## 下一步门禁
+
+- S8-T01 最终结论（2026-09-03）：Terra 实现 `806e14f43203a355c1aaab3251af724cf3b43bf3`，只新增一个高规模测试文件；隔离 100k Batch / 300k Inspection 真实达到，Release 897/897、build 0/0、EF 无漂移、migration=9。首要 blocker 为多个全量读路径的 SQLite `too many SQL variables`；成功路径中 Stage 筛选 median 6631.67 ms 最慢。S8-T01 已关闭，等待用户决定是否批准定义 S8-T02；未启动 Stage 9 或在线升级。
 
 - Stage 6 技术、用户 Windows GUI、正式环境恢复、隔离清理和最终总验收均已通过并正式归档；详见 `.ai-dev/ACCEPTANCE/STAGE-6.md` 与 `.ai-dev/STAGES/STAGE-6-CLOSEOUT.md`。
 - Stage 6 历史结论（2026-08-31）：Stage 6 四卡及总验收全部通过；Release 635/635、build 0/0、EF 无漂移、migration=8。用户本机 `RESTORE_PASS` 回执确认正式库 299008 bytes / SHA-256 `F3D423DF14B882D7BFE87780A81CF5879F074AF4880601CBEDB6B475A964F522`、进程 0，Stage 6 隔离目录已清理且恢复后未再启动应用。
