@@ -296,6 +296,8 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("ReminderTimePopupPlacement.Calculate", codeBehind, StringComparison.Ordinal);
         Assert.Contains("reminderTime.PreviewMouseLeftButtonDown", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Width = 52", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("MaxWidth = 180, MaxHeight = 208", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("VerticalAlignment = VerticalAlignment.Bottom", codeBehind, StringComparison.Ordinal);
         Assert.Contains("pickerBorder.PreviewKeyDown", codeBehind, StringComparison.Ordinal);
         Assert.Contains("每天在该时间集中提醒，修改后立即重新安排提醒。", codeBehind, StringComparison.Ordinal);
         Assert.Contains("timeValidation", codeBehind, StringComparison.Ordinal);

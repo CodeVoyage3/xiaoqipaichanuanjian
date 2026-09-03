@@ -363,7 +363,7 @@ public partial class MainWindow : Window
             panel.Children.Add(reminderTimeRow);
             panel.Children.Add(timeValidation);
             var timePicker = new Popup { PlacementTarget = reminderTimeRow, Placement = PlacementMode.Custom, StaysOpen = false, AllowsTransparency = true };
-            var pickerBorder = new Border { Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = (Brush)FindResource("BorderBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5), Padding = new Thickness(8), Margin = new Thickness(0, 4, 0, 0) };
+            var pickerBorder = new Border { Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = (Brush)FindResource("BorderBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5), Padding = new Thickness(8), Margin = new Thickness(0, 4, 0, 0), MaxWidth = 180, MaxHeight = 208 };
             var pickerGrid = new Grid();
             pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             pickerGrid.RowDefinitions.Add(new RowDefinition());
@@ -497,6 +497,7 @@ public partial class MainWindow : Window
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 18, 0, 0)
             };
             var cancel = new Button
