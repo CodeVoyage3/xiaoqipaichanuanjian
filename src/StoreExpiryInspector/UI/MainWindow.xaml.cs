@@ -318,14 +318,20 @@ public partial class MainWindow : Window
             });
             panel.Children.Add(new TextBlock
             {
-                Text = "使用本地时间，格式为 HH:mm。修改后立即重新安排提醒。",
+                Text = "每天在该时间集中提醒，修改后立即重新安排提醒。",
                 Foreground = (Brush)FindResource("SecondaryTextBrush"),
                 FontSize = 13,
                 Margin = new Thickness(0, 6, 0, 10)
             });
             var pickerState = new ReminderTimePickerState(reminderMinuteOfDay);
             var selectedReminderMinuteOfDay = reminderMinuteOfDay;
-            TextBlock? validation = null;
+            var timeValidation = new TextBlock
+            {
+                Foreground = (Brush)FindResource("DangerBrush"),
+                FontSize = 12,
+                MinHeight = 18,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
             var reminderTime = new TextBox
             {
                 Width = 120,
@@ -350,6 +356,7 @@ public partial class MainWindow : Window
             };
             reminderTimeRow.Children.Add(pickerToggle);
             panel.Children.Add(reminderTimeRow);
+            panel.Children.Add(timeValidation);
             var timePicker = new Popup { PlacementTarget = reminderTimeRow, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
             var pickerBorder = new Border { Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = (Brush)FindResource("BorderBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5), Padding = new Thickness(8), Margin = new Thickness(0, 4, 0, 0) };
             var pickerGrid = new Grid();
@@ -393,19 +400,29 @@ public partial class MainWindow : Window
             pickerGrid.Children.Add(pickerButtons);
             pickerBorder.Child = pickerGrid;
             timePicker.Child = pickerBorder;
-            pickerBorder.Resources.Add(typeof(ListBoxItem), new Style(typeof(ListBoxItem)) { Setters = { new Setter(Control.PaddingProperty, new Thickness(8, 2, 8, 2)) }, Triggers = { new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(234, 240, 247))) } } } });
+            pickerBorder.Resources.Add(typeof(ListBoxItem), new Style(typeof(ListBoxItem))
+            {
+                Setters =
+                {
+                    new Setter(FrameworkElement.HeightProperty, 24d), new Setter(Control.PaddingProperty, new Thickness(0)), new Setter(FrameworkElement.MarginProperty, new Thickness(0)),
+                    new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center), new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center),
+                    new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(71, 85, 105))), new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(203, 213, 225))), new Setter(Control.BorderThicknessProperty, new Thickness(1))
+                },
+                Triggers = { new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(234, 240, 247))), new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(51, 65, 85))), new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(180, 195, 210))) } } }
+            });
+            pickerBorder.Resources.Add(typeof(ScrollBar), new Style(typeof(ScrollBar)) { Setters = { new Setter(OpacityProperty, 0.55) } });
             var pickerWasConfirmed = false;
             void ClosePicker() { pickerState.Cancel(); timePicker.IsOpen = false; }
             bool CommitText()
             {
-                if (!ReminderTimePickerState.TryParse(reminderTime.Text, out var minuteOfDay))
+                if (!ReminderTimePickerState.TryApplyText(reminderTime.Text, selectedReminderMinuteOfDay, out var minuteOfDay))
                 {
-                    validation!.Text = "请输入有效时间（00:00–23:59）";
+                    timeValidation.Text = "请输入有效时间（00:00–23:59）";
                     return false;
                 }
                 selectedReminderMinuteOfDay = minuteOfDay;
                 reminderTime.Text = ReminderSettingsUseCase.Format(minuteOfDay);
-                validation!.Text = string.Empty;
+                timeValidation.Text = string.Empty;
                 return true;
             }
             void ApplyPickerState()
@@ -431,11 +448,12 @@ public partial class MainWindow : Window
             {
                 selectedReminderMinuteOfDay = pickerState.Confirm();
                 reminderTime.Text = ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay);
-                validation!.Text = string.Empty;
+                timeValidation.Text = string.Empty;
                 pickerWasConfirmed = true;
                 timePicker.IsOpen = false;
             };
             timePicker.Closed += (_, _) => { if (!pickerWasConfirmed) pickerState.Cancel(); };
+            pickerBorder.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape) { ClosePicker(); key.Handled = true; } };
             dialog.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape && timePicker.IsOpen) { ClosePicker(); key.Handled = true; } };
             var autoStartCheckBox = new CheckBox
             {
@@ -447,7 +465,7 @@ public partial class MainWindow : Window
             };
             AutomationProperties.SetName(autoStartCheckBox, "开机自启动，仅当前 Windows 用户");
             panel.Children.Add(autoStartCheckBox);
-            validation = new TextBlock
+            var settingsValidation = new TextBlock
             {
                 Foreground = (Brush)FindResource("DangerBrush"),
                 TextWrapping = TextWrapping.Wrap,
@@ -456,8 +474,8 @@ public partial class MainWindow : Window
                     ? string.Empty
                     : $"开机自启动状态读取失败，本次不会修改：{autoStartState.ErrorMessage}"
             };
-            AutomationProperties.SetName(validation, "提醒设置校验结果");
-            panel.Children.Add(validation);
+            AutomationProperties.SetName(settingsValidation, "提醒设置校验结果");
+            panel.Children.Add(settingsValidation);
             var buttons = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -493,13 +511,13 @@ public partial class MainWindow : Window
                 }
                 catch (Exception exception)
                 {
-                    validation.Text = $"提醒时间保存失败：{exception.Message}";
+                    settingsValidation.Text = $"提醒时间保存失败：{exception.Message}";
                     return;
                 }
 
                 if (!result.Succeeded || result.ReminderMinuteOfDay is not int savedMinute)
                 {
-                    validation.Text = result.Message;
+                    timeValidation.Text = result.Message;
                     reminderTime.Focus();
                     return;
                 }
@@ -747,5 +765,12 @@ internal sealed class ReminderTimePickerState
         minuteOfDay = 0;
         return TimeOnly.TryParseExact(value?.Trim(), ["H:mm", "HH:mm"], System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var time)
             && (minuteOfDay = time.Hour * 60 + time.Minute) >= 0;
+    }
+
+    public static bool TryApplyText(string? value, int currentMinuteOfDay, out int minuteOfDay)
+    {
+        if (TryParse(value, out minuteOfDay)) return true;
+        minuteOfDay = currentMinuteOfDay;
+        return false;
     }
 }

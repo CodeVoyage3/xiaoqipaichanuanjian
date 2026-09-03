@@ -53,9 +53,9 @@ public sealed class S6T04SettingsAndAutoStartTests
     [InlineData("9:3", -1)]
     public void R6DirectTimeInputNormalizesOnlyValidValues(string value, int expected)
     {
-        var valid = ReminderTimePickerState.TryParse(value, out var minute);
+        var valid = ReminderTimePickerState.TryApplyText(value, 600, out var minute);
         Assert.Equal(expected >= 0, valid);
-        if (valid) Assert.Equal(expected, minute);
+        Assert.Equal(valid ? expected : 600, minute);
     }
 
     [Fact]
@@ -271,9 +271,18 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("pickerCancel", codeBehind, StringComparison.Ordinal);
         Assert.Contains("pickerConfirm", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay)", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ReminderTimePickerState.TryParse", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ReminderTimePickerState.TryApplyText", codeBehind, StringComparison.Ordinal);
         Assert.Contains("请输入有效时间（00:00–23:59）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("new Popup", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("pickerBorder.PreviewKeyDown", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("每天在该时间集中提醒，修改后立即重新安排提醒。", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("timeValidation", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("settingsValidation", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("FrameworkElement.HeightProperty, 24d", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("HorizontalContentAlignmentProperty, HorizontalAlignment.Center", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Color.FromRgb(234, 240, 247)", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("SecondaryTextBrush", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("OpacityProperty, 0.55", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("dialog.Height = 460", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimeChanged?.Invoke", codeBehind, StringComparison.Ordinal);

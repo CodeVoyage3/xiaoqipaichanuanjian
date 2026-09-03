@@ -626,6 +626,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("ContentTemplate=\"{StaticResource StageBadgeTemplate}\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("ConfirmationStageBadgeStyle", window, StringComparison.Ordinal);
         Assert.Contains("StageBadgeResources.xaml", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml")), StringComparison.Ordinal);
+        var stageBadge = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "StageBadgeResources.xaml"));
+        Assert.Contains("Binding=\"{Binding HighestStage}\" Value=\"expired\"", stageBadge, StringComparison.Ordinal);
+        Assert.Contains("#FDECEC", stageBadge, StringComparison.Ordinal);
+        Assert.Contains("Binding=\"{Binding HighestStage}\" Value=\"withdraw\"", stageBadge, StringComparison.Ordinal);
+        Assert.Contains("#FFF0E5", stageBadge, StringComparison.Ordinal);
+        Assert.Contains("StageBadgeResources.xaml", window, StringComparison.Ordinal);
         Assert.Equal("过期", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "expired"), string.Empty).CurrentStage);
         Assert.Equal("收仓", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "withdraw"), string.Empty).CurrentStage);
     }
