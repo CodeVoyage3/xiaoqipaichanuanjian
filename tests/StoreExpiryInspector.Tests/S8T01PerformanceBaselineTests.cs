@@ -36,6 +36,8 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(root, "app.db"), DatabaseInitializer.GetDefaultBackupDirectory()));
         Assert.Throws<ArgumentException>(() => ValidateRoot(Environment.CurrentDirectory, Path.Combine(Environment.CurrentDirectory, "S8-T01.db"), root));
         Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), Path.Combine(Path.GetTempPath(), "S8-T01.db"), Path.Combine(Path.GetTempPath(), "S8-T01-snapshot")));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(Path.GetTempPath(), "elsewhere", "S8-T01.db"), Path.Combine(root, "S8-T01-snapshot")));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(root, "S8-T01.db"), Path.Combine(Path.GetTempPath(), "elsewhere", "S8-T01-snapshot")));
     }
 
     [Fact]
@@ -54,6 +56,7 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.Equal(InspectionCount, before.InspectionItems);
         var databaseVerificationBefore = Verify(databasePath);
         Assert.True(databaseVerificationBefore.IntegrityOk); Assert.Equal(0, databaseVerificationBefore.ForeignKeyViolations); Assert.Equal(9, databaseVerificationBefore.MigrationCount);
+        var fingerprintBefore = Fingerprint(databasePath);
 
         var measures = new List<Measure>();
         var query = new InspectionTaskQuery();
@@ -62,41 +65,43 @@ public sealed class S8T01PerformanceBaselineTests
         MeasurePath(measures, databasePath, "open_deep_page", context => query.SearchOpenTasks(context, new(Page: 1000)));
         MeasurePath(measures, databasePath, "open_search", context => query.SearchOpenTasks(context, new(SearchText: "S8-OPEN-00001")));
         MeasurePath(measures, databasePath, "open_stage", context => query.SearchOpenTasks(context, new(Stage: "expired")));
-        MeasurePath(measures, databasePath, "pending_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1));
-        MeasurePath(measures, databasePath, "pending_search_stage_category_memory_filter", context => PendingMemoryFilter(query, context, "S8-OPEN", "expired", "食品", 1));
+        MeasurePath(measures, databasePath, "pending_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1, true));
+        MeasurePath(measures, databasePath, "pending_search_stage_category_memory_filter", context => PendingMemoryFilter(query, context, "S8-OPEN", "expired", "食品", 1, true));
         MeasurePath(measures, databasePath, "task_detail", context => query.GetDetail(context, 3));
         MeasurePath(measures, databasePath, "today_initial_load", context => query.SearchOpenTasks(context, new(PageSize: int.MaxValue)));
-        MeasurePath(measures, databasePath, "today_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1));
+        MeasurePath(measures, databasePath, "today_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1, true));
         var history = new InspectionHistoryQuery();
         MeasurePath(measures, databasePath, "history_list", context => history.List(context));
         MeasurePath(measures, databasePath, "history_detail", context => history.GetDetail(context, 3));
         MeasurePath(measures, databasePath, "history_revision", context => history.GetItemRevisions(context, 3, 3));
+        var productTaskBefore = ProductTaskFingerprint(databasePath, 3);
         MeasurePath(measures, databasePath, "product_task_aggregator_no_change", context =>
         {
             var result = new ProductTaskAggregator().Aggregate(context, new(3, [new(3, "expired", 1, false)], new DateTime(2026, 9, 3, 0, 0, 0, DateTimeKind.Utc)));
             Assert.False(result.Changed);
+            Assert.Equal(productTaskBefore, ProductTaskFingerprint(databasePath, 3));
             return result;
         }, root);
         MeasurePath(measures, databasePath, "reminder_and_pre_reminder", context => new DailyReminderUseCase(query).Evaluate(context, new DateTime(2026, 9, 3, 12, 0, 0)));
         PreImportSnapshotResult? snapshot = null;
         var snapshotWatch = Stopwatch.StartNew();
         try { snapshot = new PreImportSnapshotService().Create(databasePath, backupDirectory); }
-        catch (Exception exception) { measures.Add(FailedMeasure("sqlite_backupdatabase_snapshot", exception, snapshotWatch.Elapsed, [])); }
+        catch (Exception exception) { measures.Add(FailedMeasure("sqlite_backupdatabase_snapshot", exception, snapshotWatch.Elapsed, [])); throw; }
         finally { snapshotWatch.Stop(); }
-        if (snapshot is not null)
-            measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", snapshot.CanProceed ? null : snapshot.Code, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
+        Assert.NotNull(snapshot); Assert.True(snapshot.CanProceed, snapshot.Code); Assert.NotNull(snapshot.Metadata);
+        var snapshotVerification = Verify(snapshot.Metadata.SnapshotPath);
+        Assert.True(snapshotVerification.IntegrityOk); Assert.Equal(0, snapshotVerification.ForeignKeyViolations); Assert.Equal(9, snapshotVerification.MigrationCount);
+        measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
 
         var after = ReadCounts(databasePath);
         AssertCountsEqual(before, after);
         var databaseVerificationAfter = Verify(databasePath);
         Assert.True(databaseVerificationAfter.IntegrityOk); Assert.Equal(0, databaseVerificationAfter.ForeignKeyViolations); Assert.Equal(9, databaseVerificationAfter.MigrationCount);
-        var fingerprintBefore = Fingerprint(before);
-        var fingerprintAfter = Fingerprint(after);
+        var fingerprintAfter = Fingerprint(databasePath);
         Assert.Equal(fingerprintBefore, fingerprintAfter);
-        var excludedReminderCandidates = ScalarSql(databasePath, "SELECT COUNT(*) FROM tasks t JOIN products p ON p.id=t.product_id WHERE t.status='open' AND p.expiry_management_status='excluded'");
-        Assert.Equal(0, excludedReminderCandidates);
-        var snapshotVerification = snapshot?.Metadata is null ? null : Verify(snapshot.Metadata.SnapshotPath);
-        var result = new Evidence(Environment.GetEnvironmentVariable("S8_T01_COMMIT") ?? "not_proven", root, databasePath, new FileInfo(databasePath).Length, FileHash(databasePath), databaseVerificationAfter, before, after, fingerprintBefore, fingerprintAfter, measures, Indexes(databasePath), BuildDiagnostics(measures), "direct_SQL_eligibility=0; formal reminder path recorded above (may be blocked by too_many_SQL_variables)", DateTime.UtcNow, RuntimeInformation.OSDescription, Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "not_proven", Environment.Version.ToString(), SqliteVersion(databasePath), typeof(SqliteConnection).Assembly.GetName().Version?.ToString() ?? "not_proven", Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, "fixed_seed=S8-T01-20260903; iterations=3; warm=1; cold=process_start_not_measured", snapshot?.Metadata?.SnapshotPath, snapshot?.Metadata?.Sha256, snapshot?.Metadata?.FileSize, snapshotVerification);
+        var excluded = ExcludedChecks(databasePath);
+        Assert.Equal(2, excluded.Products); Assert.Equal(2, excluded.Batches); Assert.Equal(0, excluded.OpenTasks); Assert.Equal(0, excluded.ReminderEligibleBatches);
+        var result = new Evidence(Environment.GetEnvironmentVariable("S8_T01_COMMIT") ?? "not_proven", root, databasePath, new FileInfo(databasePath).Length, FileHash(databasePath), databaseVerificationAfter, before, after, fingerprintBefore, fingerprintAfter, measures, Indexes(databasePath), BuildDiagnostics(measures), excluded, DateTime.UtcNow, RuntimeInformation.OSDescription, Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "not_proven", Environment.Version.ToString(), SqliteVersion(databasePath), typeof(SqliteConnection).Assembly.GetName().Version?.ToString() ?? "not_proven", Environment.ProcessorCount, GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, "fixed_seed=S8-T01-20260903; iterations=3; warm=1; cold=process_start_not_measured", snapshot.Metadata.SnapshotPath, snapshot.Metadata.Sha256, snapshot.Metadata.FileSize, snapshotVerification);
         var json = Path.Combine(root, "S8-T01-baseline.json");
         File.WriteAllText(json, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"S8-T01 JSON: {json}");
@@ -113,21 +118,23 @@ public sealed class S8T01PerformanceBaselineTests
 
     private static void ValidateRoot(string root, string databasePath, string backupPath)
     {
-        if (!Path.IsPathFullyQualified(root) || !Path.IsPathFullyQualified(databasePath) || !Path.IsPathFullyQualified(backupPath) ||
-            !root.Contains("StoreExpiryInspectorS8T01", StringComparison.OrdinalIgnoreCase) || !root.Contains("S8-T01-", StringComparison.OrdinalIgnoreCase) ||
-            root.StartsWith(Environment.CurrentDirectory, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(Path.GetFullPath(databasePath), DatabaseInitializer.GetDefaultDatabasePath(), StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(Path.GetFullPath(backupPath), DatabaseInitializer.GetDefaultBackupDirectory(), StringComparison.OrdinalIgnoreCase))
+        if (!Path.IsPathFullyQualified(root) || !Path.IsPathFullyQualified(databasePath) || !Path.IsPathFullyQualified(backupPath))
+            throw new ArgumentException("S8-T01 requires absolute paths.");
+        root = Path.GetFullPath(root); databasePath = Path.GetFullPath(databasePath); backupPath = Path.GetFullPath(backupPath);
+        var parent = Path.Combine(Path.GetFullPath(Path.GetTempPath()), "StoreExpiryInspectorS8T01");
+        if (!IsChild(parent, root) || !Path.GetFileName(root).StartsWith("S8-T01-", StringComparison.OrdinalIgnoreCase) || !IsChild(root, databasePath) || !IsChild(root, backupPath))
             throw new ArgumentException("S8-T01 requires a uniquely marked TEMP root.");
     }
+    private static bool IsChild(string parent, string child) { var relative = Path.GetRelativePath(parent, child); return !Path.IsPathRooted(relative) && !relative.Equals("..", StringComparison.Ordinal) && !relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal); }
 
     private static StoreDbContext Open(string path) => DatabaseInitializer.CreateContext(path);
 
     // This is the PendingTasksViewModel shape: one PageSize=int.MaxValue query, then CategoryName Where and UI paging in memory.
-    private static object PendingMemoryFilter(InspectionTaskQuery query, StoreDbContext context, string? search, string? stage, string category, int page)
+    private static object PendingMemoryFilter(InspectionTaskQuery query, StoreDbContext context, string? search, string? stage, string category, int page, bool includeAllCategories)
     {
-        var all = query.SearchOpenTasks(context, new(search, stage, 1, int.MaxValue)).Items;
-        return all.Where(item => item.CategoryName == category).Skip((page - 1) * 50).Take(50).ToArray();
+        var all = includeAllCategories ? query.SearchOpenTasks(context, new(PageSize: int.MaxValue)).Items : null;
+        var filtered = search is null && stage is null ? all! : query.SearchOpenTasks(context, new(search, stage, 1, int.MaxValue)).Items;
+        return filtered.Where(item => item.CategoryName == category).Skip((page - 1) * 50).Take(50).ToArray();
     }
 
     private static void Seed(string path)
@@ -137,10 +144,9 @@ public sealed class S8T01PerformanceBaselineTests
         using var transaction = connection.BeginTransaction();
         Execute(connection, transaction, "INSERT INTO imports (id,source_file_name,source_file_sha256,parsed_at_utc,confirmed_at_utc,status,product_count,batch_count,new_product_count,new_batch_count,updated_batch_count,issue_count,unsupported_category_count,new_task_product_count,is_undone) VALUES (1,'S8-T01','0000000000000000000000000000000000000000000000000000000000000000','2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z','succeeded',0,0,0,0,0,0,0,0,0);");
         Execute(connection, transaction, "INSERT INTO scope_baselines (id,scope_key,policy_code,policy_version,created_import_id,business_date,created_at_utc,is_completed,completed_at_utc) VALUES (1,'food','food_expiry',1,1,'2026-09-03','2026-09-03T00:00:00.0000000Z',1,'2026-09-03T00:00:00.0000000Z');");
-        Execute(connection, transaction, "WITH d(v) AS (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)), n(i) AS (SELECT a.v+10*b.v+100*c.v+1000*e.v+10000*f.v+1 FROM d a,d b,d c,d e,d f) INSERT INTO products(id,product_code,current_name,current_barcode,category_code,policy_code,policy_version,expiry_management_status,excel_stock_qty,effective_stock_qty,effective_stock_source,lifecycle_generation,is_stock_zero_terminated,created_at_utc,updated_at_utc) SELECT i,printf('S8-OPEN-%05d',i),CASE WHEN i%20=0 THEN '应季搭配' WHEN i%21=0 THEN '赠品小样' ELSE '食品' END,printf('B%05d',i),'food','food_expiry',1,'managed',10,10,'seed',0,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM n;");
+        Execute(connection, transaction, "WITH d(v) AS (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)), n(i) AS (SELECT a.v+10*b.v+100*c.v+1000*e.v+10000*f.v+1 FROM d a,d b,d c,d e,d f) INSERT INTO products(id,product_code,current_name,current_barcode,category_code,policy_code,policy_version,expiry_management_status,excel_stock_qty,effective_stock_qty,effective_stock_source,lifecycle_generation,is_stock_zero_terminated,created_at_utc,updated_at_utc) SELECT i,printf('S8-OPEN-%05d',i),'食品',printf('B%05d',i),'food','food_expiry',1,'managed',10,10,'seed',0,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM n;");
         Execute(connection, transaction, "UPDATE products SET current_name='应季搭配',category_code='seasonal_assortment',policy_code=NULL,policy_version=NULL,expiry_management_status='excluded' WHERE id=1; UPDATE products SET current_name='赠品小样',category_code='gift_sample',policy_code=NULL,policy_version=NULL,expiry_management_status='excluded' WHERE id=2;");
-        Execute(connection, transaction, "INSERT INTO batches(id,product_id,production_date,expiry_date,shelf_life_value,shelf_life_unit,current_arrival_qty,max_arrival_qty,lifecycle_generation,tracking_status,current_stage,attention_version,handled_attention_version,created_at_utc,updated_at_utc) SELECT id,id,'2026-01-01','2026-09-04',246,'D',10,10,0,'active',CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM products WHERE id>2;");
-        Execute(connection, transaction, "INSERT INTO batches(id,product_id,production_date,expiry_date,shelf_life_value,shelf_life_unit,current_arrival_qty,max_arrival_qty,lifecycle_generation,tracking_status,current_stage,attention_version,handled_attention_version,created_at_utc,updated_at_utc) VALUES(100001,3,'2026-01-02','2026-09-05',246,'D',10,10,0,'active','expired',1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z'),(100002,4,'2026-01-02','2026-09-05',246,'D',10,10,0,'active','discount_50',1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z');");
+        Execute(connection, transaction, "INSERT INTO batches(id,product_id,production_date,expiry_date,shelf_life_value,shelf_life_unit,current_arrival_qty,max_arrival_qty,lifecycle_generation,tracking_status,current_stage,attention_version,handled_attention_version,created_at_utc,updated_at_utc) SELECT id,id,'2026-01-01','2026-09-04',246,'D',10,10,0,'active',CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM products;");
         Execute(connection, transaction, "INSERT INTO tasks(id,product_id,status,highest_stage,created_at_utc,updated_at_utc,closed_at_utc) SELECT id,id,'open',CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z',NULL FROM products WHERE id>2;");
         Execute(connection, transaction, "INSERT INTO task_items(id,task_id,batch_id,product_id,stage,attention_version,requires_reconfirmation,created_at_utc,updated_at_utc) SELECT id,id,id,id,CASE id%4 WHEN 0 THEN 'discount_50' WHEN 1 THEN 'discount_20' WHEN 2 THEN 'withdraw' ELSE 'expired' END,1,0,'2026-09-03T00:00:00.0000000Z','2026-09-03T00:00:00.0000000Z' FROM products WHERE id>2;");
         Execute(connection, transaction, "WITH d(v) AS (VALUES(0),(1),(2)), n(i) AS (SELECT p.id+99998+99998*d.v FROM products p,d WHERE p.id>2) INSERT INTO tasks(id,product_id,status,highest_stage,created_at_utc,updated_at_utc,closed_at_utc) SELECT i,((i-100001)%99998)+3,'completed','expired','2026-09-01T00:00:00.0000000Z','2026-09-01T00:00:00.0000000Z','2026-09-01T00:00:00.0000000Z' FROM n;");
@@ -194,7 +200,15 @@ public sealed class S8T01PerformanceBaselineTests
     private static void Execute(SqliteConnection c, SqliteTransaction t, string sql) { using var cmd = c.CreateCommand(); cmd.Transaction = t; cmd.CommandText = sql; cmd.ExecuteNonQuery(); }
 
     private static long ScalarSql(string path, string sql) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = sql; return Convert.ToInt64(x.ExecuteScalar()); }
-    private static string Fingerprint(Counts counts) => HashText(string.Join(";", counts.Tables.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={pair.Value}")));
+    private static string Fingerprint(string path)
+    {
+        var fields = new Dictionary<string, string> { ["products"] = "product_code", ["batches"] = "current_stage", ["tasks"] = "status", ["task_items"] = "stage", ["drafts"] = "is_invalid", ["draft_items"] = "checked_qty", ["inspections"] = "product_code_snapshot", ["inspection_items"] = "checked_qty", ["inspection_item_revisions"] = "new_checked_qty", ["scope_baselines"] = "scope_key" };
+        using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open();
+        return HashText(string.Join(";", fields.Select(pair => $"{pair.Key}:{StableRows(c, pair.Key, pair.Value)}")));
+    }
+    private static string StableRows(SqliteConnection c, string table, string field) { using var x = c.CreateCommand(); x.CommandText = $"SELECT COUNT(*),MIN(id),MAX(id),COALESCE((SELECT group_concat(id || ':' || {field}, '|') FROM (SELECT id,{field} FROM {table} ORDER BY id LIMIT 2)),''),COALESCE((SELECT group_concat(id || ':' || {field}, '|') FROM (SELECT id,{field} FROM {table} ORDER BY id DESC LIMIT 2)), '') FROM {table}"; using var r = x.ExecuteReader(); r.Read(); return string.Join("|", Enumerable.Range(0, 5).Select(i => r.IsDBNull(i) ? "" : r.GetValue(i).ToString())); }
+    private static string ProductTaskFingerprint(string path, long productId) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); using var x = c.CreateCommand(); x.CommandText = "SELECT p.id || ':' || p.product_code || ':' || t.id || ':' || t.status || ':' || t.highest_stage || ':' || ti.id || ':' || ti.stage || ':' || ti.attention_version || ':' || ti.requires_reconfirmation FROM products p LEFT JOIN tasks t ON t.product_id=p.id AND t.status='open' LEFT JOIN task_items ti ON ti.task_id=t.id WHERE p.id=$id ORDER BY ti.id"; x.Parameters.AddWithValue("$id", productId); using var r = x.ExecuteReader(); var rows = new List<string>(); while (r.Read()) rows.Add(r.GetString(0)); return HashText(string.Join(";", rows)); }
+    private static ExcludedCheck ExcludedChecks(string path) => new(ScalarSql(path, "SELECT COUNT(*) FROM products WHERE expiry_management_status='excluded'"), ScalarSql(path, "SELECT COUNT(*) FROM batches b JOIN products p ON p.id=b.product_id WHERE p.expiry_management_status='excluded'"), ScalarSql(path, "SELECT COUNT(*) FROM tasks t JOIN products p ON p.id=t.product_id WHERE t.status='open' AND p.expiry_management_status='excluded'"), ScalarSql(path, "SELECT COUNT(*) FROM batches b JOIN products p ON p.id=b.product_id WHERE p.expiry_management_status='excluded' AND b.tracking_status='active' AND p.effective_stock_qty>0 AND p.expiry_management_status='managed' AND p.policy_version=1 AND p.policy_code IN ('food_expiry','pet_expiry','general_long_expiry') AND EXISTS(SELECT 1 FROM scope_baselines s WHERE s.is_completed=1 AND s.scope_key=p.category_code AND s.policy_code=p.policy_code AND s.policy_version=p.policy_version)"));
     private static string FileHash(string path) { using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant(); }
     private static string HashText(string text) => Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
     private static string SqliteVersion(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); return c.ServerVersion; }
@@ -239,5 +253,6 @@ public sealed class S8T01PerformanceBaselineTests
     private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<CommandEvidence> Commands, string Conditions, string? Blocker, long WorkingSetBytes, long ManagedAllocatedBytes, string MemoryKind, string AllocationDelta, IReadOnlyList<CapturedCommand> CapturedCommands);
     private sealed record Diagnostics(bool FullScan, bool TempBTree, string NPlusOne, string OverMaterialization, string InMemoryFiltering, bool Timeout, bool Lock, bool Crash, bool Oom);
     private sealed record Verification(bool IntegrityOk, int ForeignKeyViolations, int MigrationCount);
-    private sealed record Evidence(string SourceCommit, string Root, string DatabasePath, long DatabaseBytes, string DatabaseSha256, Verification DatabaseVerification, Counts Before, Counts After, string LogicalFingerprintBefore, string LogicalFingerprintAfter, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, Diagnostics Diagnostics, string ExcludedReminderCheck, DateTime CreatedUtc, string OsDescription, string CpuIdentifier, string DotNet, string SqliteVersion, string SqliteProviderVersion, int LogicalProcessors, long TotalAvailableMemoryBytes, string Conditions, string? SnapshotPath, string? SnapshotSha256, long? SnapshotBytes, Verification? SnapshotVerification);
+    private sealed record ExcludedCheck(long Products, long Batches, long OpenTasks, long ReminderEligibleBatches);
+    private sealed record Evidence(string SourceCommit, string Root, string DatabasePath, long DatabaseBytes, string DatabaseSha256, Verification DatabaseVerification, Counts Before, Counts After, string LogicalFingerprintBefore, string LogicalFingerprintAfter, IReadOnlyList<Measure> Measures, IReadOnlyList<string> ExistingIndexes, Diagnostics Diagnostics, ExcludedCheck ExcludedReminderCheck, DateTime CreatedUtc, string OsDescription, string CpuIdentifier, string DotNet, string SqliteVersion, string SqliteProviderVersion, int LogicalProcessors, long TotalAvailableMemoryBytes, string Conditions, string? SnapshotPath, string? SnapshotSha256, long? SnapshotBytes, Verification? SnapshotVerification);
 }
