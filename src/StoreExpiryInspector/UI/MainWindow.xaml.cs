@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Markup;
@@ -180,10 +179,75 @@ public partial class MainWindow : Window
         scrollViewer.ScrollToVerticalOffset(Math.Max(0, scrollViewer.VerticalOffset + top - (scrollViewer.ViewportHeight - item.ActualHeight) / 2));
     }, DispatcherPriority.Loaded);
 
-    private static Rect GetScreenBounds(FrameworkElement element, DpiScale dpi) =>
-        new(element.PointToScreen(new Point()), new Size(
-            element.ActualWidth * dpi.DpiScaleX,
-            element.ActualHeight * dpi.DpiScaleY));
+    private int? ShowReminderTimeDialog(int reminderMinuteOfDay)
+    {
+        var pickerState = new ReminderTimePickerState(reminderMinuteOfDay);
+        var dialog = new Window
+        {
+            Owner = this,
+            Title = "选择提醒时间",
+            FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
+            Language = XmlLanguage.GetLanguage("zh-CN"),
+            Width = 260,
+            Height = 286,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = false,
+            Content = new Grid { Margin = new Thickness(18) }
+        };
+        AutomationProperties.SetName(dialog, "选择提醒时间");
+        var root = (Grid)dialog.Content;
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition());
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.ColumnDefinitions.Add(new ColumnDefinition());
+        root.ColumnDefinitions.Add(new ColumnDefinition());
+        root.Children.Add(new TextBlock { Text = "小时", FontWeight = FontWeights.SemiBold });
+        var minuteLabel = new TextBlock { Text = "分钟", FontWeight = FontWeights.SemiBold };
+        Grid.SetColumn(minuteLabel, 1);
+        root.Children.Add(minuteLabel);
+        var hours = new ListBox { ItemsSource = ReminderTimePickerState.Hours, SelectedIndex = pickerState.Hour, Margin = new Thickness(0, 6, 6, 0) };
+        var minutes = new ListBox { ItemsSource = ReminderTimePickerState.Minutes, SelectedIndex = pickerState.Minute, Margin = new Thickness(0, 6, 0, 0) };
+        ScrollViewer.SetVerticalScrollBarVisibility(hours, ScrollBarVisibility.Auto);
+        ScrollViewer.SetVerticalScrollBarVisibility(minutes, ScrollBarVisibility.Auto);
+        AutomationProperties.SetName(hours, "提醒小时");
+        AutomationProperties.SetName(minutes, "提醒分钟");
+        Grid.SetRow(hours, 1);
+        Grid.SetRow(minutes, 1);
+        Grid.SetColumn(minutes, 1);
+        root.Children.Add(hours);
+        root.Children.Add(minutes);
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
+        var cancel = new Button { Content = "取消", IsCancel = true, Width = 64, Margin = new Thickness(0, 0, 8, 0), Style = (Style)FindResource("SecondaryButtonStyle") };
+        var confirm = new Button { Content = "确定", IsDefault = true, Width = 64, Style = (Style)FindResource("PrimaryButtonStyle") };
+        AutomationProperties.SetName(cancel, "取消选择提醒时间");
+        AutomationProperties.SetName(confirm, "确定选择提醒时间");
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(confirm);
+        Grid.SetRow(buttons, 2);
+        Grid.SetColumnSpan(buttons, 2);
+        root.Children.Add(buttons);
+        root.Resources.Add(typeof(ListBoxItem), new Style(typeof(ListBoxItem))
+        {
+            Setters =
+            {
+                new Setter(FrameworkElement.HeightProperty, 24d), new Setter(Control.PaddingProperty, new Thickness(0)),
+                new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center), new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center),
+                new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(71, 85, 105))), new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(203, 213, 225))), new Setter(Control.BorderThicknessProperty, new Thickness(1))
+            },
+            Triggers = { new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(234, 240, 247))), new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(51, 65, 85))), new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(180, 195, 210))) } } }
+        });
+        hours.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
+        minutes.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
+        confirm.Click += (_, _) => dialog.DialogResult = true;
+        dialog.Loaded += (_, _) =>
+        {
+            ScrollSelectedToCenter(hours);
+            ScrollSelectedToCenter(minutes);
+            hours.Focus();
+        };
+        return dialog.ShowDialog() == true ? pickerState.Confirm() : null;
+    }
 
     private async void Find_Executed(object sender, ExecutedRoutedEventArgs e)
     {
@@ -332,7 +396,6 @@ public partial class MainWindow : Window
                 FontSize = 13,
                 Margin = new Thickness(0, 6, 0, 10)
             });
-            var pickerState = new ReminderTimePickerState(reminderMinuteOfDay);
             var selectedReminderMinuteOfDay = reminderMinuteOfDay;
             var timeValidation = new TextBlock
             {
@@ -345,94 +408,31 @@ public partial class MainWindow : Window
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Text = ReminderSettingsUseCase.Format(reminderMinuteOfDay),
-                ToolTip = "请输入 HH:mm，或点击时钟选择",
+                ToolTip = "请输入 HH:mm，或选择时间",
                 Background = Brushes.White,
                 BorderBrush = (Brush)FindResource("BorderBrush"),
                 Height = 32,
-                Padding = new Thickness(8, 4, 42, 4)
+                Padding = new Thickness(8, 4, 8, 4)
             };
             AutomationProperties.SetName(reminderTime, "每日提醒时间");
-            var reminderTimeRow = new Grid { Width = 160, Height = 32, HorizontalAlignment = HorizontalAlignment.Left };
+            var reminderTimeRow = new Grid { Width = 250, Height = 32, HorizontalAlignment = HorizontalAlignment.Left };
+            reminderTimeRow.ColumnDefinitions.Add(new ColumnDefinition());
+            reminderTimeRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             reminderTimeRow.Children.Add(reminderTime);
-            var pickerToggleStyle = new Style(typeof(Button));
-            pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, (Brush)FindResource("SurfaceBrush")));
-            pickerToggleStyle.Setters.Add(new Setter(Control.BorderBrushProperty, (Brush)FindResource("BorderBrush")));
-            pickerToggleStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 0, 0, 0)));
-            pickerToggleStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
-            pickerToggleStyle.Triggers.Add(new Trigger { Property = UIElement.IsMouseOverProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(241, 245, 249))) } });
-            pickerToggleStyle.Triggers.Add(new Trigger { Property = ButtonBase.IsPressedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(226, 232, 240))) } });
-            pickerToggleStyle.Triggers.Add(new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true, Setters = { new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(100, 116, 139))) } });
             var pickerToggle = new Button
             {
-                Width = 38,
+                Content = "选择时间",
+                Width = 88,
                 Height = 32,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Style = pickerToggleStyle,
-                ToolTip = "选择每日提醒时间",
-                Content = new System.Windows.Shapes.Path { Data = (Geometry)FindResource("ClockIcon"), Stroke = (Brush)FindResource("SecondaryTextBrush"), StrokeThickness = 1.4, Width = 16, Height = 16 }
+                Margin = new Thickness(8, 0, 0, 0),
+                Style = (Style)FindResource("SecondaryButtonStyle"),
+                ToolTip = "选择每日提醒时间"
             };
-            AutomationProperties.SetName(pickerToggle, "打开提醒时间选择器");
+            AutomationProperties.SetName(pickerToggle, "选择提醒时间");
+            Grid.SetColumn(pickerToggle, 1);
             reminderTimeRow.Children.Add(pickerToggle);
             panel.Children.Add(reminderTimeRow);
             panel.Children.Add(timeValidation);
-            var timePicker = new Popup { PlacementTarget = pickerToggle, Placement = PlacementMode.Custom, StaysOpen = false, AllowsTransparency = true };
-            var pickerBorder = new Border { Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = (Brush)FindResource("BorderBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(5), Padding = new Thickness(8), Margin = new Thickness(0, 4, 0, 0), MaxWidth = 180, MaxHeight = 208 };
-            var pickerGrid = new Grid();
-            pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            pickerGrid.RowDefinitions.Add(new RowDefinition());
-            pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            pickerGrid.Children.Add(new TextBlock { Text = "小时", FontWeight = FontWeights.SemiBold });
-            var minuteLabel = new TextBlock { Text = "分钟", FontWeight = FontWeights.SemiBold };
-            Grid.SetColumn(minuteLabel, 1);
-            pickerGrid.Children.Add(minuteLabel);
-            var hours = new ListBox
-            {
-                ItemsSource = ReminderTimePickerState.Hours,
-                SelectedIndex = pickerState.Hour,
-                Height = 116,
-                Margin = new Thickness(0, 4, 6, 0)
-            };
-            var minutes = new ListBox
-            {
-                ItemsSource = ReminderTimePickerState.Minutes,
-                SelectedIndex = pickerState.Minute,
-                Height = 116,
-                Margin = new Thickness(0, 4, 0, 0)
-            };
-            ScrollViewer.SetVerticalScrollBarVisibility(hours, ScrollBarVisibility.Auto);
-            ScrollViewer.SetVerticalScrollBarVisibility(minutes, ScrollBarVisibility.Auto);
-            AutomationProperties.SetName(hours, "提醒小时");
-            AutomationProperties.SetName(minutes, "提醒分钟");
-            Grid.SetRow(hours, 1);
-            Grid.SetRow(minutes, 1);
-            Grid.SetColumn(minutes, 1);
-            pickerGrid.Children.Add(hours);
-            pickerGrid.Children.Add(minutes);
-            var pickerButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
-            var pickerCancel = new Button { Content = "取消", Width = 64, Margin = new Thickness(0, 0, 8, 0), Style = (Style)FindResource("SecondaryButtonStyle") };
-            var pickerConfirm = new Button { Content = "确定", Width = 64, Style = (Style)FindResource("PrimaryButtonStyle") };
-            pickerButtons.Children.Add(pickerCancel);
-            pickerButtons.Children.Add(pickerConfirm);
-            Grid.SetRow(pickerButtons, 2);
-            Grid.SetColumnSpan(pickerButtons, 2);
-            pickerGrid.Children.Add(pickerButtons);
-            pickerBorder.Child = pickerGrid;
-            timePicker.Child = pickerBorder;
-            pickerBorder.Resources.Add(typeof(ListBoxItem), new Style(typeof(ListBoxItem))
-            {
-                Setters =
-                {
-                    new Setter(FrameworkElement.HeightProperty, 24d), new Setter(Control.PaddingProperty, new Thickness(0)), new Setter(FrameworkElement.MarginProperty, new Thickness(0)),
-                    new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center), new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center),
-                    new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(71, 85, 105))), new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(203, 213, 225))), new Setter(Control.BorderThicknessProperty, new Thickness(1))
-                },
-                Triggers = { new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true, Setters = { new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(234, 240, 247))), new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(51, 65, 85))), new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(180, 195, 210))) } } }
-            });
-            pickerBorder.Resources.Add(typeof(ScrollBar), new Style(typeof(ScrollBar)) { Setters = { new Setter(OpacityProperty, 0.55) } });
-            var pickerWasConfirmed = false;
-            void ClosePicker() { pickerState.Cancel(); timePicker.IsOpen = false; }
             bool CommitText()
             {
                 if (!ReminderTimePickerState.TryApplyText(reminderTime.Text, selectedReminderMinuteOfDay, out var minuteOfDay))
@@ -445,40 +445,16 @@ public partial class MainWindow : Window
                 timeValidation.Text = string.Empty;
                 return true;
             }
-            void ApplyPickerState()
-            {
-                hours.SelectedIndex = pickerState.Hour;
-                minutes.SelectedIndex = pickerState.Minute;
-            }
-            hours.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
-            minutes.SelectionChanged += (_, _) => pickerState.Select(hours.SelectedIndex, minutes.SelectedIndex);
             reminderTime.LostKeyboardFocus += (_, _) => CommitText();
             reminderTime.KeyDown += (_, key) => { if (key.Key == Key.Enter) { CommitText(); key.Handled = true; } };
-            void OpenPicker()
+            pickerToggle.Click += (_, _) =>
             {
-                pickerState.Open(selectedReminderMinuteOfDay);
-                ApplyPickerState();
-                pickerWasConfirmed = false;
-                timePicker.IsOpen = true;
-                ScrollSelectedToCenter(hours);
-                ScrollSelectedToCenter(minutes);
-            }
-            pickerToggle.Click += (_, _) => OpenPicker();
-            pickerCancel.Click += (_, _) => ClosePicker();
-            pickerConfirm.Click += (_, _) =>
-            {
-                selectedReminderMinuteOfDay = pickerState.Confirm();
-                reminderTime.Text = ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay);
+                if (!CommitText()) return;
+                if (ShowReminderTimeDialog(selectedReminderMinuteOfDay) is not int selectedMinute) return;
+                selectedReminderMinuteOfDay = selectedMinute;
+                reminderTime.Text = ReminderSettingsUseCase.Format(selectedMinute);
                 timeValidation.Text = string.Empty;
-                pickerWasConfirmed = true;
-                timePicker.IsOpen = false;
             };
-            timePicker.Closed += (_, _) =>
-            {
-                if (!pickerWasConfirmed) pickerState.Cancel();
-            };
-            pickerBorder.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape) { ClosePicker(); key.Handled = true; } };
-            dialog.PreviewKeyDown += (_, key) => { if (key.Key == Key.Escape && timePicker.IsOpen) { ClosePicker(); key.Handled = true; } };
             var autoStartCheckBox = new CheckBox
             {
                 Content = "开机自启动（仅当前 Windows 用户）",
@@ -524,16 +500,6 @@ public partial class MainWindow : Window
                 Style = (Style)FindResource("PrimaryButtonStyle")
             };
             AutomationProperties.SetName(save, "保存提醒设置");
-            timePicker.CustomPopupPlacementCallback = (popupSize, targetSize, _) =>
-            {
-                var dpi = VisualTreeHelper.GetDpi(root);
-                var anchor = GetScreenBounds(pickerToggle, dpi);
-                var visibleWindow = GetScreenBounds(root, dpi);
-                var saveTop = save.PointToScreen(new Point()).Y;
-                var location = ReminderTimePopupPlacement.Calculate(
-                    new Size(popupSize.Width * dpi.DpiScaleX, popupSize.Height * dpi.DpiScaleY), anchor, visibleWindow, saveTop);
-                return [new CustomPopupPlacement(new Point((location.X - anchor.X) / dpi.DpiScaleX, (location.Y - anchor.Y) / dpi.DpiScaleY), PopupPrimaryAxis.Vertical)];
-            };
             int? savedMinuteOfDay = null;
             save.Click += (_, _) =>
             {
@@ -808,25 +774,5 @@ internal sealed class ReminderTimePickerState
         if (TryParse(value, out minuteOfDay)) return true;
         minuteOfDay = currentMinuteOfDay;
         return false;
-    }
-}
-
-internal static class ReminderTimePopupPlacement
-{
-    private const double Margin = 4;
-
-    public static Point Calculate(Size popupSize, Rect anchor, Rect visibleWindow, double saveTop)
-    {
-        var x = Math.Clamp(anchor.Left, visibleWindow.Left, Math.Max(visibleWindow.Left, visibleWindow.Right - popupSize.Width));
-        var down = anchor.Bottom + Margin;
-        var bottomLimit = Math.Min(visibleWindow.Bottom, saveTop - Margin);
-        if (down + popupSize.Height <= bottomLimit)
-        {
-            return new Point(x, down);
-        }
-
-        var up = anchor.Top - popupSize.Height - Margin;
-        var maxY = Math.Max(visibleWindow.Top, bottomLimit - popupSize.Height);
-        return new Point(x, Math.Clamp(up, visibleWindow.Top, maxY));
     }
 }

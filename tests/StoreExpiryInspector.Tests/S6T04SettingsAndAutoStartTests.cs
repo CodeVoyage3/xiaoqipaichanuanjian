@@ -45,23 +45,6 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Equal((8, 5), (picker.Hour, picker.Minute));
     }
 
-    [Fact]
-    public void R8PopupPlacementUsesScreenBoundsWithoutCoveringSave()
-    {
-        var popup = new Size(180, 190);
-        var visibleWindow = new Rect(100, 200, 460, 300);
-
-        var below = ReminderTimePopupPlacement.Calculate(popup, new Rect(124, 230, 38, 32), visibleWindow, 510);
-        var above = ReminderTimePopupPlacement.Calculate(popup, new Rect(124, 360, 38, 32), visibleWindow, 450);
-
-        Assert.Equal(266, below.Y);
-        Assert.InRange(below.X, visibleWindow.Left, visibleWindow.Right - popup.Width);
-        Assert.True(below.Y + popup.Height <= 506);
-        Assert.True(above.Y < 360);
-        Assert.True(above.Y >= visibleWindow.Top);
-        Assert.True(above.Y + popup.Height <= 446);
-    }
-
     [Theory]
     [InlineData("9:30", 570)]
     [InlineData("09:30", 570)]
@@ -285,35 +268,24 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("每日提醒时间", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimePickerState.Hours", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimePickerState.Minutes", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ScrollSelectedToCenter", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("pickerCancel", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("pickerConfirm", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("ShowReminderTimeDialog", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Title = \"选择提醒时间\"", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("return dialog.ShowDialog() == true ? pickerState.Confirm() : null", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderSettingsUseCase.Format(selectedReminderMinuteOfDay)", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimePickerState.TryApplyText", codeBehind, StringComparison.Ordinal);
         Assert.Contains("请输入有效时间（00:00–23:59）", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("new Popup", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("Placement = PlacementMode.Custom", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("CustomPopupPlacementCallback", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ReminderTimePopupPlacement.Calculate", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("new Popup", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("CustomPopupPlacementCallback", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("ReminderTimePopupPlacement", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("reminderTime.PreviewMouseLeftButtonDown", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("PlacementTarget = pickerToggle", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("Width = 38", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Content = \"选择时间\"", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Width = 88", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Height = 32", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, (Brush)FindResource(\"SurfaceBrush\")))", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("pickerToggleStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 0, 0, 0)))", codeBehind, StringComparison.Ordinal);
-        Assert.DoesNotContain("pickerToggleStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent))", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("UIElement.IsMouseOverProperty", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ButtonBase.IsPressedProperty", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("UIElement.IsKeyboardFocusedProperty", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("MaxWidth = 180, MaxHeight = 208", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Style = (Style)FindResource(\"SecondaryButtonStyle\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("VerticalAlignment = VerticalAlignment.Bottom", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("OpenSettingsHeight", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("ClosedSettingsHeight", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("dialog.Height =", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("VisualTreeHelper.GetDpi(root)", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("GetScreenBounds(pickerToggle, dpi)", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("GetScreenBounds(root, dpi)", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("pickerBorder.PreviewKeyDown", codeBehind, StringComparison.Ordinal);
         Assert.Contains("每天在该时间集中提醒，修改后立即重新安排提醒。", codeBehind, StringComparison.Ordinal);
         Assert.Contains("timeValidation", codeBehind, StringComparison.Ordinal);
         Assert.Contains("settingsValidation", codeBehind, StringComparison.Ordinal);
@@ -321,13 +293,17 @@ public sealed class S6T04SettingsAndAutoStartTests
         Assert.Contains("HorizontalContentAlignmentProperty, HorizontalAlignment.Center", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Color.FromRgb(234, 240, 247)", codeBehind, StringComparison.Ordinal);
         Assert.Contains("SecondaryTextBrush", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("AutomationProperties.SetName(pickerToggle, \"打开提醒时间选择器\")", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.SetName(pickerToggle, \"选择提醒时间\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.SetName(hours, \"提醒小时\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.SetName(minutes, \"提醒分钟\")", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("OpacityProperty, 0.55", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.SetName(dialog, \"选择提醒时间\")", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("hours.Focus()", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("dialog.Height = 460", codeBehind, StringComparison.Ordinal);
         Assert.Contains("开机自启动（仅当前 Windows 用户）", codeBehind, StringComparison.Ordinal);
         Assert.Contains("ReminderTimeChanged?.Invoke", codeBehind, StringComparison.Ordinal);
+        var pickerBlock = codeBehind[codeBehind.IndexOf("private int? ShowReminderTimeDialog", StringComparison.Ordinal)..codeBehind.IndexOf("private async void Find_Executed", StringComparison.Ordinal)];
+        Assert.DoesNotContain("DatabaseInitializer.CreateContext", pickerBlock, StringComparison.Ordinal);
+        Assert.DoesNotContain("ReminderTimeChanged", pickerBlock, StringComparison.Ordinal);
         var saveBlock = codeBehind[codeBehind.IndexOf("save.Click +=", StringComparison.Ordinal)..];
         Assert.True(saveBlock.IndexOf("if (!CommitText()) return;", StringComparison.Ordinal) < saveBlock.IndexOf("DatabaseInitializer.CreateContext", StringComparison.Ordinal));
         Assert.True(saveBlock.IndexOf("if (savedMinuteOfDay.HasValue)", StringComparison.Ordinal) < saveBlock.IndexOf("ReminderTimeChanged?.Invoke", StringComparison.Ordinal));

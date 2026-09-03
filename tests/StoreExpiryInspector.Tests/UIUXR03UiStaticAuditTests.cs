@@ -140,13 +140,15 @@ public sealed class UIUXR03UiStaticAuditTests
         {
             "AutomationProperties.SetName(dialog, \"提醒设置\")",
             "AutomationProperties.SetName(reminderTime, \"每日提醒时间\")",
-            "AutomationProperties.SetName(pickerToggle, \"打开提醒时间选择器\")",
-            "new Popup", "请输入有效时间（00:00–23:59）", "Enumerable.Range(0, 24)", "Enumerable.Range(0, 60)",
+            "AutomationProperties.SetName(pickerToggle, \"选择提醒时间\")",
+            "Title = \"选择提醒时间\"", "Content = \"选择时间\"", "请输入有效时间（00:00–23:59）", "Enumerable.Range(0, 24)", "Enumerable.Range(0, 60)",
             "WpfDialogService.Show(", "WpfDialogKind.Danger", "DangerButtonStyle"
         })
         {
             Assert.Contains(token, codeBehind, StringComparison.Ordinal);
         }
+        Assert.DoesNotContain("new Popup", codeBehind, StringComparison.Ordinal);
+        Assert.DoesNotContain("CustomPopupPlacementCallback", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("ShowAppDialog(", codeBehind, StringComparison.Ordinal);
         Assert.DoesNotContain("AppDialogKind", codeBehind, StringComparison.Ordinal);
         Assert.Contains("NavigationToggleButton.Width = _isNavigationCollapsed ? 24 : 32", codeBehind, StringComparison.Ordinal);
