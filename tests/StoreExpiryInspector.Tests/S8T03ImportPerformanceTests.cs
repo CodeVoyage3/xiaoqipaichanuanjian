@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using StoreExpiryInspector.Application.Imports;
+using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Excel;
 using Xunit;
@@ -367,9 +368,11 @@ public sealed class S8T03ImportPerformanceTests
         Assert.Empty(classification.SkippedRows);
 
         ConfirmedImportResult result = null!;
+        var sqlMetrics = new SqlMetricsInterceptor();
+        var saveMetrics = new SaveChangesMetricsInterceptor();
         Measure(measures, "snapshot_write_post", () =>
         {
-            using var execute = DatabaseInitializer.CreateContext(databasePath);
+            using var execute = OpenWithInterceptors(databasePath, sqlMetrics, saveMetrics);
             void Capture(string stage, TimeSpan elapsed) => stageMeasures[stage] = stageMeasures.GetValueOrDefault(stage) + elapsed.TotalMilliseconds;
             var occurredAtUtc = new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc);
             result = new ConfirmedImportLifecycleOrchestrator(
@@ -386,6 +389,7 @@ public sealed class S8T03ImportPerformanceTests
         Assert.True(result.Succeeded, result.Code);
         Assert.True(File.Exists(result.SnapshotPath));
         AssertIsUnderRoot(root, result.SnapshotPath!);
+        var importId = Assert.IsType<long>(result.ImportId);
         using (var verify = DatabaseInitializer.CreateContext(databasePath))
         {
             Assert.Equal(rows / 2, verify.Products.Count());
@@ -393,6 +397,53 @@ public sealed class S8T03ImportPerformanceTests
             Assert.Equal(2, verify.Imports.Count(import => import.Status == ImportStatuses.Succeeded));
             Assert.Equal(2, verify.ImportWorkbooks.Count());
             Assert.Equal(rows / 20, verify.Products.Count(product => product.EffectiveStockQty == 0));
+            Assert.Equal(rows / 2, verify.Products.Count(product => product.LastSeenImportId == result.ImportId));
+            Assert.Equal(rows, verify.Batches.Count(batch => batch.LastSeenImportId == result.ImportId));
+            Assert.Equal(rows / 20, verify.Products.Count(product => product.IsStockZeroTerminated));
+            Assert.Equal(rows / 20 * 2, verify.Batches.Count(batch => batch.TrackingStatus == "stopped" && batch.StopReason == "product_stock_zero"));
+            var import = Assert.Single(verify.Imports.Where(item => item.Id == importId));
+            Assert.Equal(ImportStatuses.Succeeded, import.Status);
+            Assert.Equal(rows / 2, import.ProductCount);
+            Assert.Equal(rows, import.BatchCount);
+            Assert.Equal(plan.NewProductCount, import.NewProductCount);
+            Assert.Equal(plan.NewBatchCount, import.NewBatchCount);
+            Assert.Equal(plan.UpdatedBatchCount, import.UpdatedBatchCount);
+            Assert.Equal(0, import.IssueCount);
+            Assert.Equal(result.SnapshotPath, import.PreImportSnapshotPath);
+            Assert.All(verify.ImportWorkbooks.Where(workbook => workbook.ImportId == importId), workbook =>
+            {
+                Assert.Equal(Path.GetFileName(sourcePath), workbook.OriginalFileName);
+                Assert.Equal(contract.SourceFileSha256, workbook.Sha256);
+                Assert.Equal(contract.WorkbookBytes.ToArray(), workbook.Content);
+            });
+            Assert.All(verify.Batches.Include(batch => batch.Product).Where(batch => batch.LastSeenImportId == result.ImportId).ToArray(), batch =>
+            {
+                if (batch.Product.IsStockZeroTerminated)
+                {
+                    Assert.Equal("stopped", batch.TrackingStatus);
+                    Assert.Equal("product_stock_zero", batch.StopReason);
+                    Assert.Null(batch.NextTriggerDate);
+                }
+                else if (batch.Product.ExpiryManagementStatus != ExpiryManagementStatus.Managed)
+                {
+                    Assert.Equal(ExpiryStageCalculator.None, batch.CurrentStage);
+                }
+                else
+                {
+                    var expected = ExpiryPolicyCalculator.Calculate(batch.Product.PolicyCode!, batch.Product.PolicyVersion!.Value, new DateOnly(2026, 9, 4), batch.ExpiryDate,
+                        batch.ShelfLifeUnit switch { "D" => batch.ShelfLifeValue, "M" => batch.ShelfLifeValue * 30, "Y" => batch.ShelfLifeValue * 365, _ => throw new InvalidOperationException() });
+                    Assert.Equal(expected?.CurrentStage ?? ExpiryStageCalculator.None, batch.CurrentStage);
+                }
+            });
+            var excludedProductIds = verify.Products.Where(product => product.LastSeenImportId == importId && product.ExpiryManagementStatus != ExpiryManagementStatus.Managed).Select(product => product.Id).ToArray();
+            Assert.NotEmpty(excludedProductIds);
+            Assert.All(verify.Batches.Where(batch => excludedProductIds.Contains(batch.ProductId)), batch => Assert.Equal(ExpiryStageCalculator.None, batch.CurrentStage));
+            Assert.Empty(verify.Tasks.Where(task => excludedProductIds.Contains(task.ProductId)));
+            Assert.All(verify.Tasks.Include(task => task.Items).Where(task => task.Status == "open").ToArray(), task =>
+            {
+                Assert.NotEmpty(task.Items);
+                Assert.All(task.Items, item => Assert.Equal(task.ProductId, item.ProductId));
+            });
         }
 
         var verification = Verify(databasePath);
@@ -415,10 +466,21 @@ public sealed class S8T03ImportPerformanceTests
             database_logical_bytes = DatabaseLogicalBytes(databasePath),
             snapshot_bytes = new FileInfo(result.SnapshotPath!).Length,
             measures_ms = measures,
+            sample_count = 1,
+            median_ms = measures,
+            max_ms = measures,
             import_stage_ms = stageMeasures,
             total_ms = total.Elapsed.TotalMilliseconds,
             managed_allocated_bytes = GC.GetTotalAllocatedBytes() - allocationStart,
             working_set_bytes = Environment.WorkingSet,
+            actual_sql_command_count = sqlMetrics.CommandCount,
+            actual_sql_max_parameter_count = sqlMetrics.MaxParameterCount,
+            save_changes_attempt_count = saveMetrics.AttemptCount,
+            save_changes_success_count = saveMetrics.SuccessCount,
+            transaction_count = (int?)null,
+            transaction_count_note = "not collected: no transaction interceptor was added to this performance path",
+            known_main_import_context_creations = 2,
+            measurement_note = "total excludes database initialization, seed import, workbook generation, and post-success verification; allocation covers main parse through import only",
             integrity_check = verification.IntegrityOk ? "ok" : "failed",
             foreign_key_check_count = verification.ForeignKeyViolations,
             data_distribution = "2 batches/product; first up-to-1000 products pre-exist with product-name/stock and batch-0 arrival update, remaining products/batches are new; products rotate all 10 supported categories; every tenth product has stock 0; D/M/Y all occur"
@@ -620,9 +682,12 @@ public sealed class S8T03ImportPerformanceTests
     }
 
     private static StoreDbContext OpenWithInterceptor(string databasePath, DbCommandInterceptor interceptor) =>
+        OpenWithInterceptors(databasePath, interceptor);
+
+    private static StoreDbContext OpenWithInterceptors(string databasePath, params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<StoreDbContext>()
             .UseSqlite(new SqliteConnectionStringBuilder { DataSource = databasePath, ForeignKeys = true }.ToString())
-            .AddInterceptors(interceptor)
+            .AddInterceptors(interceptors)
             .Options);
 
     // The rollback matrix uses this complete business-table fingerprint rather than counts alone.
@@ -735,6 +800,31 @@ public sealed class S8T03ImportPerformanceTests
             if (sql.Contains("INSERT INTO \"batches\"", StringComparison.OrdinalIgnoreCase)) BatchWrites++;
             if (Resolved && ZeroSaved && sql.Contains("UPDATE \"batches\"", StringComparison.OrdinalIgnoreCase)) SuccessfulPostCommands++;
         }
+    }
+
+    private sealed class SqlMetricsInterceptor : DbCommandInterceptor
+    {
+        public int CommandCount { get; private set; }
+        public int MaxParameterCount { get; private set; }
+
+        public override DbDataReader ReaderExecuted(DbCommand command, CommandExecutedEventData eventData, DbDataReader result) { Record(command); return result; }
+        public override int NonQueryExecuted(DbCommand command, CommandExecutedEventData eventData, int result) { Record(command); return result; }
+        public override object? ScalarExecuted(DbCommand command, CommandExecutedEventData eventData, object? result) { Record(command); return result; }
+
+        private void Record(DbCommand command)
+        {
+            CommandCount++;
+            MaxParameterCount = Math.Max(MaxParameterCount, command.Parameters.Count);
+        }
+    }
+
+    private sealed class SaveChangesMetricsInterceptor : SaveChangesInterceptor
+    {
+        public int AttemptCount { get; private set; }
+        public int SuccessCount { get; private set; }
+
+        public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result) { AttemptCount++; return result; }
+        public override int SavedChanges(SaveChangesCompletedEventData eventData, int result) { SuccessCount++; return result; }
     }
 
     private sealed class FailOnPlannerReadInterceptor : DbCommandInterceptor
