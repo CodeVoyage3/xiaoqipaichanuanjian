@@ -18,7 +18,7 @@ if ($TestMode) {
     $id = [guid]::NewGuid().ToString()
     $install = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
     $data = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
-    $arguments += @('/DTestMode', "/DTestAppIdKey=$id", "/DTestSuffix=$id", "/DTestInstallRoot=$install", "/DTestDataRoot=$data", "/DTestMutexName=$(Split-Path -Leaf $data)")
+    $arguments += @('/DTestMode', '/DTestVersion=1.0.0', "/DTestAppIdKey=$id", "/DTestSuffix=$id", "/DTestInstallRoot=$install", "/DTestDataRoot=$data", "/DTestMutexName=$(Split-Path -Leaf $data)")
 }
 & $Compiler @arguments (Join-Path $root 'installer\StoreExpiryInspector.iss')
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed: $LASTEXITCODE" }

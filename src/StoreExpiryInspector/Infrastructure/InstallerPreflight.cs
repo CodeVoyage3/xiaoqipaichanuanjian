@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using System.IO;
+using System.Text;
 
 namespace StoreExpiryInspector.Infrastructure;
 
@@ -50,6 +51,7 @@ public static class InstallerPreflight
         if (!arguments.Contains(Command, StringComparer.Ordinal)) return false;
 
         var result = ParseAndCheck(arguments);
+        Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         Console.Out.WriteLine($"{{\"code\":\"{result.CodeName}\",\"allowed\":{result.Allowed.ToString().ToLowerInvariant()},\"message\":\"{result.Message}\"}}");
         exitCode = result.Allowed ? 0 : (int)result.Code;
         return true;
@@ -131,10 +133,15 @@ public static class InstallerPreflight
         connection.Open();
         if (!ScalarIsOk(connection, "PRAGMA integrity_check;") || HasRows(connection, "PRAGMA foreign_key_check;")) return Corrupt();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT MigrationId FROM \"__EFMigrationsHistory\" ORDER BY MigrationId COLLATE BINARY;";
+        command.CommandText = "SELECT MigrationId, ProductVersion FROM \"__EFMigrationsHistory\" ORDER BY MigrationId COLLATE BINARY;";
         using var reader = command.ExecuteReader();
         var migrations = new List<string>();
-        while (reader.Read()) migrations.Add(reader.GetString(0));
+        while (reader.Read())
+        {
+            if (reader.IsDBNull(0) || reader.IsDBNull(1) || string.IsNullOrWhiteSpace(reader.GetString(0)) || string.IsNullOrWhiteSpace(reader.GetString(1)))
+                return new(InstallerPreflightCode.NewerOrUnknownSchema, "检测到异常 migration 记录。为保护原数据，安装已停止。");
+            migrations.Add(reader.GetString(0));
+        }
         if (migrations.SequenceEqual(CurrentMigrations, StringComparer.Ordinal)) return new(InstallerPreflightCode.CurrentMigration9Healthy, "现有数据库为当前 migration9，已通过只读检查。");
         return migrations.Count < CurrentMigrations.Length && migrations.All(CurrentMigrations.Contains)
             ? new(InstallerPreflightCode.OlderSchema, "检测到旧版数据库。为保护原数据，安装已停止。")
@@ -145,12 +152,27 @@ public static class InstallerPreflight
     {
         for (var current = new DirectoryInfo(root); current is not null; current = current.Parent)
         {
-            if (File.Exists(current.FullName)) return false;
-            if (current.Exists && (current.Attributes & FileAttributes.ReparsePoint) != 0) return false;
+            try
+            {
+                var attributes = File.GetAttributes(current.FullName);
+                if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != FileAttributes.Directory) return false;
+            }
+            catch (FileNotFoundException) { }
+            catch (DirectoryNotFoundException) { }
+            catch (UnauthorizedAccessException) { return false; }
+            catch (IOException) { return false; }
         }
 
         var data = Path.Combine(root, "data");
-        return !File.Exists(data) && (!Directory.Exists(data) || (File.GetAttributes(data) & FileAttributes.ReparsePoint) == 0);
+        try
+        {
+            var attributes = File.GetAttributes(data);
+            return (attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.Directory;
+        }
+        catch (FileNotFoundException) { return true; }
+        catch (DirectoryNotFoundException) { return true; }
+        catch (UnauthorizedAccessException) { return false; }
+        catch (IOException) { return false; }
     }
 
     private static bool IsOrdinaryFileOrMissing(string path)
