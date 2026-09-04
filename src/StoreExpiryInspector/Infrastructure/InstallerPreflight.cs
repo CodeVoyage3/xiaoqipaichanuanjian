@@ -112,7 +112,7 @@ public static class InstallerPreflight
         {
             foreach (var path in before) streams.Add(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
             if (!before.SequenceEqual(candidates.Where(File.Exists), StringComparer.OrdinalIgnoreCase)) throw new IOException("数据库文件在检查期间发生变化。");
-            for (var index = 0; index < streams.Length; index++)
+            for (var index = 0; index < streams.Count; index++)
             {
                 using var destination = File.Create(Path.Combine(scratch, Path.GetFileName(before[index])));
                 streams[index].CopyTo(destination);
@@ -155,9 +155,15 @@ public static class InstallerPreflight
 
     private static bool IsOrdinaryFileOrMissing(string path)
     {
-        if (Directory.Exists(path)) return false;
-        if (!File.Exists(path)) return true;
-        return (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0;
+        try
+        {
+            var attributes = File.GetAttributes(path);
+            return (attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0;
+        }
+        catch (FileNotFoundException) { return true; }
+        catch (DirectoryNotFoundException) { return true; }
+        catch (UnauthorizedAccessException) { return false; }
+        catch (IOException) { return false; }
     }
 
     private static bool ScalarIsOk(SqliteConnection connection, string sql)

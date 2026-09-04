@@ -4,7 +4,8 @@
 #ifndef OutputDir
   #define OutputDir "installer-output"
 #endif
-#define AppId "{{8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14}"
+#define AppIdKey "8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14"
+#define AppId "{{" + AppIdKey + "}"
 #define AppVersion "1.0.0"
 #define AppName "门店效期排查软件"
 #define InstallRoot "{localappdata}\Programs\StoreExpiryInspector"
@@ -15,15 +16,16 @@
 
 ; Test builds replace every identity that could otherwise touch a real user install.
 #ifdef TestMode
-  #ifndef TestAppId
-    #error TestAppId is required for TestMode.
+  #ifndef TestAppIdKey
+    #error TestAppIdKey is required for TestMode.
   #endif
-  #define AppId TestAppId
+  #define AppIdKey TestAppIdKey
+  #define AppId "{{" + AppIdKey + "}"
   #define AppName "StoreExpiryInspector S9-T02 Test"
   #define InstallRoot TestInstallRoot
   #define DataRoot TestDataRoot
-  #define RunValueName "StoreExpiryInspector-S9T02-Test"
-  #define ShortcutName "StoreExpiryInspector S9-T02 Test"
+  #define RunValueName "StoreExpiryInspector-S9T02-" + TestSuffix
+  #define ShortcutName "StoreExpiryInspector S9-T02 " + TestSuffix
   #define OutputName "StoreExpiryInspector-S9T02-Test-Setup"
   #define AppMutexName "Local\StoreExpiryInspector.SingleInstance." + TestMutexName
 #else
@@ -39,6 +41,8 @@ DefaultGroupName={#ShortcutName}
 DisableProgramGroupPage=yes
 DisableDirPage=yes
 UsePreviousAppDir=no
+CloseApplications=no
+RestartApplications=no
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -78,6 +82,7 @@ var
   Separator: Integer;
   Part: String;
 begin
+  if Value = '' then begin Result := 0; exit; end;
   Separator := Pos('.', Value);
   if Separator = 0 then begin Part := Value; Value := ''; end
   else begin Part := Copy(Value, 1, Separator - 1); Delete(Value, 1, Separator); end;
@@ -91,7 +96,7 @@ var
   Index, InstalledPart, ExpectedPart: Integer;
 begin
   Result := False;
-  if not GetVersionNumbersString(ExpandConstant('{app}\app\StoreExpiryInspector.exe'), InstalledVersion) then exit;
+  if not GetVersionNumbersString(ExpandConstant('{#InstallRoot}\app\StoreExpiryInspector.exe'), InstalledVersion) then exit;
   ExpectedVersion := '{#AppVersion}';
   for Index := 0 to 3 do
   begin
@@ -110,7 +115,7 @@ begin
     Result := False;
     exit;
   end;
-  WasInstalled := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppId}_is1');
+  WasInstalled := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}_is1');
   if WasInstalled and IsExistingVersionNewer() then
   begin
     MsgBox('已安装更高版本。为保护程序和数据，旧安装器已停止。', mbError, MB_OK);
@@ -125,6 +130,11 @@ var
   ResultCode: Integer;
   PreflightExe: String;
 begin
+  if CompareText(WizardDirValue, ExpandConstant('{#InstallRoot}')) <> 0 then
+  begin
+    Result := '安装目录已固定，不能修改。';
+    exit;
+  end;
   ExtractTemporaryFiles('StoreExpiryInspector-preflight\*');
   PreflightExe := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\StoreExpiryInspector.exe');
   if not Exec(PreflightExe, '--installer-preflight --data-root "' + ExpandConstant('{#DataRoot}') + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then

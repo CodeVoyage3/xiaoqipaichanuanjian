@@ -15,10 +15,10 @@ dotnet publish (Join-Path $root 'src\StoreExpiryInspector\StoreExpiryInspector.c
 if ($LASTEXITCODE -ne 0) { throw "publish failed: $LASTEXITCODE" }
 $arguments = @("/DPayloadDir=$publish", "/DOutputDir=$output")
 if ($TestMode) {
-    $id = '{{' + [guid]::NewGuid().ToString() + '}'
+    $id = [guid]::NewGuid().ToString()
     $install = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
     $data = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
-    $arguments += @('/DTestMode', "/DTestAppId=$id", "/DTestInstallRoot=$install", "/DTestDataRoot=$data", "/DTestMutexName=$(Split-Path -Leaf $data)")
+    $arguments += @('/DTestMode', "/DTestAppIdKey=$id", "/DTestSuffix=$id", "/DTestInstallRoot=$install", "/DTestDataRoot=$data", "/DTestMutexName=$(Split-Path -Leaf $data)")
 }
 & $Compiler @arguments (Join-Path $root 'installer\StoreExpiryInspector.iss')
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed: $LASTEXITCODE" }
