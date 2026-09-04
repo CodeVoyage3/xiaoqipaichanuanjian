@@ -114,6 +114,21 @@ public sealed record InspectionTaskDetailResult(
 
 public sealed class InspectionTaskQuery
 {
+    public IReadOnlyList<string> GetOpenTaskCategoryNames(StoreDbContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        return Array.AsReadOnly(context.Tasks
+            .AsNoTracking()
+            .Where(task => task.Status == "open")
+            .Select(task => task.Product.CategoryCode)
+            .Distinct()
+            .AsEnumerable()
+            .Select(ProductCategoryScopes.DisplayNameForCategoryCode)
+            .OrderBy(category => category, StringComparer.Ordinal)
+            .ToArray());
+    }
+
     public IReadOnlyList<ReminderCandidate> GetReminderCandidates(StoreDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);

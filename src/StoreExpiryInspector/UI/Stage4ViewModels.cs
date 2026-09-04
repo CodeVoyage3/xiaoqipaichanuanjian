@@ -633,6 +633,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
     public const int FixedPageSize = 50;
 
     private readonly Func<InspectionTaskSearchRequest, InspectionTaskSearchResult> _searchTasks;
+    private readonly Func<IReadOnlyList<string>>? _loadCategories;
     private readonly Action<Exception>? _logException;
     private int _loadVersion;
     private bool _isLoading;
@@ -648,10 +649,12 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
     public PendingTasksViewModel(
         Func<InspectionTaskSearchRequest, InspectionTaskSearchResult> searchTasks,
-        Action<Exception>? logException = null)
+        Action<Exception>? logException = null,
+        Func<IReadOnlyList<string>>? loadCategories = null)
     {
         ArgumentNullException.ThrowIfNull(searchTasks);
         _searchTasks = searchTasks;
+        _loadCategories = loadCategories;
         _logException = logException;
         SearchCommand = new RelayCommand(parameter => { _ = SearchAsync(); });
         ClearFiltersCommand = new RelayCommand(parameter => { _ = ClearFiltersAsync(); });
@@ -933,7 +936,20 @@ public sealed class PendingTasksViewModel : ViewModelBase
                 return;
             }
 
-            UpdateCategoryFilters(result.Item1);
+            if (_loadCategories is not null)
+            {
+                var categories = await Task.Run(() => DatabaseRuntimeGate.Run(_loadCategories));
+                if (version != _loadVersion)
+                {
+                    return;
+                }
+
+                UpdateCategoryFilters(categories);
+            }
+            else
+            {
+                UpdateCategoryFilters(result.Item1);
+            }
             var filteredItems = string.IsNullOrEmpty(SelectedCategory)
                 ? result.Item2
                 : result.Item2.Where(item => string.Equals(item.CategoryName, SelectedCategory, StringComparison.Ordinal)).ToArray();
@@ -998,12 +1014,16 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
     private void UpdateCategoryFilters(IReadOnlyList<InspectionTaskListItem> allTasks)
     {
-        var categories = allTasks
+        UpdateCategoryFilters(allTasks
             .Select(item => item.CategoryName)
             .Where(category => !string.IsNullOrWhiteSpace(category))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(category => category, StringComparer.Ordinal)
-            .ToArray();
+            .ToArray());
+    }
+
+    private void UpdateCategoryFilters(IReadOnlyList<string> categories)
+    {
         if (CategoryFilters.Select(option => option.CategoryName).SequenceEqual(categories.Prepend<string?>(null)))
         {
             return;
@@ -1056,41 +1076,117 @@ public sealed class ShellViewModel : ViewModelBase
         Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>? adjustInventory = null,
         Func<IReadOnlyList<OverStockConfirmation>, bool>? confirmTodayOverStock = null,
         Func<ExpiredInventoryWarning, bool>? confirmTodayExpiredInventory = null,
-        Func<bool>? confirmTodaySubmission = null)
+        Func<bool>? confirmTodaySubmission = null,
+        Func<IReadOnlyList<string>>? categoryLoader = null,
+        Func<StoreDbContext>? defaultContextFactory = null,
+        Func<ImportPreviewIdentity, ImportConfirmationResult>? importPreviewConfirmation = null,
+        Func<ImportConfirmationContract, DateTime, ConfirmedImportResult>? importExecutor = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "StoreExpiryInspector",
             "logs"));
         var logger = logException ?? LogException;
-        var searchTasks = taskLoader ?? SearchTasks;
+        var hasInjectedReadDependency = dashboardLoader is not null || taskLoader is not null || categoryLoader is not null
+            || historyListLoader is not null || historyDetailLoader is not null || historyRevisionLoader is not null || historyEdit is not null
+            || backupLoader is not null || backupCreator is not null || backupRestorer is not null || importParser is not null || importPreviewConfirmation is not null || importExecutor is not null
+            || detailLoader is not null || saveDraft is not null || reconfirmItem is not null || clearDraft is not null || adjustInventory is not null || submit is not null;
+        var contextFactory = defaultContextFactory ?? (() => DatabaseInitializer.CreateContext());
+        var loadDashboard = dashboardLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<InspectionDashboardResult>("dashboardLoader")
+            : CreateDashboardLoader(contextFactory));
+        var searchTasks = taskLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<InspectionTaskSearchRequest, InspectionTaskSearchResult>("taskLoader")
+            : CreateTaskLoader(contextFactory));
+        var loadCategories = categoryLoader ?? (hasInjectedReadDependency
+            ? null
+            : CreateCategoryLoader(contextFactory));
+        var loadHistory = historyListLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<IReadOnlyList<InspectionHistoryListItem>>("historyListLoader")
+            : CreateHistoryLoader(contextFactory));
+        var loadHistoryDetail = historyDetailLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<long, InspectionHistoryDetailResult>("historyDetailLoader")
+            : CreateHistoryDetailLoader(contextFactory));
+        var loadHistoryRevisions = historyRevisionLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<long, long, InspectionItemRevisionHistoryResult>("historyRevisionLoader")
+            : CreateHistoryRevisionLoader(contextFactory));
+        var editHistory = historyEdit ?? (hasInjectedReadDependency
+            ? FailClosedLoader<InspectionHistoryEditRequest, InspectionHistoryEditResult>("historyEdit")
+            : CreateHistoryEditLoader(contextFactory));
+        var loadDetail = detailLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<long, InspectionTaskDetailResult>("detailLoader")
+            : CreateDetailLoader(contextFactory));
+        var saveDraftAction = saveDraft ?? (hasInjectedReadDependency
+            ? FailClosedLoader<SaveDraftRequest, SaveDraftResult>("saveDraft")
+            : CreateSaveDraftLoader(contextFactory));
+        var reconfirmItemAction = reconfirmItem ?? (hasInjectedReadDependency
+            ? FailClosedLoader<ReconfirmItemRequest, ReconfirmItemResult>("reconfirmItem")
+            : CreateReconfirmItemLoader(contextFactory));
+        var clearDraftAction = clearDraft ?? (hasInjectedReadDependency
+            ? FailClosedLoader<ClearDraftRequest, ClearDraftResult>("clearDraft")
+            : CreateClearDraftLoader(contextFactory));
+        var adjustInventoryAction = adjustInventory ?? (hasInjectedReadDependency
+            ? FailClosedLoader<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult>("adjustInventory")
+            : CreateAdjustInventoryLoader(contextFactory));
+        var submitInspection = submit ?? (hasInjectedReadDependency
+            ? FailClosedLoader<InspectionSubmissionRequest, InspectionSubmissionResult>("submit")
+            : CreateSubmitInspectionLoader(contextFactory));
+        var exportToday = hasInjectedReadDependency
+            ? FailClosedLoader<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>("todayExport")
+            : CreateTodayExportLoader(contextFactory);
+        var previewToday = hasInjectedReadDependency
+            ? FailClosedLoader<string, InspectionPlanPreview>("todayPreview")
+            : CreateTodayPreviewLoader(contextFactory);
+        var applyToday = hasInjectedReadDependency
+            ? FailClosedLoader<ApplyInspectionPlanDraftRequest, ApplyInspectionPlanDraftResult>("todayApply")
+            : CreateTodayApplyLoader(contextFactory);
+        var submitToday = hasInjectedReadDependency
+            ? FailClosedLoader<BulkInspectionSubmissionRequest, BulkInspectionSubmissionResult>("todaySubmit")
+            : CreateTodaySubmitLoader(contextFactory);
+        var loadBackups = backupLoader ?? (hasInjectedReadDependency
+            ? FailClosedLoader<IReadOnlyList<LocalDatabaseBackupListItem>>("backupLoader")
+            : LoadBackups);
+        var createBackup = backupCreator ?? (hasInjectedReadDependency
+            ? FailClosedLoader<LocalDatabaseBackupResult>("backupCreator")
+            : CreateBackup);
+        var restoreBackup = backupRestorer ?? (hasInjectedReadDependency
+            ? FailClosedLoader<string, DatabaseRestoreResult>("backupRestorer")
+            : RestoreBackup);
         Dashboard = new DashboardViewModel(
-            dashboardLoader ?? LoadDashboard,
+            loadDashboard,
             logger,
             utcNow,
             () => NavigateTo(ShellPage.PendingTasks),
             searchTasks);
-        PendingTasks = new PendingTasksViewModel(searchTasks, logger);
+        PendingTasks = new PendingTasksViewModel(searchTasks, logger, loadCategories);
         History = new InspectionHistoryViewModel(
-            historyListLoader ?? LoadHistory,
-            historyDetailLoader ?? LoadHistoryDetail,
-            historyRevisionLoader ?? LoadHistoryRevisions,
+            loadHistory,
+            loadHistoryDetail,
+            loadHistoryRevisions,
             logger,
-            historyEdit ?? EditHistory,
+            editHistory,
             confirmHistoryEdit,
             utcNow);
         Import = new ImportViewModel(
-            parsePreview: importParser,
+            parsePreview: importParser ?? (hasInjectedReadDependency
+                ? FailClosedLoader<string, ImportPreviewLoadResult>("importParser")
+                : null),
+            confirmPreview: importPreviewConfirmation ?? (hasInjectedReadDependency
+                ? FailClosedLoader<ImportPreviewIdentity, ImportConfirmationResult>("importPreviewConfirmation")
+                : null),
+            executeImport: importExecutor ?? (hasInjectedReadDependency
+                ? FailClosedLoader<ImportConfirmationContract, DateTime, ConfirmedImportResult>("importExecutor")
+                : null),
             refreshDashboard: Dashboard.LoadAsync,
             refreshPendingTasks: PendingTasks.LoadAsync,
             logException: logException ?? LogImportException,
             utcNow: utcNow);
         TodayInspection = new TodayInspectionViewModel(
             loadTasks: () => searchTasks(new InspectionTaskSearchRequest(PageSize: int.MaxValue)),
-            export: ExportTodayInspectionPlan,
-            preview: PreviewTodayInspectionPlan,
-            apply: ApplyTodayInspectionDraft,
-            submit: SubmitTodayInspection,
+            export: exportToday,
+            preview: previewToday,
+            apply: applyToday,
+            submit: submitToday,
             refreshAfterSubmit: RefreshAfterTodayInspectionSubmitAsync,
             confirmOverStock: confirmTodayOverStock,
             confirmExpiredInventory: confirmTodayExpiredInventory,
@@ -1098,17 +1194,17 @@ public sealed class ShellViewModel : ViewModelBase
             logException: logger,
             businessToday: () => DateOnly.FromDateTime(DateTime.Today));
         BackupRestore = new DatabaseBackupRestoreViewModel(
-            loadBackups: backupLoader ?? LoadBackups,
-            createBackup: backupCreator ?? CreateBackup,
-            restore: backupRestorer ?? RestoreBackup,
+            loadBackups: loadBackups,
+            createBackup: createBackup,
+            restore: restoreBackup,
             confirmRestore: confirmRestore,
             logException: logger);
         Detail = new InspectionDetailViewModel(
-            loadDetail: detailLoader ?? LoadDetail,
-            saveDraft: saveDraft ?? SaveDraft,
-            reconfirmItem: reconfirmItem ?? ReconfirmItem,
-            clearDraft: clearDraft ?? ClearDraft,
-            adjustInventory: adjustInventory ?? AdjustInventory,
+            loadDetail: loadDetail,
+            saveDraft: saveDraftAction,
+            reconfirmItem: reconfirmItemAction,
+            clearDraft: clearDraftAction,
+            adjustInventory: adjustInventoryAction,
             refreshDashboard: Dashboard.LoadAsync,
             refreshPendingTasks: PendingTasks.LoadAsync,
             logException: logger,
@@ -1116,7 +1212,7 @@ public sealed class ShellViewModel : ViewModelBase
             confirmClearDraft: confirmClearDraft,
             confirmZeroInventory: confirmZeroInventory,
             goBack: ReturnFromDetailAsync,
-            submit: submit ?? SubmitInspection);
+            submit: submitInspection);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => CanNavigate);
         SearchTasksCommand = new RelayCommand(_ => { _ = SearchDashboardAsync(); }, _ => CanNavigate);
@@ -1367,103 +1463,116 @@ public sealed class ShellViewModel : ViewModelBase
         CurrentPage = page;
     }
 
-    private static InspectionDashboardResult LoadDashboard()
+    private static Func<InspectionDashboardResult> CreateDashboardLoader(Func<StoreDbContext> contextFactory) => () =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionTaskQuery().Dashboard(context);
-    }
+    };
 
-    private static InspectionTaskSearchResult SearchTasks(InspectionTaskSearchRequest request)
+    private static Func<InspectionTaskSearchRequest, InspectionTaskSearchResult> CreateTaskLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionTaskQuery().SearchOpenTasks(context, request);
-    }
+    };
 
-    private static IReadOnlyList<InspectionHistoryListItem> LoadHistory()
+    private static Func<IReadOnlyList<string>> CreateCategoryLoader(Func<StoreDbContext> contextFactory) => () =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
+        return new InspectionTaskQuery().GetOpenTaskCategoryNames(context);
+    };
+
+    private static Func<T> FailClosedLoader<T>(string dependency) =>
+        () => throw new InvalidOperationException($"{dependency} must be injected with the Shell read dependencies.");
+
+    private static Func<TRequest, TResult> FailClosedLoader<TRequest, TResult>(string dependency) =>
+        _ => throw new InvalidOperationException($"{dependency} must be injected with the Shell read dependencies.");
+
+    private static Func<TFirst, TSecond, TResult> FailClosedLoader<TFirst, TSecond, TResult>(string dependency) =>
+        (_, _) => throw new InvalidOperationException($"{dependency} must be injected with the Shell read dependencies.");
+
+    private static Func<IReadOnlyList<InspectionHistoryListItem>> CreateHistoryLoader(Func<StoreDbContext> contextFactory) => () =>
+    {
+        using var context = contextFactory();
         return new InspectionHistoryQuery().List(context);
-    }
+    };
 
-    private static InspectionHistoryDetailResult LoadHistoryDetail(long inspectionId)
+    private static Func<long, InspectionHistoryDetailResult> CreateHistoryDetailLoader(Func<StoreDbContext> contextFactory) => inspectionId =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionHistoryQuery().GetDetail(context, inspectionId);
-    }
+    };
 
-    private static InspectionItemRevisionHistoryResult LoadHistoryRevisions(
-        long inspectionId,
-        long inspectionItemId)
+    private static Func<long, long, InspectionItemRevisionHistoryResult> CreateHistoryRevisionLoader(Func<StoreDbContext> contextFactory) => (inspectionId, inspectionItemId) =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionHistoryQuery().GetItemRevisions(context, inspectionId, inspectionItemId);
-    }
+    };
 
-    private static InspectionHistoryEditResult EditHistory(InspectionHistoryEditRequest request)
+    private static Func<InspectionHistoryEditRequest, InspectionHistoryEditResult> CreateHistoryEditLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionHistoryEditUseCase().Execute(context, request);
-    }
+    };
 
-    private static InspectionTaskDetailResult LoadDetail(long taskId)
+    private static Func<long, InspectionTaskDetailResult> CreateDetailLoader(Func<StoreDbContext> contextFactory) => taskId =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionTaskQuery().GetDetail(context, taskId);
-    }
+    };
 
-    private static SaveDraftResult SaveDraft(SaveDraftRequest request)
+    private static Func<SaveDraftRequest, SaveDraftResult> CreateSaveDraftLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionDraftUseCase().SaveDraft(context, request);
-    }
+    };
 
-    private static ReconfirmItemResult ReconfirmItem(ReconfirmItemRequest request)
+    private static Func<ReconfirmItemRequest, ReconfirmItemResult> CreateReconfirmItemLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionDraftUseCase().ReconfirmItem(context, request);
-    }
+    };
 
-    private static ClearDraftResult ClearDraft(ClearDraftRequest request)
+    private static Func<ClearDraftRequest, ClearDraftResult> CreateClearDraftLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionDraftUseCase().ClearDraft(context, request);
-    }
+    };
 
-    private static ManualInventoryAdjustmentResult AdjustInventory(ManualInventoryAdjustmentRequest request)
+    private static Func<ManualInventoryAdjustmentRequest, ManualInventoryAdjustmentResult> CreateAdjustInventoryLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new ManualInventoryAdjustmentUseCase().Execute(context, request);
-    }
+    };
 
-    private static InspectionSubmissionResult SubmitInspection(InspectionSubmissionRequest request)
+    private static Func<InspectionSubmissionRequest, InspectionSubmissionResult> CreateSubmitInspectionLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionSubmissionUseCase().Submit(context, request);
-    }
+    };
 
-    private static TodayInspectionPlanExportResult ExportTodayInspectionPlan(string path, IReadOnlyCollection<long> taskIds)
+    private static Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult> CreateTodayExportLoader(Func<StoreDbContext> contextFactory) => (path, taskIds) =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new TodayInspectionPlanExportUseCase().Execute(context, new(path, taskIds));
-    }
+    };
 
-    private static InspectionPlanPreview PreviewTodayInspectionPlan(string path)
+    private static Func<string, InspectionPlanPreview> CreateTodayPreviewLoader(Func<StoreDbContext> contextFactory) => path =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionPlanDraftApplyUseCase().Preview(context, path);
-    }
+    };
 
-    private static ApplyInspectionPlanDraftResult ApplyTodayInspectionDraft(ApplyInspectionPlanDraftRequest request)
+    private static Func<ApplyInspectionPlanDraftRequest, ApplyInspectionPlanDraftResult> CreateTodayApplyLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new InspectionPlanDraftApplyUseCase().Apply(context, request);
-    }
+    };
 
-    private static BulkInspectionSubmissionResult SubmitTodayInspection(BulkInspectionSubmissionRequest request)
+    private static Func<BulkInspectionSubmissionRequest, BulkInspectionSubmissionResult> CreateTodaySubmitLoader(Func<StoreDbContext> contextFactory) => request =>
     {
-        using var context = DatabaseInitializer.CreateContext();
+        using var context = contextFactory();
         return new BulkInspectionSubmissionUseCase().Submit(context, request);
-    }
+    };
 
     private async Task RefreshAfterTodayInspectionSubmitAsync(IReadOnlyCollection<long> taskIds)
     {
