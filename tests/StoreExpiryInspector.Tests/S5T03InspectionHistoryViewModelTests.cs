@@ -59,6 +59,26 @@ public sealed class S5T03InspectionHistoryViewModelTests
     }
 
     [Fact]
+    public async Task PagedHistoryCannotTurnWhileLoadingThenCanTurnAfterCompletion()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var vm = new InspectionHistoryViewModel(() => [], _ => new(1, "not_found", null), (_, _) => new(1, 1, "not_found", null), loadPage: request =>
+        {
+            if (request.Page == 1) { started.TrySetResult(); release.Task.GetAwaiter().GetResult(); }
+            return new([ListItem(request.Page, $"PAGE-{request.Page}")], 100, request.Page, request.PageSize);
+        });
+        var load = vm.LoadAsync();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(vm.NextPageCommand.CanExecute(null));
+        release.SetResult();
+        await load;
+        Assert.True(vm.NextPageCommand.CanExecute(null));
+        vm.NextPageCommand.Execute(null);
+        await WaitUntil(() => vm.CurrentPage == 2 && !vm.IsLoading);
+    }
+
+    [Fact]
     public async Task ListAndDetailPreserveAllFormalSnapshotFieldsAndItems()
     {
         var record = ListItem(42, "HISTORY-42");

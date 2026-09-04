@@ -302,6 +302,73 @@ public sealed class InspectionTaskQueryTests
     }
 
     [Fact]
+    public void SearchCoversEveryFilterSubsetAndPagedRowsRemainComplete()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            foreach (var (code, category, stage, name) in new[]
+            {
+                ("MATCH-1", "food", ExpiryStageCalculator.Expired, "命中"), ("MATCH-2", "food", ExpiryStageCalculator.Expired, "命中"),
+                ("MATCH-3", "food", ExpiryStageCalculator.Expired, "命中"), ("FOOD-W", "food", ExpiryStageCalculator.Withdraw, "命中"),
+                ("PET-E", "pet", ExpiryStageCalculator.Expired, "命中"), ("OTHER", "pet", ExpiryStageCalculator.Withdraw, "无关")
+            })
+            {
+                var (product, _, _) = AddOpenTask(seed, code, stage, new DateOnly(2026, 9, 1), name);
+                product.CategoryCode = category;
+            }
+            seed.SaveChanges();
+        }
+        using var context = database.Open();
+        var query = new InspectionTaskQuery();
+        var cases = new (InspectionTaskSearchRequest Request, int Count)[]
+        {
+            (new(), 6), (new("命中"), 5), (new(Stage: ExpiryStageCalculator.Expired), 4), (new(CategoryName: "食品"), 4),
+            (new("命中", ExpiryStageCalculator.Expired), 4), (new("命中", CategoryName: "食品"), 4),
+            (new(Stage: ExpiryStageCalculator.Expired, CategoryName: "食品"), 3), (new("命中", ExpiryStageCalculator.Expired, CategoryName: "食品"), 3)
+        };
+        foreach (var item in cases)
+        {
+            var result = query.SearchOpenTasks(context, item.Request);
+            Assert.Equal(item.Count, result.TotalCount);
+            Assert.All(result.Items, row =>
+            {
+                if (!string.IsNullOrEmpty(item.Request.SearchText)) Assert.Contains(item.Request.SearchText, row.ProductName ?? string.Empty);
+                if (!string.IsNullOrEmpty(item.Request.Stage)) Assert.Equal(item.Request.Stage, row.HighestStage);
+                if (!string.IsNullOrEmpty(item.Request.CategoryName)) Assert.Equal(item.Request.CategoryName, row.CategoryName);
+            });
+        }
+        Assert.Equal(0, query.SearchOpenTasks(context, new("missing", CategoryName: "食品")).TotalCount);
+
+        var pages = Enumerable.Range(1, 4).Select(page => query.SearchOpenTasks(context, new(Page: page, PageSize: 2))).ToArray();
+        Assert.Equal(6, pages.Take(3).SelectMany(page => page.Items).Select(item => item.TaskId).Distinct().Count());
+        Assert.Empty(pages[3].Items);
+    }
+
+    [Fact]
+    public void SearchKeepsNoItemTasksLastAndCountsMultipleItemsOnce()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            var (multiProduct, multiTask, _) = AddOpenTask(seed, "MULTI", ExpiryStageCalculator.Expired, new DateOnly(2026, 9, 2));
+            multiProduct.CategoryCode = "food";
+            AddTaskItem(seed, multiTask, multiProduct, AddBatch(seed, multiProduct.Id, new DateOnly(2026, 9, 1), null, 4), ExpiryStageCalculator.Expired, 0, false);
+            var (emptyProduct, emptyTask, _) = AddOpenTask(seed, "EMPTY", ExpiryStageCalculator.Expired, new DateOnly(2026, 9, 3));
+            emptyProduct.CategoryCode = "food";
+            seed.TaskItems.RemoveRange(seed.TaskItems.Where(item => item.TaskId == emptyTask.Id));
+            seed.SaveChanges();
+        }
+        using var context = database.Open();
+        var result = new InspectionTaskQuery().SearchOpenTasks(context, new(CategoryName: "食品", PageSize: 10));
+        Assert.Equal(new[] { "MULTI", "EMPTY" }, result.Items.Select(item => item.ProductCode));
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Items[0].PendingBatchCount);
+        Assert.Equal(0, result.Items[1].PendingBatchCount);
+        Assert.Null(result.Items[1].NearestExpiryDate);
+    }
+
+    [Fact]
     public void SearchTreatsBlankTextAsNoFilterAndKeepsStableTieBreak()
     {
         using var database = SqliteTestDatabase.Create();
