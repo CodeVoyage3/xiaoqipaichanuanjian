@@ -3,6 +3,10 @@
     <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier><SelfContained>true</SelfContained><PublishSingleFile>false</PublishSingleFile><PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(S9T05TestMode)' == 'true'"><DefineConstants>$(DefineConstants);S9T05_TEST</DefineConstants></PropertyGroup>
+  <PropertyGroup Condition="'$(S9T05TestMode)' == 'true'">
+    <DefineConstants>$(DefineConstants);S9T05_TEST</DefineConstants>
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\s9t05test\</IntermediateOutputPath>
+    <OutputPath>bin\$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\s9t05test\</OutputPath>
+  </PropertyGroup>
   <ItemGroup><InternalsVisibleTo Include="StoreExpiryInspector.Tests" /></ItemGroup>
 </Project>
