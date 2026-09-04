@@ -16,6 +16,26 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class S8T05CorruptionSafetyTests
 {
+    [Theory]
+    [InlineData("relative.db")]
+    [InlineData("..\\outside.db")]
+    [InlineData("C:\\temp\\outside.db")]
+    public void GuardRejectsUnsafeTargetsBeforeAction(string target)
+    {
+        var root = NewDirectory();
+        var calls = 0;
+        Assert.Throws<ArgumentException>(() => ValidateThenAction(root, target, () => calls++));
+        Assert.Equal(0, calls);
+    }
+
+    [Fact]
+    public void GuardRejectsNoGuidRootBeforeAction()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T05", "not-a-guid");
+        var calls = 0;
+        Assert.ThrowsAny<Exception>(() => ValidateThenAction(root, Path.Combine(root, "current.db"), () => calls++));
+        Assert.Equal(0, calls);
+    }
     [Fact]
     public void CorruptCurrentDatabaseFailsClosedBeforeStagingOrReplacement()
     {
@@ -244,9 +264,15 @@ public sealed class S8T05CorruptionSafetyTests
 
     [Theory]
     [InlineData("copy")]
-    [InlineData("staging")]
-    [InlineData("replace")]
-    [InlineData("final")]
+    [InlineData("staging-header")]
+    [InlineData("staging-fk")]
+    [InlineData("staging-migration")]
+    [InlineData("staging-identity")]
+    [InlineData("replace-before")]
+    [InlineData("final-header")]
+    [InlineData("final-fk")]
+    [InlineData("final-migration")]
+    [InlineData("final-identity")]
     public void InjectedRestoreFailurePreservesOrRollsBackTheOriginalDatabase(string failure)
     {
         using var database = CreateRepresentativeDatabase();
@@ -265,17 +291,20 @@ public sealed class S8T05CorruptionSafetyTests
             {
                 checkpoints.Add(point);
                 if (failure == "copy" && point == "before_staging_copy") throw new IOException("injected copy failure");
-                if (failure == "staging" && point == "before_staging_validation") CorruptHeader(path!);
-                if (failure == "replace" && point == "before_replace") throw new IOException("injected replace failure");
-                if (failure == "final" && point == "after_replace") CorruptHeader(path!);
+                if (failure.StartsWith("staging-", StringComparison.Ordinal) && point == "before_staging_validation") MutateValidationTarget(failure[8..], path!);
+                if (failure == "replace-before" && point == "before_replace") throw new IOException("injected replace failure");
+                if (failure.StartsWith("final-", StringComparison.Ordinal) && point == "after_replace") MutateValidationTarget(failure[6..], path!);
             }).Restore(backup.BackupPath!, true, database.Path, backups);
 
-            Assert.Equal(failure == "final" ? DatabaseRestoreCodes.FinalValidationFailed : failure == "replace" ? DatabaseRestoreCodes.ReplaceFailed : DatabaseRestoreCodes.StagingFailed, result.Code);
+            var final = failure.StartsWith("final-", StringComparison.Ordinal);
+            Assert.Equal(final ? DatabaseRestoreCodes.FinalValidationFailed : failure == "replace-before" ? DatabaseRestoreCodes.ReplaceFailed : DatabaseRestoreCodes.StagingFailed, result.Code);
             Assert.Equal(changed, Fingerprint(database.Path));
             Assert.Equal("ok", Scalar(database.Path, "PRAGMA integrity_check;"));
             Assert.Equal(0, ForeignKeyViolationCount(database.Path));
             Assert.NotEqual(original, changed);
-            File.WriteAllText(Path.Combine(root, $"S8-T05-{failure}-rollback.json"), JsonSerializer.Serialize(new { failure, result = result.Code, checkpoints, original, changed, final = Fingerprint(database.Path), protectedBackup = result.PreRestoreBackupPath is not null }));
+            Assert.NotNull(result.PreRestoreBackupPath);
+            Assert.True(new DatabaseRestoreUseCase().ValidateForListing(result.PreRestoreBackupPath!, database.Path).Succeeded);
+            File.WriteAllText(Path.Combine(root, $"S8-T05-{failure}-rollback.json"), JsonSerializer.Serialize(new { failure, result = result.Code, checkpoints, interceptionLayer = failure is "copy" or "replace-before" ? "operation" : "sha", original, changed, final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true }));
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -531,6 +560,18 @@ public sealed class S8T05CorruptionSafetyTests
         stream.Write(new byte[64]);
     }
 
+    private static void MutateValidationTarget(string mutation, string path)
+    {
+        switch (mutation)
+        {
+            case "header": CorruptHeader(path); break;
+            case "fk": Execute(path, "PRAGMA foreign_keys=OFF; DELETE FROM products WHERE id=(SELECT MIN(id) FROM products);"); break;
+            case "migration": Execute(path, "DELETE FROM __EFMigrationsHistory WHERE MigrationId=(SELECT MAX(MigrationId) FROM __EFMigrationsHistory);"); break;
+            case "identity": Execute(path, "UPDATE products SET product_code='S8T05-INJECTED' WHERE id=(SELECT MIN(id) FROM products);"); break;
+            default: throw new ArgumentOutOfRangeException(nameof(mutation));
+        }
+    }
+
     private static object TryLegacyInitialize(string path)
     {
         try
@@ -649,6 +690,17 @@ public sealed class S8T05CorruptionSafetyTests
         Directory.CreateDirectory(path);
         AssertSafeSyntheticRoot(path);
         return path;
+    }
+
+    private static void ValidateThenAction(string root, string target, Action action)
+    {
+        AssertSafeSyntheticRoot(root);
+        if (!Path.IsPathFullyQualified(target)) throw new ArgumentException("S8-T05 requires an absolute contained target.");
+        var full = Path.GetFullPath(target);
+        if (!full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("S8-T05 target escaped its GUID root.");
+        AssertNoReparseAncestors(full, root);
+        action();
     }
 
     private static void AssertSafeSyntheticRoot(string root)
