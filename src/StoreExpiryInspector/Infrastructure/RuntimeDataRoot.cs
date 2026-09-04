@@ -6,6 +6,7 @@ public static class RuntimeDataRoot
 {
     private const string DataRootArgument = "--data-root";
     private const string SmokeExitArgument = "--s9-t01-smoke-exit";
+    private const string ExistingIsolatedDataRootArgument = "--allow-existing-isolated-data-root";
 
     private static RuntimeDataRootOptions? _options;
 
@@ -37,7 +38,7 @@ public static class RuntimeDataRoot
         _options = Parse(arguments, Path.GetTempPath());
         if (_options.IsIsolated)
         {
-            EnsureOrdinaryTree(_options.RootDirectory, Path.GetTempPath());
+            EnsureOrdinaryTree(_options.RootDirectory, Path.GetTempPath(), _options.AllowExisting);
         }
     }
 
@@ -48,12 +49,19 @@ public static class RuntimeDataRoot
 
         string? dataRoot = null;
         var smokeExit = false;
+        var allowExisting = false;
         for (var index = 0; index < arguments.Length; index++)
         {
             var argument = arguments[index];
             if (string.Equals(argument, SmokeExitArgument, StringComparison.Ordinal))
             {
                 smokeExit = true;
+                continue;
+            }
+
+            if (string.Equals(argument, ExistingIsolatedDataRootArgument, StringComparison.Ordinal))
+            {
+                allowExisting = true;
                 continue;
             }
 
@@ -78,6 +86,7 @@ public static class RuntimeDataRoot
                 throw new ArgumentException("发布 smoke 必须指定隔离数据目录。", nameof(arguments));
             }
 
+            if (allowExisting) throw new ArgumentException("复用隔离数据目录必须指定数据目录。", nameof(arguments));
             return new(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StoreExpiryInspector"),
                 false,
@@ -98,7 +107,7 @@ public static class RuntimeDataRoot
             throw new ArgumentException("隔离数据目录必须是 TEMP 下的 GUID 普通目录。", nameof(arguments));
         }
 
-        return new(root, true, smokeExit);
+        return new(root, true, smokeExit, allowExisting);
     }
 
     private static RuntimeDataRootOptions Options => _options ?? new(
@@ -106,11 +115,14 @@ public static class RuntimeDataRoot
         false,
         false);
 
-    internal static void EnsureOrdinaryTree(string root, string tempRoot)
+    internal static void EnsureOrdinaryTree(string root, string tempRoot, bool allowExisting = false)
     {
         if (File.Exists(root) || Directory.Exists(root))
         {
-            throw new InvalidOperationException("隔离数据目录必须是本次新建的普通目录，已停止启动。");
+            if (!allowExisting) throw new InvalidOperationException("隔离数据目录必须是本次新建的普通目录，已停止启动。");
+            EnsureOrdinaryAncestors(Path.GetDirectoryName(root)!, tempRoot);
+            EnsureExistingOrdinaryTree(root);
+            return;
         }
 
         EnsureOrdinaryAncestors(Path.GetDirectoryName(root)!, tempRoot);
@@ -159,6 +171,29 @@ public static class RuntimeDataRoot
             throw new InvalidOperationException("隔离数据目录不是普通本地目录，已停止启动。");
         }
     }
+
+    private static void EnsureExistingOrdinaryTree(string root)
+    {
+        EnsureExistingOrdinaryDirectory(root);
+        ValidateTree(root);
+    }
+
+    private static void ValidateTree(string directory)
+    {
+        foreach (var entry in Directory.EnumerateFileSystemEntries(directory))
+        {
+            var attributes = File.GetAttributes(entry);
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new InvalidOperationException("隔离数据目录不是普通本地目录，已停止启动。");
+            }
+
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                ValidateTree(entry);
+            }
+        }
+    }
 }
 
-internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun);
+internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false);

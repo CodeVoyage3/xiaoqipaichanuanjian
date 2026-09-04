@@ -24,6 +24,12 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
+        if (InstallerPreflight.TryHandle(e.Args, out var preflightExitCode))
+        {
+            Shutdown(preflightExitCode);
+            return;
+        }
+
         try
         {
             RuntimeDataRoot.Configure(e.Args);
