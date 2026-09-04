@@ -57,6 +57,7 @@ public sealed class S8T05CorruptionSafetyTests
                 File.Copy(health.Path, current);
                 corrupt(current);
                 var damagedHash = Hash(current);
+                var damagedProbe = Probe(current);
                 var checkpoints = new List<string>();
 
                 var result = new DatabaseRestoreUseCase((point, _) => checkpoints.Add(point))
@@ -67,7 +68,7 @@ public sealed class S8T05CorruptionSafetyTests
                 Assert.Equal(backupHash, Hash(backup.BackupPath!));
                 Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(current)!, "*.restore-*"));
                 Assert.Empty(Directory.GetFiles(backups, "pre-restore-*.db"));
-                evidence.Add(new { scenario = corrupt.Method.Name, damagedSha256 = damagedHash, result = result.Code, checkpoints, staging = checkpoints.Contains("staging_validated"), replace = checkpoints.Contains("before_replace") });
+                evidence.Add(new { scenario = corrupt.Method.Name, sourceSHA = Hash(health.Path), sourceProbe = Probe(health.Path), damagedSHA = damagedHash, damagedProbe, result = result.Code, resultSucceeded = result.Succeeded, checkpoints, finalSHA = Hash(current), finalProbe = Probe(current), backupSHA = Hash(backup.BackupPath!), pass = !result.Succeeded });
             }
             WriteEvidence(root, "corrupt-current", evidence);
         }
@@ -289,13 +290,25 @@ public sealed class S8T05CorruptionSafetyTests
             var changed = Fingerprint(database.Path);
             var changedSha = Hash(database.Path);
             var checkpoints = new List<string>();
+            string? mutatedSha = null;
+            SidecarProbe? mutatedProbe = null;
+            string? mutatedPath = null;
+            long? mutatedWalBytes = null;
             var result = new DatabaseRestoreUseCase((point, path) =>
             {
                 checkpoints.Add(point);
                 if (failure == "copy" && point == "before_staging_copy") throw new IOException("injected copy failure");
-                if (failure.StartsWith("staging-", StringComparison.Ordinal) && point == "before_staging_validation") MutateValidationTarget(failure[8..], path!);
+                if (failure.StartsWith("staging-", StringComparison.Ordinal) && point == "before_staging_validation")
+                {
+                    MutateValidationTarget(failure[8..], path!);
+                    mutatedPath = path; mutatedSha = Hash(path!); mutatedProbe = Probe(path!); mutatedWalBytes = File.Exists(path + "-wal") ? new FileInfo(path + "-wal").Length : null;
+                }
                 if (failure == "replace-before" && point == "before_replace") throw new IOException("injected replace failure");
-                if (failure.StartsWith("final-", StringComparison.Ordinal) && point == "after_replace") MutateValidationTarget(failure[6..], path!);
+                if (failure.StartsWith("final-", StringComparison.Ordinal) && point == "after_replace")
+                {
+                    MutateValidationTarget(failure[6..], path!);
+                    mutatedPath = path; mutatedSha = Hash(path!); mutatedProbe = Probe(path!); mutatedWalBytes = File.Exists(path + "-wal") ? new FileInfo(path + "-wal").Length : null;
+                }
             }).Restore(backup.BackupPath!, true, database.Path, backups);
 
             var final = failure.StartsWith("final-", StringComparison.Ordinal);
@@ -307,7 +320,7 @@ public sealed class S8T05CorruptionSafetyTests
             Assert.NotEqual(original, changed);
             Assert.NotNull(result.PreRestoreBackupPath);
             Assert.True(new DatabaseRestoreUseCase().ValidateForListing(result.PreRestoreBackupPath!, database.Path).Succeeded);
-            WriteEvidence(root, $"failure-{failure}", new { result = result.Code, checkpoints, mutatedMainSHA = Hash(database.Path), expectedSHA = Hash(backup.BackupPath!), mutatedProbe = Probe(database.Path), interceptionLayer = failure is "copy" or "replace-before" ? "operation" : "later_or_not_proven", original, changed, final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true, pass = true });
+            WriteEvidence(root, $"failure-{failure}", new { result = result.Code, checkpoints, mutatedPath, mutatedMainSHA = mutatedSha, expectedSHA = Hash(backup.BackupPath!), mutatedProbe, mutatedWalBytes, interceptionLayer = mutatedSha is null ? "operation" : string.Equals(mutatedSha, Hash(backup.BackupPath!), StringComparison.OrdinalIgnoreCase) ? "hash_first" : "later_not_proven", original, changed, finalSHA = Hash(database.Path), finalProbe = Probe(database.Path), final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true, pass = true });
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
