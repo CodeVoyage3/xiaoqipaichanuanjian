@@ -2,7 +2,8 @@
 
 ## 当前任务与状态
 
-- Stage 8：`IN_PROGRESS / S8-T02_ISOLATION_REPAIR / NOT_ACCEPTED`。
+- Stage 8：`IN_PROGRESS / S8-T02_QUERY_IMPLEMENTATION / NOT_ACCEPTED`。
+- 第一阶段提交 `e294a6b2e6e25e22f92c6a4a2cb30df27ae26630`；Sol 独立隔离7/7、关联回归155/155通过，测试默认factory计数=0，显式TEMP实库路径通过。现已放行新 Terra 第二阶段查询优化。
 - 用户已批准隔离优先继续；不调查/读取/哈希/修复正式库，旧 Terra 不复用。新 Terra `/root/s8_t02_isolation_new_terra` 使用 medium / priority（用户允许后续继续此档位，不再重复询问）。
 - 旧 diff 已保存到 `C:\Users\39037\.codex\visualizations\2026\09\03\01a06754-503b-72c0-b8f1-9e10cd9cad3f\S8-T02-recovery\old-terra-uncommitted.patch`，SHA256 `8242678ECCAB4D526D93C9E0BB0CA7FD732A4A845E823F46E6458FE9F2C174C9`。两份文件已恢复，clean main=`0d1d42a0667909e52264c5cd091297a827338788` 后才创建新代理。
 - 历史疑似默认正式库访问仍未核实，详见 Acceptance；不能因新隔离测试通过而声称历史未发生。
@@ -35,5 +36,5 @@
 
 ## 下一步停止门禁
 
-- 当前仅第一阶段隔离修复。Terra 先报告设计/静态安全，Sol 确认后运行隔离专项；提交并经 Sol 独立复验后才继续查询优化。不得访问正式库、提前关闭本卡或创建 S8-T03。
+- 第一阶段隔离已独立通过；当前仅继续本卡查询优化，并持续保留隔离计数门禁。不得访问正式库、提前关闭本卡或创建 S8-T03。
 - 任何新增索引、Schema 或 migration 仍需明确批准；不得启动 Stage 9 或在线升级。
