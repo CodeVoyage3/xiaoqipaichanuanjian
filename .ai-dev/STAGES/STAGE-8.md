@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T04_PAUSED_RELEASE_SCOPE_CONFIRMATION`；阶段整体尚未完成。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T04_CLOSED / WAITING_NEXT_AUTHORIZATION`；阶段整体尚未完成。
 
 ## 开工事实
 
@@ -34,7 +34,7 @@ S8-T03已于2026-09-04获单卡授权并正式建档，基线e4c628c；只做大
 
 ## 冻结边界
 
-S8-T04已于2026-09-04获单卡授权并建档，最新main基线2142cf7、clean/0/0。仅TEMP/GUID子进程硬终止：大Import、InspectionSubmission和InventoryAdjustment。全新Terra测试提交9eff272，Sol独立48/48硬杀、过滤Release838/838、build0/0、EF无漂移、migration9，生产零改动。当前NOT_ACCEPTED：全量Release中87条旧测试因人工损坏禁令冲突未运行，等待范围澄清；不push main。详见同名Task/Acceptance。S8-T05仍仅候选，不创建。
+S8-T04于2026-09-04正式TECHNICALLY_ACCEPTED / CLOSED。开工main2142cf7，全新Terra测试实现9eff272；Sol独立48/48硬Kill证据保留。用户限定放行既有隔离损坏回归后，Release无filter全量944/944、0failure，4类87项全部通过；build0/0、EF无漂移、migration9，生产/Schema/index/依赖/工程零改动，未访问正式库。普通push main后停止；不证明真实断电、磁盘/文件系统损坏安全。S8-T05仍仅候选，不创建。
 
 - blank / 0 / positive、ProductTask 生命周期、Stage 算法、Reminder、Excel 导入/导出/回导、History/Revision、Backup/Restore 语义全部冻结。
 - “应季搭配 / 赠品小样”继续正常导入，但不参与效期管理。

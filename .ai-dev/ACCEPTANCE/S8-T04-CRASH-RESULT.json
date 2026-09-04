@@ -1,6 +1,16 @@
 {
   "card": "S8-T04",
-  "status": "CRASH_MATRIX_PASSED_NOT_FULLY_ACCEPTED",
+  "status": "TECHNICALLY_ACCEPTED / CLOSED",
+  "final_release": {
+    "total": 944,
+    "passed": 944,
+    "failed": 0,
+    "filter": null,
+    "legacy_isolated_regressions": "6 + 9 + 30 + 42 = 87 passed after explicit authorization",
+    "trx": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04Sol\\bc9bacb459a9413abaf455c5d3dc2811\\s8t04-full-release.trx",
+    "sha256": "8097D52F940C1CEEC09494707AA2E551DF4FC4D5796E338DEC61BB58084F59BE",
+    "matrix_note": "Original 48/48 evidence retained unchanged; extra 100k gate not enabled during standard Release."
+  },
   "implementation_commit": "9eff2724a9bb5dcb857d8bec6129d3ef3b713b46",
   "baseline": "2142cf72588fb727cca6efd58509c113646de1e2",
   "executor": "Sol independent run",
@@ -27,7 +37,7 @@
   "limits": [
     "Not power-loss or physical corruption evidence",
     "Historical development failures retained in Acceptance, excluded from final matrix",
-    "87 existing Release tests excluded pending permission conflict; Release full suite not passed",
+    "Existing isolated damage regressions explicitly authorized for final Release only; no new S8-T05 scenarios",
     "No production code, schema, index, migration, dependency or project changes"
   ],
   "cases": [

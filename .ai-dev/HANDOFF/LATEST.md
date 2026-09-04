@@ -1,15 +1,17 @@
 # 最新交接
 
-## S8-T04当前暂停点（2026-09-04）
+## S8-T04正式关闭（2026-09-04）
 
-- 用户已单卡授权S8-T04。重新fetch HEAD=origin/main=2142cf72588fb727cca6efd58509c113646de1e2，clean、0/0，无冲突；工作分支codex/s8-t04-crash-consistency。
-- 状态`PAUSED_RELEASE_SCOPE_CONFIRMATION / NOT_ACCEPTED`。全新Terra medium/priority测试实现`9eff2724a9bb5dcb857d8bec6129d3ef3b713b46`已提交并停止；Sol只治理和独立验收，生产代码零修改。
-- Sol最终48/48真实强杀通过（Import10k六点×3、100k前后两点×3；Inspection五点×3；Inventory三点×3），36次提交前完整回滚、12次提交后完整保留。全部integrity ok/FK0/migration9/可重开可写；100k提交后50k Product/100k Batch/5001 Task。19/19 test rows，21.5144分钟、exit0；其中2个空返回facts不另算crash。逐次JSON/指纹/原文件SHA见`.ai-dev/ACCEPTANCE/S8-T04-CRASH-RESULT.json`。
-- 隔离10项通过（另2项仅100k关闭gate），过滤Release838/838；独立Release build0warning/0error，EF无漂移，migration --no-connect仍9末条AddPolicyAndBaselineFoundation。完整diff及diff --check通过，无Schema/index/PRAGMA策略/依赖/工程变化。
-- 唯一未完成门禁：既有Release有Stage2/7人工损坏隔离SQLite的用例，与本卡禁令冲突。已请求用户澄清，仅保守排除4类共87项，未运行它们；不能称全量Release通过。尚无答复，故不TECH_ACCEPTED/CLOSED、不push main。下次只需先确认旧隔离回归是否放行；如放行，再跑真正全量及收口，不额外重复48次高规模专项，也不复用旧卡Terra。
-- 开发阶段握手/reader/比较/I/O错误及一次缺最终JSON的Import试跑全部保留，不混入最终48次。旧I/O根因未独立确定；最终通过不改写旧失败或旧正式库疑似访问。48个最终worker实例都已退出，复用PID未被操作。
-- 仅TEMP/GUID真实子进程硬终止，权威大Import/InspectionSubmission/InventoryAdjustment；不访问正式库，不新增工程/依赖/Schema/index/migration/PRAGMA，不创建S8-T05，不启动Stage9/升级/重置数据。Undo永久取消。
-- 最新复fetch origin/main仍2142cf7；本地代码及治理未push。只有补齐全量Release且全部门禁完成后，才按授权普通push main并停止。以下是S8-T03历史归档回执，不再是当前停止点。
+- S8-T04：`TECHNICALLY_ACCEPTED / CLOSED`。Stage8仍IN_PROGRESS，S8-T01～T04关闭，WAITING_NEXT_AUTHORIZATION；S8-T05未创建。
+- 本轮恢复核对：origin/main2142cf7、本地治理bfa87d9、clean、ahead3/behind0；实现9eff272，代码/测试均未变化。旧本地main61a057e仅落后、无分叉，归档只作正常fast-forward。
+- 用户仅为Release全量特别放行4类既有TEMP/GUID SQLite损坏回归。Sol无filter全量944/944、0failure/skip、exit0，12.1949分钟；PreImportSnapshotServiceTests 6/6、S7T02DatabaseRestoreTests 9/9、S7T03DatabaseBackupRestoreViewModelTests 30/30、ImportUndoEligibilityTests 42/42，全部87项真实通过。不是旧838/838过滤回执。
+- 既有48/48 Process.Kill矩阵及TRX哈希保留不变：36次提交前完整回滚、12次提交后完整保留，全部integrity ok/FK0/migration9/可重开可写。本轮没有额外重跑21分钟的100k专项；标准全量中的常规用例按原实现执行。
+- Sol新鲜Release build0warning/0error，EF无漂移；migration --no-connect仍9，末条20260901155124_AddPolicyAndBaselineFoundation。生产、Schema/ModelSnapshot/index/PRAGMA策略/dependency/csproj/slnx不变，diff --check通过；未做在线NuGet漏洞审计。
+- 未访问、复制、哈希、损坏、恢复或调查正式库；损坏仅发生在获准既有测试的TEMP/GUID对象。不新增损坏场景、不恢复Undo规划。未确认生产一致性bug；开发I/O及其他失败历史继续保留，不以本轮通过改写其原因。
+- 不证明真实断电、磁盘/SSD、文件系统或介质损坏安全。不实施重置数据、Stage9、在线升级或S8-T05。
+- 代码9eff272；本文件所在提交为最终治理收口。发布方式为正常fast-forward本地main及普通push origin main，不force；发布后核对HEAD=origin/main、clean、0/0，最终SHA以Git回执为准。
+- Acceptance：`.ai-dev/ACCEPTANCE/S8-T04.md`；48次逐项摘要：`S8-T04-CRASH-RESULT.json`。全量TRX位于TEMP/StoreExpiryInspectorS8T04Sol/bc9bacb459a9413abaf455c5d3dc2811，SHA256 8097D52F940C1CEEC09494707AA2E551DF4FC4D5796E338DEC61BB58084F59BE。
+- 停止。S8-T05仅为建议方向，等待用户新授权；下方S8-T03为历史回执。
 
 ## S8-T03历史状态与停止点
 
