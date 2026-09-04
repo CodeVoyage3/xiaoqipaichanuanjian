@@ -1,0 +1,86 @@
+[
+  {
+    "name": "no_database",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\964324ce-259e-48a6-9f18-cd9792bebf96",
+    "exit": 0,
+    "code": "no_database",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "empty_root",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\ac7ce966-3c41-41fc-8b8b-fdf7d01b373d",
+    "exit": 0,
+    "code": "no_database",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "root_file",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\3081b602-be1f-48f9-a3dd-9f24ae4bf6bf",
+    "exit": 13,
+    "code": "invalid_data_root",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "data_file",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\eb6f0a1e-e070-4c3c-b5c0-bf5923d24470",
+    "exit": 13,
+    "code": "invalid_data_root",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "db_directory",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\777e9c04-8a67-447d-a969-c5d81ae93b94",
+    "exit": 13,
+    "code": "invalid_data_root",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "missing_history",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\4fa61853-7d35-48f5-9eed-29c6cb6fa27c",
+    "exit": 12,
+    "code": "corrupt_or_unreadable",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "blank_version",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\b6bf87e9-3133-4c7d-a3c9-88daf70e154b",
+    "exit": 11,
+    "code": "newer_or_unknown_schema",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "wal_current",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\41b2d1f4-b792-4fd9-bc0d-d8265db5a12f",
+    "exit": 0,
+    "code": "current_migration_9_healthy",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "wal_unknown",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\b43bf521-71bb-40a0-a4ce-a63bff295f9f",
+    "exit": 11,
+    "code": "newer_or_unknown_schema",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "busy_writer",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\ec159d7c-24b1-45b6-afc1-4ce4529186f9",
+    "exit": 12,
+    "code": "corrupt_or_unreadable",
+    "sourceUnchanged": false
+  },
+  {
+    "name": "busy_writer_released",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\ec159d7c-24b1-45b6-afc1-4ce4529186f9",
+    "exit": 0,
+    "code": "current_migration_9_healthy",
+    "sourceUnchanged": true
+  },
+  {
+    "name": "linked_data",
+    "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\014605db-920e-4afb-9197-a166a330ff06",
+    "exit": 13,
+    "code": "invalid_data_root",
+    "sourceUnchanged": false
+  }
+]

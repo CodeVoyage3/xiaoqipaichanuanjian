@@ -1,0 +1,185 @@
+[
+  {
+    "case": "A",
+    "result": "PASS",
+    "details": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrationIds": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "fullFingerprint": "e67e18e98e1afdd3a52e37ad46659286a75a36e92cc2d66cd3b45c37e2caf921",
+      "workbooks": [],
+      "settings": [
+        [
+          1,
+          600,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "case": "B",
+    "result": "PASS",
+    "details": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrationIds": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "fullFingerprint": "6ba89e4442b31b4b581e578cc2b8a545b3ffb36acda05a00e48be90702e900b0",
+      "workbooks": [
+        [
+          "53395430322073796E7468657469632072657461696E656420776F726B626F6F6B2062797465730001",
+          "25255bac91ab2b92319173c09272a77c76dfb4075c73f93470a9f3dc2cad0419"
+        ]
+      ],
+      "settings": [
+        [
+          1,
+          613,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "case": "C",
+    "result": "PASS",
+    "details": "Deleted test HKCU Run; reinstall retained off"
+  },
+  {
+    "case": "D",
+    "result": "PASS",
+    "details": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrationIds": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "fullFingerprint": "6ba89e4442b31b4b581e578cc2b8a545b3ffb36acda05a00e48be90702e900b0",
+      "workbooks": [
+        [
+          "53395430322073796E7468657469632072657461696E656420776F726B626F6F6B2062797465730001",
+          "25255bac91ab2b92319173c09272a77c76dfb4075c73f93470a9f3dc2cad0419"
+        ]
+      ],
+      "settings": [
+        [
+          1,
+          613,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "case": "E",
+    "result": "PASS",
+    "details": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrationIds": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "fullFingerprint": "6ba89e4442b31b4b581e578cc2b8a545b3ffb36acda05a00e48be90702e900b0",
+      "workbooks": [
+        [
+          "53395430322073796E7468657469632072657461696E656420776F726B626F6F6B2062797465730001",
+          "25255bac91ab2b92319173c09272a77c76dfb4075c73f93470a9f3dc2cad0419"
+        ]
+      ],
+      "settings": [
+        [
+          1,
+          613,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "case": "F",
+    "result": "PASS",
+    "details": {
+      "version": "1.0.1",
+      "exitCode": 1
+    }
+  },
+  {
+    "case": "G",
+    "result": "PASS",
+    "details": {
+      "tree": "{\"path\":\"data\\\\app.db\",\"bytes\":299008,\"sha256\":\"ECA2D99463690BD661418EFA489E3B76F6E7FF151859BA50F5C80FC583263EDA\"}",
+      "exitCode": 7,
+      "preflightExit": 10
+    }
+  },
+  {
+    "case": "H",
+    "result": "PASS",
+    "details": {
+      "tree": "{\"path\":\"data\\\\app.db\",\"bytes\":339968,\"sha256\":\"35813796E1FB19EE2F9A6928CB21DCE1CD71A4C095BD22CCAD30C1FF6AD237D4\"}",
+      "exitCode": 7,
+      "preflightExit": 11
+    }
+  },
+  {
+    "case": "I",
+    "result": "PASS",
+    "details": {
+      "tree": "{\"path\":\"data\\\\app.db\",\"bytes\":3,\"sha256\":\"039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81\"}",
+      "exitCode": 7,
+      "preflightExit": 12
+    }
+  }
+]

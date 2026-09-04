@@ -1,0 +1,1 @@
+{"code":"corrupt_or_unreadable","allowed":false,"message":"数据库或其 WAL 状态不可安全只读验证。为保护原数据，安装已停止。"}

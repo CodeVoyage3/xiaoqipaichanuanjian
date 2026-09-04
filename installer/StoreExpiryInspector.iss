@@ -37,6 +37,7 @@
 AppId={#AppId}
 AppName={#AppName}
 AppVersion={#AppVersion}
+VersionInfoVersion={#AppVersion}
 DefaultDirName={#InstallRoot}
 DefaultGroupName={#ShortcutName}
 DisableProgramGroupPage=yes
