@@ -194,6 +194,7 @@ public sealed class DatabaseRestoreUseCase
         {
             try
             {
+                checkpoint?.Invoke("before_staging_copy", stagingPath);
                 using var source = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var staging = new FileStream(stagingPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
                 source.CopyTo(staging);

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Backups;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
@@ -29,7 +30,7 @@ public sealed class S8T05CorruptionSafetyTests
             var backupHash = Hash(backup.BackupPath!);
 
             var evidence = new List<object>();
-            foreach (var corrupt in new Action<string>[] { CorruptHeader, Truncate, CorruptDataPage, PartialFile })
+            foreach (var corrupt in new Action<string>[] { CorruptHeader, Truncate, CorruptDataPage, PartialFile, PartialOverwrite })
             {
                 var current = Path.Combine(root, Guid.NewGuid().ToString("N"), "current.db");
                 Directory.CreateDirectory(Path.GetDirectoryName(current)!);
@@ -85,6 +86,24 @@ public sealed class S8T05CorruptionSafetyTests
             Assert.Equal(0, new FileInfo(current).Length);
         }
         finally { SqliteConnection.ClearAllPools(); }
+    }
+
+    [Theory]
+    [InlineData("empty")]
+    [InlineData("data_page")]
+    public void LegacyInitializeComparisonRecordsOldMigrateWalBehavior(string scenario)
+    {
+        using var health = CreateRepresentativeDatabase();
+        var root = NewDirectory();
+        var legacyPath = Path.Combine(root, $"legacy-{scenario}.db");
+        var currentPath = Path.Combine(root, $"current-{scenario}.db");
+        if (scenario == "empty") { File.WriteAllBytes(legacyPath, []); File.WriteAllBytes(currentPath, []); }
+        else { File.Copy(health.Path, legacyPath); File.Copy(health.Path, currentPath); CorruptDataPage(legacyPath); CorruptDataPage(currentPath); }
+        var before = Hash(currentPath);
+        var legacy = TryLegacyInitialize(legacyPath);
+        var current = Assert.ThrowsAny<Exception>(() => DatabaseInitializer.Initialize(currentPath));
+        Assert.Equal(before, Hash(currentPath));
+        File.WriteAllText(Path.Combine(root, $"S8-T05-legacy-{scenario}.json"), JsonSerializer.Serialize(new { scenario, before, legacy, legacyHash = Hash(legacyPath), current = current.GetType().Name, final = Hash(currentPath), pass = true }));
     }
 
     [Fact]
@@ -224,6 +243,7 @@ public sealed class S8T05CorruptionSafetyTests
     }
 
     [Theory]
+    [InlineData("copy")]
     [InlineData("staging")]
     [InlineData("replace")]
     [InlineData("final")]
@@ -244,6 +264,7 @@ public sealed class S8T05CorruptionSafetyTests
             var result = new DatabaseRestoreUseCase((point, path) =>
             {
                 checkpoints.Add(point);
+                if (failure == "copy" && point == "before_staging_copy") throw new IOException("injected copy failure");
                 if (failure == "staging" && point == "before_staging_validation") CorruptHeader(path!);
                 if (failure == "replace" && point == "before_replace") throw new IOException("injected replace failure");
                 if (failure == "final" && point == "after_replace") CorruptHeader(path!);
@@ -501,6 +522,25 @@ public sealed class S8T05CorruptionSafetyTests
     {
         var bytes = File.ReadAllBytes(path);
         File.WriteAllBytes(path, bytes[..Math.Min(512, bytes.Length)]);
+    }
+
+    private static void PartialOverwrite(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        stream.Position = Math.Max(512, stream.Length / 3);
+        stream.Write(new byte[64]);
+    }
+
+    private static object TryLegacyInitialize(string path)
+    {
+        try
+        {
+            using var context = DatabaseInitializer.CreateContext(path);
+            context.Database.Migrate();
+            context.Database.ExecuteSqlRaw("PRAGMA journal_mode = WAL;");
+            return new { succeeded = true, error = (string?)null };
+        }
+        catch (Exception exception) { return new { succeeded = false, error = exception.GetType().Name }; }
     }
 
     private static void Checkpoint(string path)
