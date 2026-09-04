@@ -320,7 +320,7 @@ public sealed class S8T05CorruptionSafetyTests
             Assert.NotEqual(original, changed);
             Assert.NotNull(result.PreRestoreBackupPath);
             Assert.True(new DatabaseRestoreUseCase().ValidateForListing(result.PreRestoreBackupPath!, database.Path).Succeeded);
-            WriteEvidence(root, $"failure-{failure}", new { result = result.Code, checkpoints, mutatedPath, mutatedMainSHA = mutatedSha, expectedSHA = Hash(backup.BackupPath!), mutatedProbe, mutatedWalBytes, interceptionLayer = mutatedSha is null ? "operation" : string.Equals(mutatedSha, Hash(backup.BackupPath!), StringComparison.OrdinalIgnoreCase) ? "hash_first" : "later_not_proven", original, changed, finalSHA = Hash(database.Path), finalProbe = Probe(database.Path), final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true, pass = true });
+            WriteEvidence(root, $"failure-{failure}", new { result = result.Code, checkpoints, mutatedPath, mutatedMainSHA = mutatedSha, expectedSHA = Hash(backup.BackupPath!), mutatedProbe, mutatedWalBytes, interceptionLayer = mutatedSha is null ? "operation" : string.Equals(mutatedSha, Hash(backup.BackupPath!), StringComparison.OrdinalIgnoreCase) ? "later_not_proven" : "hash_first", original, changed, finalSHA = Hash(database.Path), finalProbe = Probe(database.Path), final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true, pass = true });
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
