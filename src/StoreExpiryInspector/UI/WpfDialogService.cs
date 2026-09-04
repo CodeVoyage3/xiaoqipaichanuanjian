@@ -35,8 +35,13 @@ internal static class WpfDialogService
         later.Click += (_, _) => { model.DismissCommand.Execute(null); dialog.Close(); };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
         cancel.Click += (_, _) => model.CancelCommand.Execute(null);
-        model.PropertyChanged += (_, eventArgs) => dialog.Dispatcher.BeginInvoke(() => { status.Text = model.StatusText; bytes.Text = model.ProgressText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); });
-        buttons.Children.Add(later); buttons.Children.Add(cancel); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.Show();
+        System.ComponentModel.PropertyChangedEventHandler changed = (_, _) =>
+        {
+            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; bytes.Text = model.ProgressText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
+        };
+        model.PropertyChanged += changed;
+        dialog.Closed += (_, _) => model.PropertyChanged -= changed;
+        buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.Show();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {
