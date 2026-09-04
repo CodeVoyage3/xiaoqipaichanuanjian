@@ -388,20 +388,40 @@ public sealed class S8T05CorruptionSafetyTests
             Checkpoint(source.Path);
             var sourceBeforeMutation = Fingerprint(source.Path);
             File.Copy(source.Path, copy);
+            WalCapture? capture = null;
             switch (scenario)
             {
                 case "missing": File.Delete(copy + "-wal"); File.Delete(copy + "-shm"); break;
-                case "mismatched": CopyUncheckpointedWal(unrelated.Path, copy + "-wal"); break;
+                case "mismatched":
+                    Execute(unrelated.Path, "UPDATE products SET current_name='S8T05-UNRELATED' WHERE id=(SELECT MIN(id) FROM products);");
+                    Checkpoint(unrelated.Path);
+                    capture = CaptureNonEmptyWal(unrelated.Path, copy + "-wal");
+                    Assert.NotEqual(Hash(source.Path), capture.MainSha256);
+                    break;
                 case "stale":
                     var oldWal = Path.Combine(root, "old-generation.wal");
-                    CopyUncheckpointedWal(source.Path, oldWal);
+                    capture = CaptureNonEmptyWal(source.Path, oldWal);
+                    Execute(source.Path, "UPDATE products SET current_name='S8T05-NEWER-MAIN' WHERE id=(SELECT MAX(id) FROM products);");
                     Checkpoint(source.Path);
                     File.Copy(source.Path, copy, true);
                     File.Copy(oldWal, copy + "-wal", true);
+                    Assert.Equal(capture.WalSha256, Hash(copy + "-wal"));
+                    Assert.True(new FileInfo(copy + "-wal").Length > 32);
                     break;
                 case "abnormal": File.WriteAllBytes(copy + "-journal", [1, 2, 3, 4]); break;
             }
             var probe = Probe(copy);
+            var initializer = TryInitialize(copy);
+            var sourceAfterMutation = Fingerprint(source.Path);
+            var businessFingerprintMatched = probe.Fingerprint == sourceAfterMutation;
+            var structurallyHealthy = probe.Opened && probe.Integrity == "ok" && probe.ForeignKeys == 0 && probe.Migrations == "9";
+            var limitationObserved = scenario == "mismatched" && structurallyHealthy && !businessFingerprintMatched && initializer.Accepted;
+            var pass = scenario == "mismatched"
+                ? limitationObserved
+                : scenario == "abnormal"
+                    ? !probe.Opened
+                    : structurallyHealthy && businessFingerprintMatched;
+            WriteEvidence(root, $"wal-{scenario}", new { sourceBeforeMutation, sourceAfterMutation, capture, walBytes = File.Exists(copy + "-wal") ? new FileInfo(copy + "-wal").Length : 0, actual = probe, initializer, structurallyHealthy, businessFingerprintMatched, limitationObserved, provenanceProtected = false, pass });
             if (scenario == "abnormal")
             {
                 Assert.False(probe.Opened);
@@ -412,9 +432,16 @@ public sealed class S8T05CorruptionSafetyTests
                 Assert.True(probe.Opened);
                 Assert.Equal("ok", probe.Integrity);
                 Assert.Equal(0, probe.ForeignKeys);
-                Assert.Equal(Fingerprint(source.Path), probe.Fingerprint);
+                if (scenario == "mismatched")
+                {
+                    Assert.Equal("9", probe.Migrations);
+                    Assert.True(initializer.Accepted);
+                    Assert.False(businessFingerprintMatched);
+                    Assert.True(limitationObserved);
+                }
+                else Assert.Equal(sourceAfterMutation, probe.Fingerprint);
             }
-            WriteEvidence(root, $"wal-{scenario}", new { sourceBeforeMutation, sourceAfterMutation = Fingerprint(source.Path), probe, pass = true });
+            Assert.True(pass, "WAL actual result differs from the recorded expected behavior.");
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -600,6 +627,12 @@ public sealed class S8T05CorruptionSafetyTests
         catch (Exception exception) { return new { succeeded = false, error = exception.GetType().Name }; }
     }
 
+    private static InitializeProbe TryInitialize(string path)
+    {
+        try { DatabaseInitializer.Initialize(path); return new(true, null); }
+        catch (Exception exception) { return new(false, exception.GetType().Name); }
+    }
+
     private static void Checkpoint(string path)
     {
         using var connection = new SqliteConnection($"Data Source={path};Pooling=False");
@@ -609,14 +642,31 @@ public sealed class S8T05CorruptionSafetyTests
         command.ExecuteNonQuery();
     }
 
-    private static void CopyUncheckpointedWal(string databasePath, string destination)
+    private static WalCapture CaptureNonEmptyWal(string databasePath, string destination)
     {
-        using var connection = new SqliteConnection($"Data Source={databasePath};Pooling=False");
-        connection.Open();
-        using var command = connection.CreateCommand();
-        command.CommandText = "PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0; INSERT INTO products(product_code, category_code, policy_code, policy_version, expiry_management_status, excel_stock_qty, effective_stock_qty, created_at_utc, updated_at_utc) VALUES ('S8T05-WAL-' || lower(hex(randomblob(4))), 'food', 'food_expiry', 1, 'managed', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
+        Checkpoint(databasePath);
+        using var reader = new SqliteConnection($"Data Source={databasePath};Pooling=False");
+        reader.Open();
+        using var readTransaction = reader.BeginTransaction(deferred: true);
+        using var read = reader.CreateCommand();
+        read.Transaction = readTransaction;
+        read.CommandText = "SELECT product_code FROM products ORDER BY id LIMIT 1;";
+        using var readRows = read.ExecuteReader();
+        Assert.True(readRows.Read());
+        using var writer = new SqliteConnection($"Data Source={databasePath};Pooling=False");
+        writer.Open();
+        using (var mode = writer.CreateCommand()) { mode.CommandText = "PRAGMA journal_mode=WAL;"; mode.ExecuteScalar(); }
+        using (var autoCheckpoint = writer.CreateCommand()) { autoCheckpoint.CommandText = "PRAGMA wal_autocheckpoint=0;"; autoCheckpoint.ExecuteNonQuery(); }
+        using var command = writer.CreateCommand();
+        command.CommandText = "UPDATE products SET current_name='S8T05-WAL-' || lower(hex(randomblob(4))), updated_at_utc=CURRENT_TIMESTAMP WHERE id=(SELECT MIN(id) FROM products);";
         command.ExecuteNonQuery();
+        Assert.True(File.Exists(databasePath + "-wal"));
+        Assert.True(new FileInfo(databasePath + "-wal").Length > 32);
         File.Copy(databasePath + "-wal", destination, true);
+        Assert.True(new FileInfo(destination).Length > 32);
+        var header = new byte[32];
+        using (var wal = new FileStream(databasePath + "-wal", FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) wal.ReadExactly(header);
+        return new(Hash(databasePath), Hash(databasePath + "-wal"), new FileInfo(databasePath + "-wal").Length, header);
     }
 
     private static SidecarProbe Probe(string path)
@@ -758,5 +808,7 @@ public sealed class S8T05CorruptionSafetyTests
     }
 
     private sealed record SidecarProbe(bool Opened, string? Integrity, int? ForeignKeys, string? Fingerprint, string? Error, int? SqliteErrorCode, int? SqliteExtendedErrorCode, string? Products, string? Batches, string? Tasks, string? Inspections, string? Migrations);
+    private sealed record WalCapture(string MainSha256, string WalSha256, long WalBytes, byte[] Header);
+    private sealed record InitializeProbe(bool Accepted, string? Error);
 
 }
