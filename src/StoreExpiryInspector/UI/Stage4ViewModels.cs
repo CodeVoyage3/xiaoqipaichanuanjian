@@ -1270,11 +1270,12 @@ public sealed class ShellViewModel : ViewModelBase
                 NotifyNavigationState();
             }
         };
-        _ = Dashboard.LoadAsync();
-        _ = PendingTasks.LoadAsync();
+        StartupLoadTask = Task.WhenAll(Dashboard.LoadAsync(), PendingTasks.LoadAsync());
     }
 
     public DashboardViewModel Dashboard { get; }
+
+    public Task StartupLoadTask { get; }
 
     public PendingTasksViewModel PendingTasks { get; }
 

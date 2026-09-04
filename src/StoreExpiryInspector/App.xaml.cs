@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Reminders;
+using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
 using StoreExpiryInspector.UI;
@@ -21,6 +22,8 @@ public partial class App : System.Windows.Application
     private LocalFileLogger? _logger;
     private IDisposable? _databaseMaintenanceLease;
     private bool _explicitExit;
+    private UpdateCheckRuntime? _updateCheckRuntime;
+    private int _updateCheckStarted;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
@@ -153,6 +156,8 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _updateCheckRuntime?.Dispose();
+        _updateCheckRuntime = null;
         StopRuntime();
         if (_ownsInstanceMutex)
         {
@@ -179,6 +184,8 @@ public partial class App : System.Windows.Application
             mainWindow.Closing += MainWindow_Closing;
             mainWindow.ReminderTimeChanged += ReminderTimeChanged;
         }
+
+        StartUpdateCheck(mainWindow);
 
         WindowsTrayIcon trayIcon;
         try
@@ -250,6 +257,26 @@ public partial class App : System.Windows.Application
                 "每日集中提醒运行时初始化失败，关闭主窗口将正常退出应用。",
                 exception.ToString());
         }
+
+    }
+
+    private void StartUpdateCheck(UI.MainWindow mainWindow)
+    {
+        if (Interlocked.Exchange(ref _updateCheckStarted, 1) != 0) return;
+        if (!GitHubReleaseUpdateChecker.TryGetCurrentVersion(out var currentVersion))
+        {
+            _logger?.TryWrite("warning", "update_version_unavailable", "无法确认更新状态，已跳过本次检查。");
+            return;
+        }
+        var checker = new GitHubReleaseUpdateChecker();
+        _updateCheckRuntime = new UpdateCheckRuntime(
+            cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),
+            result => Dispatcher.BeginInvoke(() =>
+            {
+                if (!_explicitExit && !mainWindow.IsClosed && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
+                    mainWindow.ShowUpdateAvailable(result);
+            }));
+        _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

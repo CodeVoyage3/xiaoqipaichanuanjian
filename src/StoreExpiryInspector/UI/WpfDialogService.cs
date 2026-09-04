@@ -18,6 +18,20 @@ internal enum WpfDialogKind
 
 internal static class WpfDialogService
 {
+    public static void ShowUpdateAvailable(Window owner, UpdateNotificationViewModel model)
+    {
+        var dialog = new Window { Owner = owner, Title = "发现新版本", Width = 460, MaxHeight = 420, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
+        var panel = new StackPanel { Margin = new Thickness(24) };
+        panel.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold });
+        panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
+        if (!string.IsNullOrWhiteSpace(model.ReleaseNotes)) panel.Children.Add(new ScrollViewer { MaxHeight = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = new TextBlock { Text = model.ReleaseNotes, TextWrapping = TextWrapping.Wrap } });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
+        var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
+        var update = new Button { Content = "立即更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
+        later.Click += (_, _) => { model.DismissCommand.Execute(null); dialog.Close(); };
+        update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
+        buttons.Children.Add(later); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => later.Focus(); dialog.Show();
+    }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {
         var dialog = new Window

@@ -11,30 +11,58 @@ using StoreExpiryInspector.Application.Backups;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.Application.Updates;
 
 namespace StoreExpiryInspector.UI;
 
 public partial class MainWindow : Window
 {
     private bool _isNavigationCollapsed;
+    private readonly HashSet<Version> _suppressedUpdateVersions = [];
+    internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
 
     public MainWindow()
     {
         InitializeComponent();
-        NavigationVersionText.Text = $"软件版本：v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "未知"}";
-        ApplyNavigationLayout();
-        var shell = new ShellViewModel(
+        InitializeShell(new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
             confirmHistoryEdit: ConfirmHistoryEdit,
             confirmRestore: ConfirmRestore,
             confirmTodayOverStock: ConfirmTodayOverStock,
             confirmTodayExpiredInventory: ConfirmTodayExpiredInventory,
-            confirmTodaySubmission: ConfirmTodaySubmission);
+            confirmTodaySubmission: ConfirmTodaySubmission));
+    }
+
+    internal MainWindow(ShellViewModel shell)
+    {
+        InitializeComponent();
+        InitializeShell(shell);
+    }
+
+    private void InitializeShell(ShellViewModel shell)
+    {
+        NavigationVersionText.Text = $"软件版本：v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "未知"}";
+        ApplyNavigationLayout();
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
+        Closed += (_, _) => IsClosed = true;
+    }
+
+    internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
+
+    internal bool TryShowUpdateAvailable(UpdateCheckResult result, Action<UpdateNotificationViewModel>? show = null)
+    {
+        if (IsClosed || result.Outcome != UpdateCheckOutcome.UpdateAvailable || result.LatestVersion is null || _suppressedUpdateVersions.Contains(result.LatestVersion)) return false;
+        _suppressedUpdateVersions.Add(result.LatestVersion);
+        var model = new UpdateNotificationViewModel(
+            result,
+            dismiss: () => { },
+            requestUpdate: () => WpfDialogService.Show(this, "暂未启用更新", "自动下载和安装尚未启用，请稍后再次检查。", "知道了", WpfDialogKind.Information, showCancel: false));
+        (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
+        return true;
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
