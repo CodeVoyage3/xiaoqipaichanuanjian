@@ -69,7 +69,7 @@ public sealed class S8T05CorruptionSafetyTests
                 Assert.Empty(Directory.GetFiles(backups, "pre-restore-*.db"));
                 evidence.Add(new { scenario = corrupt.Method.Name, damagedSha256 = damagedHash, result = result.Code, checkpoints, staging = checkpoints.Contains("staging_validated"), replace = checkpoints.Contains("before_replace") });
             }
-            File.WriteAllText(Path.Combine(root, "S8-T05-corruption-evidence.json"), JsonSerializer.Serialize(evidence));
+            WriteEvidence(root, "corrupt-current", evidence);
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -123,7 +123,7 @@ public sealed class S8T05CorruptionSafetyTests
         var legacy = TryLegacyInitialize(legacyPath);
         var current = Assert.ThrowsAny<Exception>(() => DatabaseInitializer.Initialize(currentPath));
         Assert.Equal(before, Hash(currentPath));
-        File.WriteAllText(Path.Combine(root, $"S8-T05-legacy-{scenario}.json"), JsonSerializer.Serialize(new { scenario, before, legacy, legacyHash = Hash(legacyPath), current = current.GetType().Name, final = Hash(currentPath), pass = true }));
+        WriteEvidence(root, $"legacy-{scenario}", new { before, legacy, legacyHash = Hash(legacyPath), current = current.GetType().Name, final = Hash(currentPath), pass = true });
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public sealed class S8T05CorruptionSafetyTests
         var root = NewDirectory();
         AssertSafeSyntheticRoot(root);
         var database = Path.Combine(root, "S8-T05-large.db");
-        DatabaseInitializer.Initialize(database);
+        ValidateThenAction(root, database, () => DatabaseInitializer.Initialize(database));
         S8T01PerformanceBaselineTests.SeedForS8T05(database);
         Checkpoint(database);
         created.Stop();
@@ -227,7 +227,7 @@ public sealed class S8T05CorruptionSafetyTests
             var initializeWatch = Stopwatch.StartNew();
             DatabaseInitializer.Initialize(database);
             initializeWatch.Stop();
-            File.WriteAllText(Path.Combine(root, "S8-T05-large-backup-restore.json"), JsonSerializer.Serialize(new
+            WriteEvidence(root, "large-backup-restore", new
             {
                 products = 100_000, batches = 100_000, inspections = 300_000,
                 databaseBytes = new FileInfo(database).Length,
@@ -235,7 +235,7 @@ public sealed class S8T05CorruptionSafetyTests
                 createMilliseconds = created.ElapsedMilliseconds, backupMilliseconds = backupWatch.ElapsedMilliseconds,
                 restoreMilliseconds = restoreWatch.ElapsedMilliseconds, finalValidationMilliseconds = validationWatch.ElapsedMilliseconds, initializeMilliseconds = initializeWatch.ElapsedMilliseconds,
                 integrity = "ok", foreignKeys = 0, finalFingerprint = Fingerprint(database), pass = true
-            }));
+            });
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -285,7 +285,9 @@ public sealed class S8T05CorruptionSafetyTests
             var backup = new LocalDatabaseBackupUseCase().Create(database.Path, backups);
             Assert.True(backup.Succeeded);
             Execute(database.Path, "UPDATE products SET current_name = 'changed current';");
+            Checkpoint(database.Path);
             var changed = Fingerprint(database.Path);
+            var changedSha = Hash(database.Path);
             var checkpoints = new List<string>();
             var result = new DatabaseRestoreUseCase((point, path) =>
             {
@@ -299,12 +301,13 @@ public sealed class S8T05CorruptionSafetyTests
             var final = failure.StartsWith("final-", StringComparison.Ordinal);
             Assert.Equal(final ? DatabaseRestoreCodes.FinalValidationFailed : failure == "replace-before" ? DatabaseRestoreCodes.ReplaceFailed : DatabaseRestoreCodes.StagingFailed, result.Code);
             Assert.Equal(changed, Fingerprint(database.Path));
+            Assert.Equal(changedSha, Hash(database.Path));
             Assert.Equal("ok", Scalar(database.Path, "PRAGMA integrity_check;"));
             Assert.Equal(0, ForeignKeyViolationCount(database.Path));
             Assert.NotEqual(original, changed);
             Assert.NotNull(result.PreRestoreBackupPath);
             Assert.True(new DatabaseRestoreUseCase().ValidateForListing(result.PreRestoreBackupPath!, database.Path).Succeeded);
-            File.WriteAllText(Path.Combine(root, $"S8-T05-{failure}-rollback.json"), JsonSerializer.Serialize(new { failure, result = result.Code, checkpoints, interceptionLayer = failure is "copy" or "replace-before" ? "operation" : "sha", original, changed, final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true }));
+            WriteEvidence(root, $"failure-{failure}", new { result = result.Code, checkpoints, mutatedMainSHA = Hash(database.Path), expectedSHA = Hash(backup.BackupPath!), mutatedProbe = Probe(database.Path), interceptionLayer = failure is "copy" or "replace-before" ? "operation" : "later_or_not_proven", original, changed, final = Fingerprint(database.Path), protectionSha = Hash(result.PreRestoreBackupPath!), protectedBackup = true, pass = true });
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -349,7 +352,7 @@ public sealed class S8T05CorruptionSafetyTests
             Assert.Equal(before, Fingerprint(database.Path));
             Assert.Empty(checkpoints);
             Assert.Empty(Directory.GetFiles(backups, "pre-restore-*.db"));
-            File.WriteAllText(Path.Combine(root, $"S8-T05-{scenario}.json"), JsonSerializer.Serialize(new { scenario, result = result.Code, before, after = Fingerprint(database.Path), checkpoints }));
+            WriteEvidence(root, $"backup-{scenario}", new { sourceSHA = Hash(backup.BackupPath!), sourceProbe = Probe(database.Path), damagedSHA = File.Exists(candidate) ? Hash(candidate) : null, damagedProbe = Probe(candidate), result = result.Code, checkpoints, finalSHA = Hash(database.Path), finalProbe = Probe(database.Path), before, after = Fingerprint(database.Path), pass = true });
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -398,7 +401,7 @@ public sealed class S8T05CorruptionSafetyTests
                 Assert.Equal(0, probe.ForeignKeys);
                 Assert.Equal(Fingerprint(source.Path), probe.Fingerprint);
             }
-            File.WriteAllText(Path.Combine(root, $"S8-T05-wal-{scenario}.json"), JsonSerializer.Serialize(new { scenario, sourceBeforeMutation, sourceAfterMutation = Fingerprint(source.Path), probe }));
+            WriteEvidence(root, $"wal-{scenario}", new { sourceBeforeMutation, sourceAfterMutation = Fingerprint(source.Path), probe, pass = true });
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -608,12 +611,13 @@ public sealed class S8T05CorruptionSafetyTests
         try
         {
             var fingerprint = Fingerprint(path);
-            return new(true, Scalar(path, "PRAGMA integrity_check;"), ForeignKeyViolationCount(path), fingerprint, null);
+            return new(true, Scalar(path, "PRAGMA integrity_check;"), ForeignKeyViolationCount(path), fingerprint, null, null, null, Scalar(path, "SELECT COUNT(*) FROM products;"), Scalar(path, "SELECT COUNT(*) FROM batches;"), Scalar(path, "SELECT COUNT(*) FROM tasks;"), Scalar(path, "SELECT COUNT(*) FROM inspections;"), Scalar(path, "SELECT COUNT(*) FROM __EFMigrationsHistory;"));
         }
-        catch (Exception exception)
+        catch (SqliteException exception)
         {
-            return new(false, null, null, null, exception.GetType().Name);
+            return new(false, null, null, null, exception.GetType().Name, exception.SqliteErrorCode, exception.SqliteExtendedErrorCode, null, null, null, null, null);
         }
+        catch (Exception exception) { return new(false, null, null, null, exception.GetType().Name, null, null, null, null, null, null, null); }
     }
 
     private static string Hash(string path)
@@ -703,6 +707,15 @@ public sealed class S8T05CorruptionSafetyTests
         action();
     }
 
+    private static void WriteEvidence(string root, string scenario, object evidence)
+    {
+        File.WriteAllText(Path.Combine(root, $"S8-T05-{scenario}.json"), JsonSerializer.Serialize(new
+        {
+            card = "S8-T05", runId = Environment.GetEnvironmentVariable("S8_T05_RUN_ID") ?? "not_set",
+            processId = Environment.ProcessId, root, scenario, evidence
+        }));
+    }
+
     private static void AssertSafeSyntheticRoot(string root)
     {
         var expected = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T05"));
@@ -731,6 +744,6 @@ public sealed class S8T05CorruptionSafetyTests
         AssertNoReparseAncestors(actual, temp);
     }
 
-    private sealed record SidecarProbe(bool Opened, string? Integrity, int? ForeignKeys, string? Fingerprint, string? Error);
+    private sealed record SidecarProbe(bool Opened, string? Integrity, int? ForeignKeys, string? Fingerprint, string? Error, int? SqliteErrorCode, int? SqliteExtendedErrorCode, string? Products, string? Batches, string? Tasks, string? Inspections, string? Migrations);
 
 }
