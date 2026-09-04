@@ -558,7 +558,7 @@ public sealed class S8T03ImportPerformanceTests
         }
     }
 
-    private static void SeedExisting(string databasePath, string sourcePath, string snapshotDirectory)
+    internal static void SeedExisting(string databasePath, string sourcePath, string snapshotDirectory)
     {
         var workbook = new ExcelTemplateReader().Read(sourcePath);
         var classification = new ExcelFileClassifier().Classify(workbook);
@@ -576,7 +576,7 @@ public sealed class S8T03ImportPerformanceTests
         Assert.True(result.Succeeded, result.Code);
     }
 
-    private static ImportConfirmationContract ReadConfirmedContract(string databasePath, string sourcePath)
+    internal static ImportConfirmationContract ReadConfirmedContract(string databasePath, string sourcePath)
     {
         var workbook = new ExcelTemplateReader().Read(sourcePath);
         var classification = new ExcelFileClassifier().Classify(workbook);
@@ -631,7 +631,7 @@ public sealed class S8T03ImportPerformanceTests
         }, new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    private static void WriteWorkbook(string path, int products, int batchesPerProduct, bool seed, bool invalidExpiry = false, int productOffset = 0)
+    internal static void WriteWorkbook(string path, int products, int batchesPerProduct, bool seed, bool invalidExpiry = false, int productOffset = 0)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
