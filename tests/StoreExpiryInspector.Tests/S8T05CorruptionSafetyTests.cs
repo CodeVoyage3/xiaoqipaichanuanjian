@@ -421,7 +421,7 @@ public sealed class S8T05CorruptionSafetyTests
                 : scenario == "abnormal"
                     ? !probe.Opened
                     : structurallyHealthy && businessFingerprintMatched;
-            WriteEvidence(root, $"wal-{scenario}", new { sourceBeforeMutation, sourceAfterMutation, capture, walBytes = File.Exists(copy + "-wal") ? new FileInfo(copy + "-wal").Length : 0, actual = probe, initializer, structurallyHealthy, businessFingerprintMatched, limitationObserved, provenanceProtected = false, pass });
+            WriteEvidence(root, $"wal-{scenario}", new { sourceBeforeMutation, sourceAfterMutation, capture, walBytes = File.Exists(copy + "-wal") ? new FileInfo(copy + "-wal").Length : 0, actual = probe, initializer, structurallyHealthy, businessFingerprintMatched, limitationObserved, provenanceProtected = false, pass = scenario == "mismatched" ? (bool?)null : pass, contractVerified = pass, outcome = scenario == "mismatched" ? "known_limitation_not_protected" : "observed" });
             if (scenario == "abnormal")
             {
                 Assert.False(probe.Opened);
