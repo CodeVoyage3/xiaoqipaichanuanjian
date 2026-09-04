@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 已启动，`S8-T01｜高规模数据基线与性能压测基座` 已技术验收关闭，当前等待 S8-T02 是否获批；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 状态：Stage 8 已启动，S8-T01 已关闭；S8-T02 已获用户批准并为当前唯一实施卡；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -10,6 +10,8 @@
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- 2026-09-04：重新 fetch 后 main=`0ede8b901fb5e6cbc1c2f2824d6f8a6c7a54f901`。S8-T02 Task/Acceptance 已建立，派发全新 Terra / medium / priority（用户已另行允许）；只做查询/分页读取优化，禁止索引/migration、S8-T03、Stage 9 与在线升级。
 
 - Stage 8 于 2026-09-03 在重新 fetch 后从 `master == origin/main == 1e41876bfa9c203a88cf53955867f0c3dd639e84` 启动。S8-T01 已真实生成并核对隔离的 100,000 Batch / 300,000 Inspection 历史压测库；高规模专项 1/1、Release 897/897、build 0/0、EF 无漂移、migration=9。100k 下 Dashboard、无搜索待排查/今日排查、Reminder 等路径暴露 `too many SQL variables` 阻断；本卡已技术验收关闭，不预设毫秒 SLA，不创建 S8-T02。
 
