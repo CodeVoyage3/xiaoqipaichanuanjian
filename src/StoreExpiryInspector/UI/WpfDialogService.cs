@@ -25,12 +25,18 @@ internal static class WpfDialogService
         panel.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
         if (!string.IsNullOrWhiteSpace(model.ReleaseNotes)) panel.Children.Add(new ScrollViewer { MaxHeight = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = new TextBlock { Text = model.ReleaseNotes, TextWrapping = TextWrapping.Wrap } });
+        var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap };
+        var bytes = new TextBlock { Text = model.ProgressText, Margin = new Thickness(0, 4, 0, 0), Foreground = FindBrush(owner, "SecondaryTextBrush") };
+        panel.Children.Add(status); panel.Children.Add(bytes);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
         var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
+        var cancel = new Button { Content = "取消准备", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "SecondaryButtonStyle") };
         later.Click += (_, _) => { model.DismissCommand.Execute(null); dialog.Close(); };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
-        buttons.Children.Add(later); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => later.Focus(); dialog.Show();
+        cancel.Click += (_, _) => model.CancelCommand.Execute(null);
+        model.PropertyChanged += (_, eventArgs) => dialog.Dispatcher.BeginInvoke(() => { status.Text = model.StatusText; bytes.Text = model.ProgressText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); });
+        buttons.Children.Add(later); buttons.Children.Add(cancel); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.Show();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {

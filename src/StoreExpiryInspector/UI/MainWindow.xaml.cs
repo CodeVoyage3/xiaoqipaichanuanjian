@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private bool _isNavigationCollapsed;
     private readonly HashSet<Version> _suppressedUpdateVersions = [];
     private readonly CancellationTokenSource _updatePackageCancellation = new();
+    private readonly SignedUpdatePackageDownloader _updateDownloader;
     internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
@@ -27,6 +28,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _updateDownloader = new SignedUpdatePackageDownloader();
         InitializeShell(new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
@@ -38,8 +40,12 @@ public partial class MainWindow : Window
     }
 
     internal MainWindow(ShellViewModel shell)
+        : this(shell, new SignedUpdatePackageDownloader()) { }
+
+    internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader)
     {
         InitializeComponent();
+        _updateDownloader = updateDownloader;
         InitializeShell(shell);
     }
 
@@ -58,23 +64,27 @@ public partial class MainWindow : Window
     {
         if (IsClosed || result.Outcome != UpdateCheckOutcome.UpdateAvailable || result.LatestVersion is null || _suppressedUpdateVersions.Contains(result.LatestVersion)) return false;
         _suppressedUpdateVersions.Add(result.LatestVersion);
-        var model = new UpdateNotificationViewModel(
+        UpdateNotificationViewModel? model = null;
+        model = new UpdateNotificationViewModel(
             result,
             dismiss: () => { },
-            requestUpdate: () => _ = PrepareUpdateAsync(result));
+            requestUpdate: () => _ = PrepareUpdateAsync(result, model!));
         (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
         return true;
     }
 
-    private async Task PrepareUpdateAsync(UpdateCheckResult result)
+    private async Task PrepareUpdateAsync(UpdateCheckResult result, UpdateNotificationViewModel model)
     {
         if (result.Release is null)
         {
             WpfDialogService.Show(this, "暂无法准备更新", "本次发行身份信息不完整，已安全拒绝下载。", "知道了", WpfDialogKind.Warning, showCancel: false);
             return;
         }
-        var update = new SignedUpdatePackageDownloader();
-        var prepared = await update.PrepareAsync(result.Release, result.CurrentVersion, progress => Dispatcher.BeginInvoke(() => { }), _updatePackageCancellation.Token);
+        model.Begin();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_updatePackageCancellation.Token);
+        model.CancelRequested += linked.Cancel;
+        var prepared = await Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress => Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }), linked.Token), linked.Token);
+        if (!IsClosed) model.Complete(prepared);
         if (!IsClosed) WpfDialogService.Show(this, prepared.Outcome == UpdatePackageOutcome.Verified ? "更新包已准备完成" : "更新包未准备", prepared.Message, "知道了", prepared.Outcome == UpdatePackageOutcome.Verified ? WpfDialogKind.Information : WpfDialogKind.Warning, showCancel: false);
     }
 
