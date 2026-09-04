@@ -1,5 +1,13 @@
 # Stage 9｜安装、发布与在线升级交付
 
+## S9-T05正式启动（2026-09-05，覆盖下方历史停止点）
+
+- 用户仅授权 S9-T05；Stage9 IN_PROGRESS / S9-T05_CURRENT，S9-T05 IN_PROGRESS / NOT_ACCEPTED。重新 fetch 后 main=origin/main=a8e1414030864c67e5cc82ee81c6062dc20c724d，clean/0/0；无既有 T05，已建立 Task/Acceptance。
+- 全新 GPT-5.6 Terra medium/priority `/root/s9_t05_terra` 实施，提交后停止、不 push；Sol 只治理、完整 diff 和独立复验。仅同 Schema 程序切换、独立 Updater、持久 journal、staging、健康 ACK 与失败回滚。
+- 全部运行测试仅 TEMP/GUID 独立安装/数据/updater/进程身份与合成 migration9 DB；正式安装根/数据根禁止探测、哈希、复制或访问。候选 ACK 前禁止业务写；旧完整树保留，真实硬 Kill 各关键 checkpoint 至少3次，不能用异常捕获代替。
+- 产品仍1.0.0；不做 migration/Schema/生产 PRAGMA、正式 Release/tag/asset、生产私钥/trust anchor、提权、Undo。Stage8和T01～T04仍CLOSED；不创建S9-T06。
+- 尚未实施或验收通过；待完整矩阵、app/updater self-contained、fresh无filter Release、build0/0、EF无漂移/migration9、secret与diffcheck。全部通过才关闭并普通push，遇真实架构冲突则PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED。
+
 ## S9-T04正式关闭（2026-09-05，当前权威状态）
 
 - S9-T04 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION。Stage8、S9-T01/T02/T03继续CLOSED，S9-T05未创建。开工c6200ca8507c7f8d99f7f40047b6be291d6ff70b与origin一致、clean/0/0。全新Terra medium/priority完成生产/测试4dbf088ff024a9818418e33bc67868dd0447b604并停止不push；Sol只治理、完整diff和独立复验。最终main以普通push/fetch回执为准。
