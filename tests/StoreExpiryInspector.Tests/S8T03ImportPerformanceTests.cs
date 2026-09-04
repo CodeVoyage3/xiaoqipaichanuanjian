@@ -349,6 +349,8 @@ public sealed class S8T03ImportPerformanceTests
             seededProductIds = seeded.Products.ToDictionary(product => product.ProductCode, product => product.Id, StringComparer.Ordinal);
             seededBatchIds = seeded.Batches.Include(batch => batch.Product).ToDictionary(batch => $"{batch.Product.ProductCode}|{batch.ProductionDate:yyyy-MM-dd}|{batch.ExpiryDate:yyyy-MM-dd}", batch => batch.Id, StringComparer.Ordinal);
         }
+        var database_physical_bytes_before = DatabasePhysicalBytes(databasePath);
+        var database_logical_bytes_before = DatabaseLogicalBytes(databasePath);
         Measure(measures, "workbook_generate", () => WriteWorkbook(sourcePath, rows / 2, batchesPerProduct: 2, seed: false));
         workbookBytes = new FileInfo(sourcePath).Length;
         allocationStart = GC.GetTotalAllocatedBytes();
@@ -397,6 +399,7 @@ public sealed class S8T03ImportPerformanceTests
         var importAllocatedBytes = GC.GetTotalAllocatedBytes() - allocationStart;
         var importWorkingSetBytes = Environment.WorkingSet;
         var importGc = new[] { GC.CollectionCount(0) - gcStart[0], GC.CollectionCount(1) - gcStart[1], GC.CollectionCount(2) - gcStart[2] };
+        var verificationWatch = Stopwatch.StartNew();
 
         Assert.True(result.Succeeded, result.Code);
         Assert.True(File.Exists(result.SnapshotPath));
@@ -404,6 +407,9 @@ public sealed class S8T03ImportPerformanceTests
         var importId = Assert.IsType<long>(result.ImportId);
         using (var verify = DatabaseInitializer.CreateContext(databasePath))
         {
+            var productsByCode = verify.Products.AsNoTracking().ToDictionary(product => product.ProductCode, StringComparer.Ordinal);
+            var batchesByKey = verify.Batches.AsNoTracking().ToDictionary(batch => (batch.ProductId, batch.ProductionDate, batch.ExpiryDate));
+            var batchesById = verify.Batches.AsNoTracking().ToDictionary(batch => batch.Id);
             Assert.Equal(rows / 2, verify.Products.Count());
             Assert.Equal(rows, verify.Batches.Count());
             Assert.Equal(2, verify.Imports.Count(import => import.Status == ImportStatuses.Succeeded));
@@ -450,7 +456,7 @@ public sealed class S8T03ImportPerformanceTests
             for (var productNumber = 0; productNumber < rows / 2; productNumber++)
             {
                 var code = $"S8T03-{productNumber:D6}";
-                var product = verify.Products.Single(item => item.ProductCode == code);
+                var product = productsByCode[code];
                 Assert.Equal("合成更新商品" + productNumber.ToString("D6"), product.CurrentName);
                 Assert.Equal("690" + productNumber.ToString("D10"), product.CurrentBarcode);
                 Assert.Equal(productNumber % 10 == 0 ? 0 : 30, product.EffectiveStockQty);
@@ -459,7 +465,7 @@ public sealed class S8T03ImportPerformanceTests
                 {
                     var production = batchNumber == 0 ? new DateOnly(2026, 1, 1) : new DateOnly(2026, 2, 1);
                     var expiry = batchNumber == 0 && productNumber % 10 is 0 or 1 ? new DateOnly(2026, 9, 9) : new DateOnly(2027, 9, 4);
-                    var batch = verify.Batches.Single(item => item.ProductId == product.Id && item.ProductionDate == production && item.ExpiryDate == expiry);
+                    var batch = batchesByKey[(product.Id, production, expiry)];
                     Assert.Equal(batchNumber == 0 ? 2 : 1, batch.CurrentArrivalQty);
                     Assert.Equal(batchNumber == 0 ? 2 : 1, batch.MaxArrivalQty);
                     if (seededBatchIds.TryGetValue($"{code}|{production:yyyy-MM-dd}|{expiry:yyyy-MM-dd}", out var seededBatchId)) Assert.Equal(seededBatchId, batch.Id);
@@ -476,17 +482,18 @@ public sealed class S8T03ImportPerformanceTests
             {
                 Assert.Equal("pet", task.Product.CategoryCode);
                 var item = Assert.Single(task.Items);
-                var batch = verify.Batches.Single(candidate => candidate.Id == item.BatchId);
+                var batch = batchesById[item.BatchId];
                 Assert.Equal(task.ProductId, item.ProductId);
                 Assert.Equal(new DateOnly(2026, 1, 1), batch.ProductionDate);
-                Assert.Equal(ExpiryStageCalculator.Withdraw, item.Stage);
-                Assert.Equal(ExpiryStageCalculator.Withdraw, batch.CurrentStage);
-                Assert.NotNull(batch.NextTriggerDate);
+                var expected = Assert.IsType<ExpiryStageResult>(ExpiryPolicyCalculator.Calculate(ExpiryPolicies.Pet, ExpiryPolicies.Version1, new DateOnly(2026, 9, 4), batch.ExpiryDate, 10));
+                Assert.Equal(ExpiryStageCalculator.Withdraw, task.HighestStage);
+                Assert.Equal(expected.CurrentStage, item.Stage);
+                Assert.Equal(expected.CurrentStage, batch.CurrentStage);
+                Assert.Equal(expected.NextTriggerDate, batch.NextTriggerDate);
             });
             Assert.Equal(existingProductCount / 10, verify.Tasks.Count(task => task.Status == "system_closed" && task.CloseReason == "product_stock_zero"));
         }
 
-        var verificationWatch = Stopwatch.StartNew();
         var verification = Verify(databasePath);
         verificationWatch.Stop();
         Assert.True(verification.IntegrityOk);
@@ -504,6 +511,8 @@ public sealed class S8T03ImportPerformanceTests
             database_path = databasePath,
             snapshot_path = result.SnapshotPath,
             workbook_bytes = workbookBytes,
+            database_physical_bytes_before,
+            database_logical_bytes_before,
             database_physical_bytes = DatabasePhysicalBytes(databasePath),
             database_logical_bytes = DatabaseLogicalBytes(databasePath),
             snapshot_bytes = new FileInfo(result.SnapshotPath!).Length,
