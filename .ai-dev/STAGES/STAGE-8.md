@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T02_QUERY_IMPLEMENTATION`；隔离门禁已通过。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T02_CLOSED / WAITING_NEXT_AUTHORIZATION`；阶段整体尚未完成。
 
 ## 开工事实
 
@@ -19,17 +19,16 @@
 
 - `S8-T01｜高规模数据基线与性能压测基座`：已由全新 GPT-5.6 Terra 实施，Sol 独立技术验收通过并关闭。
 - S8-T01 已真实生成并核对 100,000 Batch / 300,000 Inspection；只建立隔离数据、测量工具和基线证据，没有优化生产代码或新增索引、migration、Schema、依赖。
-- 用户已于本轮批准 S8-T02｜查询、分页与高规模读性能优化，Task/Acceptance 已建立；只允许查询改写，禁止新增索引/migration，完成后停止。
+- S8-T02｜查询、分页与高规模读性能优化：Sol 独立技术验收通过并关闭。隔离9/9、正确性150/150、100k/300k专项1/1、Release912/912、build0/0、EF无漂移、migration9；未新增索引/migration。当前停止，详见 S8-T02 Acceptance。
 
 ## 后续候选规划（尚未创建 Task）
 
 以下仅为候选顺序，不构成编号任务、实施授权或 Acceptance：
 
-1. S8-T02 已转为当前正式 Task，不包含索引实施授权。
-2. S8-T03：大 Excel 导入性能、事务与回滚压力。
-3. S8-T04：异常退出、事务中断与数据库一致性。
-4. S8-T05：SQLite 损坏检测、备份恢复与灾难场景。
-5. S8-T06：Stage 8 最终高规模回归与稳定性收口。
+1. S8-T03：大 Excel 导入性能、事务与回滚压力。
+2. S8-T04：异常退出、事务中断与数据库一致性。
+3. S8-T05：SQLite 损坏检测、备份恢复与灾难场景。
+4. S8-T06：Stage 8 最终高规模回归与稳定性收口。
 
 ## 冻结边界
 
@@ -42,6 +41,6 @@
 ## 协作治理
 
 - Sol 定义任务与 Acceptance、维护治理文档，并在实现后独立审查完整 diff、复跑专项/Release/build/EF/migration/Git 门禁；Sol 不直接写生产代码。
-- 每张 Stage 8 正式 Task 使用一个全新 GPT-5.6 Terra（reasoning medium、标准速度）；不得复用旧阶段或旧卡 Terra。
+- 每张 Stage 8 正式 Task 使用一个全新 GPT-5.6 Terra（reasoning medium）；用户已允许后续 priority 服务档，不再重复询问速度。不得复用旧阶段或旧卡 Terra。
 - Terra 只实现当前 Task，提交后停止，不 push，不创建后续 Task。
 - 用户只承担确有必要的真实 GUI 验收；Stage 8 优先使用自动化、终端、SQLite、日志和压测证据。

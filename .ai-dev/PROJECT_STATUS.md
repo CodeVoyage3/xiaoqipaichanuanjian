@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 已启动，S8-T01 已关闭；S8-T02 隔离门禁已通过，查询优化进行中，未最终验收；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 状态：Stage 8 进行中，S8-T01、S8-T02 已技术验收关闭；当前停止并等待下一卡明确批准；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -11,11 +11,11 @@
 
 ## 当前交付事实
 
-- S8-T02 第一阶段新提交 `e294a6b2e6e25e22f92c6a4a2cb30df27ae26630`：Sol 独立隔离专项7/7、关联回归155/155，默认factory调用计数0，显式TEMP库路径验证通过。已放行新 Terra 第二阶段；不改写旧轮疑似正式库访问历史。
+- S8-T02 最终验收（2026-09-04）：新 Terra 隔离 `e294a6b`、查询 `50539c2`、修复 `88d1896`、测试 `81a0c1c`；Sol 独立隔离9/9、正确性150/150、高规模1/1、Release912/912、build0/0、EF无漂移、migration9。100k Batch / 300k Inspection 真实达到，20条测量路径无blocker；Stage median 7241.50→174.68ms，待排查首屏387.64ms，历史分页628.39ms。搜索及单次snapshot变慢，如实保留；详见 S8-T02 Acceptance。无索引/Schema/依赖变更，不创建S8-T03。
 
-- S8-T02 最新恢复：用户批准隔离优先继续，正式库仍禁止任何访问。旧 diff 已保存到外部参考补丁，恢复 clean main=`0d1d42a0667909e52264c5cd091297a827338788` 后创建新 Terra；先完成隔离专项并经 Sol 放行，再实施查询优化。历史疑似访问不调查、不改写为未发生。
+- S8-T02 恢复溯源：用户批准隔离优先继续，正式库仍禁止任何访问。旧 diff 已保存到外部参考补丁，恢复 clean main=`0d1d42a0667909e52264c5cd091297a827338788` 后创建新 Terra；隔离专项经 Sol 放行后才实施查询优化。历史疑似访问不调查、不改写为未发生。
 
-- S8-T02 最新停止：Terra 的定向测试曾运行在 Shell 默认大类读取器接线错误的中间实现上，无法排除正式库访问；Sol 已停测停工，只核对代码/代理回执，未访问正式库。两份生产代码改动未提交且未推送；本卡 `PAUSED_ISOLATION_REVIEW / NOT_ACCEPTED`，等待用户指示。详见 S8-T02 Acceptance。
+- S8-T02 历史暂停：旧 Terra 的中间实现无法排除默认正式库访问；当时停测停工，旧改动未提交/推送。旧事件仍未核实；本轮隔离通过不证明旧事件未发生。暂停已按上述新授权门禁解除，详细原始回执保留在 Acceptance。
 
 - 2026-09-04：重新 fetch 后 main=`0ede8b901fb5e6cbc1c2f2824d6f8a6c7a54f901`。S8-T02 Task/Acceptance 已建立，派发全新 Terra / medium / priority（用户已另行允许）；只做查询/分页读取优化，禁止索引/migration、S8-T03、Stage 9 与在线升级。
 
@@ -74,7 +74,7 @@
 - `ConfirmedImportExecutor.cs` 为 1,154 行；职责仍限于 Stage 2 持久化及外层事务参与，禁止再加入 Stage 3/4 规则。
 - `ConfirmedImportLifecycleOrchestrator.cs` 为 467 行；当前只冻结/映射明确事实、调用 S3-T04/S3-T05 与拥有事务，无阻断级 God Service 债务。
 - 当前 WPF 已具备 Stage 4～5 排查与历史能力、Stage 6 Reminder/设置/托盘、自启动及 Stage 7 本地备份/恢复闭环；UI 不复制 Stage 3～7 权威算法，恢复遵守维护与退出边界。
-- 同版本安全备份/恢复与用户隔离演练已由 Stage 7 完成；升级前完整可恢复流程、安装、Windows 门店实机和 10 万批次/30 万历史性能仍待后续批准。
+- 同版本安全备份/恢复与用户隔离演练已由 Stage 7 完成；10万批次/30万历史读查询已完成S8-T02隔离验收，其余高规模稳定性、升级前完整可恢复流程、安装及Windows门店实机仍待后续批准。
 - 正式排查历史 / 结果 Excel 导出由用户明确 deferred，不是 Stage 7 缺陷；未经后续重新批准不得补做。今日待排查任务、Draft、数据库原始表导出仍不做。
 - Stage 5 已把历史数量 Revision 与 S3-T06 Lifecycle 明确隔离；历史修改不得重放旧 0 事实或触发状态重算。
 - `HandledAttentionVersion` 已冻结为正式排查处理水位，只能在正式提交事务更新；正常成功提交在同一事务删除有效 DraftItem/Draft，系统失效 Draft 永久保留。
