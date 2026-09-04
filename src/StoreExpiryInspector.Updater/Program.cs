@@ -186,6 +186,10 @@ internal static class UpdateTransaction
         if (!string.Equals(full, Path.GetFullPath(expectedJournal), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
         foreach (var value in new[] { journal.AppPath, journal.StagingPath, journal.OldPath }) RequireUnder(journal.InstallRoot, value);
         if (!string.Equals(journal.AppPath, Path.Combine(journal.InstallRoot, "app"), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(journal.StagingPath, Path.Combine(journal.InstallRoot, "app.staging-" + journal.OperationId), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(journal.OldPath, Path.Combine(journal.InstallRoot, "app.old-" + journal.OperationId), StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(journal.AppPath, journal.StagingPath, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(journal.AppPath, journal.OldPath, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(journal.StagingPath, journal.OldPath, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
         ValidateOrdinaryTree(journal.InstallRoot);
         ValidateOrdinaryTree(journal.DataRoot);

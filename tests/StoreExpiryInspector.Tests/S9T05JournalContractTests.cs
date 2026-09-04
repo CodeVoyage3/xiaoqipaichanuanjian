@@ -44,6 +44,24 @@ public sealed class S9T05JournalContractTests
         try { File.WriteAllText(Path.Combine(fixture.Staging, "payload.dll"), "tampered"); Assert.Equal(1, await UpdateTransaction.ResumeAsync(fixture.Journal)); Assert.Equal(fixture.OldTree.Hash, TreeFingerprint.Create(fixture.App).Hash); Assert.Equal(UpdatePhase.FailedNeedsManualRecovery, ReadPhase(fixture.Journal)); }
         finally { if (Directory.Exists(fixture.Root)) Directory.Delete(fixture.Root, true); if (Directory.Exists(fixture.Install)) Directory.Delete(fixture.Install, true); }
     }
+    [Theory]
+    [InlineData("OldPath")]
+    [InlineData("StagingPath")]
+    public async Task ResumeRejectsForgedSiblingOperationPath(string property)
+    {
+        var fixture = CreateValidJournalFixture(); var sibling = Path.Combine(fixture.Install, "unrelated");
+        try
+        {
+            Directory.CreateDirectory(sibling); File.WriteAllText(Path.Combine(sibling, "keep.txt"), "keep");
+            var options = new System.Text.Json.JsonSerializerOptions { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
+            var journal = System.Text.Json.JsonSerializer.Deserialize<UpdateJournal>(await File.ReadAllTextAsync(fixture.Journal), options)!;
+            await File.WriteAllTextAsync(fixture.Journal, System.Text.Json.JsonSerializer.Serialize(property == "OldPath" ? journal with { OldPath = sibling } : journal with { StagingPath = sibling }, options));
+            Assert.Equal(1, await UpdateTransaction.ResumeAsync(fixture.Journal));
+            Assert.Equal("keep", await File.ReadAllTextAsync(Path.Combine(sibling, "keep.txt")));
+            Assert.True(File.Exists(Path.Combine(fixture.App, "payload.dll")));
+        }
+        finally { if (Directory.Exists(fixture.Root)) Directory.Delete(fixture.Root, true); if (Directory.Exists(fixture.Install)) Directory.Delete(fixture.Install, true); }
+    }
     [Fact]
     public async Task ResumeRejectsStagingJunction()
     {

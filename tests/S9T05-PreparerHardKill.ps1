@@ -8,7 +8,7 @@ foreach ($iteration in 1..$Iterations) {
     $env:S9_T05_PREPARER_CHECKPOINT = 'StagingStarted'
     $env:S9_T05_PREPARER_MARKER = $marker
     $env:S9_T05_PREPARER_DATABASE_TEMPLATE = $DatabasePath
-    $process = Start-Process dotnet -ArgumentList 'test',$project,'--no-build','--no-restore','--filter','FullyQualifiedName~InstallationPreparationCopiesIndependentUpdaterAndWritesJournalAfterRevalidation' -PassThru
+    $process = Start-Process dotnet -ArgumentList 'test',$project,'-c','Release','--no-build','--no-restore','--filter','FullyQualifiedName~InstallationPreparationCopiesIndependentUpdaterAndWritesJournalAfterRevalidation' -PassThru
     $until = [DateTime]::UtcNow.AddSeconds(20)
     while (-not (Test-Path $marker) -and -not $process.HasExited -and [DateTime]::UtcNow -lt $until) { Start-Sleep -Milliseconds 100 }
     $checkpoint = if (Test-Path $marker) { Get-Content -Raw $marker | ConvertFrom-Json } else { $null }
