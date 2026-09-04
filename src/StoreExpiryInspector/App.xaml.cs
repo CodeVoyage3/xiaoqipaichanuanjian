@@ -69,8 +69,10 @@ public partial class App : System.Windows.Application
             _logger.TryWrite(
                 "error",
                 "startup_failed",
-                "启动初始化或补算失败，已继续打开主窗口。",
+                "启动初始化或补算失败，已停止启动。",
                 exception.ToString());
+            Shutdown();
+            return;
         }
 
         base.OnStartup(e);
