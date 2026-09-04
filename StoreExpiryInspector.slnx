@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="src\StoreExpiryInspector\StoreExpiryInspector.csproj" />
+  <Project Path="src\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj" />
   <Project Path="tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj" />
 </Solution>

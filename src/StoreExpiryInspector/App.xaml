@@ -1,7 +1,6 @@
 <Application x:Class="StoreExpiryInspector.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="UI/MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <!-- S4-T10 semantic tokens: keep presentation centralized and boring. -->
         <SolidColorBrush x:Key="CanvasBrush" Color="#F5F7FA" />

@@ -7,12 +7,14 @@ public static class RuntimeDataRoot
     private const string DataRootArgument = "--data-root";
     private const string SmokeExitArgument = "--s9-t01-smoke-exit";
     private const string ExistingIsolatedDataRootArgument = "--allow-existing-isolated-data-root";
+    private const string UpgradeVerificationArgument = "--s9-t05-verify";
 
     private static RuntimeDataRootOptions? _options;
 
     public static bool IsIsolated => Options.IsIsolated;
 
     public static bool IsSmokeRun => Options.IsSmokeRun;
+    public static string? UpgradeVerificationOperationId => Options.UpgradeVerificationOperationId;
 
     public static string RootDirectory => Options.RootDirectory;
 
@@ -49,6 +51,7 @@ public static class RuntimeDataRoot
 
         string? dataRoot = null;
         var smokeExit = false;
+        string? verificationOperationId = null;
         var allowExisting = false;
         for (var index = 0; index < arguments.Length; index++)
         {
@@ -62,6 +65,14 @@ public static class RuntimeDataRoot
             if (string.Equals(argument, ExistingIsolatedDataRootArgument, StringComparison.Ordinal))
             {
                 allowExisting = true;
+                continue;
+            }
+
+            if (string.Equals(argument, UpgradeVerificationArgument, StringComparison.Ordinal))
+            {
+                if (++index >= arguments.Length || verificationOperationId is not null || !Guid.TryParse(arguments[index], out _))
+                    throw new ArgumentException("升级验证操作参数无效。", nameof(arguments));
+                verificationOperationId = arguments[index];
                 continue;
             }
 
@@ -86,6 +97,9 @@ public static class RuntimeDataRoot
                 throw new ArgumentException("发布 smoke 必须指定隔离数据目录。", nameof(arguments));
             }
 
+            if (verificationOperationId is not null)
+                return new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StoreExpiryInspector"), false, false, false, verificationOperationId);
+
             if (allowExisting) throw new ArgumentException("复用隔离数据目录必须指定数据目录。", nameof(arguments));
             return new(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StoreExpiryInspector"),
@@ -107,7 +121,7 @@ public static class RuntimeDataRoot
             throw new ArgumentException("隔离数据目录必须是 TEMP 下的 GUID 普通目录。", nameof(arguments));
         }
 
-        return new(root, true, smokeExit, allowExisting);
+        return new(root, true, smokeExit, allowExisting, verificationOperationId);
     }
 
     private static RuntimeDataRootOptions Options => _options ?? new(
@@ -196,4 +210,4 @@ public static class RuntimeDataRoot
     }
 }
 
-internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false);
+internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false, string? UpgradeVerificationOperationId = null);

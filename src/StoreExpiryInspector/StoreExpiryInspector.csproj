@@ -27,4 +27,8 @@
     <InternalsVisibleTo Include="StoreExpiryInspector.Tests" />
   </ItemGroup>
 
+  <Target Name="PublishIndependentUpdater" AfterTargets="Publish">
+    <MSBuild Projects="..\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(PublishDir)Updater\" />
+  </Target>
+
 </Project>

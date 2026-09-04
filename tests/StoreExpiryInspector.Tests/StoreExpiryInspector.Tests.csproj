@@ -20,6 +20,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\StoreExpiryInspector\StoreExpiryInspector.csproj" />
+    <ProjectReference Include="..\..\src\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj">
+      <AdditionalProperties>S9T05TestMode=true</AdditionalProperties>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

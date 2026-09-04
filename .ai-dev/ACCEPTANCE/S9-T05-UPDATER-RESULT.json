@@ -1,0 +1,9 @@
+{
+  "status": "implementation-evidence-only",
+  "provenance": "Terra isolated TEMP/GUID reruns; not Sol independent acceptance.",
+  "database": { "migrationCount": 9, "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation", "sha256": "37556296F43368424B3B813398FAF98B8776E643B94A3FBA68A7D9E4A9E84D2B" },
+  "wpf": { "normalSmoke": "exit 0", "verification": "exit 0; ACK migration9/integrity/FK/core/UI; DB unchanged; no WAL/SHM" },
+  "hardKill": { "preparerStagingStarted": "3/3", "success": "27/27", "rollback": "9/9", "normalRestartMarker": true },
+  "matrix": { "B_E_F_G": "controlled phase failures rollback to old and restart", "C": "malformed and wrong-type ACK rollback", "H": "old and candidate file locks fail closed", "O": "missing candidate DLL rollback", "P": "success removes operation candidate.zip and bounded download cache; old/journal/updater retained", "Q": "old ACK failure is manual recovery", "ackJunction": "forged operation junction rejected without external journal write", "accessDenied": "isolated ACL denial fails closed without mixed tree" },
+  "limitations": "A-Q are Terra implementation evidence only; no formal data root was read or modified."
+}

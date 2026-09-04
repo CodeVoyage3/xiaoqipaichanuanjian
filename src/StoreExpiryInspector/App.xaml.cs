@@ -1,9 +1,11 @@
 using System.IO;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Updates;
@@ -55,6 +57,11 @@ public partial class App : System.Windows.Application
         {
             _instanceMutex.Dispose();
             _instanceMutex = null;
+            if (RuntimeDataRoot.UpgradeVerificationOperationId is not null)
+            {
+                Shutdown(1);
+                return;
+            }
             WpfDialogService.Show(
                 owner: null,
                 "门店效期排查软件",
@@ -67,6 +74,14 @@ public partial class App : System.Windows.Application
         }
 
         _logger = new LocalFileLogger(RuntimeDataRoot.LogDirectory);
+        if (RuntimeDataRoot.UpgradeVerificationOperationId is { } operationId)
+        {
+            base.OnStartup(e);
+            MainWindow = new UI.MainWindow(CreateVerificationShell()) { IsEnabled = false };
+            MainWindow.Show();
+            StartUpgradeVerification(operationId);
+            return;
+        }
         try
         {
             DatabaseInitializer.Initialize();
@@ -105,6 +120,8 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
+        MainWindow = new UI.MainWindow();
+        MainWindow.Show();
         if (RuntimeDataRoot.IsSmokeRun)
         {
             Dispatcher.BeginInvoke(
@@ -131,11 +148,13 @@ public partial class App : System.Windows.Application
                 if (!shell.Dashboard.HasError && !shell.PendingTasks.HasError)
                 {
                     _logger?.TryWrite("info", "s9_t01_smoke_ready", "隔离发布 smoke 已完成 WPF Shell 初始化与首轮读取。");
+                    MainWindow?.Close();
                     Shutdown();
                 }
                 else
                 {
                     _logger?.TryWrite("error", "s9_t01_smoke_failed", "隔离发布 smoke 的 WPF Shell 首轮读取失败。");
+                    MainWindow?.Close();
                     Shutdown(1);
                 }
 
@@ -149,10 +168,83 @@ public partial class App : System.Windows.Application
 
             timer.Stop();
             _logger?.TryWrite("error", "s9_t01_smoke_failed", "隔离发布 smoke 未在时限内完成 WPF Shell 初始化与首轮读取。");
+            MainWindow?.Close();
             Shutdown(1);
         };
         timer.Start();
     }
+
+    private void StartUpgradeVerification(string operationId)
+    {
+        // This path is deliberately before Initialize/Migrate/recalculation and scheduler setup.
+        var elapsed = Stopwatch.StartNew();
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        timer.Tick += (_, _) =>
+        {
+                if (MainWindow is UI.MainWindow { IsLoaded: true, DataContext: ShellViewModel shell } &&
+                    !shell.Dashboard.IsLoading && !shell.PendingTasks.IsLoading)
+                {
+                    timer.Stop();
+                    VerifyUpgradeAndExit(operationId);
+                    return;
+                }
+                if (elapsed.Elapsed < TimeSpan.FromSeconds(30)) return;
+                timer.Stop();
+                if (MainWindow?.DataContext is ShellViewModel timedOutShell)
+                    _logger?.TryWrite("error", "s9_t05_verification_shell_timeout", $"startup={timedOutShell.StartupLoadTask.Status}; dashboardLoading={timedOutShell.Dashboard.IsLoading}; dashboardError={timedOutShell.Dashboard.HasError}; pendingLoading={timedOutShell.PendingTasks.IsLoading}; pendingError={timedOutShell.PendingTasks.HasError}", timedOutShell.StartupLoadTask.Exception?.ToString());
+                Shutdown(1);
+        };
+        timer.Start();
+    }
+
+    private static ShellViewModel CreateVerificationShell()
+    {
+        var connection = VerificationConnectionString();
+        return new ShellViewModel(defaultContextFactory: () => new StoreDbContext(
+            new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(connection).Options));
+    }
+
+    private void VerifyUpgradeAndExit(string operationId)
+    {
+        try
+        {
+            if (MainWindow is not UI.MainWindow { IsLoaded: true, DataContext: ShellViewModel shell } ||
+                shell.Dashboard.HasError || shell.PendingTasks.HasError)
+            {
+                Shutdown(1);
+                return;
+            }
+
+            var databasePath = RuntimeDataRoot.DatabasePath;
+            using var connection = new SqliteConnection(VerificationConnectionString(databasePath));
+            connection.Open();
+            using var integrity = connection.CreateCommand();
+            integrity.CommandText = "PRAGMA integrity_check;";
+            if (integrity.ExecuteScalar() is not string result || !string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase)) { Shutdown(1); return; }
+            using var foreignKeys = connection.CreateCommand();
+            foreignKeys.CommandText = "PRAGMA foreign_key_check;";
+            using var reader = foreignKeys.ExecuteReader();
+            if (reader.Read()) { Shutdown(1); return; }
+            using var migrationsCommand = connection.CreateCommand();
+            migrationsCommand.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId;";
+            using var migrationsReader = migrationsCommand.ExecuteReader();
+            var migrations = new List<string>(); while (migrationsReader.Read()) migrations.Add(migrationsReader.GetString(0));
+            if (migrations.Count != 9 || migrations[^1] != "20260901155124_AddPolicyAndBaselineFoundation") { Shutdown(1); return; }
+            UpgradeHealthAck.Write(RuntimeDataRoot.RootDirectory, operationId, Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "unknown", migrations.Count, migrations[^1]);
+            MainWindow?.Close();
+            Shutdown();
+        }
+        catch { MainWindow?.Close(); Shutdown(1); }
+    }
+
+    private static string VerificationConnectionString(string? databasePath = null) => new SqliteConnectionStringBuilder
+    {
+        // immutable=1 prevents SQLite's WAL reader from creating -wal/-shm beside the verified database.
+        DataSource = new Uri(databasePath ?? RuntimeDataRoot.DatabasePath).AbsoluteUri + "?immutable=1",
+        Mode = SqliteOpenMode.ReadOnly,
+        ForeignKeys = true,
+        Pooling = false
+    }.ToString();
 
     protected override void OnExit(ExitEventArgs e)
     {
@@ -182,6 +274,7 @@ public partial class App : System.Windows.Application
                 BeginDatabaseMaintenanceAsync,
                 EndDatabaseMaintenance,
                 ExitApplication);
+            mainWindow.ConfigureUpdateInstallation(InstallPreparedUpdateAsync);
             mainWindow.Closing += MainWindow_Closing;
             mainWindow.ReminderTimeChanged += ReminderTimeChanged;
         }
@@ -360,6 +453,31 @@ public partial class App : System.Windows.Application
         Shutdown();
     }
 
+    private async Task<UpdatePackageResult> InstallPreparedUpdateAsync(VerifiedUpdatePackage package, SignedUpdatePackageDownloader downloader)
+    {
+        if (!await BeginDatabaseMaintenanceAsync())
+            return new(UpdatePackageOutcome.IoFailure, "当前仍有写入操作，未进入升级维护状态。");
+        try
+        {
+            var prepared = await Task.Run(() =>
+            {
+                using var parent = Process.GetCurrentProcess();
+                return new UpdateInstallationPreparer(downloader).Prepare(package, parent, CancellationToken.None);
+            });
+            _ = Process.Start(new ProcessStartInfo(prepared.UpdaterPath, $"--journal \"{prepared.JournalPath}\"") { UseShellExecute = false }) ?? throw new InvalidOperationException("独立 Updater 未启动。");
+            _explicitExit = true;
+            StopRuntime();
+            MainWindow?.Close();
+            Shutdown();
+            return new(UpdatePackageOutcome.Verified, "独立 Updater 已接管程序切换。");
+        }
+        catch
+        {
+            EndDatabaseMaintenance(true);
+            return new(UpdatePackageOutcome.IoFailure, "更新安装准备失败，原程序继续运行。");
+        }
+    }
+
     private void ReminderTimeChanged(int reminderMinuteOfDay) =>
         _reminderScheduler?.Reschedule(reminderMinuteOfDay);
 
@@ -374,23 +492,17 @@ public partial class App : System.Windows.Application
     private async Task<bool> BeginDatabaseMaintenanceAsync()
     {
         if (_databaseMaintenanceLease is not null ||
-            MainWindow?.DataContext is not ShellViewModel shell ||
-            shell.Import.IsLoading ||
-            shell.History.IsEditBusy ||
-            shell.Detail.IsActionBusy)
+            MainWindow?.DataContext is not ShellViewModel shell)
         {
             return false;
         }
 
+        MainWindow.IsEnabled = false;
         // Draft autosave must settle before the gate starts rejecting database
         // workers. This preserves the existing Stage 4 save contract.
         if (!await shell.Detail.WaitForStableSaveAsync())
         {
-            return false;
-        }
-
-        if (shell.Import.IsLoading || shell.History.IsEditBusy || shell.Detail.IsActionBusy)
-        {
+            MainWindow.IsEnabled = true;
             return false;
         }
 
@@ -405,6 +517,7 @@ public partial class App : System.Windows.Application
                 {
                     _reminderScheduler?.Start();
                 }
+                MainWindow.IsEnabled = true;
 
                 return false;
             }
@@ -418,6 +531,7 @@ public partial class App : System.Windows.Application
             {
                 _reminderScheduler?.Start();
             }
+            MainWindow.IsEnabled = true;
 
             throw;
         }
@@ -432,5 +546,6 @@ public partial class App : System.Windows.Application
         {
             _reminderScheduler?.Start();
         }
+        if (!_explicitExit && MainWindow is not null) MainWindow.IsEnabled = true;
     }
 }

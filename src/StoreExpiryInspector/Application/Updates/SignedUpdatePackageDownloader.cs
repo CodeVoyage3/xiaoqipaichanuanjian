@@ -27,7 +27,7 @@ public enum UpdatePackageOutcome
 }
 
 public sealed record UpdatePackageProgress(string Stage, long BytesReceived, long TotalBytes);
-public sealed record VerifiedUpdatePackage(string CacheDirectory, string PackagePath, Version Version, string Sha256, IReadOnlyList<string> TargetMigrations);
+public sealed record VerifiedUpdatePackage(string CacheDirectory, string PackagePath, Version Version, string Sha256, IReadOnlyList<string> TargetMigrations, byte[]? SignedManifest = null, byte[]? ManifestSignature = null, CheckedRelease? Release = null);
 public sealed record UpdatePackageResult(UpdatePackageOutcome Outcome, string Message, VerifiedUpdatePackage? Package = null);
 public sealed record CheckedRelease(Version Version, long ReleaseId, string Tag, IReadOnlyList<string> AssetNames);
 
@@ -133,7 +133,7 @@ public sealed class SignedUpdatePackageDownloader
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
             progress?.Invoke(new("更新包已准备完成，安装更新功能将在后续版本启用。", manifest.PackageBytes, manifest.PackageBytes));
             cancellationToken.ThrowIfCancellationRequested(); verified = true;
-            return new(UpdatePackageOutcome.Verified, "更新包已准备完成，安装更新功能将在后续版本启用。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations));
+            return new(UpdatePackageOutcome.Verified, "更新包已准备完成，可在维护窗口中安装。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release));
         }
         catch (OperationCanceledException) { return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。"); }
         catch (HttpRequestException) { return Fail(UpdatePackageOutcome.NetworkUnavailable, "无法连接更新服务器。"); }
@@ -145,6 +145,32 @@ public sealed class SignedUpdatePackageDownloader
         {
             if (!verified && directory is not null && !TryDelete(directory)) throw new IOException("update cache cleanup failed");
         }
+    }
+
+    public UpdatePackageResult RevalidateForInstall(VerifiedUpdatePackage package, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var verifier = _options.CreateVerifier();
+            if (verifier is null || package.SignedManifest is null || package.ManifestSignature is null || package.Release is null) return Fail(UpdatePackageOutcome.SigningNotConfigured, "更新包缺少可重验的发行身份。");
+            if (!verifier.VerifyData(package.SignedManifest, package.ManifestSignature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss) || !TryParseManifest(package.SignedManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名或格式无效。");
+            if (manifest.Version != package.Version || manifest.ReleaseTag != package.Release.Tag || manifest.Repository != Owner + "/" + Repo || manifest.Rid != "win-x64" || manifest.TargetMigrations.Count != package.TargetMigrations.Count || !manifest.TargetMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal)) return Fail(UpdatePackageOutcome.VersionMismatch, "更新包身份在安装前发生变化。");
+            if (!File.Exists(package.PackagePath) || !string.Equals(manifest.PackageHash, package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
+            using var packageStream = File.OpenRead(package.PackagePath);
+            if (!string.Equals(Convert.ToHexString(SHA256.HashData(packageStream)), package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
+            if (AuditArchive(package.PackagePath, package.CacheDirectory, manifest, cancellationToken) != UpdatePackageOutcome.Verified) return Fail(UpdatePackageOutcome.UnsafeArchive, "更新包内容不符合安全要求。");
+            return new(UpdatePackageOutcome.Verified, "更新包安装前重验通过。", package);
+        }
+        catch (OperationCanceledException) { return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包重验。"); }
+        catch (IOException) { return Fail(UpdatePackageOutcome.IoFailure, "更新包重验读取失败。"); }
+        catch (Exception) { return Fail(UpdatePackageOutcome.UnsafeArchive, "更新包无法安全重验。"); }
+    }
+
+    internal void DiscardVerifiedCache(VerifiedUpdatePackage package)
+    {
+        var root = Path.GetFullPath(_options.CacheRoot ?? Path.Combine(Path.GetTempPath(), "StoreExpiryInspector", "updates"));
+        var directory = Path.GetFullPath(package.CacheDirectory);
+        if (Guid.TryParse(Path.GetFileName(directory), out _) && string.Equals(Path.GetDirectoryName(directory), root, StringComparison.OrdinalIgnoreCase) && IsOrdinaryDirectory(directory)) TryDelete(directory);
     }
 
     private async Task<(CheckedRelease? Release, UpdatePackageResult? Result)> RefreshReleaseAsync(CheckedRelease expected, CancellationToken cancellationToken)

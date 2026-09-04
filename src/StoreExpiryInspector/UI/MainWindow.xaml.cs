@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private readonly CancellationTokenSource _updatePackageCancellation = new();
     private readonly SignedUpdatePackageDownloader _updateDownloader;
     private Task<UpdatePackageResult>? _updateWorker;
+    private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>>? _installPreparedUpdate;
     internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
@@ -59,6 +60,9 @@ public partial class MainWindow : Window
         Closed += (_, _) => { IsClosed = true; StopUpdatePreparation(); };
     }
 
+    internal void ConfigureUpdateInstallation(Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>> installPreparedUpdate) =>
+        _installPreparedUpdate = installPreparedUpdate;
+
     internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
 
     internal bool TryShowUpdateAvailable(UpdateCheckResult result, Action<UpdateNotificationViewModel>? show = null)
@@ -93,7 +97,14 @@ public partial class MainWindow : Window
                 try { Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }); } catch (InvalidOperationException) { }
             }, linked.Token), linked.Token);
             var prepared = await _updateWorker;
-            if (!IsClosed) model.Complete(prepared);
+            if (prepared.Outcome != UpdatePackageOutcome.Verified || prepared.Package is null || _installPreparedUpdate is null)
+            {
+                if (!IsClosed) model.Complete(prepared);
+                return;
+            }
+            model.Report(new UpdatePackageProgress("更新包已重验，正在进入维护状态。", 0, 0));
+            var installation = await _installPreparedUpdate(prepared.Package, _updateDownloader);
+            if (!IsClosed) model.Complete(installation);
         }
         catch (OperationCanceledException) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
         catch (Exception) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
