@@ -118,6 +118,7 @@ public sealed class ConfirmedImportLifecycleOrchestrator
 
                     context.SaveChanges();
                     _stockZeroLifecycle.Execute(context, new ProductStockZeroRequest(product.Id, request.OccurredAtUtc, SourceImportId: importId));
+                    context.ChangeTracker.Clear();
                 }
             });
 
