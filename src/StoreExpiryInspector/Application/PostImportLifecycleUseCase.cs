@@ -75,6 +75,7 @@ public sealed record PostImportLifecycleResult(
 
 public sealed class PostImportLifecycleUseCase
 {
+    private const int SqliteParameterBatchSize = 500;
     private readonly ProductTaskAggregator _taskAggregator;
 
     public PostImportLifecycleUseCase(ProductTaskAggregator? taskAggregator = null)
@@ -123,9 +124,12 @@ public sealed class PostImportLifecycleUseCase
                     $"Import {request.ImportId} must be succeeded and not undone.");
             }
 
-            var products = context.Products
-                .AsTracking()
-                .Where(product => productIds.Contains(product.Id))
+            var products = productIds
+                .Chunk(SqliteParameterBatchSize)
+                .SelectMany(ids => context.Products
+                    .AsTracking()
+                    .Where(product => ids.Contains(product.Id))
+                    .ToArray())
                 .ToDictionary(product => product.Id);
             if (products.Count != productIds.Length)
             {
@@ -133,9 +137,12 @@ public sealed class PostImportLifecycleUseCase
                 throw new KeyNotFoundException($"Product {missingProductId} does not exist.");
             }
 
-            var batches = context.Batches
-                .AsTracking()
-                .Where(batch => batchIds.Contains(batch.Id))
+            var batches = batchIds
+                .Chunk(SqliteParameterBatchSize)
+                .SelectMany(ids => context.Batches
+                    .AsTracking()
+                    .Where(batch => ids.Contains(batch.Id))
+                    .ToArray())
                 .ToDictionary(batch => batch.Id);
             if (batches.Count != batchIds.Length)
             {
@@ -247,7 +254,7 @@ public sealed class PostImportLifecycleUseCase
                         productGroup.Key,
                         productGroup.Value,
                         request.OccurredAtUtc));
-                journal.ObserveAdded(context, productIds);
+                journal.ObserveAdded(context, [productGroup.Key]);
                 aggregatedProductCount++;
             }
 
@@ -619,19 +626,20 @@ public sealed class PostImportLifecycleUseCase
 
         public void CaptureOpenTasks(StoreDbContext context, IReadOnlyList<long> productIds)
         {
-            var tasks = context.Tasks
-                .Include(task => task.Items)
-                .Include(task => task.Draft)
-                .Where(task =>
-                    productIds.Contains(task.ProductId) &&
-                    task.Status == "open")
-                .ToArray();
-            foreach (var task in tasks)
+            foreach (var ids in productIds.Chunk(SqliteParameterBatchSize))
             {
-                Capture(task);
-                foreach (var item in task.Items)
+                var tasks = context.Tasks
+                    .Include(task => task.Items)
+                    .Include(task => task.Draft)
+                    .Where(task => ids.Contains(task.ProductId) && task.Status == "open")
+                    .ToArray();
+                foreach (var task in tasks)
                 {
-                    Capture(item);
+                    Capture(task);
+                    foreach (var item in task.Items)
+                    {
+                        Capture(item);
+                    }
                 }
             }
         }

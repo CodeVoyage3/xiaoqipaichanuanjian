@@ -8,6 +8,8 @@ namespace StoreExpiryInspector.Application.Imports;
 
 public sealed class ExcelImportPlanner
 {
+    private const int SqliteParameterBatchSize = 500;
+
     public ImportPlan Plan(StoreDbContext context, ExcelClassificationResult classification)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -29,11 +31,11 @@ public sealed class ExcelImportPlanner
             .OrderBy(code => code, StringComparer.Ordinal)
             .ToArray();
 
-        var existingProducts = productCodes.Length == 0
-            ? Array.Empty<ProductSnapshot>()
-            : context.Products
+        var existingProducts = productCodes
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(codes => context.Products
                 .AsNoTracking()
-                .Where(product => productCodes.Contains(product.ProductCode))
+                .Where(product => codes.Contains(product.ProductCode))
                 .Select(product => new ProductSnapshot(
                     product.Id,
                     product.ProductCode,
@@ -46,7 +48,8 @@ public sealed class ExcelImportPlanner
                     product.ExcelStockQty,
                     product.EffectiveStockQty,
                     product.EffectiveStockSource))
-                .ToArray();
+                .ToArray())
+            .ToArray();
         var productsByCode = existingProducts.ToDictionary(
             product => product.ProductCode,
             StringComparer.Ordinal);
@@ -58,11 +61,11 @@ public sealed class ExcelImportPlanner
             .Where(product => normalProductCodes.Contains(product.ProductCode))
             .Select(product => product.Id)
             .ToArray();
-        var existingBatches = existingProductIds.Length == 0
-            ? Array.Empty<BatchSnapshot>()
-            : context.Batches
+        var existingBatches = existingProductIds
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(ids => context.Batches
                 .AsNoTracking()
-                .Where(batch => existingProductIds.Contains(batch.ProductId))
+                .Where(batch => ids.Contains(batch.ProductId))
                 .Select(batch => new BatchSnapshot(
                     batch.ProductId,
                     batch.ProductionDate,
@@ -72,7 +75,8 @@ public sealed class ExcelImportPlanner
                     batch.CurrentArrivalQty,
                     batch.MaxArrivalQty,
                     batch.SourceDiscountReference))
-                .ToArray();
+                .ToArray())
+            .ToArray();
         var batchesByKey = existingBatches.ToDictionary(
             batch => new DatabaseBatchKey(batch.ProductId, batch.ProductionDate, batch.ExpiryDate));
 

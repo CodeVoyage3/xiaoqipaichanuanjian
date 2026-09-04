@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Data.Common;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Excel;
@@ -20,11 +22,65 @@ public sealed class S8T03ImportPerformanceTests
         "是否该做临期折扣", "该批次累计到货数量", "该商品门店库存总数"
     ];
 
+
     [Fact]
     [Trait("Category", "S8T03")]
     public void Small_real_import_writes_isolated_before_evidence()
     {
         Run(1_000, requireExplicitHighScaleGate: false);
+    }
+
+    [Fact]
+    [Trait("Category", "S8T03")]
+    public void Product_write_then_next_real_command_failure_rolls_back_the_real_import()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "database", "app.db");
+        var sourcePath = Path.Combine(root, "source", "rollback-product-part.xlsx");
+        var snapshotDirectory = Path.Combine(root, "snapshots");
+        var evidencePath = Path.Combine(root, "evidence", "rollback-product-part.json");
+        AssertIsUnderRoot(root, databasePath, sourcePath, snapshotDirectory, evidencePath);
+        DatabaseInitializer.Initialize(databasePath);
+        WriteWorkbook(sourcePath, products: 1, batchesPerProduct: 1, seed: false);
+
+        ImportConfirmationContract contract;
+        using (var preview = DatabaseInitializer.CreateContext(databasePath))
+        {
+            var workbook = new ExcelTemplateReader().Read(sourcePath);
+            var plan = new ExcelImportPlanner().Plan(preview, new ExcelFileClassifier().Classify(workbook));
+            contract = Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(
+                new ImportConfirmationGuard().BindPreview(sourcePath, workbook, plan)).Contract);
+        }
+
+        var before = BusinessFingerprint(databasePath);
+        var interceptor = new FailAfterProductWriteInterceptor();
+        ConfirmedImportResult result;
+        using (var execute = OpenWithInterceptor(databasePath, interceptor))
+        {
+            result = new ConfirmedImportLifecycleOrchestrator().Execute(execute, new(
+                contract, snapshotDirectory, new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc),
+                new DateOnly(2026, 9, 4), new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+            Assert.False(result.Succeeded);
+            Assert.Equal(ConfirmedImportCodes.TransactionFailed, result.Code);
+            Assert.True(interceptor.ProductWriteCount > 0);
+            Assert.True(interceptor.FailedAfterProductWrite);
+        }
+
+        Assert.Equal(before, BusinessFingerprint(databasePath));
+        var verification = Verify(databasePath);
+        Assert.True(verification.IntegrityOk);
+        Assert.Equal(0, verification.ForeignKeyViolations);
+        Directory.CreateDirectory(Path.GetDirectoryName(evidencePath)!);
+        File.WriteAllText(evidencePath, JsonSerializer.Serialize(new
+        {
+            card = "S8-T03", case_name = "product_part", root, database_path = databasePath, source_path = sourcePath,
+            snapshot_directory = snapshotDirectory, before_fingerprint = before, after_fingerprint = BusinessFingerprint(databasePath),
+            result_succeeded = result.Succeeded, result_code = result.Code, product_write_success_count = interceptor.ProductWriteCount,
+            failure_trigger_count = interceptor.FailureTriggerCount, integrity_check = verification.IntegrityOk ? "ok" : "failed",
+            foreign_key_check_count = verification.ForeignKeyViolations
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        using var verify = DatabaseInitializer.CreateContext(databasePath);
+        Assert.Equal(0, verify.Imports.Count(import => import.Status == ImportStatuses.Succeeded));
     }
 
     [Theory]
@@ -49,6 +105,7 @@ public sealed class S8T03ImportPerformanceTests
 
     private static void Run(int rows, bool requireExplicitHighScaleGate)
     {
+        var evidenceKind = Environment.GetEnvironmentVariable("S8_T03_EVIDENCE_KIND") ?? "after";
         var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
         var databasePath = Path.Combine(root, "database", "app.db");
         var sourcePath = Path.Combine(root, "source", $"synthetic-{rows}.xlsx");
@@ -130,7 +187,7 @@ public sealed class S8T03ImportPerformanceTests
         var evidence = new
         {
             card = "S8-T03",
-            kind = "before",
+            kind = evidenceKind,
             implementation_commit = Environment.GetEnvironmentVariable("S8_T03_COMMIT") ?? "not_supplied",
             rows,
             product_count = rows / 2,
@@ -152,13 +209,13 @@ public sealed class S8T03ImportPerformanceTests
             foreign_key_check_count = verification.ForeignKeyViolations,
             data_distribution = "2 batches/product; first up-to-1000 products pre-exist with product-name/stock and batch-0 arrival update, remaining products/batches are new; products rotate all 10 supported categories; every tenth product has stock 0; D/M/Y all occur"
         };
-            File.WriteAllText(Path.Combine(evidenceDirectory, "before.json"), JsonSerializer.Serialize(evidence, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(Path.Combine(evidenceDirectory, evidenceKind + ".json"), JsonSerializer.Serialize(evidence, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception exception)
         {
-            File.WriteAllText(Path.Combine(evidenceDirectory, "before-failure.json"), JsonSerializer.Serialize(new
+            File.WriteAllText(Path.Combine(evidenceDirectory, evidenceKind + "-failure.json"), JsonSerializer.Serialize(new
             {
-                card = "S8-T03", kind = "before_failure", rows, root, source_path = sourcePath,
+                card = "S8-T03", kind = evidenceKind + "_failure", rows, root, source_path = sourcePath,
                 database_path = databasePath, snapshot_directory = snapshotDirectory, evidence_directory = evidenceDirectory,
                 workbook_bytes = workbookBytes, measures_ms = measures, total_ms = total.Elapsed.TotalMilliseconds,
                 managed_allocated_bytes = GC.GetTotalAllocatedBytes() - allocationStart,
@@ -290,5 +347,88 @@ public sealed class S8T03ImportPerformanceTests
         var pages = Convert.ToInt64(command.ExecuteScalar());
         command.CommandText = "PRAGMA page_size;";
         return checked(pages * Convert.ToInt64(command.ExecuteScalar()));
+    }
+
+    private static StoreDbContext OpenWithInterceptor(string databasePath, DbCommandInterceptor interceptor) =>
+        new(new DbContextOptionsBuilder<StoreDbContext>()
+            .UseSqlite(new SqliteConnectionStringBuilder { DataSource = databasePath, ForeignKeys = true }.ToString())
+            .AddInterceptors(interceptor)
+            .Options);
+
+    // The rollback matrix uses this complete business-table fingerprint rather than counts alone.
+    private static string BusinessFingerprint(string databasePath)
+    {
+        using var connection = new SqliteConnection($"Data Source={databasePath};Foreign Keys=True");
+        connection.Open();
+        using var tables = connection.CreateCommand();
+        tables.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> '__EFMigrationsHistory' ORDER BY name";
+        using var reader = tables.ExecuteReader();
+        var text = new StringBuilder();
+        while (reader.Read())
+        {
+            var table = reader.GetString(0);
+            using var rows = connection.CreateCommand();
+            rows.CommandText = $"SELECT * FROM \"{table.Replace("\"", "\"\"")}\" ORDER BY rowid";
+            using var values = rows.ExecuteReader();
+            text.Append(table).Append('|');
+            while (values.Read())
+            {
+                for (var column = 0; column < values.FieldCount; column++) AppendFingerprintValue(text, values, column);
+                text.Append('\u001e');
+            }
+        }
+
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString()))).ToLowerInvariant();
+    }
+
+    private static void AppendFingerprintValue(StringBuilder text, SqliteDataReader values, int column)
+    {
+        text.Append(values.GetName(column)).Append(':').Append(values.GetDataTypeName(column)).Append(':');
+        if (values.IsDBNull(column))
+        {
+            text.Append("null:0");
+        }
+        else if (values.GetValue(column) is byte[] bytes)
+        {
+            text.Append("blob:").Append(bytes.Length).Append(':').Append(Convert.ToHexString(bytes));
+        }
+        else
+        {
+            var value = Convert.ToString(values.GetValue(column), System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            text.Append(values.GetFieldType(column).FullName).Append(':').Append(value.Length).Append(':').Append(value);
+        }
+
+        text.Append('\u001f');
+    }
+
+    private sealed class FailAfterProductWriteInterceptor : DbCommandInterceptor
+    {
+        public int ProductWriteCount { get; private set; }
+
+        public bool FailedAfterProductWrite { get; private set; }
+
+        public int FailureTriggerCount { get; private set; }
+
+        public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+        {
+            FailIfRequired(command.CommandText);
+            return result;
+        }
+
+        private void FailIfRequired(string commandText)
+        {
+            if (ProductWriteCount > 0 && commandText.Contains("INSERT INTO \"batches\"", StringComparison.OrdinalIgnoreCase))
+            {
+                FailedAfterProductWrite = true;
+                FailureTriggerCount++;
+                throw new InvalidOperationException("S8-T03 forced failure after persisted product write.");
+            }
+        }
+
+        public override DbDataReader ReaderExecuted(DbCommand command, CommandExecutedEventData eventData, DbDataReader result)
+        {
+            if (command.CommandText.Contains("INSERT INTO \"products\"", StringComparison.OrdinalIgnoreCase)) ProductWriteCount++;
+            return result;
+        }
     }
 }

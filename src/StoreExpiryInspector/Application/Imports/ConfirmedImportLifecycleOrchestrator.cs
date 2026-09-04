@@ -17,6 +17,8 @@ public sealed record ConfirmedImportLifecycleRequest(
 
 public sealed class ConfirmedImportLifecycleOrchestrator
 {
+    private const int SqliteParameterBatchSize = 500;
+    private const int PostImportProductGroupBatchSize = 250;
     private readonly ConfirmedImportExecutor? _executor;
     private readonly ProductStockZeroLifecycleUseCase _stockZeroLifecycle;
     private readonly PostImportLifecycleUseCase _postImportLifecycle;
@@ -133,9 +135,15 @@ public sealed class ConfirmedImportLifecycleOrchestrator
 
             Measure("post_import", () =>
             {
-                foreach (var group in positiveGroups)
+                if (positiveGroups.Length > 0)
                 {
-                    _postImportLifecycle.Execute(context, new PostImportLifecycleRequest(importId, request.BusinessDate, request.OccurredAtUtc, [group]));
+                    foreach (var groups in positiveGroups.Chunk(PostImportProductGroupBatchSize))
+                    {
+                        _postImportLifecycle.Execute(
+                            context,
+                            new PostImportLifecycleRequest(importId, request.BusinessDate, request.OccurredAtUtc, groups));
+                        context.ChangeTracker.Clear();
+                    }
                 }
             });
 
@@ -199,26 +207,30 @@ public sealed class ConfirmedImportLifecycleOrchestrator
             .Select(planItem => planItem.Key.ProductCode)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        var products = productCodes.Length == 0
-            ? new Dictionary<string, ProductSnapshot>(StringComparer.Ordinal)
-            : context.Products
+        var products = productCodes
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(codes => context.Products
                 .AsNoTracking()
-                .Where(product => productCodes.Contains(product.ProductCode))
+                .Where(product => codes.Contains(product.ProductCode))
                 .Select(product => new ProductSnapshot(product.Id, product.ProductCode))
-                .ToDictionary(product => product.ProductCode, StringComparer.Ordinal);
+                .ToArray())
+            .ToDictionary(product => product.ProductCode, StringComparer.Ordinal);
+        var productsById = products.Values.ToDictionary(product => product.Id, product => product.ProductCode);
+        var batches = productsById.Keys
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(ids => context.Batches
+                .AsNoTracking()
+                .Where(batch => ids.Contains(batch.ProductId))
+                .ToArray())
+            .ToDictionary(batch => new BatchKey(productsById[batch.ProductId], batch.ProductionDate, batch.ExpiryDate));
 
         var facts = new List<FrozenBatchFact>(batchPlans.Length);
         foreach (var planItem in batchPlans)
         {
             var hasProduct = products.TryGetValue(planItem.Key.ProductCode, out var product);
-            var existingBatch = !hasProduct
-                ? null
-                : context.Batches
-                    .AsNoTracking()
-                    .SingleOrDefault(batch =>
-                        batch.ProductId == product.Id &&
-                        batch.ProductionDate == planItem.Key.ProductionDate &&
-                        batch.ExpiryDate == planItem.Key.ExpiryDate);
+            var existingBatch = hasProduct
+                ? batches.GetValueOrDefault(planItem.Key)
+                : null;
 
             if (planItem.Kind == PostImportBatchFactKinds.New)
             {
@@ -278,17 +290,26 @@ public sealed class ConfirmedImportLifecycleOrchestrator
         long importId)
     {
         var productCodes = ProductCodes(plan).ToArray();
-        var products = productCodes.Length == 0
-            ? new Dictionary<string, ProductSnapshot>(StringComparer.Ordinal)
-            : context.Products
+        var products = productCodes
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(codes => context.Products
                 .AsNoTracking()
-                .Where(product => productCodes.Contains(product.ProductCode))
+                .Where(product => codes.Contains(product.ProductCode))
                 .Select(product => new ProductSnapshot(
                     product.Id,
                     product.ProductCode,
                     product.EffectiveStockQty,
                     product.LastSeenImportId))
-                .ToDictionary(product => product.ProductCode, StringComparer.Ordinal);
+                .ToArray())
+            .ToDictionary(product => product.ProductCode, StringComparer.Ordinal);
+        var productsById = products.Values.ToDictionary(product => product.Id, product => product.ProductCode);
+        var batches = productsById.Keys
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(ids => context.Batches
+                .AsNoTracking()
+                .Where(batch => ids.Contains(batch.ProductId))
+                .ToArray())
+            .ToDictionary(batch => new BatchKey(productsById[batch.ProductId], batch.ProductionDate, batch.ExpiryDate));
 
         foreach (var stock in plan.ExplicitProductStocks)
         {
@@ -314,12 +335,7 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 throw new InvalidOperationException("The imported product identity is stale.");
             }
 
-            var batch = context.Batches
-                .AsNoTracking()
-                .SingleOrDefault(candidate =>
-                    candidate.ProductId == product.Id &&
-                    candidate.ProductionDate == frozen.Key.ProductionDate &&
-                    candidate.ExpiryDate == frozen.Key.ExpiryDate);
+            var batch = batches.GetValueOrDefault(frozen.Key);
             if (batch is null || batch.LastSeenImportId != importId || batch.ProductId != product.Id)
             {
                 throw new InvalidOperationException("The imported batch facts are stale.");

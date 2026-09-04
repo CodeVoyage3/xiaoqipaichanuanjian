@@ -90,6 +90,7 @@ public sealed class ConfirmedImportResult
 
 public sealed class ConfirmedImportExecutor
 {
+    private const int SqliteParameterBatchSize = 500;
     private readonly PreImportSnapshotService _snapshotService;
     private readonly Func<DateTime> _utcNow;
     private readonly Action<string, TimeSpan>? _measure;
@@ -733,8 +734,11 @@ public sealed class ConfirmedImportExecutor
     {
         currentPlan = new CurrentPlan();
         var productCodes = ProductCodes(plan).ToArray();
-        var existingProducts = context.Products
-            .Where(product => productCodes.Contains(product.ProductCode))
+        var existingProducts = productCodes
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(codes => context.Products
+                .Where(product => codes.Contains(product.ProductCode))
+                .ToArray())
             .ToArray();
         var existingProductsByCode = existingProducts.ToDictionary(
             product => product.ProductCode,
@@ -770,22 +774,23 @@ public sealed class ConfirmedImportExecutor
             }
         }
 
-        var batchesByKey = existingProducts.Length == 0
-            ? new Dictionary<BatchKey, Batch>(BatchKeyComparer.Instance)
-            : context.Batches
-                .Where(batch => existingProducts.Select(product => product.Id).Contains(batch.ProductId))
-                .ToDictionary(
-                    batch => new BatchKey(
-                        existingProductsByCode.Values.Single(product => product.Id == batch.ProductId).ProductCode,
-                        batch.ProductionDate,
-                        batch.ExpiryDate),
-                    BatchKeyComparer.Instance);
+        var productCodesById = existingProducts.ToDictionary(product => product.Id, product => product.ProductCode);
+        var newProductCodes = plan.NewProducts.Select(product => product.ProductCode).ToHashSet(StringComparer.Ordinal);
+        var batchesByKey = existingProducts
+            .Select(product => product.Id)
+            .Chunk(SqliteParameterBatchSize)
+            .SelectMany(ids => context.Batches
+                .Where(batch => ids.Contains(batch.ProductId))
+                .ToArray())
+            .ToDictionary(
+                batch => new BatchKey(productCodesById[batch.ProductId], batch.ProductionDate, batch.ExpiryDate),
+                BatchKeyComparer.Instance);
 
         foreach (var batch in plan.NewBatches)
         {
             var key = new BatchKey(batch.BatchKey);
             if (!existingProductsByCode.ContainsKey(batch.BatchKey.ProductCode) &&
-                !plan.NewProducts.Any(product => product.ProductCode == batch.BatchKey.ProductCode))
+                !newProductCodes.Contains(batch.BatchKey.ProductCode))
             {
                 return false;
             }
