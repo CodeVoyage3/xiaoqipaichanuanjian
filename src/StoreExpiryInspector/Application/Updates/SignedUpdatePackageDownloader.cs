@@ -109,10 +109,8 @@ public sealed class SignedUpdatePackageDownloader
             var packagePath = Path.Combine(directory, "package.download");
             progress?.Invoke(new("正在下载更新包", 0, manifest.PackageBytes));
             var download = await DownloadAsync(AssetUri(release, packageName), packagePath, manifest.PackageBytes, progress, cancellationToken);
-            if (download != UpdatePackageOutcome.Verified) return Fail(download, "更新包下载校验失败。");
-            byte[] actualHash;
-            using (var packageStream = File.OpenRead(packagePath)) actualHash = SHA256.HashData(packageStream);
-            if (!CryptographicOperations.FixedTimeEquals(expectedHash, actualHash)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
+            if (download.Outcome != UpdatePackageOutcome.Verified) return Fail(download.Outcome, "更新包下载校验失败。");
+            if (!CryptographicOperations.FixedTimeEquals(expectedHash, download.Hash!)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             progress?.Invoke(new("正在校验更新包", manifest.PackageBytes, manifest.PackageBytes));
             var audit = AuditArchive(packagePath, directory, manifest);
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
@@ -162,24 +160,26 @@ public sealed class SignedUpdatePackageDownloader
         catch (JsonException) { return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行元数据无效。")); }
     }
 
-    private async Task<UpdatePackageOutcome> DownloadAsync(Uri uri, string target, long expected, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
+    private async Task<(UpdatePackageOutcome Outcome, byte[]? Hash)> DownloadAsync(Uri uri, string target, long expected, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
     {
-        using var response = await SendFollowingRedirects(uri, cancellationToken);
-        if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return UpdatePackageOutcome.RateLimited;
-        if (!response.IsSuccessStatusCode) return UpdatePackageOutcome.NetworkUnavailable;
-        if (response.Content.Headers.ContentLength is > PackageLimit) return UpdatePackageOutcome.AssetTooLarge;
-        await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(_options.PackageTimeout ?? TimeSpan.FromMinutes(10));
+        using var response = await SendFollowingRedirects(uri, timeout.Token);
+        if (response.StatusCode is HttpStatusCode.NotFound) return (UpdatePackageOutcome.AssetMissing, null);
+        if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return (UpdatePackageOutcome.RateLimited, null);
+        if (!response.IsSuccessStatusCode) return (UpdatePackageOutcome.NetworkUnavailable, null);
+        if (response.Content.Headers.ContentLength is > PackageLimit) return (UpdatePackageOutcome.AssetTooLarge, null);
+        await using var input = await response.Content.ReadAsStreamAsync(timeout.Token);
         await using var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         var buffer = new byte[81920]; long total = 0; var last = Environment.TickCount64;
-        for (int read; (read = await input.ReadAsync(buffer, cancellationToken)) > 0;)
+        try { for (int read; (read = await input.ReadAsync(buffer, timeout.Token)) > 0;)
         {
-            total += read; if (total > PackageLimit || total > expected) return total > PackageLimit ? UpdatePackageOutcome.AssetTooLarge : UpdatePackageOutcome.SizeMismatch;
-            hash.AppendData(buffer, 0, read); await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            total += read; if (total > PackageLimit || total > expected) return (total > PackageLimit ? UpdatePackageOutcome.AssetTooLarge : UpdatePackageOutcome.SizeMismatch, null);
+            hash.AppendData(buffer, 0, read); await output.WriteAsync(buffer.AsMemory(0, read), timeout.Token);
             if (Environment.TickCount64 - last >= 100) { progress?.Invoke(new("正在下载更新包", total, expected)); last = Environment.TickCount64; }
-        }
+        } } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (UpdatePackageOutcome.Cancelled, null); } catch (OperationCanceledException) { return (UpdatePackageOutcome.NetworkUnavailable, null); }
         progress?.Invoke(new("正在下载更新包", total, expected));
-        return total == expected ? UpdatePackageOutcome.Verified : UpdatePackageOutcome.SizeMismatch;
+        return total == expected ? (UpdatePackageOutcome.Verified, hash.GetHashAndReset()) : (UpdatePackageOutcome.SizeMismatch, null);
     }
 
     private async Task<byte[]> ReadSmallAsync(Uri uri, int limit, CancellationToken cancellationToken)
@@ -220,7 +220,16 @@ public sealed class SignedUpdatePackageDownloader
             if (entry.FullName.EndsWith("/", StringComparison.Ordinal)) continue;
             if (!Allowed(entry.FullName)) return UpdatePackageOutcome.UnsafeArchive;
             var temp = Path.Combine(scratch, "audit-" + Guid.NewGuid().ToString("N"));
-            try { using var input = entry.Open(); using var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None); input.CopyTo(output); if (new FileInfo(temp).Length != entry.Length) return UpdatePackageOutcome.UnsafeArchive; if (entry.FullName == "StoreExpiryInspector.exe") exe = temp; else if (entry.FullName == "StoreExpiryInspector.dll") dll = temp; else File.Delete(temp); }
+            try
+            {
+                using (var input = entry.Open()) using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    var buffer = new byte[81920]; long actual = 0;
+                    for (int read; (read = input.Read(buffer, 0, buffer.Length)) > 0;) { actual += read; if (actual > entry.Length || actual > PackageLimit) return UpdatePackageOutcome.UnsafeArchive; output.Write(buffer, 0, read); }
+                    if (actual != entry.Length) return UpdatePackageOutcome.UnsafeArchive;
+                }
+                if (entry.FullName == "StoreExpiryInspector.exe") exe = temp; else if (entry.FullName == "StoreExpiryInspector.dll") dll = temp; else File.Delete(temp);
+            }
             catch { return UpdatePackageOutcome.UnsafeArchive; }
         }
         if (exe is null || dll is null) return UpdatePackageOutcome.PackageVersionMismatch;
@@ -273,11 +282,11 @@ public sealed class SignedUpdatePackageDownloader
         var name = entry.FullName.Replace('\\', '/');
         if (name.Length == 0 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Split('/').Any(part => part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
         if (!paths.Add(name) || paths.Any(existing => existing.StartsWith(name + "/", StringComparison.OrdinalIgnoreCase) || name.StartsWith(existing + "/", StringComparison.OrdinalIgnoreCase))) return false;
-        var attrs = (uint)entry.ExternalAttributes;
-        return (attrs & 0xF0000000) is 0 or 0x40000000 && !HasLinkExtra(entry);
+        var unixType = ((uint)entry.ExternalAttributes >> 16) & 0xF000;
+        return (unixType is 0 or 0x8000 or 0x4000) && !HasLinkExtra(entry);
     }
 
-    private static bool HasLinkExtra(ZipArchiveEntry entry) => entry.ExternalAttributes is not 0 && ((uint)entry.ExternalAttributes & 0xF0000000) is 0xA0000000 or 0x60000000;
+    private static bool HasLinkExtra(ZipArchiveEntry entry) => (((uint)entry.ExternalAttributes >> 16) & 0xF000) is 0xA000 or 0x6000;
     private static bool IsReserved(string part) => new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" }.Contains(part.Split('.')[0], StringComparer.OrdinalIgnoreCase);
     private static bool Allowed(string name) => name is "StoreExpiryInspector.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pri", StringComparison.OrdinalIgnoreCase);
     private static bool IsRedirect(HttpStatusCode code) => code is HttpStatusCode.Moved or HttpStatusCode.Redirect or HttpStatusCode.RedirectMethod or HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect;

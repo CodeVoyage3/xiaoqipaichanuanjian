@@ -13,7 +13,7 @@ public enum UpdateCheckOutcome
     NetworkUnavailable, RateLimited, InvalidRemoteMetadata, Cancelled
 }
 
-public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null)
+public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null, CheckedRelease? Release = null)
 {
     public static UpdateCheckResult From(UpdateCheckOutcome outcome, Version current) => new(outcome, current);
 }
@@ -67,7 +67,18 @@ public sealed class GitHubReleaseUpdateChecker
             var notes = root.TryGetProperty("body", out var body) && body.ValueKind == JsonValueKind.String
                 ? SanitizeNotes(body.GetString()) : null;
             var outcome = latest > currentVersion ? UpdateCheckOutcome.UpdateAvailable : latest == currentVersion ? UpdateCheckOutcome.UpToDate : UpdateCheckOutcome.RemoteOlder;
-            return new(outcome, currentVersion, latest, notes);
+            CheckedRelease? release = null;
+            if (root.TryGetProperty("id", out var id) && id.TryGetInt64(out var releaseId) && releaseId > 0 && root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
+            {
+                var names = new List<string>();
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    if (!asset.TryGetProperty("name", out var name) || name.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(name.GetString())) { names.Clear(); break; }
+                    names.Add(name.GetString()!);
+                }
+                if (names.Count == assets.GetArrayLength()) release = new CheckedRelease(latest, releaseId, tag.GetString()!, names);
+            }
+            return new(outcome, currentVersion, latest, notes, release);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

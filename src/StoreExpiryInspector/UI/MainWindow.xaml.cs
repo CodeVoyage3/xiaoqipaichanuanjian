@@ -19,6 +19,7 @@ public partial class MainWindow : Window
 {
     private bool _isNavigationCollapsed;
     private readonly HashSet<Version> _suppressedUpdateVersions = [];
+    private readonly CancellationTokenSource _updatePackageCancellation = new();
     internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
@@ -48,7 +49,7 @@ public partial class MainWindow : Window
         ApplyNavigationLayout();
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
-        Closed += (_, _) => IsClosed = true;
+        Closed += (_, _) => { IsClosed = true; _updatePackageCancellation.Cancel(); };
     }
 
     internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
@@ -60,9 +61,21 @@ public partial class MainWindow : Window
         var model = new UpdateNotificationViewModel(
             result,
             dismiss: () => { },
-            requestUpdate: () => WpfDialogService.Show(this, "暂未启用更新", "自动下载和安装尚未启用，请稍后再次检查。", "知道了", WpfDialogKind.Information, showCancel: false));
+            requestUpdate: () => _ = PrepareUpdateAsync(result));
         (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
         return true;
+    }
+
+    private async Task PrepareUpdateAsync(UpdateCheckResult result)
+    {
+        if (result.Release is null)
+        {
+            WpfDialogService.Show(this, "暂无法准备更新", "本次发行身份信息不完整，已安全拒绝下载。", "知道了", WpfDialogKind.Warning, showCancel: false);
+            return;
+        }
+        var update = new SignedUpdatePackageDownloader();
+        var prepared = await update.PrepareAsync(result.Release, result.CurrentVersion, progress => Dispatcher.BeginInvoke(() => { }), _updatePackageCancellation.Token);
+        if (!IsClosed) WpfDialogService.Show(this, prepared.Outcome == UpdatePackageOutcome.Verified ? "更新包已准备完成" : "更新包未准备", prepared.Message, "知道了", prepared.Outcome == UpdatePackageOutcome.Verified ? WpfDialogKind.Information : WpfDialogKind.Warning, showCancel: false);
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
