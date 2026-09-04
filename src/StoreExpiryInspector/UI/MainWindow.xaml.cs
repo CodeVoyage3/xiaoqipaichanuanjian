@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Reflection;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,6 +23,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        NavigationVersionText.Text = $"软件版本：v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "未知"}";
         ApplyNavigationLayout();
         var shell = new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,

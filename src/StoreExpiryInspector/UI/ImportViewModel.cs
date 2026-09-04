@@ -42,11 +42,7 @@ public sealed class DataImportCoordinator
         Func<DateOnly>? businessDate = null)
     {
         _createContext = createContext ?? (() => DatabaseInitializer.CreateContext());
-        _snapshotDirectory = snapshotDirectory ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "StoreExpiryInspector",
-            "backups",
-            "pre-import");
+        _snapshotDirectory = snapshotDirectory ?? RuntimeDataRoot.PreImportSnapshotDirectory;
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _businessDate = businessDate ?? (() => DateOnly.FromDateTime(DateTime.Now));
     }

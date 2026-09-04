@@ -636,7 +636,7 @@
                             BorderThickness="0,1,0,0"
                             Margin="0,0,0,12" />
                     <TextBlock x:Name="NavigationVersionText"
-                               Text="软件版本：v1.0.0"
+                               Text="软件版本"
                                FontSize="12"
                                Foreground="{DynamicResource SecondaryTextBrush}" />
                 </StackPanel>

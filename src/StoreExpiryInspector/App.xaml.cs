@@ -13,8 +13,6 @@ namespace StoreExpiryInspector;
 
 public partial class App : System.Windows.Application
 {
-    private const string SingleInstanceMutexName = @"Local\StoreExpiryInspector.SingleInstance";
-
     private Mutex? _instanceMutex;
     private bool _ownsInstanceMutex;
     private DailyReminderScheduler? _reminderScheduler;
@@ -25,7 +23,24 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
-        _instanceMutex = new Mutex(true, SingleInstanceMutexName, out _ownsInstanceMutex);
+        try
+        {
+            RuntimeDataRoot.Configure(e.Args);
+        }
+        catch (Exception exception)
+        {
+            WpfDialogService.Show(
+                owner: null,
+                "门店效期排查软件",
+                exception.Message,
+                "知道了",
+                WpfDialogKind.Error,
+                showCancel: false);
+            Shutdown();
+            return;
+        }
+
+        _instanceMutex = new Mutex(true, RuntimeDataRoot.MutexName, out _ownsInstanceMutex);
         if (!_ownsInstanceMutex)
         {
             _instanceMutex.Dispose();
@@ -41,10 +56,7 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        _logger = new LocalFileLogger(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "StoreExpiryInspector",
-            "logs"));
+        _logger = new LocalFileLogger(RuntimeDataRoot.LogDirectory);
         try
         {
             DatabaseInitializer.Initialize();
@@ -83,9 +95,53 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
+        if (RuntimeDataRoot.IsSmokeRun)
+        {
+            Dispatcher.BeginInvoke(
+                VerifySmokeStartupAndExit,
+                DispatcherPriority.ApplicationIdle);
+            return;
+        }
+
         Dispatcher.BeginInvoke(
             InitializeTrayAndReminderScheduler,
             DispatcherPriority.ApplicationIdle);
+    }
+
+    private void VerifySmokeStartupAndExit()
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        timer.Tick += (_, _) =>
+        {
+            if (MainWindow is UI.MainWindow { IsLoaded: true, DataContext: ShellViewModel shell } &&
+                !shell.Dashboard.IsLoading && !shell.PendingTasks.IsLoading)
+            {
+                timer.Stop();
+                if (!shell.Dashboard.HasError && !shell.PendingTasks.HasError)
+                {
+                    _logger?.TryWrite("info", "s9_t01_smoke_ready", "隔离发布 smoke 已完成 WPF Shell 初始化与首轮读取。");
+                    Shutdown();
+                }
+                else
+                {
+                    _logger?.TryWrite("error", "s9_t01_smoke_failed", "隔离发布 smoke 的 WPF Shell 首轮读取失败。");
+                    Shutdown(1);
+                }
+
+                return;
+            }
+
+            if (DateTime.UtcNow < deadline)
+            {
+                return;
+            }
+
+            timer.Stop();
+            _logger?.TryWrite("error", "s9_t01_smoke_failed", "隔离发布 smoke 未在时限内完成 WPF Shell 初始化与首轮读取。");
+            Shutdown(1);
+        };
+        timer.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)

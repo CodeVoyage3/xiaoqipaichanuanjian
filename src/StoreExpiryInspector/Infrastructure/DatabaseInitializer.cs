@@ -8,19 +8,12 @@ public static class DatabaseInitializer
 {
     public static string GetDefaultDatabasePath()
     {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "StoreExpiryInspector",
-            "data",
-            "app.db");
+        return RuntimeDataRoot.DatabasePath;
     }
 
     public static string GetDefaultBackupDirectory()
     {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "StoreExpiryInspector",
-            "backups");
+        return RuntimeDataRoot.BackupDirectory;
     }
 
     public static StoreDbContext CreateContext(string? databasePath = null)

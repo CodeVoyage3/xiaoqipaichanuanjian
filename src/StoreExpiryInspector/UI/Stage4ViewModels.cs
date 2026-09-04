@@ -1077,10 +1077,7 @@ public sealed class ShellViewModel : ViewModelBase
         Func<string?, IReadOnlyList<long>>? todayTaskIdsLoader = null,
         Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? todayOpenTaskIdsLoader = null)
     {
-        _logger = new LocalFileLogger(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "StoreExpiryInspector",
-            "logs"));
+        _logger = new LocalFileLogger(RuntimeDataRoot.LogDirectory);
         var logger = logException ?? LogException;
         var hasInjectedReadDependency = dashboardLoader is not null || taskLoader is not null || categoryLoader is not null
             || historyListLoader is not null || historyDetailLoader is not null || historyRevisionLoader is not null || historyEdit is not null

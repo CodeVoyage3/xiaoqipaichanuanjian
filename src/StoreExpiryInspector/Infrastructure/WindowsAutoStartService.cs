@@ -31,6 +31,11 @@ public sealed class WindowsAutoStartService
 
     public AutoStartResult ReadState()
     {
+        if (RuntimeDataRoot.IsIsolated)
+        {
+            return new(false, false, "隔离运行不会读取或修改真实开机启动设置。");
+        }
+
         try
         {
             return new(
@@ -46,6 +51,11 @@ public sealed class WindowsAutoStartService
 
     public AutoStartResult SetEnabled(bool enabled)
     {
+        if (RuntimeDataRoot.IsIsolated)
+        {
+            return new(false, false, "隔离运行不会读取或修改真实开机启动设置。");
+        }
+
         try
         {
             if (enabled)

@@ -143,6 +143,7 @@ public sealed class S6T03TrayAndReminderSchedulerTests
     {
         var root = FindRepositoryRoot();
         var app = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "App.xaml.cs"));
+        var runtimeDataRoot = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "Infrastructure", "RuntimeDataRoot.cs"));
         var scheduler = File.ReadAllText(Path.Combine(
             root,
             "src",
@@ -156,8 +157,9 @@ public sealed class S6T03TrayAndReminderSchedulerTests
             "StoreExpiryInspector",
             "StoreExpiryInspector.csproj"));
 
-        Assert.Contains("Local\\StoreExpiryInspector.SingleInstance", app, StringComparison.Ordinal);
+        Assert.Contains("RuntimeDataRoot.MutexName", app, StringComparison.Ordinal);
         Assert.Contains("new Mutex", app, StringComparison.Ordinal);
+        Assert.Contains("Local\\StoreExpiryInspector.SingleInstance", runtimeDataRoot, StringComparison.Ordinal);
         Assert.Contains("MaximumWakeDelay = TimeSpan.FromMinutes(1)", scheduler, StringComparison.Ordinal);
         Assert.DoesNotContain("MainWindow", scheduler, StringComparison.Ordinal);
         Assert.DoesNotContain("Visibility", scheduler, StringComparison.Ordinal);
