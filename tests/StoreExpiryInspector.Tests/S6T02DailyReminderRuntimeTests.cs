@@ -145,7 +145,11 @@ public sealed class S6T02DailyReminderRuntimeTests
         Assert.Contains("DispatcherPriority.ApplicationIdle", app, StringComparison.Ordinal);
         Assert.Contains("DailyReminderRuntimeCoordinator", app, StringComparison.Ordinal);
         Assert.Contains("daily_reminder_runtime_failed", app, StringComparison.Ordinal);
-        Assert.DoesNotContain("Timer", app, StringComparison.OrdinalIgnoreCase);
+        var normalRuntime = app[..app.IndexOf("private void VerifySmokeStartupAndExit", StringComparison.Ordinal)];
+        var smokeOnly = app[app.IndexOf("private void VerifySmokeStartupAndExit", StringComparison.Ordinal)..app.IndexOf("protected override void OnExit", StringComparison.Ordinal)];
+        Assert.DoesNotContain("Timer", normalRuntime, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RuntimeDataRoot.IsSmokeRun", app, StringComparison.Ordinal);
+        Assert.Contains("DispatcherTimer", smokeOnly, StringComparison.Ordinal);
         Assert.DoesNotContain("NotifyIcon", app, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Toast", app, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Microsoft.WindowsAppSDK", project, StringComparison.OrdinalIgnoreCase);

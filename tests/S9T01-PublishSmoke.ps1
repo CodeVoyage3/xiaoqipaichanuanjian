@@ -10,6 +10,11 @@ function Get-RelativePath([string]$basePath, [string]$path) {
     if (-not $fullPath.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) { return $null }
     return $fullPath.Substring($prefix.Length)
 }
+function Assert-OrdinaryAncestors([string]$path) {
+    for ($current = [IO.DirectoryInfo]([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($path))); $null -ne $current; $current = $current.Parent) {
+        if (-not $current.Exists -or (($current.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) { throw "OutputRoot ancestor must be an ordinary local directory." }
+    }
+}
 $fullOutputRoot = [System.IO.Path]::GetFullPath($OutputRoot)
 $tempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $relative = Get-RelativePath $tempRoot $fullOutputRoot
@@ -18,6 +23,7 @@ if ($null -eq $relative -or [System.IO.Path]::IsPathRooted($relative) -or -not [
     throw "OutputRoot must be a GUID directory directly below TEMP."
 }
 
+Assert-OrdinaryAncestors $fullOutputRoot
 if (Test-Path -LiteralPath $fullOutputRoot) { throw "OutputRoot must not already exist." }
 New-Item -ItemType Directory -Path $fullOutputRoot | Out-Null
 if ((Get-Item -LiteralPath $fullOutputRoot).Attributes -band [IO.FileAttributes]::ReparsePoint) {
@@ -26,8 +32,9 @@ if ((Get-Item -LiteralPath $fullOutputRoot).Attributes -band [IO.FileAttributes]
 
 function Get-TreeHash([string]$path) {
     @(
-        Get-ChildItem -LiteralPath $path -Recurse -File | Get-FileHash | Sort-Object Path | ForEach-Object {
-            [pscustomobject]@{ Path = Get-RelativePath $path $_.Path; Sha256 = $_.Hash; Length = $_.Length }
+        Get-ChildItem -LiteralPath $path -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $file = $_
+            [pscustomobject]@{ Path = Get-RelativePath $path $file.FullName; Sha256 = (Get-FileHash -LiteralPath $file.FullName).Hash; Length = $file.Length }
         }
     ) | ConvertTo-Json -Compress
 }
@@ -42,6 +49,7 @@ $secondPublish = Join-Path $fullOutputRoot "publish-b"
 $firstData = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
 $secondData = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
 $smokeWorking = Join-Path $fullOutputRoot "working"
+if ((Get-RelativePath $fullOutputRoot $firstPublish) -ne "publish-a" -or (Get-RelativePath $fullOutputRoot $secondPublish) -ne "publish-b" -or (Test-Path -LiteralPath $secondPublish)) { throw "Publish move paths are outside this run's output root or already exist." }
 New-Item -ItemType Directory -Path $smokeWorking | Out-Null
 dotnet publish src/StoreExpiryInspector/StoreExpiryInspector.csproj -c Release -p:PublishProfile=WinX64 -o $firstPublish
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
@@ -69,7 +77,9 @@ $runtime = Get-Content -Raw (Join-Path $secondPublish "StoreExpiryInspector.runt
 $evidence = [pscustomobject]@{
     Result = "PASS"; PublishDirectory = $secondPublish; FirstDataRoot = $firstData; SecondDataRoot = $secondData
     PublishBytes = (Get-ChildItem -LiteralPath $secondPublish -Recurse -File | Measure-Object Length -Sum).Sum
-    FileVersion = (Get-Item -LiteralPath $secondExe).VersionInfo.ProductVersion
+    FileVersion = (Get-Item -LiteralPath $secondExe).VersionInfo.FileVersion
+    ProductVersion = (Get-Item -LiteralPath $secondExe).VersionInfo.ProductVersion
+    AssemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($secondExe).Version.ToString()
     Framework = $runtime.runtimeOptions.framework; IncludedFrameworks = $runtime.runtimeOptions.includedFrameworks
     RuntimeFiles = @("coreclr.dll", "hostfxr.dll", "e_sqlite3.dll")
 }
