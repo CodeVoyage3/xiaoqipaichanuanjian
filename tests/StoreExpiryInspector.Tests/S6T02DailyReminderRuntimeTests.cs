@@ -145,8 +145,10 @@ public sealed class S6T02DailyReminderRuntimeTests
         Assert.Contains("DispatcherPriority.ApplicationIdle", app, StringComparison.Ordinal);
         Assert.Contains("DailyReminderRuntimeCoordinator", app, StringComparison.Ordinal);
         Assert.Contains("daily_reminder_runtime_failed", app, StringComparison.Ordinal);
-        var normalRuntime = app[..app.IndexOf("private void VerifySmokeStartupAndExit", StringComparison.Ordinal)];
-        var smokeOnly = app[app.IndexOf("private void VerifySmokeStartupAndExit", StringComparison.Ordinal)..app.IndexOf("protected override void OnExit", StringComparison.Ordinal)];
+        var smokeStart = app.IndexOf("private void VerifySmokeStartupAndExit", StringComparison.Ordinal);
+        var smokeEnd = app.IndexOf("protected override void OnExit", StringComparison.Ordinal);
+        var normalRuntime = app[..smokeStart] + app[smokeEnd..];
+        var smokeOnly = app[smokeStart..smokeEnd];
         Assert.DoesNotContain("Timer", normalRuntime, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("RuntimeDataRoot.IsSmokeRun", app, StringComparison.Ordinal);
         Assert.Contains("DispatcherTimer", smokeOnly, StringComparison.Ordinal);

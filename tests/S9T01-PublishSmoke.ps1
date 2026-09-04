@@ -79,7 +79,7 @@ $evidence = [pscustomobject]@{
     PublishBytes = (Get-ChildItem -LiteralPath $secondPublish -Recurse -File | Measure-Object Length -Sum).Sum
     FileVersion = (Get-Item -LiteralPath $secondExe).VersionInfo.FileVersion
     ProductVersion = (Get-Item -LiteralPath $secondExe).VersionInfo.ProductVersion
-    AssemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($secondExe).Version.ToString()
+    AssemblyVersion = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $secondPublish "StoreExpiryInspector.dll")).Version.ToString()
     Framework = $runtime.runtimeOptions.framework; IncludedFrameworks = $runtime.runtimeOptions.includedFrameworks
     RuntimeFiles = @("coreclr.dll", "hostfxr.dll", "e_sqlite3.dll")
 }
