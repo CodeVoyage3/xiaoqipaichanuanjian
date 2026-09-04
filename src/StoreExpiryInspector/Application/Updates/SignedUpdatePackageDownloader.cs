@@ -49,7 +49,7 @@ public sealed class SignedUpdatePackageDownloader
     private const long ExpandedLimit = 512L * 1024 * 1024;
     private const int EntryLimit = 4096;
     private static readonly Regex VersionPattern = new("\\A(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\z", RegexOptions.CultureInvariant);
-    private static readonly Regex MigrationPattern = new("\\A[0-9]{14}_[^\\s]+\\z", RegexOptions.CultureInvariant);
+    private static readonly Regex MigrationPattern = new("\\A[0-9]{14}_[^\\s/\\\\]+\\z", RegexOptions.CultureInvariant);
     private static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation"];
     private readonly HttpClient _client;
     private readonly UpdatePackageOptions _options;
@@ -93,14 +93,17 @@ public sealed class SignedUpdatePackageDownloader
             var signatureUri = AssetUri(release, "update-manifest.sig");
             if (!release.AssetNames.Contains("update-manifest.json", StringComparer.Ordinal)) return Fail(UpdatePackageOutcome.ManifestMissing, "发行中缺少更新清单。");
             if (!release.AssetNames.Contains("update-manifest.sig", StringComparer.Ordinal)) return Fail(UpdatePackageOutcome.SignatureMissing, "发行中缺少清单签名。");
-            var rawManifest = await ReadSmallAsync(manifestUri, 64 * 1024, cancellationToken);
-            var signature = await ReadSmallAsync(signatureUri, 1024, cancellationToken);
+            var rawManifest = await ReadSmallAsync(manifestUri, 64 * 1024, UpdatePackageOutcome.ManifestMissing, cancellationToken);
+            var signature = await ReadSmallAsync(signatureUri, 1024, UpdatePackageOutcome.SignatureMissing, cancellationToken);
             using var verifier = _options.CreateVerifier()!;
             if (!verifier.VerifyData(rawManifest, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名无效。");
+            try { using var schema = JsonDocument.Parse(rawManifest); if (!schema.RootElement.TryGetProperty("schemaVersion", out var schemaVersion) || !schemaVersion.TryGetInt32(out var value)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); if (value != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。"); } catch (JsonException) { return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); }
             if (!TryParseManifest(rawManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。");
             if (manifest.MinimumProtocolVersion != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
             if (manifest.Version != release.Version || manifest.ReleaseTag != release.Tag || manifest.Repository != Owner + "/" + Repo) return Fail(UpdatePackageOutcome.VersionMismatch, "更新清单与发行版本不一致。");
-            if (manifest.Rid != "win-x64" || manifest.Channel != "stable") return Fail(UpdatePackageOutcome.UnsupportedPlatform, "更新包平台不受支持。");
+            if (manifest.Rid != "win-x64") return Fail(UpdatePackageOutcome.UnsupportedPlatform, "更新包平台不受支持。");
+            if (manifest.Channel != "stable") return Fail(UpdatePackageOutcome.InvalidManifest, "更新通道无效。");
+            if (manifest.Version <= currentVersion) return Fail(UpdatePackageOutcome.VersionMismatch, "候选版本必须高于当前版本。");
             if (!manifest.SourceAllows(currentVersion, CurrentMigrations[^1])) return Fail(UpdatePackageOutcome.SourceNotSupported, "当前版本不在该更新包支持范围内。");
             var packageName = $"StoreExpiryInspector-{manifest.Version:0.0.0}-win-x64.zip";
             if (manifest.PackageName != packageName || !release.AssetNames.Count(name => name == packageName).Equals(1)) return Fail(UpdatePackageOutcome.AssetMissing, "发行中没有唯一匹配的更新包。");
@@ -111,6 +114,8 @@ public sealed class SignedUpdatePackageDownloader
             var download = await DownloadAsync(AssetUri(release, packageName), packagePath, manifest.PackageBytes, progress, cancellationToken);
             if (download.Outcome != UpdatePackageOutcome.Verified) return Fail(download.Outcome, "更新包下载校验失败。");
             if (!CryptographicOperations.FixedTimeEquals(expectedHash, download.Hash!)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
+            using var packageLock = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (!CryptographicOperations.FixedTimeEquals(expectedHash, SHA256.HashData(packageLock))) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             progress?.Invoke(new("正在校验更新包", manifest.PackageBytes, manifest.PackageBytes));
             var audit = AuditArchive(packagePath, directory, manifest);
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
@@ -122,6 +127,7 @@ public sealed class SignedUpdatePackageDownloader
         catch (HttpRequestException) { return Fail(UpdatePackageOutcome.NetworkUnavailable, "无法连接更新服务器。"); }
         catch (IOException) { return Fail(UpdatePackageOutcome.IoFailure, "更新缓存读写失败。"); }
         catch (CryptographicException) { return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新签名数据无效。"); }
+        catch (UpdatePackageException error) { return Fail(error.Outcome, "更新发布内容不可用。"); }
         catch (Exception) { return Fail(UpdatePackageOutcome.UnsafeArchive, "更新包无法安全验证。"); }
         finally
         {
@@ -147,11 +153,12 @@ public sealed class SignedUpdatePackageDownloader
             var names = new List<string>();
             foreach (var asset in assets.EnumerateArray())
             {
-                if (!asset.TryGetProperty("name", out var name) || name.ValueKind != JsonValueKind.String || !asset.TryGetProperty("browser_download_url", out var url) || url.ValueKind != JsonValueKind.String) return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行资产无效。"));
+                if (!asset.TryGetProperty("name", out var name) || name.ValueKind != JsonValueKind.String || !asset.TryGetProperty("state", out var state) || state.GetString() != "uploaded" || !asset.TryGetProperty("browser_download_url", out var url) || url.ValueKind != JsonValueKind.String) return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行资产无效。"));
                 var value = name.GetString()!;
                 if (url.GetString() != AssetUri(expected, value).ToString()) return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行资产来源无效。"));
                 names.Add(value);
             }
+            if (names.Distinct(StringComparer.Ordinal).Count() != names.Count) return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行资产名称重复。"));
             return (expected with { AssetNames = names }, null);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (null, Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
@@ -182,14 +189,16 @@ public sealed class SignedUpdatePackageDownloader
         return total == expected ? (UpdatePackageOutcome.Verified, hash.GetHashAndReset()) : (UpdatePackageOutcome.SizeMismatch, null);
     }
 
-    private async Task<byte[]> ReadSmallAsync(Uri uri, int limit, CancellationToken cancellationToken)
+    private async Task<byte[]> ReadSmallAsync(Uri uri, int limit, UpdatePackageOutcome missing, CancellationToken cancellationToken)
     {
         using var response = await SendFollowingRedirects(uri, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound) throw new UpdatePackageException(missing);
+        if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) throw new UpdatePackageException(UpdatePackageOutcome.RateLimited);
         if (!response.IsSuccessStatusCode) throw new HttpRequestException();
-        if (response.Content.Headers.ContentLength > limit) throw new InvalidDataException();
+        if (response.Content.Headers.ContentLength > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest);
         await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var output = new MemoryStream(); var buffer = new byte[8192];
-        for (int read; (read = await input.ReadAsync(buffer, cancellationToken)) > 0;) { if (output.Length + read > limit) throw new InvalidDataException(); output.Write(buffer, 0, read); }
+        for (int read; (read = await input.ReadAsync(buffer, cancellationToken)) > 0;) { if (output.Length + read > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest); output.Write(buffer, 0, read); }
         return output.ToArray();
     }
 
@@ -210,6 +219,7 @@ public sealed class SignedUpdatePackageDownloader
 
     private static UpdatePackageOutcome AuditArchive(string packagePath, string scratch, Manifest manifest)
     {
+        if (!TryReadZipDirectory(packagePath, out var expectedCrc)) return UpdatePackageOutcome.UnsafeArchive;
         using var archive = ZipFile.OpenRead(packagePath);
         if (archive.Entries.Count is 0 or > EntryLimit) return UpdatePackageOutcome.UnsafeArchive;
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase); long expanded = 0; string? exe = null; string? dll = null;
@@ -224,10 +234,11 @@ public sealed class SignedUpdatePackageDownloader
             {
                 using (var input = entry.Open()) using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
-                    var buffer = new byte[81920]; long actual = 0;
-                    for (int read; (read = input.Read(buffer, 0, buffer.Length)) > 0;) { actual += read; if (actual > entry.Length || actual > PackageLimit) return UpdatePackageOutcome.UnsafeArchive; output.Write(buffer, 0, read); }
-                    if (actual != entry.Length) return UpdatePackageOutcome.UnsafeArchive;
+                    var buffer = new byte[81920]; long actual = 0; var crc = new Crc32();
+                    for (int read; (read = input.Read(buffer, 0, buffer.Length)) > 0;) { actual += read; if (actual > entry.Length || actual > PackageLimit) return UpdatePackageOutcome.UnsafeArchive; crc.Append(buffer.AsSpan(0, read)); output.Write(buffer, 0, read); }
+                    if (actual != entry.Length || !expectedCrc.TryGetValue(entry.FullName, out var expected) || crc.Value != expected) return UpdatePackageOutcome.UnsafeArchive;
                 }
+                if ((entry.FullName.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || entry.FullName.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase)) && ContainsSecret(temp)) return UpdatePackageOutcome.UnsafeArchive;
                 if (entry.FullName == "StoreExpiryInspector.exe") exe = temp; else if (entry.FullName == "StoreExpiryInspector.dll") dll = temp; else File.Delete(temp);
             }
             catch { return UpdatePackageOutcome.UnsafeArchive; }
@@ -280,15 +291,48 @@ public sealed class SignedUpdatePackageDownloader
     private static bool SafeEntry(ZipArchiveEntry entry, HashSet<string> paths)
     {
         var name = entry.FullName.Replace('\\', '/');
-        if (name.Length == 0 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Split('/').Any(part => part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
+        if (name.Length == 0 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Any(character => character is '<' or '>' or '"' or '|' or '?' or '*') || name.Split('/').Any(part => part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
         if (!paths.Add(name) || paths.Any(existing => existing.StartsWith(name + "/", StringComparison.OrdinalIgnoreCase) || name.StartsWith(existing + "/", StringComparison.OrdinalIgnoreCase))) return false;
         var unixType = ((uint)entry.ExternalAttributes >> 16) & 0xF000;
-        return (unixType is 0 or 0x8000 or 0x4000) && !HasLinkExtra(entry);
+        return (unixType is 0 or 0x8000 or 0x4000) && (((uint)entry.ExternalAttributes & 0x400) == 0) && !HasLinkExtra(entry);
     }
 
     private static bool HasLinkExtra(ZipArchiveEntry entry) => (((uint)entry.ExternalAttributes >> 16) & 0xF000) is 0xA000 or 0x6000;
     private static bool IsReserved(string part) => new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" }.Contains(part.Split('.')[0], StringComparer.OrdinalIgnoreCase);
-    private static bool Allowed(string name) => name is "StoreExpiryInspector.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pri", StringComparison.OrdinalIgnoreCase);
+    private static bool Allowed(string name) => !name.StartsWith("data/", StringComparison.OrdinalIgnoreCase) && !name.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) && !name.StartsWith("backup", StringComparison.OrdinalIgnoreCase) && (name is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pri", StringComparison.OrdinalIgnoreCase));
+    private static bool ContainsSecret(string path) { var info = new FileInfo(path); if (info.Length > 1024 * 1024) return true; var text = File.ReadAllText(path); return text.Contains("token", StringComparison.OrdinalIgnoreCase) || text.Contains("private", StringComparison.OrdinalIgnoreCase) || text.Contains("password", StringComparison.OrdinalIgnoreCase) || text.Contains("secret", StringComparison.OrdinalIgnoreCase); }
+    private static bool TryReadZipDirectory(string path, out Dictionary<string, uint> crcs)
+    {
+        crcs = new(StringComparer.Ordinal);
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (stream.Length < 22) return false;
+            var tailStart = Math.Max(0, stream.Length - 65557); var tail = ReadAt(stream, tailStart, checked((int)(stream.Length - tailStart))); var end = tail.Length - 22;
+            while (end >= 0 && Read32(tail, end) != 0x06054b50) end--;
+            if (end < 0 || tailStart + end + 22 + Read16(tail, end + 20) != stream.Length || Read16(tail, end + 4) != 0 || Read16(tail, end + 6) != 0) return false;
+            var count = Read16(tail, end + 10); var size = Read32(tail, end + 12); var offset = Read32(tail, end + 16);
+            if (count > EntryLimit || (long)offset + size != tailStart + end || offset > stream.Length) return false;
+            var cursor = (long)offset;
+            for (var index = 0; index < count; index++)
+            {
+                var header = ReadAt(stream, cursor, 46); if (Read32(header, 0) != 0x02014b50) return false;
+                var flags = Read16(header, 8); var method = Read16(header, 10); var crc = Read32(header, 16); var compressed = Read32(header, 20); var uncompressed = Read32(header, 24); var nameLength = Read16(header, 28); var extraLength = Read16(header, 30); var commentLength = Read16(header, 32); var attrs = Read32(header, 38); var localOffset = Read32(header, 42);
+                if ((flags & 0x9) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || (long)localOffset + 30 > stream.Length) return false;
+                var nameBytes = ReadAt(stream, cursor + 46, nameLength); var local = ReadAt(stream, localOffset, 30); if (Read32(local, 0) != 0x04034b50) return false;
+                var name = Encoding.UTF8.GetString(nameBytes);
+                if (name.Any(character => character > 127) || Read16(local, 6) != flags || Read16(local, 8) != method || Read32(local, 14) != crc || Read32(local, 18) != compressed || Read32(local, 22) != uncompressed || Read16(local, 26) != nameLength || Read16(local, 28) != 0 || !nameBytes.AsSpan().SequenceEqual(ReadAt(stream, (long)localOffset + 30, nameLength)) || (((attrs >> 16) & 0xF000) is 0xA000 or 0x6000) || (attrs & 0x400) != 0 || !crcs.TryAdd(name, crc)) return false;
+                var payload = (long)localOffset + 30 + nameLength; if (payload + compressed > offset || payload + compressed > stream.Length) return false;
+                cursor += 46 + nameLength + extraLength + commentLength;
+            }
+            return cursor == tailStart + end;
+        }
+        catch { return false; }
+    }
+    private static byte[] ReadAt(FileStream stream, long position, int count) { var buffer = new byte[count]; stream.Position = position; for (var read = 0; read < count;) { var got = stream.Read(buffer, read, count - read); if (got == 0) throw new EndOfStreamException(); read += got; } return buffer; }
+    private static ushort Read16(byte[] data, int offset) => BitConverter.ToUInt16(data, offset);
+    private static uint Read32(byte[] data, int offset) => BitConverter.ToUInt32(data, offset);
+    private sealed class Crc32 { private uint _value = uint.MaxValue; public void Append(ReadOnlySpan<byte> bytes) { foreach (var b in bytes) { _value ^= b; for (var i = 0; i < 8; i++) _value = (_value >> 1) ^ ((_value & 1) == 1 ? 0xEDB88320u : 0); } } public uint Value => ~_value; }
     private static bool IsRedirect(HttpStatusCode code) => code is HttpStatusCode.Moved or HttpStatusCode.Redirect or HttpStatusCode.RedirectMethod or HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect;
     private static bool IsInitialUri(Uri uri) => uri.Scheme == Uri.UriSchemeHttps && uri.Port == 443 && string.IsNullOrEmpty(uri.UserInfo) && string.IsNullOrEmpty(uri.Fragment) && uri.Host == "github.com" && Regex.IsMatch(uri.AbsolutePath, $"\\A/{Owner}/{Repo}/releases/download/v[0-9]+\\.[0-9]+\\.[0-9]+/[^/]+\\z");
     private static bool IsCdnUri(Uri uri) => uri.Scheme == Uri.UriSchemeHttps && uri.Port == 443 && string.IsNullOrEmpty(uri.UserInfo) && string.IsNullOrEmpty(uri.Fragment) && uri.Host == "release-assets.githubusercontent.com" && Regex.IsMatch(uri.AbsolutePath, "\\A/github-production-release-asset/[0-9]+/[0-9a-fA-F-]{36}\\z");
@@ -298,6 +342,7 @@ public sealed class SignedUpdatePackageDownloader
     private string CreateCacheDirectory() { var root = _options.CacheRoot ?? Path.Combine(Path.GetTempPath(), "StoreExpiryInspector", "updates"); if (!IsOrdinaryDirectory(root)) throw new IOException(); var path = Path.Combine(root, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); if (!IsOrdinaryDirectory(path)) throw new IOException(); return path; }
     private static bool IsOrdinaryDirectory(string path) { for (var item = new DirectoryInfo(path); item is not null; item = item.Parent) { if (!item.Exists) continue; if ((item.Attributes & FileAttributes.ReparsePoint) != 0) return false; } return true; }
     private static UpdatePackageResult Fail(UpdatePackageOutcome outcome, string message) => new(outcome, message);
+    private sealed class UpdatePackageException(UpdatePackageOutcome outcome) : Exception { public UpdatePackageOutcome Outcome { get; } = outcome; }
 
     private sealed record Manifest(Version Version, string ReleaseTag, string Repository, string Channel, string Rid, int MinimumProtocolVersion, string PackageName, long PackageBytes, string PackageHash, List<string> TargetMigrations, Version MinVersion, Version MaxVersion, string MinMigration, string MaxMigration)
     { public bool SourceAllows(Version version, string migration) => version >= MinVersion && version <= MaxVersion && string.CompareOrdinal(migration, MinMigration) >= 0 && string.CompareOrdinal(migration, MaxMigration) <= 0; }
@@ -309,9 +354,9 @@ public sealed class SignedUpdatePackageDownloader
         {
             using var document = JsonDocument.Parse(bytes); if (!NoDuplicateProperties(document.RootElement) || document.RootElement.ValueKind != JsonValueKind.Object) return false;
             var root = document.RootElement;
-            if (Int(root, "schemaVersion") != 1 || String(root, "channel") != "stable" || String(root, "rid") != "win-x64" || Int(root, "minimumProtocolVersion") < 1 || !VersionValue(String(root, "version"), out var version) || String(root, "releaseTag") != "v" + version.ToString(3)) return false;
+            if (Int(root, "schemaVersion") < 1 || String(root, "channel") != "stable" || string.IsNullOrEmpty(String(root, "rid")) || Int(root, "minimumProtocolVersion") < 1 || !VersionValue(String(root, "version"), out var version)) return false;
             var package = Object(root, "package"); var source = Object(root, "source"); var migrations = Array(root, "targetMigrations").EnumerateArray().Select((JsonElement item) => item.GetString()).ToList();
-            if (migrations.Any(id => id is null || !MigrationPattern.IsMatch(id)) || migrations.Distinct(StringComparer.Ordinal).Count() != migrations.Count || !VersionValue(String(source, "minVersion"), out var min) || !VersionValue(String(source, "maxVersion"), out var max) || min > max || !MigrationPattern.IsMatch(String(source, "minMigration")) || !MigrationPattern.IsMatch(String(source, "maxMigration")) || string.CompareOrdinal(String(source, "minMigration"), String(source, "maxMigration")) > 0) return false;
+            if (migrations.Any(id => id is null || !MigrationPattern.IsMatch(id)) || migrations.Distinct(StringComparer.Ordinal).Count() != migrations.Count || !migrations.SequenceEqual(migrations.OrderBy(id => id, StringComparer.Ordinal)) || !VersionValue(String(source, "minVersion"), out var min) || !VersionValue(String(source, "maxVersion"), out var max) || min > max || !MigrationPattern.IsMatch(String(source, "minMigration")) || !MigrationPattern.IsMatch(String(source, "maxMigration")) || string.CompareOrdinal(String(source, "minMigration"), String(source, "maxMigration")) > 0) return false;
             var hash = String(package, "sha256"); if (!Regex.IsMatch(hash, "\\A[0-9a-fA-F]{64}\\z") || Long(package, "bytes") <= 0) return false;
             manifest = new(version, String(root, "releaseTag"), String(root, "repository"), String(root, "channel"), String(root, "rid"), Int(root, "minimumProtocolVersion"), String(package, "fileName"), Long(package, "bytes"), hash, migrations!, min, max, String(source, "minMigration"), String(source, "maxMigration")); return true;
         }
