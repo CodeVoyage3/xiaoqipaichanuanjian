@@ -121,7 +121,7 @@ public sealed class SignedUpdatePackageDownloader
             var packagePath = Path.Combine(directory, "package.download");
             progress?.Invoke(new("正在下载更新包", 0, manifest.PackageBytes));
             var download = await DownloadAsync(AssetUri(release, packageName), packagePath, manifest.PackageBytes, progress, cancellationToken);
-            if (download.Outcome != UpdatePackageOutcome.Verified) return Fail(download.Outcome, "更新包下载校验失败。");
+            if (download.Outcome != UpdatePackageOutcome.Verified) return Fail(download.Outcome, download.Outcome == UpdatePackageOutcome.Cancelled ? "已取消更新包准备。" : "更新包下载校验失败。");
             if (!CryptographicOperations.FixedTimeEquals(expectedHash, download.Hash!)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             using var packageLock = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var lockedHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256); var lockedBuffer = new byte[81920];
