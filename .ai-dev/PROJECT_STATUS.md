@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 已启动，S8-T01 已关闭；S8-T02 已获用户批准并为当前唯一实施卡；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 状态：Stage 8 已启动，S8-T01 已关闭；S8-T02 当前暂停隔离问题调查，未验收；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -10,6 +10,8 @@
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T02 最新停止：Terra 的定向测试曾运行在 Shell 默认大类读取器接线错误的中间实现上，无法排除正式库访问；Sol 已停测停工，只核对代码/代理回执，未访问正式库。两份生产代码改动未提交且未推送；本卡 `PAUSED_ISOLATION_REVIEW / NOT_ACCEPTED`，等待用户指示。详见 S8-T02 Acceptance。
 
 - 2026-09-04：重新 fetch 后 main=`0ede8b901fb5e6cbc1c2f2824d6f8a6c7a54f901`。S8-T02 Task/Acceptance 已建立，派发全新 Terra / medium / priority（用户已另行允许）；只做查询/分页读取优化，禁止索引/migration、S8-T03、Stage 9 与在线升级。
 
