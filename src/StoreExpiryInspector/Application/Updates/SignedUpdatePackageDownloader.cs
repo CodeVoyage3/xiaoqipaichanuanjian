@@ -272,8 +272,8 @@ public sealed class SignedUpdatePackageDownloader
         try
         {
             if (!IsAmd64Executable(exe)) return UpdatePackageOutcome.PackageVersionMismatch;
-            var fileVersion = FileVersionInfo.GetVersionInfo(exe).FileVersion;
-            if (fileVersion is null || !fileVersion.StartsWith(manifest.Version + ".", StringComparison.Ordinal)) return UpdatePackageOutcome.PackageVersionMismatch;
+            var fileVersion = FileVersionInfo.GetVersionInfo(exe);
+            if (fileVersion.FileMajorPart != manifest.Version.Major || fileVersion.FileMinorPart != manifest.Version.Minor || fileVersion.FileBuildPart != manifest.Version.Build || fileVersion.FilePrivatePart != 0) return UpdatePackageOutcome.PackageVersionMismatch;
             if (!ReadAssembly(dll, manifest.Version, out var migrations) || !migrations.OrderBy(id => id, StringComparer.Ordinal).SequenceEqual(manifest.TargetMigrations.OrderBy(id => id, StringComparer.Ordinal), StringComparer.Ordinal)) return UpdatePackageOutcome.PackageVersionMismatch;
             return UpdatePackageOutcome.Verified;
         }
@@ -287,7 +287,7 @@ public sealed class SignedUpdatePackageDownloader
         if (!pe.HasMetadata) return false;
         var reader = pe.GetMetadataReader();
         var asm = reader.GetAssemblyDefinition();
-        if (!Version.TryParse(asm.Version.ToString(), out var product) || product.Major != version.Major || product.Minor != version.Minor || product.Build != version.Build) return false;
+        if (!Version.TryParse(asm.Version.ToString(), out var product) || product.Major != version.Major || product.Minor != version.Minor || product.Build != version.Build || product.Revision != 0) return false;
         foreach (var type in reader.TypeDefinitions)
             foreach (var attributeHandle in reader.GetTypeDefinition(type).GetCustomAttributes())
             {
