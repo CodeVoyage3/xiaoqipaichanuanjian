@@ -1,5 +1,9 @@
 # 项目状态
 
+## S9-T04当前授权（2026-09-05，覆盖下方历史状态）
+
+Stage9 IN_PROGRESS / S9-T04_CURRENT；S9-T04 IN_PROGRESS / NOT_ACCEPTED。开工fetch main=origin/main=c6200ca8507c7f8d99f7f40047b6be291d6ff70b、clean/0/0；实查无既有T04，按用户正式授权创建Task/Acceptance及包协议。全新Terra medium/priority实施，Sol仅治理、完整diff、独立复验。仅下载/原始Manifest签名/size/hash/ZIP及内部身份校验，止于VerifiedUpdatePackage；生产trust anchor未配置必须fail-closed。正式DB及更新目录禁止访问，产品仍1.0.0；T02安装器历史产物。禁止T05、程序替换、Updater事务、migration、正式Release/tag/资产、重置、Undo。全部门禁通过后普通push/fetch clean/0/0并停。下方T03及更早为历史回执。
+
 ## S9-T03正式关闭（2026-09-05，当前权威状态）
 
 - S9-T03 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION。Stage8、T01/T02保持CLOSED；T04未创建。开工main=origin/main=82c3fd16423c9772e4c2f4f41a8b56cbbf67c669、clean/0/0。全新GPT-5.6 Terra medium/priority实现523918b及可读性修复15434e53a6809fd654337fee0332c851c238a922，已提交停止；Sol只治理、完整diff、独立复验。最终main见普通push/fetch回执。

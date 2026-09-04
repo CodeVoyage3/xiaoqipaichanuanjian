@@ -1,0 +1,95 @@
+[
+  {
+    "time": "2026-09-05T00:23:40.7837326+08:00",
+    "url": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian",
+    "status": 200,
+    "anonymous": true,
+    "authorization": false,
+    "visibility": "public",
+    "count": null,
+    "rateLimit": [
+      {
+        "name": "X-RateLimit-Limit",
+        "value": "60"
+      },
+      {
+        "name": "X-RateLimit-Remaining",
+        "value": "47"
+      },
+      {
+        "name": "X-RateLimit-Used",
+        "value": "13"
+      },
+      {
+        "name": "X-RateLimit-Resource",
+        "value": "core"
+      },
+      {
+        "name": "X-RateLimit-Reset",
+        "value": "1788539263"
+      }
+    ]
+  },
+  {
+    "time": "2026-09-05T00:23:41.8464774+08:00",
+    "url": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases?per_page=100",
+    "status": 200,
+    "anonymous": true,
+    "authorization": false,
+    "visibility": null,
+    "count": 0,
+    "rateLimit": [
+      {
+        "name": "X-RateLimit-Limit",
+        "value": "60"
+      },
+      {
+        "name": "X-RateLimit-Remaining",
+        "value": "46"
+      },
+      {
+        "name": "X-RateLimit-Used",
+        "value": "14"
+      },
+      {
+        "name": "X-RateLimit-Resource",
+        "value": "core"
+      },
+      {
+        "name": "X-RateLimit-Reset",
+        "value": "1788539263"
+      }
+    ]
+  },
+  {
+    "time": "2026-09-05T00:23:42.1808584+08:00",
+    "url": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases/latest",
+    "status": 404,
+    "anonymous": true,
+    "authorization": false,
+    "visibility": null,
+    "count": null,
+    "rateLimit": [
+      {
+        "name": "X-RateLimit-Limit",
+        "value": "60"
+      },
+      {
+        "name": "X-RateLimit-Remaining",
+        "value": "45"
+      },
+      {
+        "name": "X-RateLimit-Used",
+        "value": "15"
+      },
+      {
+        "name": "X-RateLimit-Resource",
+        "value": "core"
+      },
+      {
+        "name": "X-RateLimit-Reset",
+        "value": "1788539263"
+      }
+    ]
+  }
+]

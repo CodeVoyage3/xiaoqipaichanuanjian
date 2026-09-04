@@ -1,0 +1,15 @@
+{
+  "time": "2026-09-05T00:23:45.3156963+08:00",
+  "purpose": "GitHub official cli public asset redirect headers only; not product download",
+  "repository": "cli/cli",
+  "tag": "v2.100.0",
+  "asset": "gh_2.100.0_checksums.txt",
+  "initialUrl": "https://github.com/cli/cli/releases/download/v2.100.0/gh_2.100.0_checksums.txt",
+  "status": 302,
+  "locationHost": "release-assets.githubusercontent.com",
+  "locationPath": "/github-production-release-asset/212613049/b18994e4-6206-4906-a37a-14deef887795",
+  "locationScheme": "https",
+  "queryOmitted": true,
+  "bodyRead": false,
+  "authorization": false
+}
