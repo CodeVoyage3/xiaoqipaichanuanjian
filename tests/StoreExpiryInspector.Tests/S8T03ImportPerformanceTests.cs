@@ -342,9 +342,17 @@ public sealed class S8T03ImportPerformanceTests
         Measure(measures, "database_initialize", () => DatabaseInitializer.Initialize(databasePath));
         WriteWorkbook(seedPath, existingProductCount, batchesPerProduct: 1, seed: true);
         SeedExisting(databasePath, seedPath, snapshotDirectory);
+        Dictionary<string, long> seededProductIds;
+        Dictionary<string, long> seededBatchIds;
+        using (var seeded = DatabaseInitializer.CreateContext(databasePath))
+        {
+            seededProductIds = seeded.Products.ToDictionary(product => product.ProductCode, product => product.Id, StringComparer.Ordinal);
+            seededBatchIds = seeded.Batches.Include(batch => batch.Product).ToDictionary(batch => $"{batch.Product.ProductCode}|{batch.ProductionDate:yyyy-MM-dd}|{batch.ExpiryDate:yyyy-MM-dd}", batch => batch.Id, StringComparer.Ordinal);
+        }
         Measure(measures, "workbook_generate", () => WriteWorkbook(sourcePath, rows / 2, batchesPerProduct: 2, seed: false));
         workbookBytes = new FileInfo(sourcePath).Length;
         allocationStart = GC.GetTotalAllocatedBytes();
+        var gcStart = new[] { GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2) };
         total.Start();
         ExcelWorkbookDto workbook = null!;
         Measure(measures, "workbook_open_parse", () => workbook = new ExcelTemplateReader().Read(sourcePath));
@@ -385,6 +393,10 @@ public sealed class S8T03ImportPerformanceTests
                 occurredAtUtc));
         });
         total.Stop();
+        var importElapsedMs = total.Elapsed.TotalMilliseconds;
+        var importAllocatedBytes = GC.GetTotalAllocatedBytes() - allocationStart;
+        var importWorkingSetBytes = Environment.WorkingSet;
+        var importGc = new[] { GC.CollectionCount(0) - gcStart[0], GC.CollectionCount(1) - gcStart[1], GC.CollectionCount(2) - gcStart[2] };
 
         Assert.True(result.Succeeded, result.Code);
         Assert.True(File.Exists(result.SnapshotPath));
@@ -435,18 +447,48 @@ public sealed class S8T03ImportPerformanceTests
                     Assert.Equal(expected?.CurrentStage ?? ExpiryStageCalculator.None, batch.CurrentStage);
                 }
             });
-            var excludedProductIds = verify.Products.Where(product => product.LastSeenImportId == importId && product.ExpiryManagementStatus != ExpiryManagementStatus.Managed).Select(product => product.Id).ToArray();
-            Assert.NotEmpty(excludedProductIds);
-            Assert.All(verify.Batches.Where(batch => excludedProductIds.Contains(batch.ProductId)), batch => Assert.Equal(ExpiryStageCalculator.None, batch.CurrentStage));
-            Assert.Empty(verify.Tasks.Where(task => excludedProductIds.Contains(task.ProductId)));
-            Assert.All(verify.Tasks.Include(task => task.Items).Where(task => task.Status == "open").ToArray(), task =>
+            for (var productNumber = 0; productNumber < rows / 2; productNumber++)
             {
-                Assert.NotEmpty(task.Items);
-                Assert.All(task.Items, item => Assert.Equal(task.ProductId, item.ProductId));
+                var code = $"S8T03-{productNumber:D6}";
+                var product = verify.Products.Single(item => item.ProductCode == code);
+                Assert.Equal("合成更新商品" + productNumber.ToString("D6"), product.CurrentName);
+                Assert.Equal("690" + productNumber.ToString("D10"), product.CurrentBarcode);
+                Assert.Equal(productNumber % 10 == 0 ? 0 : 30, product.EffectiveStockQty);
+                if (seededProductIds.TryGetValue(code, out var seededProductId)) Assert.Equal(seededProductId, product.Id);
+                for (var batchNumber = 0; batchNumber < 2; batchNumber++)
+                {
+                    var production = batchNumber == 0 ? new DateOnly(2026, 1, 1) : new DateOnly(2026, 2, 1);
+                    var expiry = batchNumber == 0 && productNumber % 10 is 0 or 1 ? new DateOnly(2026, 9, 9) : new DateOnly(2027, 9, 4);
+                    var batch = verify.Batches.Single(item => item.ProductId == product.Id && item.ProductionDate == production && item.ExpiryDate == expiry);
+                    Assert.Equal(batchNumber == 0 ? 2 : 1, batch.CurrentArrivalQty);
+                    Assert.Equal(batchNumber == 0 ? 2 : 1, batch.MaxArrivalQty);
+                    if (seededBatchIds.TryGetValue($"{code}|{production:yyyy-MM-dd}|{expiry:yyyy-MM-dd}", out var seededBatchId)) Assert.Equal(seededBatchId, batch.Id);
+                }
+            }
+            var excluded = verify.Products.Where(product => product.LastSeenImportId == importId && product.ExpiryManagementStatus != ExpiryManagementStatus.Managed);
+            Assert.NotEmpty(excluded);
+            Assert.All(verify.Batches.Join(excluded, batch => batch.ProductId, product => product.Id, (batch, _) => batch), batch => Assert.Equal(ExpiryStageCalculator.None, batch.CurrentStage));
+            Assert.Empty(verify.Tasks.Join(excluded, task => task.ProductId, product => product.Id, (task, _) => task));
+            var openTasks = verify.Tasks.Include(task => task.Items).Include(task => task.Product).Where(task => task.Status == "open").ToArray();
+            Assert.Equal(rows / 20, openTasks.Length);
+            Assert.Equal(openTasks.Length, openTasks.Select(task => task.ProductId).Distinct().Count());
+            Assert.All(openTasks, task =>
+            {
+                Assert.Equal("pet", task.Product.CategoryCode);
+                var item = Assert.Single(task.Items);
+                var batch = verify.Batches.Single(candidate => candidate.Id == item.BatchId);
+                Assert.Equal(task.ProductId, item.ProductId);
+                Assert.Equal(new DateOnly(2026, 1, 1), batch.ProductionDate);
+                Assert.Equal(ExpiryStageCalculator.Withdraw, item.Stage);
+                Assert.Equal(ExpiryStageCalculator.Withdraw, batch.CurrentStage);
+                Assert.NotNull(batch.NextTriggerDate);
             });
+            Assert.Equal(existingProductCount / 10, verify.Tasks.Count(task => task.Status == "system_closed" && task.CloseReason == "product_stock_zero"));
         }
 
+        var verificationWatch = Stopwatch.StartNew();
         var verification = Verify(databasePath);
+        verificationWatch.Stop();
         Assert.True(verification.IntegrityOk);
         Assert.Equal(0, verification.ForeignKeyViolations);
         var evidence = new
@@ -470,9 +512,14 @@ public sealed class S8T03ImportPerformanceTests
             median_ms = measures,
             max_ms = measures,
             import_stage_ms = stageMeasures,
-            total_ms = total.Elapsed.TotalMilliseconds,
-            managed_allocated_bytes = GC.GetTotalAllocatedBytes() - allocationStart,
-            working_set_bytes = Environment.WorkingSet,
+            total_ms = importElapsedMs,
+            total_median_ms = importElapsedMs,
+            total_max_ms = importElapsedMs,
+            managed_allocated_bytes = importAllocatedBytes,
+            working_set_bytes = importWorkingSetBytes,
+            gc_collection_counts = importGc,
+            runtime_version = Environment.Version.ToString(), os_version = Environment.OSVersion.VersionString,
+            verification_ms = verificationWatch.Elapsed.TotalMilliseconds,
             actual_sql_command_count = sqlMetrics.CommandCount,
             actual_sql_max_parameter_count = sqlMetrics.MaxParameterCount,
             save_changes_attempt_count = saveMetrics.AttemptCount,
@@ -480,7 +527,7 @@ public sealed class S8T03ImportPerformanceTests
             transaction_count = (int?)null,
             transaction_count_note = "not collected: no transaction interceptor was added to this performance path",
             known_main_import_context_creations = 2,
-            measurement_note = "total excludes database initialization, seed import, workbook generation, and post-success verification; allocation covers main parse through import only",
+            measurement_note = "total/allocation/working-set/GC end immediately after main import; they exclude database initialization, seed import, workbook generation, and all verification. SQL/SaveChanges metrics cover execute context only, excluding planner, seed, and verification.",
             integrity_check = verification.IntegrityOk ? "ok" : "failed",
             foreign_key_check_count = verification.ForeignKeyViolations,
             data_distribution = "2 batches/product; first up-to-1000 products pre-exist with product-name/stock and batch-0 arrival update, remaining products/batches are new; products rotate all 10 supported categories; every tenth product has stock 0; D/M/Y all occur"
