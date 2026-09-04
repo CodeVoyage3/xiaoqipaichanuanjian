@@ -11,6 +11,24 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class S9T04SignedUpdatePackageTests
 {
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("{\"schemaVersion\":\"1\"}")]
+    [InlineData("{\"schemaVersion\":null}")]
+    public async Task SignedMalformedManifestIsInvalidAndCleansCache(string manifestText)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorT04", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+        try
+        {
+            var manifest = Encoding.UTF8.GetBytes(manifestText); using var rsa = RSA.Create(2048);
+            var signature = rsa.SignData(manifest, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
+            var release = new CheckedRelease(new Version(1, 0, 0), 7, "v1.0.0", ["update-manifest.json", "update-manifest.sig", "StoreExpiryInspector-1.0.0-win-x64.zip"]);
+            var result = await new SignedUpdatePackageDownloader(new Routes(manifest, signature, []), new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: root)).PrepareAsync(release, new Version(0, 9, 9), null, CancellationToken.None);
+            Assert.Equal(UpdatePackageOutcome.InvalidManifest, result.Outcome); Assert.Empty(Directory.EnumerateFileSystemEntries(root));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     [Fact]
     public void NotificationStateCancelsAndResetsForRetry()
     {
