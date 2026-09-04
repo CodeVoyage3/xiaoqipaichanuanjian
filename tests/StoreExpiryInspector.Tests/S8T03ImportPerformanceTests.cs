@@ -84,6 +84,169 @@ public sealed class S8T03ImportPerformanceTests
     }
 
     [Theory]
+    [InlineData("product_part", 12)]
+    [InlineData("batch_part", 12)]
+    [InlineData("import_record", 12)]
+    [InlineData("post_middle", 400)]
+    [Trait("Category", "S8T03")]
+    public void Controlled_real_write_failures_roll_back_every_business_table(string injectionStage, int products)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "database", "app.db");
+        var seedPath = Path.Combine(root, "source", "seed.xlsx");
+        var sourcePath = Path.Combine(root, "source", injectionStage + ".xlsx");
+        var snapshots = Path.Combine(root, "snapshots");
+        var evidencePath = Path.Combine(root, "evidence", injectionStage + ".json");
+        AssertIsUnderRoot(root, databasePath, seedPath, sourcePath, snapshots, evidencePath);
+        DatabaseInitializer.Initialize(databasePath);
+        WriteWorkbook(seedPath, 10, 1, seed: true); // Seed every supported category before the main import; no main scope cold-starts.
+        SeedExisting(databasePath, seedPath, snapshots); // A real succeeded import is deliberately part of the before-state.
+        WriteWorkbook(sourcePath, products, 1, seed: false);
+        var contract = ReadConfirmedContract(databasePath, sourcePath);
+        var before = BusinessFingerprint(databasePath);
+        var interceptor = new FailureMatrixInterceptor(injectionStage);
+        var resolved = false;
+        var zeroSaved = false;
+        ConfirmedImportResult result;
+        using (var execute = OpenWithInterceptor(databasePath, interceptor))
+        {
+            void Measure(string stage, TimeSpan _) { if (stage == "resolve_facts") { resolved = true; interceptor.MarkResolved(); } if (stage == "stock_zero") { zeroSaved = true; interceptor.MarkStockZero(); } }
+            result = new ConfirmedImportLifecycleOrchestrator(measure: Measure).Execute(execute, new(
+                contract, snapshots, new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc),
+                new DateOnly(2026, 9, 4), new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+        }
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(ConfirmedImportCodes.TransactionFailed, result.Code);
+        Assert.True(interceptor.FailureTriggerCount > 0);
+        if (injectionStage == "product_part") Assert.True(interceptor.ProductWrites > 0);
+        if (injectionStage == "batch_part") Assert.True(interceptor.BatchWrites > 0);
+        if (injectionStage == "post_middle") { Assert.True(resolved); Assert.True(zeroSaved); Assert.True(interceptor.SuccessfulPostCommands >= 250); }
+        Assert.Equal(before, BusinessFingerprint(databasePath));
+        AssertFailureEvidence(evidencePath, injectionStage, root, databasePath, sourcePath, snapshots, before, result, interceptor, resolveFactsCompleted: resolved);
+    }
+
+    [Fact]
+    [Trait("Category", "S8T03")]
+    public void Resolve_facts_failure_after_real_stage2_rolls_back_seeded_database()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "database", "app.db");
+        var seedPath = Path.Combine(root, "source", "seed.xlsx");
+        var sourcePath = Path.Combine(root, "source", "resolve-facts.xlsx");
+        var snapshots = Path.Combine(root, "snapshots");
+        var evidencePath = Path.Combine(root, "evidence", "post-before.json");
+        AssertIsUnderRoot(root, databasePath, seedPath, sourcePath, snapshots, evidencePath);
+        DatabaseInitializer.Initialize(databasePath);
+        WriteWorkbook(seedPath, 10, 1, seed: true);
+        SeedExisting(databasePath, seedPath, snapshots);
+        WriteWorkbook(sourcePath, 12, 1, seed: false);
+        var contract = ReadConfirmedContract(databasePath, sourcePath);
+        var before = BusinessFingerprint(databasePath);
+        var resolved = false;
+        ConfirmedImportResult result;
+        using (var execute = DatabaseInitializer.CreateContext(databasePath))
+        {
+            void Measure(string stage, TimeSpan _) { if (stage == "resolve_facts") { resolved = true; throw new InvalidOperationException("S8-T03 forced failure after resolve facts."); } }
+            result = new ConfirmedImportLifecycleOrchestrator(measure: Measure).Execute(execute, new(
+                contract, snapshots, new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 9, 4), new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+        }
+
+        Assert.True(resolved);
+        Assert.False(result.Succeeded);
+        Assert.Equal(ConfirmedImportCodes.TransactionFailed, result.Code);
+        Assert.Equal(before, BusinessFingerprint(databasePath));
+        AssertFailureEvidence(evidencePath, "post_before", root, databasePath, sourcePath, snapshots, before, result, null, resolveFactsCompleted: true);
+    }
+
+    [Fact]
+    [Trait("Category", "S8T03")]
+    public void Zero_stock_failure_after_real_zero_save_rolls_back_seeded_database()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "database", "app.db");
+        var seedPath = Path.Combine(root, "source", "seed.xlsx");
+        var sourcePath = Path.Combine(root, "source", "zero-after-save.xlsx");
+        var snapshots = Path.Combine(root, "snapshots");
+        var evidencePath = Path.Combine(root, "evidence", "zero-after-save.json");
+        AssertIsUnderRoot(root, databasePath, seedPath, sourcePath, snapshots, evidencePath);
+        DatabaseInitializer.Initialize(databasePath);
+        WriteWorkbook(seedPath, 10, 1, seed: true);
+        SeedExisting(databasePath, seedPath, snapshots);
+        WriteWorkbook(sourcePath, 12, 1, seed: false); // Product 0 and 10 have real Excel stock 0.
+        var contract = ReadConfirmedContract(databasePath, sourcePath);
+        var before = BusinessFingerprint(databasePath);
+        var zeroSaved = false;
+        ConfirmedImportResult result;
+        using (var execute = DatabaseInitializer.CreateContext(databasePath))
+        {
+            void Measure(string stage, TimeSpan _) { if (stage == "stock_zero") { zeroSaved = true; throw new InvalidOperationException("S8-T03 forced failure after zero-stock SaveChanges."); } }
+            result = new ConfirmedImportLifecycleOrchestrator(measure: Measure).Execute(execute, new(
+                contract, snapshots, new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 9, 4), new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+        }
+        Assert.True(zeroSaved);
+        Assert.False(result.Succeeded);
+        Assert.Equal(before, BusinessFingerprint(databasePath));
+        AssertFailureEvidence(evidencePath, "zero_after_save", root, databasePath, sourcePath, snapshots, before, result, null, resolveFactsCompleted: true);
+    }
+
+    [Fact]
+    [Trait("Category", "S8T03")]
+    public void Parser_validation_plan_and_snapshot_failures_do_not_mutate_a_real_seed()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "database", "app.db");
+        var seedPath = Path.Combine(root, "source", "seed.xlsx");
+        var sourcePath = Path.Combine(root, "source", "valid.xlsx");
+        var badPath = Path.Combine(root, "source", "parser-failure.xlsx");
+        var validationPath = Path.Combine(root, "source", "validation-failure.xlsx");
+        var snapshots = Path.Combine(root, "snapshots-file");
+        AssertIsUnderRoot(root, databasePath, seedPath, sourcePath, badPath, validationPath, snapshots);
+        DatabaseInitializer.Initialize(databasePath);
+        WriteWorkbook(seedPath, 10, 1, seed: true);
+        SeedExisting(databasePath, seedPath, Path.Combine(root, "seed-snapshots"));
+        WriteWorkbook(sourcePath, 2, 1, seed: false);
+        WriteWorkbook(validationPath, 1, 1, seed: false, invalidExpiry: true, productOffset: 100);
+        File.WriteAllText(badPath, "not an xlsx");
+        var before = BusinessFingerprint(databasePath);
+        Assert.ThrowsAny<Exception>(() => new ExcelTemplateReader().Read(badPath));
+        AssertNoMutationEvidence(Path.Combine(root, "evidence", "parser.json"), "parser", root, databasePath, badPath, before, "reader_threw");
+        var invalidWorkbook = new ExcelTemplateReader().Read(validationPath);
+        var blocked = new ExcelFileClassifier().Classify(invalidWorkbook);
+        Assert.NotEmpty(blocked.RowIssues);
+        using (var preview = DatabaseInitializer.CreateContext(databasePath))
+        {
+            var plan = new ExcelImportPlanner().Plan(preview, blocked);
+            var confirmation = new ImportConfirmationGuard().Confirm(new ImportConfirmationGuard().BindPreview(validationPath, invalidWorkbook, plan));
+            Assert.False(plan.HasChanges);
+            Assert.False(confirmation.CanConfirm);
+            Assert.Equal(ImportConfirmationCodes.NoChanges, confirmation.Code);
+        }
+        AssertNoMutationEvidence(Path.Combine(root, "evidence", "validation.json"), "validation", root, databasePath, validationPath, before, "no_changes");
+        var plannerInterceptor = new FailOnPlannerReadInterceptor();
+        using (var preview = OpenWithInterceptor(databasePath, plannerInterceptor))
+        {
+            var validWorkbook = new ExcelTemplateReader().Read(sourcePath);
+            Assert.ThrowsAny<Exception>(() => new ExcelImportPlanner().Plan(preview, new ExcelFileClassifier().Classify(validWorkbook)));
+        }
+        Assert.Equal(1, plannerInterceptor.FailureTriggerCount);
+        AssertNoMutationEvidence(Path.Combine(root, "evidence", "plan.json"), "plan", root, databasePath, sourcePath, before, "planner_read_threw");
+        File.WriteAllText(snapshots, "not a directory");
+        var contract = ReadConfirmedContract(databasePath, sourcePath);
+        ConfirmedImportResult snapshotResult;
+        using (var execute = DatabaseInitializer.CreateContext(databasePath))
+        {
+            snapshotResult = new ConfirmedImportLifecycleOrchestrator().Execute(execute, new(
+                contract, snapshots, new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 9, 4), new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+        }
+        Assert.False(snapshotResult.Succeeded);
+        Assert.Equal(ConfirmedImportCodes.SnapshotFailed, snapshotResult.Code);
+        Assert.Equal(before, BusinessFingerprint(databasePath));
+        using (var verify = DatabaseInitializer.CreateContext(databasePath)) Assert.Empty(verify.Imports.Where(import => import.Status == ImportStatuses.Succeeded).Skip(1));
+        AssertNoMutationEvidence(Path.Combine(root, "evidence", "snapshot.json"), "snapshot", root, databasePath, sourcePath, before, snapshotResult.Code);
+    }
+
+    [Theory]
     [InlineData(10_000)]
     [InlineData(50_000)]
     [InlineData(100_000)]
@@ -101,6 +264,57 @@ public sealed class S8T03ImportPerformanceTests
         }
 
         Run(rows, requireExplicitHighScaleGate: true);
+    }
+
+    [Fact]
+    [Trait("Category", "S8T03HighScale")]
+    public void High_scale_resolve_facts_failure_requires_explicit_gate()
+    {
+        if (!string.Equals(Environment.GetEnvironmentVariable("S8_T03_RUN_HIGH_SCALE_FAILURE"), "1", StringComparison.Ordinal)) return;
+        const int rows = 100_000;
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T03", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "database", "app.db");
+        var seedPath = Path.Combine(root, "source", "seed.xlsx");
+        var sourcePath = Path.Combine(root, "source", "synthetic-100000-failure.xlsx");
+        var snapshots = Path.Combine(root, "snapshots");
+        var evidencePath = Path.Combine(root, "evidence", "100000-post-before.json");
+        AssertIsUnderRoot(root, databasePath, seedPath, sourcePath, snapshots, evidencePath);
+        DatabaseInitializer.Initialize(databasePath);
+        WriteWorkbook(seedPath, 1, 1, seed: true);
+        SeedExisting(databasePath, seedPath, snapshots);
+        WriteWorkbook(sourcePath, rows / 2, 2, seed: false);
+        var contract = ReadConfirmedContract(databasePath, sourcePath);
+        var before = BusinessFingerprint(databasePath);
+        var resolved = false;
+        var stage2Products = 0;
+        var stage2Batches = 0;
+        var stage2Workbooks = 0;
+        var stage2SucceededImports = 0;
+        ConfirmedImportResult result;
+        using (var execute = DatabaseInitializer.CreateContext(databasePath))
+        {
+            void Measure(string stage, TimeSpan _)
+            {
+                if (stage != "resolve_facts") return;
+                resolved = true;
+                stage2Products = execute.Products.Count();
+                stage2Batches = execute.Batches.Count();
+                stage2Workbooks = execute.ImportWorkbooks.Count();
+                stage2SucceededImports = execute.Imports.Count(import => import.Status == ImportStatuses.Succeeded);
+                throw new InvalidOperationException("S8-T03 forced 100k failure after Stage2.");
+            }
+            result = new ConfirmedImportLifecycleOrchestrator(measure: Measure).Execute(execute, new(
+                contract, snapshots, new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc), new DateOnly(2026, 9, 4), new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+        }
+        Assert.True(resolved);
+        Assert.Equal(50_000, stage2Products);
+        Assert.Equal(100_000, stage2Batches);
+        Assert.Equal(2, stage2Workbooks);
+        Assert.Equal(2, stage2SucceededImports);
+        Assert.False(result.Succeeded);
+        Assert.Equal(before, BusinessFingerprint(databasePath));
+        AssertFailureEvidence(evidencePath, "post_before_100000", root, databasePath, sourcePath, snapshots, before, result, null, resolveFactsCompleted: true,
+            stage2State: new Dictionary<string, int> { ["products"] = stage2Products, ["batches"] = stage2Batches, ["workbooks"] = stage2Workbooks, ["succeeded_imports"] = stage2SucceededImports });
     }
 
     private static void Run(int rows, bool requireExplicitHighScaleGate)
@@ -244,7 +458,62 @@ public sealed class S8T03ImportPerformanceTests
         Assert.True(result.Succeeded, result.Code);
     }
 
-    private static void WriteWorkbook(string path, int products, int batchesPerProduct, bool seed)
+    private static ImportConfirmationContract ReadConfirmedContract(string databasePath, string sourcePath)
+    {
+        var workbook = new ExcelTemplateReader().Read(sourcePath);
+        var classification = new ExcelFileClassifier().Classify(workbook);
+        Assert.Empty(classification.RowIssues);
+        using var preview = DatabaseInitializer.CreateContext(databasePath);
+        var plan = new ExcelImportPlanner().Plan(preview, classification);
+        return Assert.IsType<ImportConfirmationContract>(new ImportConfirmationGuard().Confirm(
+            new ImportConfirmationGuard().BindPreview(sourcePath, workbook, plan)).Contract);
+    }
+
+    private static void AssertFailureEvidence(
+        string evidencePath, string injectionStage, string root, string databasePath, string sourcePath, string snapshots,
+        string before, ConfirmedImportResult result, FailureMatrixInterceptor? interceptor, bool resolveFactsCompleted,
+        IReadOnlyDictionary<string, int>? stage2State = null)
+    {
+        var after = BusinessFingerprint(databasePath);
+        var verification = Verify(databasePath);
+        Assert.True(verification.IntegrityOk);
+        Assert.Equal(0, verification.ForeignKeyViolations);
+        using (var verify = DatabaseInitializer.CreateContext(databasePath))
+        {
+            Assert.Equal(1, verify.Imports.Count(import => import.Status == ImportStatuses.Succeeded));
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(evidencePath)!);
+        File.WriteAllText(evidencePath, JsonSerializer.Serialize(new
+        {
+            card = "S8-T03", implementation_commit = Environment.GetEnvironmentVariable("S8_T03_COMMIT") ?? "not_supplied",
+            injection_stage = injectionStage, root, database_path = databasePath, source_path = sourcePath, snapshot_directory = snapshots,
+            before_fingerprint = before, after_fingerprint = after, result_succeeded = result.Succeeded, result_code = result.Code,
+            resolve_facts_completed = resolveFactsCompleted, actual_successful_commands = interceptor?.SuccessfulCommands,
+            product_write_success_count = interceptor?.ProductWrites, batch_write_success_count = interceptor?.BatchWrites,
+            actual_successful_post_commands = interceptor?.SuccessfulPostCommands, failure_trigger_count = interceptor?.FailureTriggerCount,
+            stage2_state_before_injected_failure = stage2State,
+            integrity_check = verification.IntegrityOk ? "ok" : "failed", foreign_key_check_count = verification.ForeignKeyViolations
+        }, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private static void AssertNoMutationEvidence(string evidencePath, string injectionStage, string root, string databasePath, string sourcePath, string before, string result)
+    {
+        var after = BusinessFingerprint(databasePath);
+        var verification = Verify(databasePath);
+        Assert.Equal(before, after);
+        Assert.True(verification.IntegrityOk);
+        Assert.Equal(0, verification.ForeignKeyViolations);
+        Directory.CreateDirectory(Path.GetDirectoryName(evidencePath)!);
+        File.WriteAllText(evidencePath, JsonSerializer.Serialize(new
+        {
+            card = "S8-T03", implementation_commit = Environment.GetEnvironmentVariable("S8_T03_COMMIT") ?? "not_supplied",
+            injection_stage = injectionStage, root, database_path = databasePath, source_path = sourcePath,
+            before_fingerprint = before, after_fingerprint = after, result, actual_successful_commands = (int?)null, failure_trigger_count = (int?)null,
+            integrity_check = verification.IntegrityOk ? "ok" : "failed", foreign_key_check_count = verification.ForeignKeyViolations
+        }, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private static void WriteWorkbook(string path, int products, int batchesPerProduct, bool seed, bool invalidExpiry = false, int productOffset = 0)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
@@ -259,7 +528,8 @@ public sealed class S8T03ImportPerformanceTests
         WriteRow(writer, 1, Headers);
         for (var product = 0; product < products; product++)
         {
-            var category = (product % 10) switch { 0 => "食品", 1 => "宠物", 2 => "日用", 3 => "美妆", 4 => "家居", 5 => "香氛香水", 6 => "文具", 7 => "潮流玩具", 8 => "应季搭配", _ => "赠品小样" };
+            var productNumber = product + productOffset;
+            var category = (productNumber % 10) switch { 0 => "食品", 1 => "宠物", 2 => "日用", 3 => "美妆", 4 => "家居", 5 => "香氛香水", 6 => "文具", 7 => "潮流玩具", 8 => "应季搭配", _ => "赠品小样" };
             var stock = seed ? "20" : product % 10 == 0 ? "0" : "30";
             var shortShelfLife = category is "食品" or "宠物";
             var yearlyShelfLife = product % 10 == 2;
@@ -267,7 +537,7 @@ public sealed class S8T03ImportPerformanceTests
             {
                 var row = product * batchesPerProduct + batch + 2;
                 WriteRow(writer, row,
-                [category, $"S8T03-{product:D6}", $"690{product:D10}", $"{(seed ? "合成商品" : "合成更新商品")}{product:D6}", batch == 0 ? "2026-01-01" : "2026-02-01", batch == 0 && shortShelfLife ? "2026-09-09" : "2027-09-04", shortShelfLife ? "10" : yearlyShelfLife ? "1" : "12", shortShelfLife ? "D" : yearlyShelfLife ? "Y" : "M", "是", (seed ? 1 : batch == 0 ? 2 : 1).ToString(), stock]);
+                [category, $"S8T03-{productNumber:D6}", $"690{productNumber:D10}", $"{(seed ? "合成商品" : "合成更新商品")}{productNumber:D6}", batch == 0 ? "2026-01-01" : "2026-02-01", invalidExpiry ? "not-a-date" : batch == 0 && shortShelfLife ? "2026-09-09" : "2027-09-04", shortShelfLife ? "10" : yearlyShelfLife ? "1" : "12", shortShelfLife ? "D" : yearlyShelfLife ? "Y" : "M", "是", (seed ? 1 : batch == 0 ? 2 : 1).ToString(), stock]);
             }
         }
 
@@ -399,6 +669,82 @@ public sealed class S8T03ImportPerformanceTests
         }
 
         text.Append('\u001f');
+    }
+
+    private sealed class FailureMatrixInterceptor(string stage) : DbCommandInterceptor
+    {
+        public int SuccessfulCommands { get; private set; }
+        public int SuccessfulPostCommands { get; private set; }
+        public int FailureTriggerCount { get; private set; }
+        public int ProductWrites { get; private set; }
+        public int BatchWrites { get; private set; }
+        private bool Resolved { get; set; }
+        private bool ZeroSaved { get; set; }
+
+        public void MarkResolved() => Resolved = true;
+
+        public void MarkStockZero() => ZeroSaved = true;
+
+        public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+        {
+            FailIfRequired(command.CommandText);
+            return result;
+        }
+
+        public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<int> result)
+        {
+            FailIfRequired(command.CommandText);
+            return result;
+        }
+
+        public override DbDataReader ReaderExecuted(DbCommand command, CommandExecutedEventData eventData, DbDataReader result)
+        {
+            RecordSuccess(command.CommandText);
+            return result;
+        }
+
+        public override int NonQueryExecuted(DbCommand command, CommandExecutedEventData eventData, int result)
+        {
+            RecordSuccess(command.CommandText);
+            return result;
+        }
+
+        private void FailIfRequired(string sql)
+        {
+            var products = sql.Contains("INSERT INTO \"products\"", StringComparison.OrdinalIgnoreCase);
+            var batches = sql.Contains("INSERT INTO \"batches\"", StringComparison.OrdinalIgnoreCase);
+            var imports = sql.Contains("INSERT INTO \"imports\"", StringComparison.OrdinalIgnoreCase);
+            var postBatchUpdate = sql.Contains("UPDATE \"batches\"", StringComparison.OrdinalIgnoreCase);
+            var fail = stage switch
+            {
+                "product_part" => ProductWrites > 0 && products,
+                "batch_part" => BatchWrites > 0 && batches,
+                "import_record" => imports,
+                "post_middle" => Resolved && ZeroSaved && SuccessfulPostCommands >= 250 && postBatchUpdate,
+                _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+            };
+            if (!fail) return;
+            FailureTriggerCount++;
+            throw new InvalidOperationException("S8-T03 controlled real SQL failure: " + stage);
+        }
+
+        private void RecordSuccess(string sql)
+        {
+            SuccessfulCommands++;
+            if (sql.Contains("INSERT INTO \"products\"", StringComparison.OrdinalIgnoreCase)) ProductWrites++;
+            if (sql.Contains("INSERT INTO \"batches\"", StringComparison.OrdinalIgnoreCase)) BatchWrites++;
+            if (Resolved && ZeroSaved && sql.Contains("UPDATE \"batches\"", StringComparison.OrdinalIgnoreCase)) SuccessfulPostCommands++;
+        }
+    }
+
+    private sealed class FailOnPlannerReadInterceptor : DbCommandInterceptor
+    {
+        public int FailureTriggerCount { get; private set; }
+        public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+        {
+            if (command.CommandText.Contains("SELECT", StringComparison.OrdinalIgnoreCase)) { FailureTriggerCount++; throw new InvalidOperationException("S8-T03 controlled planner read failure."); }
+            return result;
+        }
     }
 
     private sealed class FailAfterProductWriteInterceptor : DbCommandInterceptor
