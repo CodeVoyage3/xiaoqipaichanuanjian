@@ -3,6 +3,8 @@ using System.Text;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.UI;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -137,6 +139,11 @@ public sealed class S9T03UpdateCheckTests
                         Assert.False(window.TryShowUpdateAvailable(update, _ => shown++));
                         Assert.False(window.TryShowUpdateAvailable(UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 0)), _ => shown++));
                         Assert.Equal(1, shown);
+                        WpfDialogService.ShowUpdateAvailable(window, new UpdateNotificationViewModel(update, () => { }, () => { }));
+                        var prompt = System.Windows.Application.Current.Windows.Cast<Window>().Single(item => item.Title == "发现新版本");
+                        var buttons = (StackPanel)((StackPanel)prompt.Content).Children[^1];
+                        Assert.Equal(Brushes.White, ((TextBlock)((Button)buttons.Children[1]).Content).Foreground);
+                        prompt.Close();
                         window.Close();
                         Assert.False(window.TryShowUpdateAvailable(new UpdateCheckResult(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 0), new Version(1, 0, 2)), _ => shown++));
                     }

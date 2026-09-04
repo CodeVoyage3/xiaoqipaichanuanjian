@@ -27,7 +27,7 @@ internal static class WpfDialogService
         if (!string.IsNullOrWhiteSpace(model.ReleaseNotes)) panel.Children.Add(new ScrollViewer { MaxHeight = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = new TextBlock { Text = model.ReleaseNotes, TextWrapping = TextWrapping.Wrap } });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
-        var update = new Button { Content = "立即更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
+        var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
         later.Click += (_, _) => { model.DismissCommand.Execute(null); dialog.Close(); };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
         buttons.Children.Add(later); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => later.Focus(); dialog.Show();
