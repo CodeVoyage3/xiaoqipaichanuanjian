@@ -1,6 +1,8 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T05_CLOSED / WAITING_NEXT_AUTHORIZATION`；S8-T01～T05关闭，阶段整体尚未完成。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T06_CURRENT / NOT_ACCEPTED`；T01～T05关闭。2026-09-04用户批准最后卡T06，fetch main=f981211、clean/0/0；Task/Acceptance已建立，阶段整体待最终新鲜验收。
+
+本次授权覆盖下方历史“不创建S8-T06”停止点。全新Terra medium/priority，仅复用及必要最小测试；Sol独立验收、默认零生产改动，全部合成TEMP/GUID。WAL来源不可证明、坏当前不能保护时阻断及物理风险继续保留。完成后创建STAGE-8-CLOSEOUT.md并关闭阶段；不启动Stage9或任何新Task。
 
 S8-T05已TECHNICALLY_ACCEPTED / CLOSED：代码/测试e0e5a0d；Sol新鲜无filter984/984、专项100/100、新鲜48/48硬杀、build0/0、EF无漂移、migration9、禁止项与diff检查通过。用户接受合法外来WAL业务漂移为residual risk，不新增来源防护；旧失败保留，不冒充识别成功。严重坏当前不能保护时Restore仍阻断。治理普通push后停止，不创建S8-T06；未来阶段收口须继续列入上述两项能力限制和未证明的物理介质风险。
 
@@ -29,11 +31,9 @@ S8-T05已TECHNICALLY_ACCEPTED / CLOSED：代码/测试e0e5a0d；Sol新鲜无filt
 
 S8-T03已于2026-09-04获单卡授权并正式建档，基线e4c628c；只做大Excel权威导入性能及受控异常原子回滚。用户已永久取消Import Undo，删除全部execution/eligibility验证要求，不以Restore替代、不再规划。设置页重置数据仅记录未来独立需求，不建Task或实施。
 
-## 后续候选规划（尚未创建 Task）
+## 最后正式任务
 
-以下仅为候选顺序，不构成编号任务、实施授权或 Acceptance：
-
-1. S8-T06：Stage 8 最终高规模回归与稳定性收口。
+S8-T06已获单卡授权并正式建立Task/Acceptance：最终高规模回归与稳定性收口。无后续自动任务。
 
 ## 冻结边界
 

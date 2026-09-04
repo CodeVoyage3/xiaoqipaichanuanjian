@@ -1,5 +1,11 @@
 # 最新交接
 
+## S8-T06正式开工（2026-09-04，覆盖下方历史停止点）
+
+- 用户批准Stage8最后一张卡S8-T06；IN_PROGRESS / S8-T06_CURRENT / NOT_ACCEPTED。已重新fetch，main=origin/main=f9812110d8616801852c56aca40b802f3c578438，clean、0/0；T01～T05 CLOSED。
+- Task/Acceptance已建立；派发全新Terra medium/priority复用最终回归设施，默认不改生产；Sol独立验收。仅TEMP/GUID，不访问正式库。保留WAL来源与坏库无法保护的能力限制，不创建Stage9/升级/重置/Undo。
+- 全部门禁通过才关闭Stage8；当前尚未取得本卡新鲜结果，不沿用旧数字预报通过。
+
 ## S8-T05正式关闭（2026-09-04，覆盖下方历史状态）
 
 - S8-T05 TECHNICALLY_ACCEPTED / CLOSED；最终代码/测试e0e5a0dc6eaba2d347246daa571a35cbbbcf3004。Stage8仍IN_PROGRESS，S8-T01～T05关闭，等待后续授权；不创建S8-T06。

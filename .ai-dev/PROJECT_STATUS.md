@@ -2,8 +2,8 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01～T05 TECHNICALLY_ACCEPTED / CLOSED，WAITING_NEXT_AUTHORIZATION；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01均已关闭；Stage9未开始
-- 当前工作分支：`main`（S8-T05治理收口，普通push后停止）
+- 状态：Stage8 IN_PROGRESS / S8-T06_CURRENT / NOT_ACCEPTED；T01～T05 CLOSED。用户已批准最后卡T06，Stage9 NOT_STARTED；V1各卡继续关闭。
+- 当前工作分支：`main`（S8-T06开工fetch=f981211，clean/0/0；最终新鲜门禁待执行）
 - 最终代码/测试：S8-T05 `e0e5a0d`，Sol新鲜无filter Release984/984、专项100/100、48/48硬杀、build0/0、EF无漂移、migration9。已接受合法外来WAL来源不可验证的residual risk，不新增防护。最终归档SHA以治理commit/push回执为准，详见Acceptance/HANDOFF
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
