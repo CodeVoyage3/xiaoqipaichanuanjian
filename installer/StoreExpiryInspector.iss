@@ -226,10 +226,16 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ExePath: String;
+  Command: String;
+  Arguments: String;
 begin
   if (CurStep = ssPostInstall) and not WasInstalled then
   begin
     ExePath := ExpandConstant('{app}\app\StoreExpiryInspector.exe');
-    RegWriteStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', '{#RunValueName}', '"' + ExePath + '" ' + RuntimeArguments(''));
+    Command := '"' + ExePath + '"';
+    Arguments := RuntimeArguments('');
+    if Arguments <> '' then Command := Command + ' ' + Arguments;
+    if not RegWriteStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', '{#RunValueName}', Command) then
+      RaiseException('无法写入当前用户开机启动设置。');
   end;
 end;
