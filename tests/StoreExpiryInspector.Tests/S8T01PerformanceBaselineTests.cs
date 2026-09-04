@@ -100,7 +100,7 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.NotNull(snapshot); Assert.True(snapshot.CanProceed, snapshot.Code); Assert.NotNull(snapshot.Metadata);
         var snapshotVerification = Verify(snapshot.Metadata.SnapshotPath);
         Assert.True(snapshotVerification.IntegrityOk); Assert.Equal(0, snapshotVerification.ForeignKeyViolations); Assert.Equal(9, snapshotVerification.MigrationCount);
-        measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", 0, 0, []));
+        measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", null, 0, []));
 
         var after = ReadCounts(databasePath);
         AssertCountsEqual(before, after);
@@ -218,8 +218,19 @@ public sealed class S8T01PerformanceBaselineTests
     private static string FileHash(string path) { using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant(); }
     private static string HashText(string text) => Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
     private static string SqliteVersion(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); return c.ServerVersion; }
-    private static int ReturnedDtoRows(object result) => result switch { InspectionTaskSearchResult value => value.Items.Count, InspectionDashboardResult value => value.UrgentTasks.Count, InspectionHistoryPageResult value => value.Items.Count, System.Collections.ICollection value => value.Count, _ => 0 };
-    private static Measure FailedMeasure(string name, Exception exception, TimeSpan elapsed, IReadOnlyList<CapturedCommand> captures, IReadOnlyList<CommandEvidence>? evidence = null) => new(name, [], elapsed.TotalMilliseconds, elapsed.TotalMilliseconds, captures.Count, evidence ?? [], "warm=1; measured=3; cold=process-start not measured", $"{Classify(exception)}; type={exception.GetType().FullName}; message={exception.Message}; elapsed_ms={elapsed.TotalMilliseconds:F3}", Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", 0, 0, captures);
+    private static int? ReturnedDtoRows(object result) => result switch
+    {
+        InspectionTaskSearchResult value => value.Items.Count,
+        InspectionDashboardResult value => value.UrgentTasks.Count,
+        InspectionHistoryPageResult value => value.Items.Count,
+        InspectionTaskDetailResult value => value.Detail?.TaskItems.Count,
+        InspectionHistoryDetailResult value => value.Detail?.Items.Count,
+        DailyReminderResult value => value.Items.Count + value.PreReminderItems.Count,
+        InspectionItemRevisionHistoryResult value => value.History?.Revisions.Count,
+        System.Collections.ICollection value => value.Count,
+        _ => null
+    };
+    private static Measure FailedMeasure(string name, Exception exception, TimeSpan elapsed, IReadOnlyList<CapturedCommand> captures, IReadOnlyList<CommandEvidence>? evidence = null) => new(name, [], elapsed.TotalMilliseconds, elapsed.TotalMilliseconds, captures.Count, evidence ?? [], "warm=1; measured=3; cold=process-start not measured", $"{Classify(exception)}; type={exception.GetType().FullName}; message={exception.Message}; elapsed_ms={elapsed.TotalMilliseconds:F3}", Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", null, 0, captures);
     private static string Classify(Exception exception) => exception is OutOfMemoryException ? "oom" : exception is TimeoutException || exception.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ? "timeout" : exception is SqliteException && exception.Message.Contains("locked", StringComparison.OrdinalIgnoreCase) ? "lock" : exception is SqliteException && exception.Message.Contains("too many SQL variables", StringComparison.OrdinalIgnoreCase) ? "too_many_sql_variables" : "crash_or_error";
     private static IReadOnlyList<CommandEvidence> CreateCommandEvidence(string databasePath, string root, IReadOnlyList<CapturedCommand> commands) => commands.Select((command, index) =>
     {
@@ -259,7 +270,7 @@ public sealed class S8T01PerformanceBaselineTests
     private sealed record CapturedParameter(string Name, string DbType, string? Value);
     private sealed record CapturedCommand(string Kind, string Sql, IReadOnlyList<CapturedParameter> Parameters);
     private sealed record CommandEvidence(string Kind, int SqlLength, string SqlSha256, IReadOnlyList<CapturedParameter> Parameters, string? Sql, string? ArtifactPath, IReadOnlyList<string> Plan);
-    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<CommandEvidence> Commands, string Conditions, string? Blocker, long WorkingSetBytes, long ManagedAllocatedBytes, string MemoryKind, string AllocationDelta, int ReturnedDtoRows, int ReaderReadOperations, IReadOnlyList<CapturedCommand> CapturedCommands);
+    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<CommandEvidence> Commands, string Conditions, string? Blocker, long WorkingSetBytes, long ManagedAllocatedBytes, string MemoryKind, string AllocationDelta, int? ReturnedDtoRows, int ReaderReadOperations, IReadOnlyList<CapturedCommand> CapturedCommands);
     private sealed record Diagnostics(bool FullScan, bool TempBTree, string NPlusOne, string OverMaterialization, string InMemoryFiltering, bool Timeout, bool Lock, bool Crash, bool Oom);
     private sealed record Verification(bool IntegrityOk, int ForeignKeyViolations, int MigrationCount);
     private sealed record ExcludedCheck(long Products, long Batches, long OpenTasks, long ReminderEligibleBatches);

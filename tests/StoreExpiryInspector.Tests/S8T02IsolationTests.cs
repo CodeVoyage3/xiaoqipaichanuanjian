@@ -195,6 +195,29 @@ public sealed class S8T02IsolationTests
         Assert.Equal(0, factoryCalls);
     }
 
+    [Fact]
+    public async Task TodayBulkSelectionDisablesContentCommandsAndNotifiesBindings()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var items = Enumerable.Range(1, 51).Select(id => new InspectionTaskListItem(id, id, "商品", $"SKU{id}", null, "expired", 1, 1, new DateOnly(2026, 9, 4), false, "食品")).ToArray();
+        var shell = new ShellViewModel(taskLoader: request => new(items.Take(request.PageSize).ToArray(), items.Length, request.Page, request.PageSize), categoryLoader: () => ["食品"], todayTaskIdsLoader: _ => { started.TrySetResult(); release.Task.GetAwaiter().GetResult(); return items.Select(item => item.TaskId).ToArray(); }, todayOpenTaskIdsLoader: ids => ids.ToArray(), logException: _ => { });
+        await shell.TodayInspection.LoadAsync();
+        var properties = new List<string?>(); var commandChanges = 0;
+        shell.TodayInspection.PropertyChanged += (_, eventArgs) => properties.Add(eventArgs.PropertyName);
+        shell.TodayInspection.ExportCommand.CanExecuteChanged += (_, _) => commandChanges++;
+        shell.TodayInspection.SelectAllCommand.Execute(null);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(shell.TodayInspection.CanUseContent);
+        Assert.False(shell.TodayInspection.ReloadCommand.CanExecute(null));
+        Assert.False(shell.TodayInspection.ExportCommand.CanExecute(null));
+        Assert.False(shell.TodayInspection.NextPageCommand.CanExecute(null));
+        Assert.Contains(nameof(TodayInspectionViewModel.CanUseContent), properties);
+        release.SetResult();
+        await WaitUntil(() => shell.TodayInspection.SelectedCount == 51);
+        Assert.True(commandChanges > 0);
+    }
+
     private static InspectionTaskListItem TaskItem(string category) =>
         new(1, 1, "商品", "SKU", null, "expired", 1, 1, new DateOnly(2026, 9, 4), false, category);
 

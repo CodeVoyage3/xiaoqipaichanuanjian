@@ -138,7 +138,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _checkDateText = _businessToday().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         _checkDateValue = _businessToday().ToDateTime(TimeOnly.MinValue);
-        ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsLoadingTasks && !IsActionBusy);
+        ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => CanUseContent);
         SelectAllCommand = new RelayCommand(_ => { _ = SetSelectionAsync(true); }, _ => CanUseContent && !_isBulkSelectionBusy && Tasks.Count != 0);
         ClearSelectionCommand = new RelayCommand(_ => { _ = SetSelectionAsync(false); }, _ => CanUseContent && !_isBulkSelectionBusy && SelectedCount != 0);
         PreviousPageCommand = new RelayCommand(_ => { _ = GoToPageAsync(CurrentPage - 1); }, _ => CanUseContent && CurrentPage > 1);
@@ -180,8 +180,8 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public RelayCommand PreviousPageCommand { get; }
     public RelayCommand NextPageCommand { get; }
     public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.IsDraftComplete).Select(task => task.TaskId).ToArray() ?? [];
-    public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
-    public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
+    public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
+    public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsBusy => IsActionBusy;
     public bool HasLoadedTasks => _hasLoadedTasks;
     public bool CanUseContent => !IsLoadingTasks && !IsActionBusy && !_isBulkSelectionBusy;
