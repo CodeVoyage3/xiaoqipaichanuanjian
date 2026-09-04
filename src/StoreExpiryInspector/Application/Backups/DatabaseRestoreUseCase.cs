@@ -204,6 +204,7 @@ public sealed class DatabaseRestoreUseCase
                 return Failure(DatabaseRestoreCodes.StagingFailed, "恢复 staging 文件创建失败，正式数据库未替换。", protection);
             }
 
+            checkpoint?.Invoke("before_staging_validation", stagingPath);
             var stagingValidation = Validate(stagingPath, expectedMigrations, sourceValidation.Metadata!, requireMetadata: false);
             if (!stagingValidation.Succeeded)
             {

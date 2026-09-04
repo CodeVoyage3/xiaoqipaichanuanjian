@@ -32,8 +32,8 @@ public sealed class S8T01PerformanceBaselineTests
     {
         var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorS8T01", "S8-T01-guard");
         Assert.Throws<ArgumentException>(() => ValidateRoot("relative", "relative.db", root));
-        Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), DatabaseInitializer.GetDefaultDatabasePath(), root));
-        Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(root, "app.db"), DatabaseInitializer.GetDefaultBackupDirectory()));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), Path.Combine(Path.GetTempPath(), "outside", "app.db"), root));
+        Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(root, "app.db"), Path.Combine(Path.GetTempPath(), "outside", "backups")));
         Assert.Throws<ArgumentException>(() => ValidateRoot(Environment.CurrentDirectory, Path.Combine(Environment.CurrentDirectory, "S8-T01.db"), root));
         Assert.Throws<ArgumentException>(() => ValidateRoot(Path.GetTempPath(), Path.Combine(Path.GetTempPath(), "S8-T01.db"), Path.Combine(Path.GetTempPath(), "S8-T01-snapshot")));
         Assert.Throws<ArgumentException>(() => ValidateRoot(root, Path.Combine(Path.GetTempPath(), "elsewhere", "S8-T01.db"), Path.Combine(root, "S8-T01-snapshot")));
@@ -139,6 +139,7 @@ public sealed class S8T01PerformanceBaselineTests
 
     private static StoreDbContext Open(string path) => DatabaseInitializer.CreateContext(path);
 
+    internal static void SeedForS8T05(string path) => Seed(path);
 
     private static void Seed(string path)
     {
