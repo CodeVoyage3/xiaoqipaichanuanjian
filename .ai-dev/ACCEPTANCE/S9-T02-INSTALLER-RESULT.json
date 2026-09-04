@@ -1,0 +1,90 @@
+{
+  "task": "S9-T02",
+  "status": "TECHNICALLY_ACCEPTED / CLOSED",
+  "openingMain": "34c336a3f03e823048e5987d102001911527e5b2",
+  "candidate": "5a8fe57d53697afcec066c8e70d63a346d45c5df",
+  "installer": {
+    "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\4b26880c-ba60-471c-8bde-2afd6401e5ee\\production-final\\StoreExpiryInspector-Setup-1.0.0.exe",
+    "name": "StoreExpiryInspector-Setup-1.0.0.exe",
+    "bytes": 49294439,
+    "sha256": "AE1608F57CA66BCA08FC5545DD7674E8F4057BD4F46420EE6390E3B227F8F258",
+    "compilerVersion": "6.7.3",
+    "appId": "{8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14}",
+    "appVersion": "1.0.0",
+    "fixedPEVersion": "1.0.0.0",
+    "signature": "NotSigned",
+    "installRoot": "%LOCALAPPDATA%\\Programs\\StoreExpiryInspector",
+    "exe": "%LOCALAPPDATA%\\Programs\\StoreExpiryInspector\\app\\StoreExpiryInspector.exe",
+    "dataRoot": "%LOCALAPPDATA%\\StoreExpiryInspector",
+    "privilegesRequired": "lowest",
+    "uninstaller": "%LOCALAPPDATA%\\Programs\\StoreExpiryInspector\\unins000.exe",
+    "shortcuts": "Current-user Desktop and Start Menu, 门店效期排查软件, stable EXE",
+    "runKey": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "runName": "StoreExpiryInspector",
+    "runValue": "Quoted absolute stable EXE path, no trailing space",
+    "formalIdentityExecuted": false
+  },
+  "payload": {
+    "files": 420,
+    "bytes": 164218708,
+    "sourceCommit": "55aa751a9892d9adc49a3ee6eb94919439295275",
+    "assemblyVersion": "1.0.0.0",
+    "fileVersion": "1.0.0.0",
+    "runtime": "win-x64 self-contained .NET 10.0.10 multi-file",
+    "audit": "S9-T02-SOL-VERIFY/payload-audit.json",
+    "dbOrSecretFindings": [],
+    "pdbIncluded": false
+  },
+  "independent": {
+    "matrixRuns": 2,
+    "matrixEach": "9/9 PASS",
+    "finalMatrix": "S9-T02-SOL-VERIFY/final-matrix.json",
+    "negativeCases": "12/12 expected results",
+    "negativeEvidence": "S9-T02-SOL-VERIFY/negative-results.json",
+    "negativeFingerprintCaveat": "busy_writer was not byte-compared while write handle held; linked_data target was independently compared by script",
+    "cleanup": "Both Sol identities and known Terra test identities cleaned; synthetic data and evidence retained",
+    "build": {
+      "warnings": 0,
+      "errors": 0,
+      "elapsedSeconds": 11.09
+    },
+    "release": {
+      "total": 996,
+      "passed": 996,
+      "failed": 0,
+      "errors": 0,
+      "aborted": 0,
+      "timeout": 0,
+      "notExecuted": 0,
+      "exitCode": 0,
+      "filter": null,
+      "runnerDuration": "10m35s",
+      "wallSeconds": 636.33,
+      "trx": "C:\\Users\\39037\\AppData\\Local\\Temp\\4b26880c-ba60-471c-8bde-2afd6401e5ee\\final-release\\full-release.trx",
+      "gates": "High-scale/real Excel and independent worker gates disabled; empty returns are not such evidence",
+      "freshRunCount": 1
+    },
+    "ef": {
+      "exitCode": 0,
+      "pendingModelChanges": false,
+      "factory": "Data Source=:memory:"
+    },
+    "migrations": {
+      "count": 9,
+      "last": "20260901155124_AddPolicyAndBaselineFoundation",
+      "noConnect": true,
+      "appliedStatusOfFormalDatabase": "NOT_CHECKED"
+    }
+  },
+  "formalDataAccessed": false,
+  "githubReleaseCreated": false,
+  "cleanWin10Win11GuiVerified": false,
+  "limits": [
+    "Unsigned; SmartScreen reputation not established",
+    "Developer Windows 11 silent install evidence only; clean-machine wizard GUI pending",
+    "Stage8 foreign legal WAL provenance and physical-media limits unchanged",
+    "TEMP artifacts can be removed by OS cleanup"
+  ],
+  "next": "Suggestion only: S9-T03 public version metadata and offline-friendly check/prompt; no task created; requires explicit authorization",
+  "githubReleaseCount": 0
+}

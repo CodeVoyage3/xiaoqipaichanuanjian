@@ -1,10 +1,21 @@
 # 最新交接
 
-## Stage9 / S9-T02正式启动（2026-09-04，覆盖下方历史停止点）
+## Stage9 / S9-T02正式关闭（2026-09-04，当前权威状态）
+
+- S9-T02 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；Stage8、T01保持CLOSED。T03未创建。开工main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0；最终生产/测试5a8fe57d53697afcec066c8e70d63a346d45c5df，之后仅治理收口。最终main以本次普通push/fetch回执为准。
+- 全新GPT-5.6 Terra medium/priority实施并已提交停止；Sol仅治理、完整diff、独立复验。Sol两轮真实独立身份A-I各9/9、preflight12/12；最终无filter Release996/996，0failure/error/timeout/aborted/skip、10m35s；build0warning/0error；EF无漂移，migration9末条20260901155124_AddPolicyAndBaselineFoundation。门禁空return不当高规模或真实Excel证据。
+- 正式产物StoreExpiryInspector-Setup-1.0.0.exe，49,294,439bytes，SHA256 AE1608F57CA66BCA08FC5545DD7674E8F4057BD4F46420EE6390E3B227F8F258；本地TEMP/4b26880c-ba60-471c-8bde-2afd6401e5ee/production-final。Inno6.7.3，未签名；AppId={8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14}，后续1.x不变。lowest/current-user，固定%LOCALAPPDATA%/Programs/StoreExpiryInspector/app/StoreExpiryInspector.exe；完整420文件/164218708bytes self-contained payload，包审计无DB/secret/开发路径命中，二进制不入Git。
+- 首装双快捷方式/Run on、同版本修复且尊重Run off、卸载全部数据保留、重装读取原合成BLOB/设置、数字降级阻断及旧/未知/坏Schema写入前阻断均实测通过。源DB/sidecar只读复制，SQLite仅检查临时副本，不调用Migrate/修复/业务写入。正式身份EXE从未执行，正式数据根从未探测/访问/哈希/复制；测试安装/Run/双快捷方式/卸载项清理，合成数据可恢复保留。
+- 证据见ACCEPTANCE/S9-T02.md、S9-T02-INSTALLER-RESULT.json与S9-T02-SOL-VERIFY。历史返修/沙箱安装失败/NuGet缓存问题保留；后续已独立复验，不冒充原始候选通过。最终源码无业务算法/Schema/ModelSnapshot/index/生产PRAGMA/依赖变化。
+- 开发机Win11静默矩阵不替代干净Win10/11或门店GUI；未解决SmartScreen信誉。Stage8合法外来WAL来源、严重坏当前无法保护时Restore阻断、真实物理介质安全限制不变。TEMP产物可能被系统清理。
+- 下一步仅建议S9-T03公开版本元数据及离线友好检查/提示，明确无Release/无更新/网络失败；不自动建卡、不下载/替换/实现Updater，不创建正式Release。重置数据另需授权，Undo永久取消。按授权普通push main核对clean/0/0后停止。
+
+## Stage9 / S9-T02正式启动（历史，已被上方关闭状态覆盖）
 
 - 用户仅授权S9-T02当前用户首次安装器与数据保留安全门禁；Stage9 IN_PROGRESS / S9-T02_CURRENT，T02 IN_PROGRESS / NOT_ACCEPTED。开工fetch main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0，无既有T02，现已建立Task/Acceptance。
 - Sol仅治理/完整diff/独立复验；全新Terra medium/priority实施并提交后停、不push。仅官方Inno6、lowest当前用户、稳定AppId/Programs/app入口、首装Run on与重装尊重off、卸载保留全部数据、降级及非健康migration9只读阻断。全部测试严格TEMP/GUID独立身份，禁止探测正式库。
 - 待实际安装器A-I矩阵、包安全、fresh Release/build/EF/migration门禁；尚未验收。Stage8及T01仍CLOSED。不创建T03、不实现Updater/Release/重置/Undo。验收后普通push main并停止。
+- 实施中回执：治理a389cd4；Terra候选c4acd2f及返修b6b60d8/62ef4d3均未获验收，尚未完整执行A-I；Sol已退回同一Terra补齐。已有11/11仅实施者局部单测，不是安装矩阵或Sol全量证据。无push、无正式身份安装。官方Inno6.7.3已以签名Valid/Pyrsys B.V.的portable模式准备，详见Acceptance。
 
 ## Stage9 / S9-T01正式关闭（2026-09-04，覆盖下方开工状态）
 

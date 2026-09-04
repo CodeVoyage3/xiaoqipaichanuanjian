@@ -1,0 +1,7 @@
+{
+  "httpStatus": 200,
+  "count": 0,
+  "authenticated": false,
+  "checkedAt": "2026-09-04T23:17:53.7803804+08:00",
+  "endpoint": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases?per_page=100"
+}

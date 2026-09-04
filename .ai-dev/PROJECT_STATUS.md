@@ -2,7 +2,9 @@
 
 ## 2026-09-04 当前授权覆盖状态
 
-Stage9 IN_PROGRESS / S9-T02_CURRENT；S9-T02 IN_PROGRESS / NOT_ACCEPTED，Task/Acceptance已创建；开工fetch main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0。仅当前用户Inno6首次安装器及数据保留/重装偏好/降级/只读Schema安全门禁。全新Terra实施，Sol治理与独立验收。T01及Stage8保持CLOSED；T03未创建。下方既有状态是历史回执。
+Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02 TECHNICALLY_ACCEPTED / CLOSED。全新Terra实施，Sol独立两轮A-I各9/9、preflight12/12、Release996/996（0failure/error/aborted/timeout）、build0/0、EF无漂移/migration9通过。正式当前用户Inno6.7.3安装器49,294,439bytes已生成，AppId固定{8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14}，程序路径稳定、重装偏好/卸载保数据/降级及Schema门禁通过；未签名，未访问正式数据。详见S9-T02 Acceptance与INSTALLER-RESULT.json。最终生产/测试5a8fe57，之后仅治理；普通push/fetch回执给出最终main。T01及Stage8保持CLOSED，T03未创建，不实施Updater/Release/重置/Undo，等待用户新授权。
+
+## 以下为S9-T01及更早历史回执（不覆盖当前状态）
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 9｜安装、发布与在线升级交付（2026-09-04用户授权启动）
