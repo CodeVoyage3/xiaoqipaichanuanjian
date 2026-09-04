@@ -1,13 +1,17 @@
 # 最新交接
 
-## S8-T04当前开工（2026-09-04）
+## S8-T04当前暂停点（2026-09-04）
 
 - 用户已单卡授权S8-T04。重新fetch HEAD=origin/main=2142cf72588fb727cca6efd58509c113646de1e2，clean、0/0，无冲突；工作分支codex/s8-t04-crash-consistency。
-- Task/Acceptance已建，状态IN_PROGRESS / NOT_ACCEPTED，待全新Terra medium/priority实施；Sol只治理和独立验收。
+- 状态`PAUSED_RELEASE_SCOPE_CONFIRMATION / NOT_ACCEPTED`。全新Terra medium/priority测试实现`9eff2724a9bb5dcb857d8bec6129d3ef3b713b46`已提交并停止；Sol只治理和独立验收，生产代码零修改。
+- Sol最终48/48真实强杀通过（Import10k六点×3、100k前后两点×3；Inspection五点×3；Inventory三点×3），36次提交前完整回滚、12次提交后完整保留。全部integrity ok/FK0/migration9/可重开可写；100k提交后50k Product/100k Batch/5001 Task。19/19 test rows，21.5144分钟、exit0；其中2个空返回facts不另算crash。逐次JSON/指纹/原文件SHA见`.ai-dev/ACCEPTANCE/S8-T04-CRASH-RESULT.json`。
+- 隔离10项通过（另2项仅100k关闭gate），过滤Release838/838；独立Release build0warning/0error，EF无漂移，migration --no-connect仍9末条AddPolicyAndBaselineFoundation。完整diff及diff --check通过，无Schema/index/PRAGMA策略/依赖/工程变化。
+- 唯一未完成门禁：既有Release有Stage2/7人工损坏隔离SQLite的用例，与本卡禁令冲突。已请求用户澄清，仅保守排除4类共87项，未运行它们；不能称全量Release通过。尚无答复，故不TECH_ACCEPTED/CLOSED、不push main。下次只需先确认旧隔离回归是否放行；如放行，再跑真正全量及收口，不额外重复48次高规模专项，也不复用旧卡Terra。
+- 开发阶段握手/reader/比较/I/O错误及一次缺最终JSON的Import试跑全部保留，不混入最终48次。旧I/O根因未独立确定；最终通过不改写旧失败或旧正式库疑似访问。48个最终worker实例都已退出，复用PID未被操作。
 - 仅TEMP/GUID真实子进程硬终止，权威大Import/InspectionSubmission/InventoryAdjustment；不访问正式库，不新增工程/依赖/Schema/index/migration/PRAGMA，不创建S8-T05，不启动Stage9/升级/重置数据。Undo永久取消。
-- 完成后按授权普通push main并停止。以下是S8-T03历史归档回执，不再是当前停止点。
+- 最新复fetch origin/main仍2142cf7；本地代码及治理未push。只有补齐全量Release且全部门禁完成后，才按授权普通push main并停止。以下是S8-T03历史归档回执，不再是当前停止点。
 
-## 当前状态与停止点
+## S8-T03历史状态与停止点
 
 - Stage8：`IN_PROGRESS / S8-T03_CLOSED / WAITING_NEXT_AUTHORIZATION`。S8-T01、S8-T02、S8-T03技术验收关闭；S8-T04～T06仅候选，未创建Task。Stage9、在线升级未开始。
 - V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01继续CLOSED；V1-UI-01保持GUI_ACCEPTANCE_PASSED。本卡没有启动真实GUI，不冒充新的GUI人工验收。

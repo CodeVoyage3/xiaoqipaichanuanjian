@@ -2,14 +2,16 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01、S8-T02、S8-T03 已技术验收关闭；S8-T04已授权启动；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 状态：Stage 8 进行中，S8-T01、S8-T02、S8-T03 已技术验收关闭；S8-T04为PAUSED_RELEASE_SCOPE_CONFIRMATION / NOT_ACCEPTED；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前工作分支：`codex/s8-t04-crash-consistency`；归档目标远端`main`
-- 当前最新 HEAD：本文件所在归档提交（具体 SHA 以 `git rev-parse HEAD` 为准）；本卡代码验收基线`31ace5b`
+- 当前最新 HEAD：本文件所在本地治理提交（具体 SHA 以 `git rev-parse HEAD` 为准，尚未推送）；S8-T04测试代码基线`9eff272`
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T04（2026-09-04）测试实现9eff272：Sol独立48/48真实硬终止，36提交前回滚、12提交后保留，全部integrity ok/FK0/migration9/可重开可写；隔离实际10项通过，过滤Release838/838，独立build0/0、EF无漂移、schema/index/依赖/工程不变，生产零修改。完整Release与禁止人为损坏SQLite冲突，4个旧类共87项未执行，待用户范围澄清；不能关闭或push main。原始证据索引S8-T04-CRASH-RESULT.json，失败开发历史见Acceptance。重fetch origin/main仍2142cf7，不创建S8-T05。
 
 - S8-T04开工（2026-09-04）：重新fetch HEAD=origin/main=2142cf72588fb727cca6efd58509c113646de1e2、clean、0/0。Task/Acceptance已建；待全新Terra medium/priority实施TEMP/GUID子进程硬终止矩阵，Sol独立验收。禁止正式库访问、新工程/依赖/索引/migration，不创建S8-T05；以下旧卡停止点为历史回执，不覆盖本次授权。
 

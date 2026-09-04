@@ -1,0 +1,3155 @@
+{
+  "card": "S8-T04",
+  "status": "CRASH_MATRIX_PASSED_NOT_FULLY_ACCEPTED",
+  "implementation_commit": "9eff2724a9bb5dcb857d8bec6129d3ef3b713b46",
+  "baseline": "2142cf72588fb727cca6efd58509c113646de1e2",
+  "executor": "Sol independent run",
+  "parent_pid": 23904,
+  "mechanism": "Process.Kill(entireProcessTree:true); validated worker process handle waited before reopen",
+  "repeat_policy": "Fixed 3 per checkpoint; no retry-until-pass",
+  "summary": {
+    "cases": 48,
+    "pass": 48,
+    "fail": 0,
+    "precommit_rollback": 36,
+    "postcommit_preserved": 12,
+    "integrity_ok": 48,
+    "fk_zero": 48,
+    "migrations_nine": 48
+  },
+  "trx": {
+    "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04Sol\\21f75e5a30954ac0be9eb2372a894bf4\\s8t04-final-matrix.trx",
+    "sha256": "9FC15DB04AFFFD8ACB61D2895401451D71E8CD2BF844FD443E6BCF47BF915576",
+    "test_cases": 19,
+    "notes": "16 theory rows each execute 3 kills; input guard 1; disabled worker/diagnostic facts 2. All 100k cases explicitly enabled.",
+    "elapsed_minutes": 21.5144
+  },
+  "limits": [
+    "Not power-loss or physical corruption evidence",
+    "Historical development failures retained in Acceptance, excluded from final matrix",
+    "87 existing Release tests excluded pending permission conflict; Release full suite not passed",
+    "No production code, schema, index, migration, dependency or project changes"
+  ],
+  "cases": [
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "batches_partial",
+      "iteration": 1,
+      "worker_pid": 428,
+      "stage": "sql_succeeded:INSERT INTO \"batches\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\4fe3b5a96c964c578bfcce0f0ea6afa9\\evidence\\import-10000-batches_partial-1.json",
+      "evidence_sha256": "B6BF25A79B29FAC8C6E8487C23F963E2C1E578295CB7BDEA77964496CC20849D",
+      "comparison": "raw_after_equals_before",
+      "before": "9325b9d3f45500b3b798082bbc6401cb17633a3a9f8b0198204b072d3c6621f8",
+      "expected": "9325b9d3f45500b3b798082bbc6401cb17633a3a9f8b0198204b072d3c6621f8",
+      "after": "9325b9d3f45500b3b798082bbc6401cb17633a3a9f8b0198204b072d3c6621f8",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:50:04.8554739Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:03.3168201Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:50:08.2961247Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:08.2871323Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "batches_partial",
+      "iteration": 2,
+      "worker_pid": 42788,
+      "stage": "sql_succeeded:INSERT INTO \"batches\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\06f475065755489893ea1d35b624a259\\evidence\\import-10000-batches_partial-2.json",
+      "evidence_sha256": "DBE40553BBA4A244F16AC0937B6EEB9655F3260E5C109CA7BD732954B280D55B",
+      "comparison": "raw_after_equals_before",
+      "before": "4bf506a7a2c1b37c9f28c99e7bdbf72996cbb1c1e73cf0a3cf9db4a7492cead9",
+      "expected": "4bf506a7a2c1b37c9f28c99e7bdbf72996cbb1c1e73cf0a3cf9db4a7492cead9",
+      "after": "4bf506a7a2c1b37c9f28c99e7bdbf72996cbb1c1e73cf0a3cf9db4a7492cead9",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:50:23.9126394Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:22.4371781Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:50:27.10916Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:27.1038287Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "batches_partial",
+      "iteration": 3,
+      "worker_pid": 42612,
+      "stage": "sql_succeeded:INSERT INTO \"batches\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\94c854e57a86436b9dd5dba1a9ce873e\\evidence\\import-10000-batches_partial-3.json",
+      "evidence_sha256": "11CEE362A3624F86BEB5DA74F487EB80D41408536AB4587A876A9F0888F3B55F",
+      "comparison": "raw_after_equals_before",
+      "before": "b85e1d817e49d92190c03de27f2eb9ae65393e164ba09d6247072e3d4f7a5f29",
+      "expected": "b85e1d817e49d92190c03de27f2eb9ae65393e164ba09d6247072e3d4f7a5f29",
+      "after": "b85e1d817e49d92190c03de27f2eb9ae65393e164ba09d6247072e3d4f7a5f29",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:50:41.7772199Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:40.3892488Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:50:44.9098496Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:44.9028439Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "post_task",
+      "iteration": 1,
+      "worker_pid": 33784,
+      "stage": "sql_succeeded:INSERT INTO \"tasks\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\d98fd3ba80074e788fbbb3e06af78d1e\\evidence\\import-10000-post_task-1.json",
+      "evidence_sha256": "B39884E0EC10FA3EA2B2CB97C5AD512F07018D64616BD55739B99A7BA4E2E317",
+      "comparison": "raw_after_equals_before",
+      "before": "a700c29fec3a56db43d66d23ad15f9c0bdd6d3a2e435161a7b65e7c5187793cc",
+      "expected": "a700c29fec3a56db43d66d23ad15f9c0bdd6d3a2e435161a7b65e7c5187793cc",
+      "after": "a700c29fec3a56db43d66d23ad15f9c0bdd6d3a2e435161a7b65e7c5187793cc",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4886352,
+          "last_write_utc": "2026-09-04T07:49:03.5131082Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:48:55.8549512Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:49:03.6133793Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:49:03.6074752Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "post_task",
+      "iteration": 2,
+      "worker_pid": 8092,
+      "stage": "sql_succeeded:INSERT INTO \"tasks\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\d7171a91ad5e47a2a7ce399faad3beee\\evidence\\import-10000-post_task-2.json",
+      "evidence_sha256": "09BDAB5EEF23A4A0D7C4AA64275BE8890345EF69BA6D0DB36344F145789856D2",
+      "comparison": "raw_after_equals_before",
+      "before": "f2cb8371c7c98b46af5a429ed2558f5549b758b4a36f768212f167908ae63572",
+      "expected": "f2cb8371c7c98b46af5a429ed2558f5549b758b4a36f768212f167908ae63572",
+      "after": "f2cb8371c7c98b46af5a429ed2558f5549b758b4a36f768212f167908ae63572",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4886352,
+          "last_write_utc": "2026-09-04T07:49:26.6797664Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:49:19.6990481Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:49:26.7830626Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:49:26.7740602Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "post_task",
+      "iteration": 3,
+      "worker_pid": 40808,
+      "stage": "sql_succeeded:INSERT INTO \"tasks\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\ee61cd762ab042478aefe6dfc201d041\\evidence\\import-10000-post_task-3.json",
+      "evidence_sha256": "BBBCB4B75353F8605593D8BF4E8B68AF98C7526E14304E1FD77AEA54C534C038",
+      "comparison": "raw_after_equals_before",
+      "before": "cf3db15cf3f728de8f386e8eb98ddf2e1a7fad98cb827609ef11c3dd26628907",
+      "expected": "cf3db15cf3f728de8f386e8eb98ddf2e1a7fad98cb827609ef11c3dd26628907",
+      "after": "cf3db15cf3f728de8f386e8eb98ddf2e1a7fad98cb827609ef11c3dd26628907",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4886352,
+          "last_write_utc": "2026-09-04T07:49:48.1032121Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:49:41.4863874Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:49:48.2153781Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:49:48.2033606Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "postcommit",
+      "iteration": 1,
+      "worker_pid": 43472,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\023b41b71fda472b9418014f6247b7e7\\evidence\\import-10000-postcommit-1.json",
+      "evidence_sha256": "D63EE06FAE119CC9545C222340DDC44077FBE8AC0347C111FB1D2AB77266C6C8",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "f3ad000e1eb611896702542a6cb9a18a8f48da6758200c0afdd1cf9954850374",
+      "expected": "30354b2919b47f43d142e3e485c0d103553ee38d3e587056a56eaf0b1c1b9c4e",
+      "after": "30354b2919b47f43d142e3e485c0d103553ee38d3e587056a56eaf0b1c1b9c4e",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 2,
+        "batch_baselines": 2,
+        "batches": 10000,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 2,
+        "imports": 2,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 501,
+        "products": 5000,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 501,
+        "tasks": 501
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 5512592,
+          "last_write_utc": "2026-09-04T07:47:50.9080743Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:47:41.3721364Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:47:51.4458744Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:47:51.4274382Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "postcommit",
+      "iteration": 2,
+      "worker_pid": 22724,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\d933a8c5ff234e428a5cc7bfe6a873dc\\evidence\\import-10000-postcommit-2.json",
+      "evidence_sha256": "270488F0DFA8016760849C21303A67C5D1DF85C348A9ADCA194483B02D7809E2",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "a1491c79c3e277b31ac1311b4b98acfcb2f8fd17fa6015824745f6c8ba7c0c1e",
+      "expected": "0f26edfd09c5668273b4018ff6886d829d36b55e7730e71d5c230d935afe71e5",
+      "after": "0f26edfd09c5668273b4018ff6886d829d36b55e7730e71d5c230d935afe71e5",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 2,
+        "batch_baselines": 2,
+        "batches": 10000,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 2,
+        "imports": 2,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 501,
+        "products": 5000,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 501,
+        "tasks": 501
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 5512592,
+          "last_write_utc": "2026-09-04T07:48:16.4819785Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:48:05.7304735Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:48:17.1459275Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:48:17.131824Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "postcommit",
+      "iteration": 3,
+      "worker_pid": 28496,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\695eae11e467419b92e7be6c2b623547\\evidence\\import-10000-postcommit-3.json",
+      "evidence_sha256": "062AF8FBF38B23CB61E17AF4901D8BC410B047807196F0D82E11257951693E36",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "16587283a50b415c550d561abd2137f39643e3e8ce22e393ee6d2fd149fd5e1b",
+      "expected": "a1159c642e07f4c6bfe708d30c45782ba4d4429de37245bd425ee32cc1585f09",
+      "after": "a1159c642e07f4c6bfe708d30c45782ba4d4429de37245bd425ee32cc1585f09",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 2,
+        "batch_baselines": 2,
+        "batches": 10000,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 2,
+        "imports": 2,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 501,
+        "products": 5000,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 501,
+        "tasks": 501
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 5512592,
+          "last_write_utc": "2026-09-04T07:48:40.8217483Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:48:31.0717366Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:48:41.3622627Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:48:41.3492631Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "precommit",
+      "iteration": 1,
+      "worker_pid": 4888,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\ded129432b6b41e78538817804f236d5\\evidence\\import-10000-precommit-1.json",
+      "evidence_sha256": "620843374887456038C78172268107A1703B3C7A7F44A0682414C740C8FFD974",
+      "comparison": "raw_after_equals_before",
+      "before": "65d9952925069bf7000a7f1a5dabe7a2fee6ff8ce2a084c1b14c51bb3057ec9a",
+      "expected": "65d9952925069bf7000a7f1a5dabe7a2fee6ff8ce2a084c1b14c51bb3057ec9a",
+      "after": "65d9952925069bf7000a7f1a5dabe7a2fee6ff8ce2a084c1b14c51bb3057ec9a",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 5047032,
+          "last_write_utc": "2026-09-04T07:51:07.3771437Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:50:58.075438Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:51:07.5017536Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:51:07.495754Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "precommit",
+      "iteration": 2,
+      "worker_pid": 42152,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\2845ab6cfc04443193207615198e6c01\\evidence\\import-10000-precommit-2.json",
+      "evidence_sha256": "4D7583B001B9992A7C8B4679B7B6BEE95681947A30C8EF019526524987ACF2AB",
+      "comparison": "raw_after_equals_before",
+      "before": "de1b3a9783377ac16acee5f1064cac516c69912c274f205050779c3c70bb4ef9",
+      "expected": "de1b3a9783377ac16acee5f1064cac516c69912c274f205050779c3c70bb4ef9",
+      "after": "de1b3a9783377ac16acee5f1064cac516c69912c274f205050779c3c70bb4ef9",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 5047032,
+          "last_write_utc": "2026-09-04T07:51:30.3253285Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:51:21.0912245Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:51:30.4483393Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:51:30.4423329Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "precommit",
+      "iteration": 3,
+      "worker_pid": 41960,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\ad24b85706f34830a3003e10cead8ae7\\evidence\\import-10000-precommit-3.json",
+      "evidence_sha256": "AE57F595AA226B0E76B4BB8EEDB2D71C3AC0748B3FCF62CEE662CBE4F12E5CE3",
+      "comparison": "raw_after_equals_before",
+      "before": "c506f7c2ed1db0a663eafdc409f1a20578d455324862c9e6114a7d3bca563369",
+      "expected": "c506f7c2ed1db0a663eafdc409f1a20578d455324862c9e6114a7d3bca563369",
+      "after": "c506f7c2ed1db0a663eafdc409f1a20578d455324862c9e6114a7d3bca563369",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 5047032,
+          "last_write_utc": "2026-09-04T07:51:55.9159365Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:51:44.6475748Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:51:56.0448577Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:51:56.0388577Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "products_partial",
+      "iteration": 1,
+      "worker_pid": 43248,
+      "stage": "sql_succeeded:INSERT INTO \"products\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\a225c6760e854278bf16e09fab8bb592\\evidence\\import-10000-products_partial-1.json",
+      "evidence_sha256": "A4B8065391C032DBC4849C4A86EC9EC4C8CE343EE78C96F545DE5282359196C5",
+      "comparison": "raw_after_equals_before",
+      "before": "d8f310b443359c6610417499cd21ae57b7700ccac8512e1290a62a806a6ab044",
+      "expected": "d8f310b443359c6610417499cd21ae57b7700ccac8512e1290a62a806a6ab044",
+      "after": "d8f310b443359c6610417499cd21ae57b7700ccac8512e1290a62a806a6ab044",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:46:52.9765688Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:51.5679176Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:46:54.4696778Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:54.4636744Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "products_partial",
+      "iteration": 2,
+      "worker_pid": 4032,
+      "stage": "sql_succeeded:INSERT INTO \"products\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\7dc9c12b7efd4878aa87dcd501cb952e\\evidence\\import-10000-products_partial-2.json",
+      "evidence_sha256": "7656C346D01596B95C55C968F3C7996E30B00235281C25814D2EFCA364C88EC0",
+      "comparison": "raw_after_equals_before",
+      "before": "9b6a5f1085386c56c01d98926917fd991012d3aa67bc2f0911f48ca65163f2b3",
+      "expected": "9b6a5f1085386c56c01d98926917fd991012d3aa67bc2f0911f48ca65163f2b3",
+      "after": "9b6a5f1085386c56c01d98926917fd991012d3aa67bc2f0911f48ca65163f2b3",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:47:09.6322915Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:47:08.2322238Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:47:11.1088597Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:47:11.1016292Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "products_partial",
+      "iteration": 3,
+      "worker_pid": 31000,
+      "stage": "sql_succeeded:INSERT INTO \"products\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\34404c3999d04a50a6a28fae1d234015\\evidence\\import-10000-products_partial-3.json",
+      "evidence_sha256": "A19F7140780459E7DB3E5DE5912B698E6644C038B643A2D4AFCCA30031852309",
+      "comparison": "raw_after_equals_before",
+      "before": "197386d9d4ba04553d3e7da92d262ec680f2af1bb64575e253d6b3fecffa99ef",
+      "expected": "197386d9d4ba04553d3e7da92d262ec680f2af1bb64575e253d6b3fecffa99ef",
+      "after": "197386d9d4ba04553d3e7da92d262ec680f2af1bb64575e253d6b3fecffa99ef",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:47:26.4538446Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:47:25.0424804Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:47:27.778275Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:47:27.7712623Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "started",
+      "iteration": 1,
+      "worker_pid": 36852,
+      "stage": "transaction_started",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\0eb5daac6ef049828d669498ccc580d3\\evidence\\import-10000-started-1.json",
+      "evidence_sha256": "5D428EB9A6419D480230403EB0DBE69295C3361D6816E07F0C792AAF78CEDDFD",
+      "comparison": "raw_after_equals_before",
+      "before": "81fb5eaba4d47327d90c6b2612a81eba3fb2414f0c10882bb8f36434557dd5c0",
+      "expected": "81fb5eaba4d47327d90c6b2612a81eba3fb2414f0c10882bb8f36434557dd5c0",
+      "after": "81fb5eaba4d47327d90c6b2612a81eba3fb2414f0c10882bb8f36434557dd5c0",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:46:04.9524704Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:03.5326893Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:46:05.9065975Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:05.8991556Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "started",
+      "iteration": 2,
+      "worker_pid": 1040,
+      "stage": "transaction_started",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\77558e81d08f42e9a11d8f40e955cae0\\evidence\\import-10000-started-2.json",
+      "evidence_sha256": "3C8FFDC9045E67E94A98D0EB5B0575362290872D9FDC8F505453F999FDFC3AD0",
+      "comparison": "raw_after_equals_before",
+      "before": "abf1c187bf2784394f21bc83c292e1ac348bb9606baca18eacde00cb275e3835",
+      "expected": "abf1c187bf2784394f21bc83c292e1ac348bb9606baca18eacde00cb275e3835",
+      "after": "abf1c187bf2784394f21bc83c292e1ac348bb9606baca18eacde00cb275e3835",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:46:20.8462172Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:19.4921259Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:46:21.7836958Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:21.7776958Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 10000,
+      "checkpoint": "started",
+      "iteration": 3,
+      "worker_pid": 13264,
+      "stage": "transaction_started",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\79358564d48d408ca18218223d0793a5\\evidence\\import-10000-started-3.json",
+      "evidence_sha256": "60B86B667571992ABEE5C1E14B818C2A0F175C4F3402FE36A1D73E3F1A0F4A85",
+      "comparison": "raw_after_equals_before",
+      "before": "aa15e71b413b68532388c5dd45d9d87161a870afda01383943708674f33f4a35",
+      "expected": "aa15e71b413b68532388c5dd45d9d87161a870afda01383943708674f33f4a35",
+      "after": "aa15e71b413b68532388c5dd45d9d87161a870afda01383943708674f33f4a35",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 980592,
+          "last_write_utc": "2026-09-04T07:46:36.9321452Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:35.5421135Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:46:37.8761935Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:46:37.870191Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 100000,
+      "checkpoint": "postcommit",
+      "iteration": 1,
+      "worker_pid": 44704,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\d99e08a1443f44c8845349e22f6c68f2\\evidence\\import-100000-postcommit-1.json",
+      "evidence_sha256": "E237877D6786CAB9801892F10DFAAE750A09E9E49B35E8A750C237F60282ED58",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "6b917581cd78795ebb84f3cce288805b4cf432b5a0426bb829a356fc4e797f3e",
+      "expected": "8c0361a617fe107a865e2bc3ce5f810e396e565ac3224429cdb3cabc401f7cd0",
+      "after": "8c0361a617fe107a865e2bc3ce5f810e396e565ac3224429cdb3cabc401f7cd0",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 2,
+        "batch_baselines": 2,
+        "batches": 100000,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 2,
+        "imports": 2,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 5001,
+        "products": 50000,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 5001,
+        "tasks": 5001
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 46041032,
+          "last_write_utc": "2026-09-04T07:41:25.1255332Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 98304,
+          "last_write_utc": "2026-09-04T07:40:58.730974Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:41:30.7386714Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:41:30.6634498Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 100000,
+      "checkpoint": "postcommit",
+      "iteration": 2,
+      "worker_pid": 43116,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\f8583575feae4dffabd2c036d4988b4e\\evidence\\import-100000-postcommit-2.json",
+      "evidence_sha256": "C9B8CC4356E41079D300E9719B68ED1A61AD1DBE692853032685C9BB5DF8ED69",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "82dc1d885076a5f8d57accd7e1802f417a71bada9897fb3370e2a487a26a5b4a",
+      "expected": "b8a3997a2031ee79280d504bc027f8496abcc54e41c8caea2e398ed455c18aea",
+      "after": "b8a3997a2031ee79280d504bc027f8496abcc54e41c8caea2e398ed455c18aea",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 2,
+        "batch_baselines": 2,
+        "batches": 100000,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 2,
+        "imports": 2,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 5001,
+        "products": 50000,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 5001,
+        "tasks": 5001
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 46041032,
+          "last_write_utc": "2026-09-04T07:43:40.8344959Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 98304,
+          "last_write_utc": "2026-09-04T07:43:10.7239355Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:43:45.0821521Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:43:45.0190347Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 100000,
+      "checkpoint": "postcommit",
+      "iteration": 3,
+      "worker_pid": 39212,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\573c871b89354a18967ccf5fc1ea96b6\\evidence\\import-100000-postcommit-3.json",
+      "evidence_sha256": "2F9D4ECDE9F9CFDC3B832D345F3F06BC98BAC4B17DB06B1CA5CEEB8A96FCD456",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "011c98a4582efb44c9a7b48ba92277e534dd86baf7eb6583076db93a004d82f3",
+      "expected": "e3ecf099af8476f6ea6e1558e61731f6dfb48b4e088bb699393d62532a876ae5",
+      "after": "e3ecf099af8476f6ea6e1558e61731f6dfb48b4e088bb699393d62532a876ae5",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 2,
+        "batch_baselines": 2,
+        "batches": 100000,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 2,
+        "imports": 2,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 5001,
+        "products": 50000,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 5001,
+        "tasks": 5001
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 46041032,
+          "last_write_utc": "2026-09-04T07:45:44.7877486Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 98304,
+          "last_write_utc": "2026-09-04T07:45:15.8038137Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:45:49.2783374Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:45:49.218789Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 100000,
+      "checkpoint": "precommit",
+      "iteration": 1,
+      "worker_pid": 30024,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\a0e86f1a3e86492e9c2a082d01c8cf06\\evidence\\import-100000-precommit-1.json",
+      "evidence_sha256": "C27D2E24CC35A35C904F8C93615E85E29417DF87A37FE692A5FE818D69B99735",
+      "comparison": "raw_after_equals_before",
+      "before": "bc57d6d646123bf3c11f0683d2fe8e86fedd8fef4c3e223f711677a38c1046e6",
+      "expected": "bc57d6d646123bf3c11f0683d2fe8e86fedd8fef4c3e223f711677a38c1046e6",
+      "after": "bc57d6d646123bf3c11f0683d2fe8e86fedd8fef4c3e223f711677a38c1046e6",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 45583712,
+          "last_write_utc": "2026-09-04T07:35:16.7324938Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 98304,
+          "last_write_utc": "2026-09-04T07:34:48.123894Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:35:17.0354207Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:35:16.9864042Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 100000,
+      "checkpoint": "precommit",
+      "iteration": 2,
+      "worker_pid": 40080,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\2b9dd2fa4b144912b4aecf6b3680127b\\evidence\\import-100000-precommit-2.json",
+      "evidence_sha256": "F0CFBB87E85595843850037FB8FBD70061AE6F6FBCA117F4981C9B5266A8BFB5",
+      "comparison": "raw_after_equals_before",
+      "before": "1d33564699ff088d281f9ef45f0c9f11f02a8104958c88c8648e351291cd611a",
+      "expected": "1d33564699ff088d281f9ef45f0c9f11f02a8104958c88c8648e351291cd611a",
+      "after": "1d33564699ff088d281f9ef45f0c9f11f02a8104958c88c8648e351291cd611a",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 45583712,
+          "last_write_utc": "2026-09-04T07:37:18.5940038Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 98304,
+          "last_write_utc": "2026-09-04T07:36:50.8758667Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:37:18.8219358Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:37:18.8119399Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "import",
+      "rows": 100000,
+      "checkpoint": "precommit",
+      "iteration": 3,
+      "worker_pid": 26340,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\74d0b50bdd2a444987d4bbf10d0bd786\\evidence\\import-100000-precommit-3.json",
+      "evidence_sha256": "C6F777F72357762C180AFEBEF843F95581561438385ED0CBCB6258F614EF199C",
+      "comparison": "raw_after_equals_before",
+      "before": "d8306e32a7686247f02f3d0fdaa7487cc2055cc5647ef95e9c9408d2493260f7",
+      "expected": "d8306e32a7686247f02f3d0fdaa7487cc2055cc5647ef95e9c9408d2493260f7",
+      "after": "d8306e32a7686247f02f3d0fdaa7487cc2055cc5647ef95e9c9408d2493260f7",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 1,
+        "batch_baselines": 2,
+        "batches": 10,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 1,
+        "imports": 1,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 10,
+        "scope_baselines": 8,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 2
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 45583712,
+          "last_write_utc": "2026-09-04T07:39:19.3479272Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 98304,
+          "last_write_utc": "2026-09-04T07:38:50.0054077Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:39:19.9092605Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:39:19.9022551Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "items_partial",
+      "iteration": 1,
+      "worker_pid": 440,
+      "stage": "sql_succeeded:INSERT INTO \"inspection_items\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\fa30837d7ec14750abf0bb914db45378\\evidence\\inspection-items_partial-1.json",
+      "evidence_sha256": "9E4F4741FE60C3EC9A5B48DE02AC780BC2FECC3F26880A084B6E037EA3812915",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:32:19.1078117Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:18.4033078Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:19.7648505Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:19.7596551Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "items_partial",
+      "iteration": 2,
+      "worker_pid": 41904,
+      "stage": "sql_succeeded:INSERT INTO \"inspection_items\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\7d1d5bac07d24ab093ca6944a4a2c970\\evidence\\inspection-items_partial-2.json",
+      "evidence_sha256": "3A1DD2E3910982448246FA1871F62990AB50E7EC913AE4CE4DDDF0BB6D59973E",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:32:26.473431Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:25.7521791Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:27.1015555Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:27.0965545Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "items_partial",
+      "iteration": 3,
+      "worker_pid": 31976,
+      "stage": "sql_succeeded:INSERT INTO \"inspection_items\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\b953609d45b843bea37f04eb46aa36e5\\evidence\\inspection-items_partial-3.json",
+      "evidence_sha256": "58F78C81931B1C80AF10C863AC4CCD2710044665DD0AD30BCB97CDA4087B6229",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:32:33.6278189Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:32.9376332Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:34.2041327Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:34.1994936Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "partial",
+      "iteration": 1,
+      "worker_pid": 6340,
+      "stage": "sql_succeeded:INSERT INTO \"inspections\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\a3a74abd1c344578a935e8d94223651a\\evidence\\inspection-partial-1.json",
+      "evidence_sha256": "F07A4B0C5E74F1B1C4C2A57CCA40CE84204DC64B0586369D2BD8A9D12789C9CB",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:57.752225Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:57.0639814Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:58.3697437Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:58.3657461Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "partial",
+      "iteration": 2,
+      "worker_pid": 43204,
+      "stage": "sql_succeeded:INSERT INTO \"inspections\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\a1ca9ac6b1124e6f9eceff9d60da6b62\\evidence\\inspection-partial-2.json",
+      "evidence_sha256": "4B03CE5B041697C964BED2B623CA32C608E1BA7ED0B415F5F5BC7E533ED00672",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:32:05.1630118Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:04.310213Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:05.9139354Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:05.9099444Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "partial",
+      "iteration": 3,
+      "worker_pid": 44000,
+      "stage": "sql_succeeded:INSERT INTO \"inspections\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\728b1c42d916457789acde6d3b0f1f7a\\evidence\\inspection-partial-3.json",
+      "evidence_sha256": "1E6AF645F26D5E952DCD8B07D689508F1BC3340669A2E5BC9FEB94D0D8D7EC6E",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:32:12.0373115Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:11.3666007Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:12.6869733Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:12.6780958Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "postcommit",
+      "iteration": 1,
+      "worker_pid": 43564,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\cbd18e2906e0454da6277de41b453f9d\\evidence\\inspection-postcommit-1.json",
+      "evidence_sha256": "598E4479966AA83B99E457D8E41F74ABEC0DF23443A29DA80595B0D98C91C5F0",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "9c788147c3e9926af0186242eb2016bc51207683d1badccfffeb4b235727e852",
+      "after": "9c788147c3e9926af0186242eb2016bc51207683d1badccfffeb4b235727e852",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 2,
+        "inspections": 1,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 1,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 1091832,
+          "last_write_utc": "2026-09-04T07:32:40.7410166Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:39.5170661Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:40.8483482Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:40.8039582Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "postcommit",
+      "iteration": 2,
+      "worker_pid": 7988,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\9e53e6e177b949488d5d8848c19c0b52\\evidence\\inspection-postcommit-2.json",
+      "evidence_sha256": "F0BB30184D3A6A881C449725014AEE3AABABE985BFEE843E109E08E8F5AFF730",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "9c788147c3e9926af0186242eb2016bc51207683d1badccfffeb4b235727e852",
+      "after": "9c788147c3e9926af0186242eb2016bc51207683d1badccfffeb4b235727e852",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 2,
+        "inspections": 1,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 1,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 1091832,
+          "last_write_utc": "2026-09-04T07:32:47.3599195Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:46.1534446Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:47.4404328Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:47.4364333Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "postcommit",
+      "iteration": 3,
+      "worker_pid": 24812,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\bce608dd5ad64f47b88f18334143b0f7\\evidence\\inspection-postcommit-3.json",
+      "evidence_sha256": "9438D837D56ECE5171F12AE8220FDC0CEB4672D1961BBF1EFEC776580A03AA60",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "9c788147c3e9926af0186242eb2016bc51207683d1badccfffeb4b235727e852",
+      "after": "9c788147c3e9926af0186242eb2016bc51207683d1badccfffeb4b235727e852",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 0,
+        "drafts": 0,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 2,
+        "inspections": 1,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 1,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 1091832,
+          "last_write_utc": "2026-09-04T07:32:54.049058Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:52.8005397Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:32:54.1372792Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:54.1322795Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "precommit",
+      "iteration": 1,
+      "worker_pid": 38332,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\2d8386ede30c427d8a5c1643980ba9b7\\evidence\\inspection-precommit-1.json",
+      "evidence_sha256": "3A8EEDBFBF924A301C5EE446FA42B4C50B6E98E62ED63F0FAF6D59572B347641",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:30:33.1393703Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:32.3907741Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:30:35.2269255Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:34.9627208Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "precommit",
+      "iteration": 2,
+      "worker_pid": 43936,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\243b363dfa9f44969fee6c5a3c273a8c\\evidence\\inspection-precommit-2.json",
+      "evidence_sha256": "A6E5EFBC4E271E90929B98844C8D590E4B2648FB7E3FF9A01D350E5069376CFB",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:30:42.3548654Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:41.618402Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:30:43.0963304Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:43.0893323Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "precommit",
+      "iteration": 3,
+      "worker_pid": 43892,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\ec08672163114faea90a3114578ed5d4\\evidence\\inspection-precommit-3.json",
+      "evidence_sha256": "C95CEB1BB2B3F77A6B21C0F1948E308B3D223F78F3555EC0D88B0E65249EAEE3",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:30:49.7620767Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:49.1082118Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:30:50.4686941Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:50.4636008Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "task_handled",
+      "iteration": 1,
+      "worker_pid": 43012,
+      "stage": "sql_succeeded:UPDATE \"tasks\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\2e1fdff2854746d1a3d9909fb3b4f889\\evidence\\inspection-task_handled-1.json",
+      "evidence_sha256": "9E87824A7C278F80E364556B473385F5AD6E2FE897CFF1C70E3E86F1B9C16D5C",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:36.8220502Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:36.1959297Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:37.4939199Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:37.488417Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "task_handled",
+      "iteration": 2,
+      "worker_pid": 8080,
+      "stage": "sql_succeeded:UPDATE \"tasks\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\b908a9d5c1884d68bba474ccb58bbcd3\\evidence\\inspection-task_handled-2.json",
+      "evidence_sha256": "AFC756E9DAD03685A33B39F5B49559F4014F2FC779580A9FB72288FBCF564C60",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:43.9925635Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:43.3154616Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:44.6695693Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:44.6655686Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inspection",
+      "rows": null,
+      "checkpoint": "task_handled",
+      "iteration": 3,
+      "worker_pid": 34648,
+      "stage": "sql_succeeded:UPDATE \"tasks\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\8994c259c1294c41a1168b1feed09844\\evidence\\inspection-task_handled-3.json",
+      "evidence_sha256": "CA518D614CFB9B132BCD004F401E3280FEB0A38A5B765FB12AB93C9B8EBDCC97",
+      "comparison": "raw_after_equals_before",
+      "before": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "expected": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after": "3c26487ac2ff5410039e8248f8f3c5bda8ea984aa17d08b8cc1467561a612a20",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:50.6296918Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:49.9563863Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:51.3262992Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:51.3212821Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "partial",
+      "iteration": 1,
+      "worker_pid": 43304,
+      "stage": "sql_succeeded:INSERT INTO \"inventory_adjustments\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\8d55454c81da4565a0aa85b8d945d700\\evidence\\inventory-partial-1.json",
+      "evidence_sha256": "09AC995021A36790F74442BE4F36F5DCE401BA8B7E9B280A9B1085A4C7ECE18D",
+      "comparison": "raw_after_equals_before",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:30:56.7820919Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:56.1368859Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:30:57.2235316Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:30:57.2180122Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "partial",
+      "iteration": 2,
+      "worker_pid": 41820,
+      "stage": "sql_succeeded:INSERT INTO \"inventory_adjustments\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\8b8fc11a80e140e1b92fbcec87d47b60\\evidence\\inventory-partial-2.json",
+      "evidence_sha256": "4F80105FBC3D0D6E8C69667300F736E36204C9CC0E942E1A47CC939AA60C68FE",
+      "comparison": "raw_after_equals_before",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:02.9212861Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:02.2825842Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:03.3478893Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:03.3428911Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "partial",
+      "iteration": 3,
+      "worker_pid": 8800,
+      "stage": "sql_succeeded:INSERT INTO \"inventory_adjustments\"",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\8c07bd94c0514baabadd4e1c131943d8\\evidence\\inventory-partial-3.json",
+      "evidence_sha256": "9DE71F375639DD443D8DADB72AB36895AC037B36994322648EBA84C1FA505583",
+      "comparison": "raw_after_equals_before",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:09.4215376Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:08.709275Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:09.9290692Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:09.9234623Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "postcommit",
+      "iteration": 1,
+      "worker_pid": 4476,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\1d8ce3f90b98414db3caef272b523cd0\\evidence\\inventory-postcommit-1.json",
+      "evidence_sha256": "C3A3816CD4B95DBE55254CCBAD9A1ADF4B66D75A187F442B5E87BE88CEEEC2E6",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "5a6884763d1c499d244e9a6f92b38437f6a5f3c9876450325e44b25cd8866a00",
+      "after": "5a6884763d1c499d244e9a6f92b38437f6a5f3c9876450325e44b25cd8866a00",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 1,
+        "lifecycle_events": 3,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 1038272,
+          "last_write_utc": "2026-09-04T07:33:00.6541076Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:32:59.4721444Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:33:00.7233774Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:33:00.7193769Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "postcommit",
+      "iteration": 2,
+      "worker_pid": 43488,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\27f317cd93b340eaae15c3db2ae46c1c\\evidence\\inventory-postcommit-2.json",
+      "evidence_sha256": "44743368028067A9898F1540CEF00DC85486D9535FAD8368F7326985BEFE7672",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "5a6884763d1c499d244e9a6f92b38437f6a5f3c9876450325e44b25cd8866a00",
+      "after": "5a6884763d1c499d244e9a6f92b38437f6a5f3c9876450325e44b25cd8866a00",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 1,
+        "lifecycle_events": 3,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 1038272,
+          "last_write_utc": "2026-09-04T07:33:07.1602382Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:33:06.0430068Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:33:07.2461733Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:33:07.2421737Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "postcommit",
+      "iteration": 3,
+      "worker_pid": 43052,
+      "stage": "transaction_committed",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\6f5252341cf04239995b1bf22cad8641\\evidence\\inventory-postcommit-3.json",
+      "evidence_sha256": "F68FE8F906264FCF0748FA57287A253F675055D55E8D4456C1DFB4CD0D4392CC",
+      "comparison": "canonical_after_equals_committed_expected",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "5a6884763d1c499d244e9a6f92b38437f6a5f3c9876450325e44b25cd8866a00",
+      "after": "5a6884763d1c499d244e9a6f92b38437f6a5f3c9876450325e44b25cd8866a00",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 1,
+        "lifecycle_events": 3,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 1038272,
+          "last_write_utc": "2026-09-04T07:33:13.8952621Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:33:12.6292172Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:33:13.9976607Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:33:13.9936611Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "precommit",
+      "iteration": 1,
+      "worker_pid": 42916,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\3c6083b7aef34a74a605d30e25d72dbf\\evidence\\inventory-precommit-1.json",
+      "evidence_sha256": "35D39C72A6E1E2EB912D589283C5ECEB6E735AF7377485D38ABC59BA82DD2B69",
+      "comparison": "raw_after_equals_before",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:16.0723113Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:15.2930318Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:16.6529667Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:16.6479658Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "precommit",
+      "iteration": 2,
+      "worker_pid": 36604,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\8c6bfdc29a4e4991984b7660469e0914\\evidence\\inventory-precommit-2.json",
+      "evidence_sha256": "43D0764D807CD65ECD74AFEE2DCEDB31BAFD9C8FCF99AF88D7D9A37D5F520FD1",
+      "comparison": "raw_after_equals_before",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:22.7888005Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:22.1427234Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:23.3874681Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:23.3827354Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    },
+    {
+      "scenario": "inventory",
+      "rows": null,
+      "checkpoint": "precommit",
+      "iteration": 3,
+      "worker_pid": 41228,
+      "stage": "transaction_committing",
+      "child_exit_code": -1,
+      "evidence": "C:\\Users\\39037\\AppData\\Local\\Temp\\StoreExpiryInspectorS8T04\\8030f8ee50b243db824feb294eb624f9\\evidence\\inventory-precommit-3.json",
+      "evidence_sha256": "C389A868DC35223A34BCC2DE1735859CC74DE25EBAB176E48BDAC27E8CD25871",
+      "comparison": "raw_after_equals_before",
+      "before": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "expected": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after": "e31814d9f8837ad2c631b16738afa960ac52a9bf62189dbe18085def3e57e217",
+      "after_counts": {
+        "__EFMigrationsLock": 0,
+        "app_state": 1,
+        "backups": 0,
+        "batch_baselines": 0,
+        "batches": 2,
+        "draft_items": 2,
+        "drafts": 1,
+        "import_issues": 0,
+        "import_workbooks": 0,
+        "imports": 0,
+        "inspection_item_revisions": 0,
+        "inspection_items": 0,
+        "inspections": 0,
+        "inventory_adjustments": 0,
+        "lifecycle_events": 0,
+        "products": 1,
+        "scope_baselines": 0,
+        "settings": 1,
+        "task_items": 2,
+        "tasks": 1
+      },
+      "sidecars_before": [
+        {
+          "name": "app.db-wal",
+          "bytes": 972352,
+          "last_write_utc": "2026-09-04T07:31:29.2866841Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:28.6484013Z"
+        }
+      ],
+      "sidecars_after": [
+        {
+          "name": "app.db-wal",
+          "bytes": 4152,
+          "last_write_utc": "2026-09-04T07:31:29.8740599Z"
+        },
+        {
+          "name": "app.db-shm",
+          "bytes": 32768,
+          "last_write_utc": "2026-09-04T07:31:29.8690623Z"
+        }
+      ],
+      "integrity": "ok",
+      "fk": 0,
+      "migrations": 9,
+      "pass": true
+    }
+  ]
+}
