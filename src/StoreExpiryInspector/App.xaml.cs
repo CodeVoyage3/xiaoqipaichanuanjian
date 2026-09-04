@@ -1,4 +1,5 @@
 using System.IO;
+using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -110,7 +111,7 @@ public partial class App : System.Windows.Application
 
     private void VerifySmokeStartupAndExit()
     {
-        var deadline = DateTime.UtcNow.AddSeconds(30);
+        var elapsed = Stopwatch.StartNew();
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         timer.Tick += (_, _) =>
         {
@@ -132,7 +133,7 @@ public partial class App : System.Windows.Application
                 return;
             }
 
-            if (DateTime.UtcNow < deadline)
+            if (elapsed.Elapsed < TimeSpan.FromSeconds(30))
             {
                 return;
             }
