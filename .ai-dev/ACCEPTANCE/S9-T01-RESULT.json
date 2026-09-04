@@ -1,0 +1,216 @@
+{
+  "card": "S9-T01",
+  "status": "TECHNICALLY_ACCEPTED / CLOSED",
+  "openingMain": "7c1fa2d4b0178314816e79663765f952c66d3095",
+  "candidate": "0c6d0e4e37b3d18f3fdefa65c7c80f0108d41b11",
+  "independentAcceptance": "Sol",
+  "publish": {
+    "Result": "PASS",
+    "PublishDirectory": "C:\\Users\\39037\\AppData\\Local\\Temp\\a19c9aa7-f978-4241-91c0-56a480882d2d\\publish-b",
+    "FirstDataRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\09e86884-1b86-4029-82fa-9cb807891024",
+    "SecondDataRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\088a0173-ea7c-4459-b77e-b3d99e3101cd",
+    "PublishBytes": 164508896.0,
+    "FileVersion": "1.0.0.0",
+    "ProductVersion": "1.0.0+0c6d0e4e37b3d18f3fdefa65c7c80f0108d41b11",
+    "AssemblyVersion": "1.0.0.0",
+    "Framework": null,
+    "IncludedFrameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "10.0.10"
+      },
+      {
+        "name": "Microsoft.WindowsDesktop.App",
+        "version": "10.0.10"
+      }
+    ],
+    "RuntimeFiles": [
+      "coreclr.dll",
+      "hostfxr.dll",
+      "e_sqlite3.dll"
+    ]
+  },
+  "syntheticDatabaseChecks": [
+    {
+      "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\09e86884-1b86-4029-82fa-9cb807891024",
+      "databaseBytes": 339968,
+      "integrity": "ok",
+      "foreignKeyViolations": 0,
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "logs": [
+        {
+          "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\09e86884-1b86-4029-82fa-9cb807891024\\logs\\app-20260904.log",
+          "sha256": "d6699088d05476257321a8f85d2ed432f1adb59b94c99f3e9e1a5eedce0316ec"
+        }
+      ]
+    },
+    {
+      "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\088a0173-ea7c-4459-b77e-b3d99e3101cd",
+      "databaseBytes": 339968,
+      "integrity": "ok",
+      "foreignKeyViolations": 0,
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "logs": [
+        {
+          "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\088a0173-ea7c-4459-b77e-b3d99e3101cd\\logs\\app-20260904.log",
+          "sha256": "0052ae4e953a0e9e3f6524435b866ca161c13b597d3cf1caef295f6d2ad831f0"
+        }
+      ]
+    },
+    {
+      "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\40850d9e-b72f-4d65-98ef-c1237bfc027c",
+      "databaseBytes": 339968,
+      "integrity": "ok",
+      "foreignKeyViolations": 0,
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ],
+      "logs": [
+        {
+          "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\40850d9e-b72f-4d65-98ef-c1237bfc027c\\logs\\app-20260904.log",
+          "sha256": "fcd73e98ad0531e6613c3ed6cc5cbc21d1cb524cb6f273e43e1f523102ca51df"
+        }
+      ]
+    }
+  ],
+  "rawEvidence": [
+    {
+      "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\a19c9aa7-f978-4241-91c0-56a480882d2d\\s9-t01-publish-smoke.json",
+      "sha256": "a7328ac635ce26ca0c8b498427f19cfb2f395f71a1936a26df8975a24cb838a2"
+    },
+    {
+      "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\a19c9aa7-f978-4241-91c0-56a480882d2d\\host-trace.txt",
+      "sha256": "3dd832970aabe8ade1f49434ec3a856bb16852beff05aed72c8e933eab6c1b99"
+    }
+  ],
+  "runtimeProbe": {
+    "exitCode": 0,
+    "globalDotnetRoot": "nonexistent path",
+    "multilevelLookup": false,
+    "hostfxrAndCoreclr": "loaded from publish-b per host trace"
+  },
+  "githubAnonymous": {
+    "repositoryStatus": 200,
+    "private": false,
+    "visibility": "public",
+    "releasesStatus": 200,
+    "releaseCount": 0,
+    "latestStatus": 404,
+    "realAssetDownload": "not yet possible: no release"
+  },
+  "formalDatabaseAccessed": false,
+  "accessEvidenceScope": "explicit newly created TEMP/GUID roots; code and call-chain review; not a machine-wide I/O audit",
+  "fullReleaseTests": {
+    "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\S9T01-Sol-662b5863bb574469b798b1597f86cd5a\\full-release.trx",
+    "sha256": "aaa81eed9a57e2c1bdbcf39bd861bb2d32ae96471fdad5bb3d4f3737de3130df",
+    "counters": {
+      "total": "991",
+      "executed": "991",
+      "passed": "991",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "times": {
+      "creation": "2026-09-04T21:17:08.6642856+08:00",
+      "queuing": "2026-09-04T21:17:08.6642859+08:00",
+      "start": "2026-09-04T21:17:07.0747760+08:00",
+      "finish": "2026-09-04T21:27:46.1451087+08:00"
+    },
+    "unitTestResultCount": 991,
+    "exitCode": 0
+  },
+  "limitations": [
+    "No clean-machine or store GUI install acceptance",
+    "No installer or updater implemented",
+    "No real release asset download verified",
+    "Structurally valid foreign WAL provenance not proven",
+    "Severely corrupt current database without healthy protection remains fail-closed",
+    "Physical power loss, SSD, disk, filesystem, bit rot and unreadable media safety not proven"
+  ],
+  "runnerSkipped": 0,
+  "explicitGateEmptyReturns": 10,
+  "gateMeaning": "10 existing gated methods return without high-scale or real-Excel exercise; not pressure evidence",
+  "stage9Status": "IN_PROGRESS / WAITING_NEXT_AUTHORIZATION",
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "exitCode": 0
+  },
+  "ef": {
+    "pendingModelChanges": false,
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "listNoConnect": true,
+    "designTimeDatabase": ":memory:"
+  },
+  "gitDiffCheck": "passed",
+  "businessSchemaIndexAndPackageChanges": false,
+  "s9t02Created": false,
+  "terra": {
+    "agent": "/root/s9_t01_terra_medium",
+    "model": "GPT-5.6 Terra",
+    "reasoning": "medium",
+    "commits": [
+      "e86d91c423359333bcd7df252b378f5850615507",
+      "f1eb6c5d28b986ecc6b7bbf70784d9b910d6197f",
+      "abb31bb94775593bf4c75f736f01b23511132bc9",
+      "0c6d0e4e37b3d18f3fdefa65c7c80f0108d41b11"
+    ],
+    "stopped": true,
+    "pushed": false
+  },
+  "priorTimeoutFocusedRerun": {
+    "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\S9T01-Sol-9946795be5104e7d9973924d356d6b47\\focused-timeout-rerun.trx",
+    "sha256": "1578413c045c440805d6001aa1e751260891055a047b0bda4921bf2aa26fb1df",
+    "passed": 1,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "failedAttemptsRetained": [
+    "Sandbox FETCH_HEAD permission, escalated fetch succeeded",
+    "Sandbox NuGet NU1301 TLS, escalated official restore/publish succeeded",
+    "S6T02 static Timer boundary failed, smoke-only boundary fixed",
+    "S3T07 clock count failed, production smoke changed to monotonic Stopwatch and original assertion preserved",
+    "S7T03 5-second asynchronous timeout, unchanged focused rerun passed then final full 991 passed"
+  ]
+}

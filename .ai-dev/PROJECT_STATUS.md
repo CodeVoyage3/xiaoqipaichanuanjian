@@ -2,14 +2,16 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 9｜安装、发布与在线升级交付（2026-09-04用户授权启动）
-- 状态：Stage9 IN_PROGRESS；S9-T01 IN_PROGRESS / NOT_ACCEPTED，唯一已创建Stage9 Task。Stage8 TECHNICALLY_ACCEPTED / CLOSED、S8-T01～T06及V1各卡继续关闭。
-- 当前工作分支：`main`（S8-T06开工fetch=f981211，clean/0/0；最终验收候选17ebb6c，随后仅治理收口及普通push）
-- 最终代码/测试沿用S8-T05 e0e5a0d，本卡零生产/测试改动。S8-T06 Sol新鲜Release984/984、隔离15/15、读100k/300k、导入100k50.19s、回滚2/2、恢复6/6、代表18/18及全量42/42 Kill，build0/0、EF无漂移、migration9、Git禁止项通过。最终main SHA以发布回执为准。
+- 状态：Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T01 TECHNICALLY_ACCEPTED / CLOSED，唯一已创建Stage9 Task，S9-T02未创建。Stage8 TECHNICALLY_ACCEPTED / CLOSED、S8-T01～T06及V1各卡继续关闭。
+- 当前工作分支：`main`（S9-T01开工fetch=7c1fa2d、clean/0/0；最终生产/测试0c6d0e4，之后仅治理收口，普通push/fetch最终SHA以Git回执为准）
+- S9-T01 Sol新鲜Release991/991、0failure/error/aborted/skip、10m38s；build0/0、EF无漂移、migration9/固定末条。win-x64 self-contained164508896bytes，移目录WPF双跑与隔离SQLite正常，host trace本地runtime加载通过；完整安装器/Updater未实现，未访问正式库。
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S9-T01已完成独立技术验收。总纲/D-007在线升级冲突已按2026-09-04用户决策治理，历史保留；产品Version1.0.0、程序/数据目录解耦与隔离发布底座完成。GitHub当前public但无Release，真实下载尚未验证，无private token blocker。推荐Inno Setup当前用户首装；Updater/staging/journal/ACK及migration保护回退仅冻结契约。下一卡建议当前用户安装器及数据保留矩阵，尚未创建。Stage8能力边界、Undo永久取消及重置数据独立授权均保持。以下开工/旧阶段为历史回执。
 
 - Stage9开工重新fetch：main=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095，clean、0/0；实际检查无旧Stage9/S9卡。已修订总纲第2/3/37/38节，2026-09-04新决策覆盖旧“V1不做在线自动升级”，首次EXE、后续用户确认后自动升级、核心业务完全离线。仅S9-T01允许发布/版本/安全隔离底座，完整安装器/Updater未实现。GitHub匿名API仓库200/public、Release列表200且0条、latest404：无private token blocker，尚无实际更新资产下载验证。此条覆盖下方历史的Stage9未启动停止点，不改写Stage8历史证据。
 

@@ -40,7 +40,7 @@ Sol无Authorization头的HTTPS GET实测：仓库API200/private=false/visibility
 
 拟定资产：`StoreExpiryInspector-1.0.0-win-x64.zip`（只有app payload）、`StoreExpiryInspector-Setup-1.0.0.exe`（首装）、`update-manifest.json`及其分离签名。manifest schemaVersion=1，至少version/channel/rid、package文件名/长度/SHA256、目标migration ID列表、允许升级的源版本及源migration范围、最低Updater版本。说明取Release body，不执行HTML/命令。实际字段、签名格式和固定公钥指纹需后续协议卡通过正反例测试再最终落地；当前不伪造生产key或私钥。
 
-SHA256只证明与所取元数据一致，不能单独证明发布者身份。冻结额外信任门禁：manifest使用离线保管/受控发布端私钥签名，客户端仅含公钥；具体采用.NET自带RSA-PSS/SHA256（原始manifest字节签名，避免重序列化歧义），私钥永不入repo/包/门店。Windows Authenticode另用于EXE发行身份与SmartScreen体验，不替代manifest信任链，证书采购/签名发布另需授权。
+SHA256只证明与所取元数据一致，不能单独证明发布者身份。冻结额外信任门禁：manifest使用离线保管/受控发布端私钥签名，客户端仅含公钥；具体采用.NET自带RSA-PSS/SHA256（原始manifest字节签名，避免重序列化歧义），私钥永不入repo/包/门店。Windows Authenticode另用于EXE发行身份与SmartScreen体验，不替代manifest信任链。D-001已有“接受未签名EXE/未知发布者”的用户决策保持有效，本卡不强制采购证书、不把证书变成首装blocker；未来如采购/签名另需授权。
 
 只访问固定HTTPS GitHub仓库/Release与其真实资产重定向目标；API返回的任意URL不能直接被当本机执行输入。下载字节上限、声明长度与实际长度、SHA256、manifest签名、版本和目标平台全部一致后才能解包。解包拒绝绝对路径、`..`、ADS、ReparsePoint/link、重复/大小写冲突条目及解压体积越界；包不能包含数据根、任意脚本或任意安装命令。对最终解包文件清单再次核验。
 
@@ -67,7 +67,7 @@ Updater不得从正在替换的app目录运行：使用同一用户可写的升�
 ## 后续门禁和本卡边界
 
 当前未实现：正式安装器、可下载Release、签名发布链、Updater及跨版本恢复、Windows干净机器/普通用户/卸载最终矩阵。这些是后续交付工作，不是Stage8未修生产blocker。不能用S9-T01发布基座通过宣称可向门店投放在线升级。
-下一卡建议只做当前用户首次安装器：包装已验收publish、固定目录/AppId/版本、快捷方式、首装默认自启动且升级保留偏好、卸载默认保留合成数据、拒绝不兼容降级；只TEMP/GUID或另行批准的隔离用户环境。正式库迁移/安装验收必须另获用户授权。实际S9-T02不得自动创建。
+下一卡建议只做当前用户首次安装器：包装已验收publish、固定目录/AppId/版本、快捷方式、首装默认自启动且重装保留偏好、卸载默认保留合成数据、拒绝不兼容降级；只TEMP/GUID或另行批准的隔离用户环境。首次启动只接受全新空数据目录或已经兼容的migration9数据，不能借“首装/重装”触发未经保护的旧Schema升级；旧Schema路径应阻断并指向后续升级保护契约。正式库迁移/安装验收必须另获用户授权。实际S9-T02不得自动创建。
 
 ## 官方资料（2026-09-04读取）
 

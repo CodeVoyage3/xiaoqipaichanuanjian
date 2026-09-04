@@ -1,5 +1,7 @@
 # 架构事实与阶段边界
 
+> 2026-09-04 Stage9补充：S9-T01将默认数据路径集中到RuntimeDataRoot（正式默认位置不变），新增仅TEMP/GUID的安全隔离启动与win-x64 self-contained多文件发布配置，产品Version=1.0.0。代码/发布证据与当前验收状态见ACCEPTANCE/S9-T01.md；安装目录、持久化清单、GitHub信任、独立Updater及migration保护契约见ANALYSIS/S9-T01-UPDATE-ARCHITECTURE.md。后续安装器/Updater尚未实现；Stage8关闭及全部能力边界持续有效。下方早期“当前事实”保留为历史。
+
 > 更新于 2026-08-31。Stage 7 已总验收并收口；下方保留 Stage 5 架构图及早期债务记录，Stage 6～7 当前边界见本文末节。不得将历史开工缺口当作当前未交付功能。
 
 ## Stage 5 整体通过时的代码结构

@@ -1,5 +1,17 @@
 # 最新交接
 
+## Stage9 / S9-T01正式关闭（2026-09-04，覆盖下方开工状态）
+
+- S9-T01 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02未创建。开工main=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095、clean/0/0；最终生产/测试0c6d0e4e37b3d18f3fdefa65c7c80f0108d41b11。最终治理提交后普通push main、fetch核对clean/0/0，实际SHA以发布回执为准。
+- 全新GPT-5.6 Terra medium/priority实施e86d91c/f1eb6c5/abb31bb/0c6d0e4并已停止；Sol治理、完整diff审查和独立复验，未代写生产代码。Sol最终无filter Release991/991、0failure/error/timeout/aborted/skip、10m38s；build0warning/0error、EF无漂移、migration9末条20260901155124_AddPolicyAndBaselineFoundation；无业务/Schema/index/包变动。
+- 总纲第2/3/37/38节和D-007明确2026-09-04决策覆盖旧在线升级禁令；首次当前用户安装EXE、后续GitHub在线检查+用户确认后自动升级，核心业务离线，无静默强制升级。Version=1.0.0，Assembly/File=1.0.0.0，UI读程序集；发布为win-x64 self-contained多文件，不trim。
+- Sol最终发布164508896bytes（156.8879MiB）；移目录前后真实WPF双跑，两个独立TEMP/GUID库与程序树hash门禁通过。另关闭全局.NET搜索、指向不存在DOTNET_ROOT直接启动成功，hostfxr/CoreCLR实际从发布目录加载；三份合成DB各339968bytes、integrity ok/FK0/migration9。不是干净机器或用户GUI验收。
+- 数据逻辑默认根仍%LOCALAPPDATA%\StoreExpiryInspector（data/app.db、backups/pre-import、logs；settings/runtime/原始Excel BLOB在库内），与拟安装Programs\StoreExpiryInspector\app解耦。正式根/库未探测/访问/哈希/复制。隔离参数仅接受本次全新TEMP/GUID，拒绝已有根、未知/缺失参数和ReparsePoint祖先；隔离自启动读写拒绝。
+- GitHub匿名仓库200/public、Release列表200/0、latest404，无private token blocker，但未有实际Release资产下载。客户端严禁PAT/secret。Inno Setup lowest当前用户首装方案冻结，保留用户接受未签名EXE的历史决策；完整安装器/Updater/签名协议/跨版本回滚尚未实现。
+- 现有Restore不能直接当跨版本回滚器；后续升级专用保护+staging迁移+独立Updater/journal/健康ACK+旧程序/旧DB回退契约见ANALYSIS/S9-T01-UPDATE-ARCHITECTURE.md。Stage8继续CLOSED：合法外来WAL来源未证明，严重坏当前无法保护时Restore阻断，真实断电/SSD/磁盘/文件系统/bit rot/不可读介质安全未证明。
+- 首次NuGet TLS失败、两条旧静态门禁返修、一次S7T03异步超时和原样单项1/1后新鲜全量通过的过程均保留于Acceptance。10个显式空return不算高规模/真实Excel验证。证据索引S9-T01-RESULT.json；TEMP原件保留但可能被系统清理。
+- 下一步仅建议S9-T02：当前用户Inno首装、稳定路径/AppId、快捷方式、自启动偏好、同版本重装/卸载保留合成数据；旧Schema无保护升级/降级必须阻断。未创建，等待用户新授权。Undo永久取消、重置数据另立需求。现在停止。
+
 ## Stage9 / S9-T01正式启动（2026-09-04，覆盖下方阶段停止点）
 
 - 用户授权Stage9及仅S9-T01：产品基线修订、win-x64 self-contained发布/版本/数据路径底座、安装与在线升级架构。状态IN_PROGRESS / NOT_ACCEPTED，未创建S9-T02。Sol先fetch：main=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095，clean、0/0；治理目录实查无既有Stage9文件。

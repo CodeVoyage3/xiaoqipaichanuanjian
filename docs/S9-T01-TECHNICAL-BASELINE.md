@@ -1,5 +1,7 @@
 # S9-T01 技术基线
 
+2026-09-04 Sol独立技术验收通过；最终生产/测试0c6d0e4，Release991/991、build0/0、EF无漂移、migration9。最终发布164508896bytes，真实WPF移目录双跑及本地runtime加载/隔离SQLite证据见`.ai-dev/ACCEPTANCE/S9-T01.md`与`S9-T01-RESULT.json`。本卡已关闭，Stage9最终安装和在线更新交付仍未完成。
+
 本卡只建立发布、版本和隔离启动底座；不实现安装器、GitHub 更新检查、下载器、Updater 或跨版本迁移回滚。完整在线升级信任、Updater journal 与 migration 专用保护契约见 `.ai-dev/ANALYSIS/S9-T01-UPDATE-ARCHITECTURE.md`。
 
 ## 发布与版本
