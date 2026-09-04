@@ -75,6 +75,28 @@ public sealed class InspectionHistoryQueryTests
     }
 
     [Fact]
+    public void ListPageCountsOrdersAndKeepsZeroItemInspection()
+    {
+        using var database = SqliteTestDatabase.Create();
+        FormalScenario first;
+        FormalScenario second;
+        using (var seed = database.Open())
+        {
+            first = AddFormalInspection(seed, "PAGE-FIRST", NewerSubmittedAtUtc, []);
+            second = AddFormalInspection(seed, "PAGE-SECOND", NewerSubmittedAtUtc, new[] { 3 });
+        }
+        using var context = database.Open();
+        var page = new InspectionHistoryQuery().ListPage(context, new(1, 1));
+        Assert.Equal(2, page.TotalCount);
+        Assert.Equal(second.InspectionId, Assert.Single(page.Items).InspectionId);
+        Assert.Equal(1, page.Items[0].ItemCount);
+        var last = new InspectionHistoryQuery().ListPage(context, new(2, 1));
+        Assert.Equal(first.InspectionId, Assert.Single(last.Items).InspectionId);
+        Assert.Equal(0, last.Items[0].ItemCount);
+        Assert.Empty(new InspectionHistoryQuery().ListPage(context, new(3, 1)).Items);
+    }
+
+    [Fact]
     public void DraftAndUnfinishedTasksAreExcludedWithoutAnInspection()
     {
         using var database = SqliteTestDatabase.Create();

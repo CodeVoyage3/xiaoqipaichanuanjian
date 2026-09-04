@@ -10,7 +10,8 @@ public sealed record InspectionTaskSearchRequest(
     string? SearchText = null,
     string? Stage = null,
     int Page = 1,
-    int PageSize = 50)
+    int PageSize = 50,
+    string? CategoryName = null)
 {
     public string? Search => SearchText;
 }
@@ -129,17 +130,49 @@ public sealed class InspectionTaskQuery
             .ToArray());
     }
 
+    public IReadOnlyList<long> GetOpenTaskIds(StoreDbContext context, string? categoryName = null)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return Array.AsReadOnly(BuildTasks(context, categoryName: categoryName)
+            .OrderBy(task => task.Id)
+            .Select(task => task.Id)
+            .ToArray());
+    }
+
+    public IReadOnlyList<long> GetOpenTaskIds(StoreDbContext context, IReadOnlyCollection<long> taskIds)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (taskIds.Count == 0) return Array.Empty<long>();
+
+        var openIds = new List<long>(taskIds.Count);
+        foreach (var ids in taskIds.Distinct().Chunk(900))
+        {
+            openIds.AddRange(BuildTasks(context).Where(task => ids.Contains(task.Id)).Select(task => task.Id));
+        }
+        return Array.AsReadOnly(openIds.ToArray());
+    }
+
     public IReadOnlyList<ReminderCandidate> GetReminderCandidates(StoreDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return Array.AsReadOnly(OrderTasks(QueryTaskList(context, eligibleForReminder: true))
-            .Select(task => new ReminderCandidate(
+        return Array.AsReadOnly(BuildTasks(context, eligibleForReminder: true)
+            .Select(task => new
+            {
+                TaskId = task.Id,
                 task.ProductId,
-                task.ProductName,
-                task.ProductBarcode,
-                task.ProductCode,
-                task.HighestStage))
+                task.Product.CurrentName,
+                task.Product.CurrentBarcode,
+                task.Product.ProductCode,
+                task.HighestStage,
+                NearestExpiryDate = task.Items.Select(item => (DateOnly?)item.Batch.ExpiryDate).Min()
+            })
+            .OrderByDescending(task => task.HighestStage == ExpiryStageCalculator.Expired ? 4 : task.HighestStage == ExpiryStageCalculator.Withdraw ? 3 : task.HighestStage == ExpiryStageCalculator.Discount20 ? 2 : task.HighestStage == ExpiryStageCalculator.Discount50 ? 1 : 0)
+            .ThenBy(task => task.NearestExpiryDate == null)
+            .ThenBy(task => task.NearestExpiryDate)
+            .ThenBy(task => task.TaskId)
+            .AsEnumerable()
+            .Select(task => new ReminderCandidate(task.ProductId, task.CurrentName, task.CurrentBarcode, task.ProductCode, task.HighestStage))
             .ToArray());
     }
 
@@ -147,8 +180,7 @@ public sealed class InspectionTaskQuery
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var tasks = QueryTaskList(context);
-        var ordered = OrderTasks(tasks).ToArray();
+        var tasks = BuildTasks(context);
         var lastSuccessfulImportAtUtc = context.Imports
             .AsNoTracking()
             .Where(import => import.Status == ImportStatuses.Succeeded
@@ -161,12 +193,12 @@ public sealed class InspectionTaskQuery
         var productCount = context.Products.AsNoTracking().Count();
         var batchCount = context.Batches.AsNoTracking().Count();
         return new(
-            ordered.Length,
-            ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Expired),
-            ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Withdraw),
-            ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Discount20),
-            ordered.Count(task => task.HighestStage == ExpiryStageCalculator.Discount50),
-            Array.AsReadOnly(ordered.Take(20).ToArray()),
+            tasks.Count(),
+            tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Expired),
+            tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Withdraw),
+            tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Discount20),
+            tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Discount50),
+            Array.AsReadOnly(ReadTaskRows(tasks, 1, 20).ToArray()),
             lastSuccessfulImportAtUtc,
             productCount,
             batchCount);
@@ -183,13 +215,10 @@ public sealed class InspectionTaskQuery
         var search = string.IsNullOrWhiteSpace(request.SearchText)
             ? null
             : request.SearchText.Trim();
-        var tasks = QueryTaskList(context, search, request.Stage);
-        var ordered = OrderTasks(tasks).ToArray();
-        var offset = (long)(request.Page - 1) * request.PageSize;
-        var page = offset >= ordered.Length
-            ? Array.Empty<InspectionTaskListItem>()
-            : ordered.Skip((int)offset).Take(request.PageSize).ToArray();
-        return new(Array.AsReadOnly(page), ordered.Length, request.Page, request.PageSize);
+        var tasks = BuildTasks(context, search, request.Stage, request.CategoryName);
+        var totalCount = tasks.Count();
+        var page = ReadTaskRows(tasks, request.Page, request.PageSize);
+        return new(Array.AsReadOnly(page), totalCount, request.Page, request.PageSize);
     }
 
     public InspectionTaskDetailResult GetDetail(StoreDbContext context, long taskId)
@@ -359,10 +388,11 @@ public sealed class InspectionTaskQuery
         return new(task.Id, task.Status, task.ProductId, task.ClosedAtUtc, task.CloseReason, detail);
     }
 
-    private static IReadOnlyList<InspectionTaskListItem> QueryTaskList(
+    private static IQueryable<ProductTask> BuildTasks(
         StoreDbContext context,
         string? search = null,
         string? stage = null,
+        string? categoryName = null,
         bool eligibleForReminder = false)
     {
         var query = context.Tasks
@@ -394,62 +424,45 @@ public sealed class InspectionTaskQuery
                 task.Product.ProductCode.Contains(search) ||
                 (task.Product.CurrentBarcode != null && task.Product.CurrentBarcode.Contains(search)));
         }
-
-        var headers = query
-            .Select(task => new TaskListHeader(
-                task.Id,
-                task.ProductId,
-                task.Product.CurrentName,
-                task.Product.ProductCode,
-                task.Product.CurrentBarcode,
-                task.Product.CategoryCode,
-                task.HighestStage,
-                task.Product.EffectiveStockQty))
-            .ToArray();
-        if (headers.Length == 0)
+        if (!string.IsNullOrWhiteSpace(categoryName))
         {
-            return Array.Empty<InspectionTaskListItem>();
+            query = query.Where(task => task.Product.CategoryCode == CategoryCodeForDisplayName(categoryName));
         }
-
-        var taskIds = headers.Select(task => task.TaskId).ToArray();
-        var itemRows = context.TaskItems
-            .AsNoTracking()
-            .Where(item => taskIds.Contains(item.TaskId))
-            .Select(item => new TaskListItemRow(item.TaskId, item.Batch.ExpiryDate))
-            .ToArray();
-        var itemsByTask = itemRows.ToLookup(item => item.TaskId);
-        var validDraftTaskIds = context.Drafts
-            .AsNoTracking()
-            .Where(draft => taskIds.Contains(draft.TaskId) && !draft.IsInvalid)
-            .Select(draft => draft.TaskId)
-            .ToHashSet();
-
-        return Array.AsReadOnly(headers
-            .Select(header =>
-            {
-                var items = itemsByTask[header.TaskId];
-                return new InspectionTaskListItem(
-                    header.TaskId,
-                    header.ProductId,
-                    header.ProductName,
-                    header.ProductCode,
-                    header.ProductBarcode,
-                    header.HighestStage,
-                    items.Count(),
-                    header.EffectiveStockQty,
-                    items.Select(item => (DateOnly?)item.ExpiryDate).DefaultIfEmpty().Min(),
-                    validDraftTaskIds.Contains(header.TaskId),
-                    ProductCategoryScopes.DisplayNameForCategoryCode(header.CategoryCode));
-            })
-            .ToArray());
+        return query;
     }
 
-    // ponytail: materialize filtered task rows to reuse canonical priority; add a provider-specific ordering projection if volume proves this costly.
-    private static IEnumerable<InspectionTaskListItem> OrderTasks(
-        IEnumerable<InspectionTaskListItem> tasks) => tasks
-        .OrderByDescending(task => ExpiryStageCalculator.GetStagePriority(task.HighestStage))
-        .ThenBy(task => task.NearestExpiryDate ?? DateOnly.MaxValue)
-        .ThenBy(task => task.TaskId);
+    private static InspectionTaskListItem[] ReadTaskRows(IQueryable<ProductTask> tasks, int page, int pageSize)
+    {
+        var offset = checked((long)(page - 1) * pageSize);
+        if (offset > int.MaxValue)
+        {
+            return [];
+        }
+
+        return tasks
+            .Select(task => new
+            {
+                task.Id, task.ProductId, task.Product.CurrentName, task.Product.ProductCode, task.Product.CurrentBarcode,
+                task.Product.CategoryCode, task.HighestStage, task.Product.EffectiveStockQty,
+                PendingBatchCount = task.Items.Count(),
+                NearestExpiryDate = task.Items.Select(item => (DateOnly?)item.Batch.ExpiryDate).Min(),
+                HasValidDraft = task.Draft != null && !task.Draft.IsInvalid
+            })
+            .OrderByDescending(task => task.HighestStage == ExpiryStageCalculator.Expired ? 4 : task.HighestStage == ExpiryStageCalculator.Withdraw ? 3 : task.HighestStage == ExpiryStageCalculator.Discount20 ? 2 : task.HighestStage == ExpiryStageCalculator.Discount50 ? 1 : 0)
+            .ThenBy(task => task.NearestExpiryDate == null)
+            .ThenBy(task => task.NearestExpiryDate)
+            .ThenBy(task => task.Id)
+            .Skip((int)offset)
+            .Take(pageSize)
+            .AsEnumerable()
+            .Select(task => new InspectionTaskListItem(task.Id, task.ProductId, task.CurrentName, task.ProductCode, task.CurrentBarcode, task.HighestStage, task.PendingBatchCount, task.EffectiveStockQty, task.NearestExpiryDate, task.HasValidDraft, ProductCategoryScopes.DisplayNameForCategoryCode(task.CategoryCode)))
+            .ToArray();
+    }
+
+    private static string CategoryCodeForDisplayName(string categoryName) => categoryName.Trim() switch
+    {
+        "食品" => "food", "宠物" => "pet", "日用" => "daily_use", "美妆" => "beauty", "家居" => "home", "香氛香水" => "fragrance", "文具" => "stationery", "潮流玩具" => "trendy_toys", "应季搭配" => "seasonal_assortment", "赠品小样" => "gift_sample", _ => throw new ArgumentException("Unknown category.", nameof(categoryName))
+    };
 
     private static void ValidateSearchRequest(InspectionTaskSearchRequest request)
     {

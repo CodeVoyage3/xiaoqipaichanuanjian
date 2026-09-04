@@ -161,9 +161,9 @@ public sealed class Stage4ViewModelTests
         await vm.SearchAsync();
 
         Assert.Equal(50, vm.PageSize);
-        Assert.Equal(3, requests.Count);
+        Assert.Equal(2, requests.Count);
         Assert.Equal("商品编码", requests[^1].SearchText);
-        Assert.Equal(int.MaxValue, requests[^1].PageSize);
+        Assert.Equal(50, requests[^1].PageSize);
         Assert.Equal(1, requests[^1].Page);
         Assert.Single(vm.Items);
     }
@@ -202,7 +202,7 @@ public sealed class Stage4ViewModelTests
 
         await vm.LoadAsync();
         vm.SelectedStage = "discount_20";
-        await WaitForRequestCount(requests, 3);
+        await WaitForRequestCount(requests, 2);
 
         Assert.Equal("discount_20", requests[^1].Stage);
         Assert.Equal(1, requests[^1].Page);
@@ -301,8 +301,9 @@ public sealed class Stage4ViewModelTests
             var filtered = tasks
                 .Where(item => string.IsNullOrEmpty(request.SearchText) || item.ProductCode.Contains(request.SearchText, StringComparison.Ordinal))
                 .Where(item => string.IsNullOrEmpty(request.Stage) || item.HighestStage == request.Stage)
+                .Where(item => string.IsNullOrEmpty(request.CategoryName) || item.CategoryName == request.CategoryName)
                 .ToArray();
-            return new InspectionTaskSearchResult(filtered, filtered.Length, request.Page, request.PageSize);
+            return new InspectionTaskSearchResult(filtered.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToArray(), filtered.Length, request.Page, request.PageSize);
         });
 
         await vm.LoadAsync();
@@ -358,8 +359,9 @@ public sealed class Stage4ViewModelTests
             var filtered = tasks
                 .Where(item => string.IsNullOrEmpty(request.SearchText) || item.ProductCode.Contains(request.SearchText, StringComparison.Ordinal))
                 .Where(item => string.IsNullOrEmpty(request.Stage) || item.HighestStage == request.Stage)
+                .Where(item => string.IsNullOrEmpty(request.CategoryName) || item.CategoryName == request.CategoryName)
                 .ToArray();
-            return new InspectionTaskSearchResult(filtered, filtered.Length, request.Page, request.PageSize);
+            return new InspectionTaskSearchResult(filtered.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToArray(), filtered.Length, request.Page, request.PageSize);
         });
 
         await vm.LoadAsync();

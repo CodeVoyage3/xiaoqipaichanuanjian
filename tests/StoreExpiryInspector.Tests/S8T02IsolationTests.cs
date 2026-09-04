@@ -178,6 +178,23 @@ public sealed class S8T02IsolationTests
         Assert.Equal(first.Path, context.Database.GetDbConnection().DataSource);
     }
 
+    [Fact]
+    public async Task TodayIdLoaderOnlyInjectionsFailClosedBeforeTheDefaultContextFactory()
+    {
+        var factoryCalls = 0;
+        foreach (var shell in new[]
+        {
+            new ShellViewModel(todayTaskIdsLoader: _ => [1L], logException: _ => { }, defaultContextFactory: () => { Interlocked.Increment(ref factoryCalls); throw new InvalidOperationException(); }),
+            new ShellViewModel(todayOpenTaskIdsLoader: ids => ids.ToArray(), logException: _ => { }, defaultContextFactory: () => { Interlocked.Increment(ref factoryCalls); throw new InvalidOperationException(); })
+        })
+        {
+            await WaitUntil(() => shell.Dashboard.HasError && shell.PendingTasks.HasError);
+            await shell.NavigateToAsync(ShellPage.TodayInspection);
+            await WaitUntil(() => shell.TodayInspection.HasLoadedTasks || shell.TodayInspection.StatusText == "加载今日任务失败");
+        }
+        Assert.Equal(0, factoryCalls);
+    }
+
     private static InspectionTaskListItem TaskItem(string category) =>
         new(1, 1, "商品", "SKU", null, "expired", 1, 1, new DateOnly(2026, 9, 4), false, category);
 

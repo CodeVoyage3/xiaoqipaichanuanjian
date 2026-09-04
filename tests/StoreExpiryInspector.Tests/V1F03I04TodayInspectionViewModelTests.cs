@@ -293,10 +293,11 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             dashboardLoader: () => new(0, 0, 0, 0, 0, []),
             taskLoader: request =>
             {
-                if (request.PageSize == int.MaxValue) Interlocked.Increment(ref loads);
+                if (request.PageSize == 50) Interlocked.Increment(ref loads);
                 return new([], 0, request.Page, request.PageSize);
             });
 
+        await WaitUntil(() => shell.PendingTasks.HasLoadedResult);
         await shell.NavigateToAsync(ShellPage.TodayInspection);
         await WaitUntil(() => shell.TodayInspection.HasLoadedTasks);
         var loadsAfterFirstVisit = loads;
@@ -313,11 +314,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     {
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var blockToday = false;
         var shell = new ShellViewModel(
             dashboardLoader: () => new(0, 0, 0, 0, 0, []),
             taskLoader: request =>
             {
-                if (request.PageSize == int.MaxValue)
+                if (blockToday && request.PageSize == 50)
                 {
                     started.TrySetResult();
                     release.Task.GetAwaiter().GetResult();
@@ -325,13 +327,65 @@ public sealed class V1F03I04TodayInspectionViewModelTests
                 return new([], 0, request.Page, request.PageSize);
             });
 
+        await WaitUntil(() => shell.PendingTasks.HasLoadedResult);
+        blockToday = true;
+        var pageCommandChanges = 0;
+        shell.TodayInspection.NextPageCommand.CanExecuteChanged += (_, _) => pageCommandChanges++;
         var load = shell.TodayInspection.LoadAsync();
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await WaitUntil(() => shell.TodayInspection.IsLoadingTasks);
         Assert.True(shell.NavigateHomeCommand.CanExecute(null));
         Assert.False(shell.TodayInspection.ReloadCommand.CanExecute(null));
         Assert.False(shell.TodayInspection.PreviewCommand.CanExecute(null));
         release.SetResult();
         await load;
+        Assert.True(pageCommandChanges > 0);
+    }
+
+    [Fact]
+    public async Task PagedCategorySelectionExportsAcrossPagesAndPrunesOnlyClosedTasksOnReload()
+    {
+        var openIds = Enumerable.Range(1, 51).Select(id => (long)id).Append(99).ToHashSet();
+        IReadOnlyCollection<long>? exported = null;
+        var all = Enumerable.Range(1, 51).Select(id => new InspectionTaskListItem(id, id, $"食品 {id}", $"F{id}", null, "expired", 1, 1, Today, false, "食品"))
+            .Append(new(99, 99, "饮料 99", "D99", null, "withdraw", 1, 1, Today, false, "饮料"))
+            .ToArray();
+        InspectionTaskSearchResult Search(InspectionTaskSearchRequest request)
+        {
+            var filtered = all.Where(item => request.CategoryName is null || item.CategoryName == request.CategoryName).ToArray();
+            return new(filtered.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToArray(), filtered.Length, request.Page, request.PageSize);
+        }
+        var vm = new TodayInspectionViewModel(
+            loadTasks: () => new([], 0, 1, 50),
+            export: (_, ids) => { exported = ids.ToArray(); return new("test.xlsx", ids.Count, ids.Count); },
+            preview: _ => Preview([]), apply: _ => new(true, []), submit: _ => new(BulkInspectionSubmissionOutcome.Submitted, [], []), refreshAfterSubmit: _ => Task.CompletedTask,
+            searchTasks: Search, loadCategories: () => ["食品", "饮料"],
+            loadTaskIds: category => all.Where(item => category is null || item.CategoryName == category).Select(item => item.TaskId).ToArray(),
+            loadOpenTaskIds: ids => ids.Where(openIds.Contains).ToArray());
+
+        vm.SelectedCategory = "食品";
+        await WaitUntil(() => vm.Tasks.Count == 50 && vm.SelectedCategory == "食品");
+        vm.SelectAllCommand.Execute(null);
+        await WaitUntil(() => vm.SelectedCount == 51);
+        vm.SelectedCategory = "饮料";
+        await WaitUntil(() => vm.Tasks.Count == 1 && vm.Tasks[0].TaskId == 99);
+        vm.SelectAllCommand.Execute(null);
+        await WaitUntil(() => vm.SelectedCount == 52);
+        vm.SelectedCategory = "食品";
+        await WaitUntil(() => vm.Tasks.Count == 50 && vm.SelectedCategory == "食品");
+        vm.NextPageCommand.Execute(null);
+        await WaitUntil(() => vm.CurrentPage == 2 && vm.Tasks.Single().TaskId == 51);
+        Assert.True(vm.Tasks.Single().IsSelected);
+
+        await vm.ExportAsync("test.xlsx");
+        Assert.Equal(52, exported?.Count);
+        Assert.Contains(99, exported!);
+        openIds.Remove(1);
+        await vm.LoadAsync();
+        Assert.Equal(51, vm.SelectedCount);
+        await vm.ExportAsync("test.xlsx");
+        Assert.DoesNotContain(1, exported!);
+        Assert.Contains(99, exported!);
     }
 
     [Fact]
@@ -417,13 +471,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             dashboardLoader: () => new(0, 0, 0, 0, 0, []),
             taskLoader: request =>
             {
-                if (request.PageSize == int.MaxValue) todayRequest = request;
+                if (request.PageSize == 50) todayRequest = request;
                 return new([], 0, request.Page, request.PageSize);
             });
         await shell.TodayInspection.LoadAsync();
         var root = FindRepositoryRoot();
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
-        Assert.Equal(int.MaxValue, todayRequest?.PageSize);
+        Assert.Equal(50, todayRequest?.PageSize);
         Assert.Contains("NavigationTodayInspectionButton", window, StringComparison.Ordinal);
         Assert.Contains("NavigationImportButton", window, StringComparison.Ordinal);
         Assert.Contains("Click=\"OpenTodayInspection_Click\"", window, StringComparison.Ordinal);

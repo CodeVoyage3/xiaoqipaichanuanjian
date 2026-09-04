@@ -13,6 +13,7 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
     private enum RevisionLoadState { None, Loading, Found, Empty, NotFound, Error }
 
     private readonly Func<IReadOnlyList<InspectionHistoryListItem>> _loadList;
+    private readonly Func<InspectionHistoryPageRequest, InspectionHistoryPageResult>? _loadPage;
     private readonly Func<long, InspectionHistoryDetailResult> _loadDetail;
     private readonly Func<long, long, InspectionItemRevisionHistoryResult> _loadRevisions;
     private readonly Func<InspectionHistoryEditRequest, InspectionHistoryEditResult> _editHistory;
@@ -23,6 +24,8 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
     private DetailLoadState _detailState;
     private RevisionLoadState _revisionState;
     private int _loadVersion;
+    private int _currentPage = 1;
+    private int _totalCount;
     private int _detailLoadVersion;
     private int _revisionLoadVersion;
     private string _errorMessage = string.Empty;
@@ -49,12 +52,14 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         Action<Exception>? logException = null,
         Func<InspectionHistoryEditRequest, InspectionHistoryEditResult>? editHistory = null,
         Func<InspectionHistoryEditRequest, bool>? confirmEdit = null,
-        Func<DateTime>? utcNow = null)
+        Func<DateTime>? utcNow = null,
+        Func<InspectionHistoryPageRequest, InspectionHistoryPageResult>? loadPage = null)
     {
         ArgumentNullException.ThrowIfNull(loadList);
         ArgumentNullException.ThrowIfNull(loadDetail);
         ArgumentNullException.ThrowIfNull(loadRevisions);
         _loadList = loadList;
+        _loadPage = loadPage;
         _loadDetail = loadDetail;
         _loadRevisions = loadRevisions;
         _editHistory = editHistory ?? (_ => throw new InvalidOperationException("History edit is not configured."));
@@ -63,6 +68,8 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         RefreshCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsEditBusy);
         RetryCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsEditBusy);
+        PreviousPageCommand = new RelayCommand(_ => { _ = GoToPreviousPageAsync(); }, _ => !IsEditBusy && !IsLoading && CurrentPage > 1);
+        NextPageCommand = new RelayCommand(_ => { _ = GoToNextPageAsync(); }, _ => !IsEditBusy && !IsLoading && CurrentPage < TotalPages);
         BackCommand = new RelayCommand(_ => BackToList(), _ => !IsEditBusy);
         OpenDetailCommand = new RelayCommand(parameter =>
         {
@@ -89,6 +96,15 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
     public RelayCommand RefreshCommand { get; }
 
     public RelayCommand RetryCommand { get; }
+    public RelayCommand PreviousPageCommand { get; }
+    public RelayCommand NextPageCommand { get; }
+    public int PageSize => 50;
+    public int CurrentPage => _currentPage;
+    public int TotalCount => _totalCount;
+    public int TotalPages => Math.Max(1, (TotalCount + PageSize - 1) / PageSize);
+    public bool CanGoPrevious => !IsEditBusy && !IsLoading && CurrentPage > 1;
+    public bool CanGoNext => !IsEditBusy && !IsLoading && CurrentPage < TotalPages;
+    public string PageSummary => $"第 {CurrentPage} / {TotalPages} 页 · 共 {TotalCount} 条记录";
 
     public RelayCommand BackCommand { get; }
 
@@ -386,23 +402,34 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         Notify(nameof(HasEmptyResult));
         _listState = ListLoadState.Loading;
         _errorMessage = string.Empty;
-        Notify(nameof(IsLoading), nameof(HasError), nameof(HasLoadedResult), nameof(HasEmptyResult), nameof(ErrorMessage));
+        Notify(nameof(IsLoading), nameof(HasError), nameof(HasLoadedResult), nameof(HasEmptyResult), nameof(ErrorMessage), nameof(CanGoPrevious), nameof(CanGoNext));
+        PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged();
 
         try
         {
-            var records = await Task.Run(() => DatabaseRuntimeGate.Run(_loadList));
+            var page = _loadPage is null
+                ? new InspectionHistoryPageResult(await Task.Run(() => DatabaseRuntimeGate.Run(_loadList)), 0, 1, PageSize)
+                : await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadPage(new(CurrentPage, PageSize))));
             if (version != _loadVersion)
             {
                 return;
             }
 
-            foreach (var record in records)
+            if (_loadPage is not null && CurrentPage > Math.Max(1, (page.TotalCount + PageSize - 1) / PageSize))
+            {
+                _currentPage = Math.Max(1, (page.TotalCount + PageSize - 1) / PageSize);
+                await LoadAsync();
+                return;
+            }
+            _totalCount = _loadPage is null ? page.Items.Count : page.TotalCount;
+            foreach (var record in page.Items)
             {
                 Items.Add(record);
             }
 
             _listState = ListLoadState.Loaded;
-            Notify(nameof(IsLoading), nameof(HasError), nameof(HasLoadedResult), nameof(HasEmptyResult));
+            Notify(nameof(IsLoading), nameof(HasError), nameof(HasLoadedResult), nameof(HasEmptyResult), nameof(TotalCount), nameof(TotalPages), nameof(CurrentPage), nameof(PageSummary), nameof(CanGoPrevious), nameof(CanGoNext));
+            PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged();
         }
         catch (Exception exception)
         {
@@ -415,8 +442,23 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
             Items.Clear();
             _listState = ListLoadState.Error;
             _errorMessage = "排查历史加载失败";
-            Notify(nameof(IsLoading), nameof(HasError), nameof(HasLoadedResult), nameof(HasEmptyResult), nameof(ErrorMessage));
+            Notify(nameof(IsLoading), nameof(HasError), nameof(HasLoadedResult), nameof(HasEmptyResult), nameof(ErrorMessage), nameof(CanGoPrevious), nameof(CanGoNext));
+            PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged();
         }
+    }
+
+    private async Task GoToPreviousPageAsync()
+    {
+        if (IsEditBusy || IsLoading || CurrentPage <= 1) return;
+        _currentPage--;
+        await LoadAsync();
+    }
+
+    private async Task GoToNextPageAsync()
+    {
+        if (IsEditBusy || IsLoading || CurrentPage >= TotalPages) return;
+        _currentPage++;
+        await LoadAsync();
     }
 
     public async Task LoadDetailAsync()
@@ -603,6 +645,9 @@ public sealed class InspectionHistoryViewModel : ViewModelBase
         OpenDetailCommand.RaiseCanExecuteChanged();
         RetryDetailCommand.RaiseCanExecuteChanged();
         RetryRevisionCommand.RaiseCanExecuteChanged();
+        PreviousPageCommand.RaiseCanExecuteChanged();
+        NextPageCommand.RaiseCanExecuteChanged();
+        Notify(nameof(CanGoPrevious), nameof(CanGoNext));
     }
 
     private void NotifyEditMessages() => Notify(

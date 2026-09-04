@@ -16,7 +16,7 @@ public sealed class InspectionTaskQueryTests
     private static readonly DateTime SubmittedAtUtc = new(2026, 8, 27, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void OpenTaskListUsesThreeBatchReadsAndReturnsCanonicalCategoryName()
+    public void OpenTaskListUsesDatabaseProjectionAndReturnsCanonicalCategoryName()
     {
         using var database = SqliteTestDatabase.Create();
         using (var seed = database.Open()) AddOpenTask(seed, "BATCHED", ExpiryStageCalculator.Expired, new DateOnly(2026, 8, 28));
@@ -29,7 +29,7 @@ public sealed class InspectionTaskQueryTests
 
         var item = Assert.Single(new InspectionTaskQuery().SearchOpenTasks(context, new()).Items);
 
-        Assert.Equal(3, interceptor.ReaderCommandCount);
+        Assert.Equal(2, interceptor.ReaderCommandCount);
         Assert.Equal("食品", item.CategoryName);
     }
 
@@ -275,6 +275,30 @@ public sealed class InspectionTaskQueryTests
         Assert.Throws<ArgumentOutOfRangeException>(() => query.SearchOpenTasks(
             context,
             new InspectionTaskSearchRequest(PageSize: 0)));
+    }
+
+    [Fact]
+    public void SearchCategoryAndStageIntersectionKeepsTotalCountAndDoesNotDropEmptyItemTasks()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using (var seed = database.Open())
+        {
+            _ = AddOpenTask(seed, "FOOD-EXPIRED", ExpiryStageCalculator.Expired, new DateOnly(2026, 9, 1));
+            var (petProduct, petTask, _) = AddOpenTask(seed, "PET-EXPIRED", ExpiryStageCalculator.Expired, new DateOnly(2026, 9, 2));
+            petProduct.CategoryCode = "pet";
+            seed.TaskItems.RemoveRange(seed.TaskItems.Where(item => item.TaskId == petTask.Id));
+            seed.SaveChanges();
+        }
+
+        using var context = database.Open();
+        var query = new InspectionTaskQuery();
+        var food = query.SearchOpenTasks(context, new("FOOD", ExpiryStageCalculator.Expired, CategoryName: "食品"));
+        var pet = query.SearchOpenTasks(context, new(Stage: ExpiryStageCalculator.Expired, CategoryName: "宠物"));
+        Assert.Equal(1, food.TotalCount);
+        Assert.Equal("FOOD-EXPIRED", Assert.Single(food.Items).ProductCode);
+        Assert.Equal(1, pet.TotalCount);
+        Assert.Equal("PET-EXPIRED", Assert.Single(pet.Items).ProductCode);
+        Assert.Equal(0, pet.Items[0].PendingBatchCount);
     }
 
     [Fact]

@@ -70,13 +70,16 @@ public sealed class S8T01PerformanceBaselineTests
             return result;
         }, condition: "hit_count=1");
         MeasurePath(measures, databasePath, "open_stage", context => query.SearchOpenTasks(context, new(Stage: "expired")));
-        MeasurePath(measures, databasePath, "pending_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1, true));
-        MeasurePath(measures, databasePath, "pending_search_stage_category_memory_filter", context => PendingMemoryFilter(query, context, "S8-OPEN", "expired", "食品", 1, true));
+        MeasurePath(measures, databasePath, "pending_category", context => query.SearchOpenTasks(context, new(CategoryName: "食品")));
+        MeasurePath(measures, databasePath, "pending_search_stage", context => query.SearchOpenTasks(context, new("S8-OPEN", "expired")));
+        MeasurePath(measures, databasePath, "pending_search_category", context => query.SearchOpenTasks(context, new("S8-OPEN", CategoryName: "食品")));
+        MeasurePath(measures, databasePath, "pending_stage_category", context => query.SearchOpenTasks(context, new(Stage: "expired", CategoryName: "食品")));
+        MeasurePath(measures, databasePath, "pending_search_stage_category", context => query.SearchOpenTasks(context, new("S8-OPEN", "expired", 1, 50, "食品")));
         MeasurePath(measures, databasePath, "task_detail", context => query.GetDetail(context, 3));
-        MeasurePath(measures, databasePath, "today_initial_load", context => query.SearchOpenTasks(context, new(PageSize: int.MaxValue)));
-        MeasurePath(measures, databasePath, "today_category_memory_filter", context => PendingMemoryFilter(query, context, null, null, "食品", 1, true));
+        MeasurePath(measures, databasePath, "today_initial_load", context => query.SearchOpenTasks(context, new(Page: 1, PageSize: 50)));
+        MeasurePath(measures, databasePath, "today_category", context => query.SearchOpenTasks(context, new(CategoryName: "食品")));
         var history = new InspectionHistoryQuery();
-        MeasurePath(measures, databasePath, "history_list", context => history.List(context));
+        MeasurePath(measures, databasePath, "history_list", context => history.ListPage(context, new()));
         MeasurePath(measures, databasePath, "history_detail", context => history.GetDetail(context, 3));
         MeasurePath(measures, databasePath, "history_revision", context => history.GetItemRevisions(context, 3, 3));
         var productTaskBefore = ProductTaskFingerprint(databasePath, 3);
@@ -87,6 +90,7 @@ public sealed class S8T01PerformanceBaselineTests
             Assert.Equal(productTaskBefore, ProductTaskFingerprint(databasePath, 3));
             return result;
         }, root);
+        MeasurePath(measures, databasePath, "reminder_candidates", context => query.GetReminderCandidates(context));
         MeasurePath(measures, databasePath, "reminder_and_pre_reminder", context => new DailyReminderUseCase(query).Evaluate(context, new DateTime(2026, 9, 3, 12, 0, 0)));
         PreImportSnapshotResult? snapshot = null;
         var snapshotWatch = Stopwatch.StartNew();
@@ -96,7 +100,7 @@ public sealed class S8T01PerformanceBaselineTests
         Assert.NotNull(snapshot); Assert.True(snapshot.CanProceed, snapshot.Code); Assert.NotNull(snapshot.Metadata);
         var snapshotVerification = Verify(snapshot.Metadata.SnapshotPath);
         Assert.True(snapshotVerification.IntegrityOk); Assert.Equal(0, snapshotVerification.ForeignKeyViolations); Assert.Equal(9, snapshotVerification.MigrationCount);
-        measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
+        measures.Add(new("sqlite_backupdatabase_snapshot", [snapshotWatch.Elapsed.TotalMilliseconds], snapshotWatch.Elapsed.TotalMilliseconds, snapshotWatch.Elapsed.TotalMilliseconds, 0, [], "BackupDatabase via PreImportSnapshotService; warm=not_applicable", null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", 0, 0, []));
 
         var after = ReadCounts(databasePath);
         AssertCountsEqual(before, after);
@@ -111,6 +115,7 @@ public sealed class S8T01PerformanceBaselineTests
         File.WriteAllText(json, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"S8-T01 JSON: {json}");
         Console.WriteLine($"S8-T01 counts: batches={before.Batches}; inspections={before.Inspections}; inspection_items={before.InspectionItems}");
+        Assert.DoesNotContain(measures, measure => measure.Blocker is not null);
     }
 
     private static string CreateRoot()
@@ -134,13 +139,6 @@ public sealed class S8T01PerformanceBaselineTests
 
     private static StoreDbContext Open(string path) => DatabaseInitializer.CreateContext(path);
 
-    // This is the PendingTasksViewModel shape: one PageSize=int.MaxValue query, then CategoryName Where and UI paging in memory.
-    private static object PendingMemoryFilter(InspectionTaskQuery query, StoreDbContext context, string? search, string? stage, string category, int page, bool includeAllCategories)
-    {
-        var all = includeAllCategories ? query.SearchOpenTasks(context, new(PageSize: int.MaxValue)).Items : null;
-        var filtered = search is null && stage is null ? all! : query.SearchOpenTasks(context, new(search, stage, 1, int.MaxValue)).Items;
-        return filtered.Where(item => item.CategoryName == category).Skip((page - 1) * 50).Take(50).ToArray();
-    }
 
     private static void Seed(string path)
     {
@@ -177,14 +175,17 @@ public sealed class S8T01PerformanceBaselineTests
             var samples = new List<double>();
             for (var i = 0; i < 3; i++)
             {
-                var interceptor = new Capture();
-                var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true }.ToString()).AddInterceptors(interceptor).Options;
-                using var context = new StoreDbContext(options);
+                using var context = Open(path);
                 var sampleWatch = Stopwatch.StartNew(); _ = action(context); sampleWatch.Stop();
-                samples.Add(sampleWatch.Elapsed.TotalMilliseconds); captures.AddRange(interceptor.Commands);
+                samples.Add(sampleWatch.Elapsed.TotalMilliseconds);
             }
+            var interceptor = new Capture();
+            var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true }.ToString()).AddInterceptors(interceptor).Options;
+            object capturedResult;
+            using (var captured = new StoreDbContext(options)) capturedResult = action(captured);
+            captures.AddRange(interceptor.Commands);
             var ordered = samples.Order().ToArray();
-            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], captures.Count / 3, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures), $"warm=1; measured=3; cold=process-start not measured; {condition}".TrimEnd(';', ' '), null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", []));
+            target.Add(new(name, samples, ordered[ordered.Length / 2], ordered[^1], captures.Count, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures), $"warm=1; measured=3 interceptor-free; capture=one unmeasured; cold=process-start not measured; {condition}".TrimEnd(';', ' '), null, Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", ReturnedDtoRows(capturedResult), interceptor.ReaderReadOperations, []));
         }
         catch (Exception exception) { target.Add(FailedMeasure(name, exception, watch.Elapsed, captures, CreateCommandEvidence(path, root ?? Path.GetDirectoryName(path)!, captures))); }
         finally { watch.Stop(); }
@@ -217,7 +218,8 @@ public sealed class S8T01PerformanceBaselineTests
     private static string FileHash(string path) { using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant(); }
     private static string HashText(string text) => Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
     private static string SqliteVersion(string path) { using var c = new SqliteConnection($"Data Source={path};Foreign Keys=True"); c.Open(); return c.ServerVersion; }
-    private static Measure FailedMeasure(string name, Exception exception, TimeSpan elapsed, IReadOnlyList<CapturedCommand> captures, IReadOnlyList<CommandEvidence>? evidence = null) => new(name, [], elapsed.TotalMilliseconds, elapsed.TotalMilliseconds, captures.Count, evidence ?? [], "warm=1; measured=3; cold=process-start not measured", $"{Classify(exception)}; type={exception.GetType().FullName}; message={exception.Message}; elapsed_ms={elapsed.TotalMilliseconds:F3}", Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", captures);
+    private static int ReturnedDtoRows(object result) => result switch { InspectionTaskSearchResult value => value.Items.Count, InspectionDashboardResult value => value.UrgentTasks.Count, InspectionHistoryPageResult value => value.Items.Count, System.Collections.ICollection value => value.Count, _ => 0 };
+    private static Measure FailedMeasure(string name, Exception exception, TimeSpan elapsed, IReadOnlyList<CapturedCommand> captures, IReadOnlyList<CommandEvidence>? evidence = null) => new(name, [], elapsed.TotalMilliseconds, elapsed.TotalMilliseconds, captures.Count, evidence ?? [], "warm=1; measured=3; cold=process-start not measured", $"{Classify(exception)}; type={exception.GetType().FullName}; message={exception.Message}; elapsed_ms={elapsed.TotalMilliseconds:F3}", Environment.WorkingSet, GC.GetTotalAllocatedBytes(), "snapshot", "not_proven", 0, 0, captures);
     private static string Classify(Exception exception) => exception is OutOfMemoryException ? "oom" : exception is TimeoutException || exception.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ? "timeout" : exception is SqliteException && exception.Message.Contains("locked", StringComparison.OrdinalIgnoreCase) ? "lock" : exception is SqliteException && exception.Message.Contains("too many SQL variables", StringComparison.OrdinalIgnoreCase) ? "too_many_sql_variables" : "crash_or_error";
     private static IReadOnlyList<CommandEvidence> CreateCommandEvidence(string databasePath, string root, IReadOnlyList<CapturedCommand> commands) => commands.Select((command, index) =>
     {
@@ -240,22 +242,24 @@ public sealed class S8T01PerformanceBaselineTests
     private static Diagnostics BuildDiagnostics(IEnumerable<Measure> measures)
     {
         var plans = measures.SelectMany(measure => measure.Commands).SelectMany(command => command.Plan).ToArray();
-        return new(plans.Any(plan => plan.Contains("SCAN", StringComparison.OrdinalIgnoreCase)), plans.Any(plan => plan.Contains("TEMP B-TREE", StringComparison.OrdinalIgnoreCase)), "not_proven", "observed: canonical query materializes headers/items; see command evidence", "observed: PendingTasksViewModel shape uses PageSize=int.MaxValue then Where in memory", measures.Any(measure => measure.Blocker?.Contains("timeout", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("lock", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("crash", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("oom", StringComparison.OrdinalIgnoreCase) == true));
+        return new(plans.Any(plan => plan.Contains("SCAN", StringComparison.OrdinalIgnoreCase)), plans.Any(plan => plan.Contains("TEMP B-TREE", StringComparison.OrdinalIgnoreCase)), "not_proven", "per-path returned_dto_rows and reader_read_operations are recorded from one unmeasured capture; reader reads can include EOF", "not_proven", measures.Any(measure => measure.Blocker?.Contains("timeout", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("lock", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("crash", StringComparison.OrdinalIgnoreCase) == true), measures.Any(measure => measure.Blocker?.Contains("oom", StringComparison.OrdinalIgnoreCase) == true));
     }
     private sealed class Capture : DbCommandInterceptor
     {
         public List<CapturedCommand> Commands { get; } = [];
+        public int ReaderReadOperations { get; private set; }
         private void Add(DbCommand command, string kind) => Commands.Add(new(kind, command.CommandText, command.Parameters.Cast<DbParameter>().Select(parameter => new CapturedParameter(parameter.ParameterName, parameter.DbType.ToString(), parameter.Value is DBNull ? null : parameter.Value?.ToString())).ToArray()));
         public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData data, InterceptionResult<DbDataReader> result) { Add(command, "reader"); return result; }
         public override InterceptionResult<object> ScalarExecuting(DbCommand command, CommandEventData data, InterceptionResult<object> result) { Add(command, "scalar"); return result; }
         public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData data, InterceptionResult<int> result) { Add(command, "nonquery"); return result; }
+        public override InterceptionResult DataReaderDisposing(DbCommand command, DataReaderDisposingEventData data, InterceptionResult result) { ReaderReadOperations += data.ReadCount; return result; }
         public override void CommandFailed(DbCommand command, CommandErrorEventData data) => Add(command, "failed");
     }
     private sealed record Counts(IReadOnlyDictionary<string, long> Tables) { public long Batches => Tables["batches"]; public long Inspections => Tables["inspections"]; public long InspectionItems => Tables["inspection_items"]; }
     private sealed record CapturedParameter(string Name, string DbType, string? Value);
     private sealed record CapturedCommand(string Kind, string Sql, IReadOnlyList<CapturedParameter> Parameters);
     private sealed record CommandEvidence(string Kind, int SqlLength, string SqlSha256, IReadOnlyList<CapturedParameter> Parameters, string? Sql, string? ArtifactPath, IReadOnlyList<string> Plan);
-    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<CommandEvidence> Commands, string Conditions, string? Blocker, long WorkingSetBytes, long ManagedAllocatedBytes, string MemoryKind, string AllocationDelta, IReadOnlyList<CapturedCommand> CapturedCommands);
+    private sealed record Measure(string Name, IReadOnlyList<double> SamplesMs, double MedianMs, double MaxMs, int CommandCount, IReadOnlyList<CommandEvidence> Commands, string Conditions, string? Blocker, long WorkingSetBytes, long ManagedAllocatedBytes, string MemoryKind, string AllocationDelta, int ReturnedDtoRows, int ReaderReadOperations, IReadOnlyList<CapturedCommand> CapturedCommands);
     private sealed record Diagnostics(bool FullScan, bool TempBTree, string NPlusOne, string OverMaterialization, string InMemoryFiltering, bool Timeout, bool Lock, bool Crash, bool Oom);
     private sealed record Verification(bool IntegrityOk, int ForeignKeyViolations, int MigrationCount);
     private sealed record ExcludedCheck(long Products, long Batches, long OpenTasks, long ReminderEligibleBatches);

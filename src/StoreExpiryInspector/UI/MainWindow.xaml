@@ -1423,6 +1423,7 @@
                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                           IsTabStop="True"
                                           Focusable="True"
+                                          Margin="0,0,0,48"
                                           AutomationProperties.Name="正式排查历史列表"
                                           BorderThickness="0">
                                     <DataGrid.Columns>
@@ -1468,6 +1469,17 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Border>
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Margin="0,8,0,0">
+                                <StackPanel.Visibility>
+                                    <Binding Path="History.HasLoadedResult" Converter="{StaticResource BoolToVisibility}" />
+                                </StackPanel.Visibility>
+                                <TextBlock Text="{Binding History.PageSummary}" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <Button Content="‹  上一页" Command="{Binding History.PreviousPageCommand}" IsEnabled="{Binding History.CanGoPrevious}" Style="{StaticResource SecondaryButtonStyle}" Width="96" AutomationProperties.Name="上一页排查历史" />
+                                <Button Content="下一页  ›" Command="{Binding History.NextPageCommand}" IsEnabled="{Binding History.CanGoNext}" Style="{StaticResource SecondaryButtonStyle}" Width="96" Margin="8,0,0,0" AutomationProperties.Name="下一页排查历史" />
+                            </StackPanel>
                             <Border Style="{StaticResource StateMessageBorderStyle}"
                                     Visibility="{Binding History.IsLoading, Converter={StaticResource BoolToVisibility}}">
                                 <StackPanel VerticalAlignment="Center">
@@ -2719,9 +2731,9 @@
                         </Border>
                         <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" Style="{StaticResource PageSectionBorderStyle}">
                             <Grid>
-                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                                     <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding TodayInspection.SelectedCount, StringFormat=已选择 {0} 项}" VerticalAlignment="Center" FontWeight="SemiBold" /><Button Grid.Column="1" Content="导出排查计划" Click="ExportTodayInspection_Click" Command="{Binding TodayInspection.ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="120" Margin="0,0,8,0" AutomationProperties.Name="导出今日排查计划" /><Button Grid.Column="2" Content="导入排查结果" Click="OpenTodayInspection_Click" Command="{Binding TodayInspection.PreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="120" AutomationProperties.Name="导入今日排查结果文件" /></Grid>
-                                <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.VisibleTasks}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell" AutomationProperties.Name="今日排查任务列表" GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}"
+                                <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.VisibleTasks}" IsEnabled="{Binding TodayInspection.CanUseContent}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell" AutomationProperties.Name="今日排查任务列表" GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn Header="选择" Width="52" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择今日排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
@@ -2732,6 +2744,11 @@
                                             <DataGridTextColumn Header="总库存" Binding="{Binding EffectiveStockQty}" Width="88" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                         </DataGrid.Columns>
                                     </DataGrid>
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                                    <TextBlock Text="{Binding TodayInspection.PageSummary}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,8,0" />
+                                    <Button Content="上一页" Command="{Binding TodayInspection.PreviousPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" Margin="0,0,8,0" AutomationProperties.Name="上一页今日排查任务" />
+                                    <Button Content="下一页" Command="{Binding TodayInspection.NextPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" AutomationProperties.Name="下一页今日排查任务" />
+                                </StackPanel>
                             </Grid>
                         </Border>
                 </Grid>

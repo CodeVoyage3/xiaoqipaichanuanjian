@@ -65,6 +65,10 @@ public sealed record ExpiredInventoryWarning(int BatchCount, long TotalCheckedQt
 public sealed class TodayInspectionViewModel : ViewModelBase
 {
     private readonly Func<InspectionTaskSearchResult> _loadTasks;
+    private readonly Func<InspectionTaskSearchRequest, InspectionTaskSearchResult>? _searchTasks;
+    private readonly Func<IReadOnlyList<string>>? _loadCategories;
+    private readonly Func<string?, IReadOnlyList<long>>? _loadTaskIds;
+    private readonly Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? _loadOpenTaskIds;
     private readonly Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult> _export;
     private readonly Func<string, InspectionPlanPreview> _preview;
     private readonly Func<ApplyInspectionPlanDraftRequest, ApplyInspectionPlanDraftResult> _apply;
@@ -80,6 +84,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private bool _isActionBusy;
     private bool _hasLoadedTasks;
     private bool _isBulkSelecting;
+    private bool _isBulkSelectionBusy;
+    private int _loadVersion;
+    private int _selectionVersion;
     private string _statusText = "正在加载今日任务…";
     private string _inspectorName = string.Empty;
     private string _checkDateText;
@@ -90,6 +97,10 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private ApplyInspectionPlanDraftResult? _draftResult;
     private IReadOnlyList<OverStockConfirmation> _pendingConfirmations = Array.Empty<OverStockConfirmation>();
     private SubmissionIntent? _submissionIntent;
+    private readonly HashSet<long> _selectedTaskIds = [];
+    private IReadOnlyList<string> _categories = ["全部"];
+    private int _currentPage = 1;
+    private int _totalCount;
 
     public TodayInspectionViewModel(
         Func<InspectionTaskSearchResult> loadTasks,
@@ -103,9 +114,17 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         Func<bool>? confirmSubmission = null,
         Action<Exception>? logException = null,
         Func<DateOnly>? businessToday = null,
-        Func<DateTime>? utcNow = null)
+        Func<DateTime>? utcNow = null,
+        Func<InspectionTaskSearchRequest, InspectionTaskSearchResult>? searchTasks = null,
+        Func<IReadOnlyList<string>>? loadCategories = null,
+        Func<string?, IReadOnlyList<long>>? loadTaskIds = null,
+        Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? loadOpenTaskIds = null)
     {
         _loadTasks = loadTasks;
+        _searchTasks = searchTasks;
+        _loadCategories = loadCategories;
+        _loadTaskIds = loadTaskIds;
+        _loadOpenTaskIds = loadOpenTaskIds;
         _export = export;
         _preview = preview;
         _apply = apply;
@@ -120,8 +139,10 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _checkDateText = _businessToday().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         _checkDateValue = _businessToday().ToDateTime(TimeOnly.MinValue);
         ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => !IsLoadingTasks && !IsActionBusy);
-        SelectAllCommand = new RelayCommand(_ => SetSelection(true), _ => CanUseContent && Tasks.Count != 0);
-        ClearSelectionCommand = new RelayCommand(_ => SetSelection(false), _ => CanUseContent && SelectedCount != 0);
+        SelectAllCommand = new RelayCommand(_ => { _ = SetSelectionAsync(true); }, _ => CanUseContent && !_isBulkSelectionBusy && Tasks.Count != 0);
+        ClearSelectionCommand = new RelayCommand(_ => { _ = SetSelectionAsync(false); }, _ => CanUseContent && !_isBulkSelectionBusy && SelectedCount != 0);
+        PreviousPageCommand = new RelayCommand(_ => { _ = GoToPageAsync(CurrentPage - 1); }, _ => CanUseContent && CurrentPage > 1);
+        NextPageCommand = new RelayCommand(_ => { _ = GoToPageAsync(CurrentPage + 1); }, _ => CanUseContent && CurrentPage < TotalPages);
         ExportCommand = new RelayCommand(_ => { }, _ => CanUseContent && SelectedCount != 0);
         PreviewCommand = new RelayCommand(_ => { }, _ => CanUseContent);
         SaveDraftCommand = new RelayCommand(_ => { _ = SaveDraftAsync(); }, _ => CanUseContent && CanSaveDraft);
@@ -129,9 +150,10 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     }
 
     public IReadOnlyList<TodayInspectionTaskViewModel> Tasks { get; private set; } = Array.Empty<TodayInspectionTaskViewModel>();
-    public IReadOnlyList<TodayInspectionTaskViewModel> VisibleTasks => SelectedCategory == "全部"
-        ? Tasks : Tasks.Where(task => task.CategoryName == SelectedCategory).ToArray();
-    public IReadOnlyList<string> Categories => ["全部", .. Tasks.Select(task => task.CategoryName).Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.Ordinal).OrderBy(name => name, StringComparer.Ordinal)];
+    public IReadOnlyList<TodayInspectionTaskViewModel> VisibleTasks => _searchTasks is null && SelectedCategory != "全部"
+        ? Tasks.Where(task => task.CategoryName == SelectedCategory).ToArray()
+        : Tasks;
+    public IReadOnlyList<string> Categories => _categories;
     private string _selectedCategory = "全部";
     public string SelectedCategory
     {
@@ -141,7 +163,10 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             var category = string.IsNullOrEmpty(value) ? "全部" : value;
             if (_selectedCategory == category) return;
             _selectedCategory = category;
-            OnPropertyChanged(); OnPropertyChanged(nameof(VisibleTasks)); OnPropertyChanged(nameof(SelectedCount)); RefreshCommands();
+            _currentPage = 1;
+            _selectionVersion++;
+            OnPropertyChanged(); OnPropertyChanged(nameof(VisibleTasks)); OnPropertyChanged(nameof(SelectedCount)); OnPropertyChanged(nameof(CurrentPage)); RefreshCommands();
+            _ = LoadAsync();
         }
     }
     public ObservableCollection<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
@@ -152,13 +177,21 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public RelayCommand PreviewCommand { get; }
     public RelayCommand SaveDraftCommand { get; }
     public RelayCommand SubmitCommand { get; }
+    public RelayCommand PreviousPageCommand { get; }
+    public RelayCommand NextPageCommand { get; }
     public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.IsDraftComplete).Select(task => task.TaskId).ToArray() ?? [];
-    public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); RefreshCommands(); } }
-    public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); RefreshCommands(); } }
+    public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
+    public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsBusy => IsActionBusy;
     public bool HasLoadedTasks => _hasLoadedTasks;
-    public bool CanUseContent => !IsLoadingTasks && !IsActionBusy;
-    public int SelectedCount => Tasks.Count(task => task.IsSelected);
+    public bool CanUseContent => !IsLoadingTasks && !IsActionBusy && !_isBulkSelectionBusy;
+    public int SelectedCount => _selectedTaskIds.Count;
+    public int CurrentPage => _currentPage;
+    public int TotalCount => _totalCount;
+    public int TotalPages => Math.Max(1, (TotalCount + 49) / 50);
+    public bool CanGoPrevious => CanUseContent && CurrentPage > 1;
+    public bool CanGoNext => CanUseContent && CurrentPage < TotalPages;
+    public string PageSummary => $"第 {CurrentPage} / {TotalPages} 页 · 共 {TotalCount} 个当前任务";
     public bool HasPreview => _currentPreview is not null;
     public bool CanSaveDraft => _currentPreview?.ApplicableTaskIds.Count > 0 && IsFormValid;
     public bool IsFormValid => !string.IsNullOrWhiteSpace(InspectorName) && TryGetCheckDate(out _);
@@ -186,25 +219,58 @@ public sealed class TodayInspectionViewModel : ViewModelBase
 
     public async Task LoadAsync()
     {
+        _loadVersion++;
         await LoadTasksAsync();
     }
 
     private async Task<bool> LoadTasksAsync()
     {
         if (IsLoadingTasks) return false;
-        var selected = Tasks.Where(task => task.IsSelected).Select(task => task.TaskId).ToHashSet();
         IsLoadingTasks = true;
         try
         {
-            var tasks = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadTasks().Items.Select(item =>
+            while (true)
             {
-                var task = new TodayInspectionTaskViewModel(item) { IsSelected = selected.Contains(item.TaskId) };
+            var version = _loadVersion;
+            var page = CurrentPage;
+            var category = SelectedCategory;
+            var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _searchTasks is null
+                ? _loadTasks()
+                : _searchTasks(new InspectionTaskSearchRequest(Page: page, PageSize: 50, CategoryName: category == "全部" ? null : category))));
+            if (version != _loadVersion) continue;
+            if (page > Math.Max(1, (result.TotalCount + 49) / 50))
+            {
+                _currentPage = Math.Max(1, (result.TotalCount + 49) / 50);
+                _loadVersion++;
+                continue;
+            }
+            var tasks = result.Items.Select(item =>
+            {
+                var task = new TodayInspectionTaskViewModel(item) { IsSelected = _selectedTaskIds.Contains(item.TaskId) };
                 task.SelectionChanged += OnSelectionChanged;
                 return task;
-            }).ToArray()));
+            }).ToArray();
+            var categories = _loadCategories is not null
+                ? (IReadOnlyList<string>)["全部", .. await Task.Run(() => DatabaseRuntimeGate.Run(_loadCategories))]
+                : ["全部", .. tasks.Select(task => task.CategoryName).Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.Ordinal).OrderBy(name => name, StringComparer.Ordinal)];
+            if (version != _loadVersion) continue;
+            if (_selectedTaskIds.Count != 0 && (_loadOpenTaskIds is not null || _searchTasks is null))
+            {
+                var openTaskIds = _loadOpenTaskIds is null
+                    ? tasks.Select(task => task.TaskId).ToArray()
+                    : await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadOpenTaskIds(_selectedTaskIds.ToArray())));
+                if (version != _loadVersion) continue;
+                _selectedTaskIds.IntersectWith(openTaskIds);
+            }
             Tasks = tasks;
+            _categories = categories;
+            _totalCount = result.TotalCount;
             _hasLoadedTasks = true;
-            OnPropertyChanged(nameof(Tasks)); OnPropertyChanged(nameof(Categories)); OnPropertyChanged(nameof(VisibleTasks));
+            OnPropertyChanged(nameof(Tasks)); OnPropertyChanged(nameof(Categories)); OnPropertyChanged(nameof(VisibleTasks)); OnPropertyChanged(nameof(TotalCount)); OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext));
+            StatusText = Tasks.Count == 0 ? "当前没有可排查任务。" : $"已加载 {Tasks.Count} 个当前任务，已选择 {SelectedCount} 项。";
+            OnSelectionChanged();
+            return true;
+            }
         }
         catch (Exception exception)
         {
@@ -213,15 +279,12 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             return false;
         }
         finally { IsLoadingTasks = false; }
-        StatusText = Tasks.Count == 0 ? "当前没有可排查任务。" : $"已加载 {Tasks.Count} 个当前任务，已选择 {SelectedCount} 项。";
-        OnSelectionChanged();
-        return true;
     }
 
     public async Task ExportAsync(string path)
     {
         if (SelectedCount == 0) { StatusText = "请先选择至少一个任务，再导出计划。"; return; }
-        var result = await RunAsync("导出今日排查计划失败", () => _export(path, Tasks.Where(task => task.IsSelected).Select(task => task.TaskId).ToArray()));
+        var result = await RunAsync("导出今日排查计划失败", () => _export(path, _selectedTaskIds.ToArray()));
         if (result is not null) { LatestExportResult = result; OnPropertyChanged(nameof(LatestExportResult)); StatusText = $"已导出 {result.TaskCount} 个任务、{result.RowCount} 个批次：{result.OutputPath}"; }
     }
 
@@ -308,6 +371,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
                     continue;
                 }
                 StatusText = result.Outcome == BulkInspectionSubmissionOutcome.AlreadySubmitted ? "任务已提交过，正在刷新页面。" : "提交已成功，正在刷新页面。";
+                RemoveSelectedTaskIds(intent.TaskIds);
                 await RefreshAfterSubmitAsync(intent.TaskIds);
                 ClearSubmittedSession();
                 return;
@@ -352,19 +416,66 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         date = _checkDateValue is DateTime value ? DateOnly.FromDateTime(value) : default;
         return date != default && date <= _businessToday();
     }
-    private void SetSelection(bool selected)
+    private async Task SetSelectionAsync(bool selected)
     {
+        if (_isBulkSelectionBusy) return;
+        _isBulkSelectionBusy = true;
+        OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands();
         _isBulkSelecting = true;
-        try { foreach (var task in VisibleTasks) task.IsSelected = selected; }
-        finally { _isBulkSelecting = false; }
+        try
+        {
+            var selectionVersion = _selectionVersion;
+            var category = SelectedCategory;
+            var ids = _loadTaskIds is null
+                ? VisibleTasks.Select(task => task.TaskId).ToArray()
+                : await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadTaskIds(category == "全部" ? null : category)));
+            if (selectionVersion != _selectionVersion) return;
+            foreach (var id in ids)
+            {
+                if (selected) _selectedTaskIds.Add(id); else _selectedTaskIds.Remove(id);
+            }
+            foreach (var task in Tasks) task.IsSelected = _selectedTaskIds.Contains(task.TaskId);
+        }
+        catch (Exception exception)
+        {
+            _logException?.Invoke(exception);
+            StatusText = "更新任务选择失败，请重试。";
+        }
+        finally { _isBulkSelecting = false; _isBulkSelectionBusy = false; OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); }
         OnSelectionChanged();
     }
-    private void OnSelectionChanged() { if (_isBulkSelecting) return; OnPropertyChanged(nameof(SelectedCount)); RefreshCommands(); }
+    private void OnSelectionChanged()
+    {
+        if (_isBulkSelecting) return;
+        foreach (var task in Tasks)
+        {
+            if (task.IsSelected) _selectedTaskIds.Add(task.TaskId); else _selectedTaskIds.Remove(task.TaskId);
+        }
+        OnPropertyChanged(nameof(SelectedCount)); RefreshCommands();
+    }
+    private async Task GoToPageAsync(int page)
+    {
+        if (!CanUseContent || page < 1 || page > TotalPages) return;
+        _currentPage = page;
+        OnPropertyChanged(nameof(CurrentPage)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext));
+        await LoadAsync();
+    }
     private void ResetSession() { _currentPreview = null; _draftResult = null; InvalidateSubmissionIntent(); PreviewRows.Clear(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); RefreshCommands(); }
     private void InvalidateSubmissionIntent() { _submissionIntent = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); }
     private void InvalidateDraftOnFormChange() { if (_draftResult is null) return; _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
     private DateTime RequireUtcNow() { var value = _utcNow(); return value.Kind == DateTimeKind.Utc ? value : throw new InvalidOperationException("权威提交时间必须为 UTC。"); }
     private Task ReloadTasksWhileBusyAsync() => LoadTasksAsync();
+    private void RemoveSelectedTaskIds(IEnumerable<long> taskIds)
+    {
+        _isBulkSelecting = true;
+        try
+        {
+            foreach (var id in taskIds) _selectedTaskIds.Remove(id);
+            foreach (var task in Tasks) task.IsSelected = _selectedTaskIds.Contains(task.TaskId);
+        }
+        finally { _isBulkSelecting = false; }
+        OnSelectionChanged();
+    }
     private void ClearSubmittedSession()
     {
         _currentPreview = null;
@@ -388,5 +499,5 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands();
     }
     private void BlockSubmission(string status, string reason) { StatusText = status; SubmissionBlocked?.Invoke(reason); }
-    private void RefreshCommands() { ReloadCommand.RaiseCanExecuteChanged(); SelectAllCommand.RaiseCanExecuteChanged(); ClearSelectionCommand.RaiseCanExecuteChanged(); ExportCommand.RaiseCanExecuteChanged(); PreviewCommand.RaiseCanExecuteChanged(); SaveDraftCommand.RaiseCanExecuteChanged(); SubmitCommand.RaiseCanExecuteChanged(); }
+    private void RefreshCommands() { ReloadCommand.RaiseCanExecuteChanged(); SelectAllCommand.RaiseCanExecuteChanged(); ClearSelectionCommand.RaiseCanExecuteChanged(); PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged(); ExportCommand.RaiseCanExecuteChanged(); PreviewCommand.RaiseCanExecuteChanged(); SaveDraftCommand.RaiseCanExecuteChanged(); SubmitCommand.RaiseCanExecuteChanged(); }
 }

@@ -13,6 +13,14 @@ public sealed record InspectionHistoryListItem(
     DateTime SubmittedAtUtc,
     int ItemCount);
 
+public sealed record InspectionHistoryPageRequest(int Page = 1, int PageSize = 50);
+
+public sealed record InspectionHistoryPageResult(
+    IReadOnlyList<InspectionHistoryListItem> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
 public sealed record InspectionHistoryItemDetail(
     long InspectionItemId,
     long InspectionId,
@@ -70,7 +78,7 @@ public sealed class InspectionHistoryQuery
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var records = context.Inspections
+        return Array.AsReadOnly(context.Inspections
             .AsNoTracking()
             .Where(inspection => inspection.Task.Status == "completed")
             .OrderByDescending(inspection => inspection.SubmittedAtUtc)
@@ -84,8 +92,73 @@ public sealed class InspectionHistoryQuery
                 inspection.BarcodeSnapshot,
                 inspection.SubmittedAtUtc,
                 inspection.Items.Count()))
+            .ToArray());
+    }
+
+    public InspectionHistoryPageResult ListPage(StoreDbContext context, InspectionHistoryPageRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.Page <= 0 || request.PageSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
+        var records = context.Inspections
+            .AsNoTracking()
+            .Where(inspection => inspection.Task.Status == "completed");
+        var totalCount = records.Count();
+        var offset = checked((long)(request.Page - 1) * request.PageSize);
+        if (offset > int.MaxValue)
+        {
+            return new(Array.Empty<InspectionHistoryListItem>(), totalCount, request.Page, request.PageSize);
+        }
+
+        var page = records
+            .OrderByDescending(inspection => inspection.SubmittedAtUtc)
+            .ThenByDescending(inspection => inspection.Id)
+            .Skip((int)offset)
+            .Take(request.PageSize)
+            .Select(inspection => new
+            {
+                inspection.Id,
+                inspection.TaskId,
+                inspection.ProductId,
+                inspection.ProductCodeSnapshot,
+                inspection.ProductNameSnapshot,
+                inspection.BarcodeSnapshot,
+                inspection.SubmittedAtUtc
+            })
             .ToArray();
-        return Array.AsReadOnly(records);
+        if (page.Length == 0)
+        {
+            return new(Array.Empty<InspectionHistoryListItem>(), totalCount, request.Page, request.PageSize);
+        }
+
+        var pageIds = page.Select(inspection => inspection.Id).ToArray();
+        var itemCounts = new Dictionary<long, int>();
+        foreach (var ids in pageIds.Chunk(900))
+        {
+            foreach (var item in context.InspectionItems
+                .AsNoTracking()
+                .Where(item => ids.Contains(item.InspectionId))
+                .GroupBy(item => item.InspectionId)
+                .Select(group => new { InspectionId = group.Key, Count = group.Count() }))
+            {
+                itemCounts[item.InspectionId] = item.Count;
+            }
+        }
+        var result = page.Select(inspection => new InspectionHistoryListItem(
+                inspection.Id,
+                inspection.TaskId,
+                inspection.ProductId,
+                inspection.ProductCodeSnapshot,
+                inspection.ProductNameSnapshot,
+                inspection.BarcodeSnapshot,
+                inspection.SubmittedAtUtc,
+                itemCounts.GetValueOrDefault(inspection.Id)))
+            .ToArray();
+        return new(Array.AsReadOnly(result), totalCount, request.Page, request.PageSize);
     }
 
     public InspectionHistoryDetailResult GetDetail(StoreDbContext context, long inspectionId)

@@ -924,13 +924,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
         try
         {
             var result = await Task.Run(() => DatabaseRuntimeGate.Run(() =>
-            {
-                var allTasks = _searchTasks(new InspectionTaskSearchRequest(PageSize: int.MaxValue));
-                var filteredTasks = string.IsNullOrWhiteSpace(SearchText) && string.IsNullOrEmpty(SelectedStage)
-                    ? allTasks
-                    : _searchTasks(new InspectionTaskSearchRequest(SearchText, SelectedStage, PageSize: int.MaxValue));
-                return (allTasks.Items, filteredTasks.Items);
-            }));
+                _searchTasks(new InspectionTaskSearchRequest(SearchText, SelectedStage, CurrentPage, FixedPageSize, SelectedCategory))));
             if (version != _loadVersion)
             {
                 return;
@@ -948,20 +942,19 @@ public sealed class PendingTasksViewModel : ViewModelBase
             }
             else
             {
-                UpdateCategoryFilters(result.Item1);
+                UpdateCategoryFilters(result.Items);
             }
-            var filteredItems = string.IsNullOrEmpty(SelectedCategory)
-                ? result.Item2
-                : result.Item2.Where(item => string.Equals(item.CategoryName, SelectedCategory, StringComparison.Ordinal)).ToArray();
-            TotalCount = filteredItems.Count;
+            TotalCount = result.TotalCount;
             TotalPages = Math.Max(1, (TotalCount + FixedPageSize - 1) / FixedPageSize);
             if (CurrentPage > TotalPages)
             {
                 CurrentPage = TotalPages;
+                await LoadAsync();
+                return;
             }
 
             Items.Clear();
-            foreach (var item in filteredItems.Skip((CurrentPage - 1) * FixedPageSize).Take(FixedPageSize))
+            foreach (var item in result.Items)
             {
                 Items.Add(item);
             }
@@ -1080,7 +1073,9 @@ public sealed class ShellViewModel : ViewModelBase
         Func<IReadOnlyList<string>>? categoryLoader = null,
         Func<StoreDbContext>? defaultContextFactory = null,
         Func<ImportPreviewIdentity, ImportConfirmationResult>? importPreviewConfirmation = null,
-        Func<ImportConfirmationContract, DateTime, ConfirmedImportResult>? importExecutor = null)
+        Func<ImportConfirmationContract, DateTime, ConfirmedImportResult>? importExecutor = null,
+        Func<string?, IReadOnlyList<long>>? todayTaskIdsLoader = null,
+        Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? todayOpenTaskIdsLoader = null)
     {
         _logger = new LocalFileLogger(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -1089,7 +1084,7 @@ public sealed class ShellViewModel : ViewModelBase
         var logger = logException ?? LogException;
         var hasInjectedReadDependency = dashboardLoader is not null || taskLoader is not null || categoryLoader is not null
             || historyListLoader is not null || historyDetailLoader is not null || historyRevisionLoader is not null || historyEdit is not null
-            || backupLoader is not null || backupCreator is not null || backupRestorer is not null || importParser is not null || importPreviewConfirmation is not null || importExecutor is not null
+            || backupLoader is not null || backupCreator is not null || backupRestorer is not null || importParser is not null || importPreviewConfirmation is not null || importExecutor is not null || todayTaskIdsLoader is not null || todayOpenTaskIdsLoader is not null
             || detailLoader is not null || saveDraft is not null || reconfirmItem is not null || clearDraft is not null || adjustInventory is not null || submit is not null;
         var contextFactory = defaultContextFactory ?? (() => DatabaseInitializer.CreateContext());
         var loadDashboard = dashboardLoader ?? (hasInjectedReadDependency
@@ -1104,6 +1099,11 @@ public sealed class ShellViewModel : ViewModelBase
         var loadHistory = historyListLoader ?? (hasInjectedReadDependency
             ? FailClosedLoader<IReadOnlyList<InspectionHistoryListItem>>("historyListLoader")
             : CreateHistoryLoader(contextFactory));
+        var loadHistoryPage = historyListLoader is not null
+            ? null
+            : hasInjectedReadDependency
+                ? FailClosedLoader<InspectionHistoryPageRequest, InspectionHistoryPageResult>("historyPageLoader")
+                : CreateHistoryPageLoader(contextFactory);
         var loadHistoryDetail = historyDetailLoader ?? (hasInjectedReadDependency
             ? FailClosedLoader<long, InspectionHistoryDetailResult>("historyDetailLoader")
             : CreateHistoryDetailLoader(contextFactory));
@@ -1166,7 +1166,8 @@ public sealed class ShellViewModel : ViewModelBase
             logger,
             editHistory,
             confirmHistoryEdit,
-            utcNow);
+            utcNow,
+            loadHistoryPage);
         Import = new ImportViewModel(
             parsePreview: importParser ?? (hasInjectedReadDependency
                 ? FailClosedLoader<string, ImportPreviewLoadResult>("importParser")
@@ -1192,7 +1193,15 @@ public sealed class ShellViewModel : ViewModelBase
             confirmExpiredInventory: confirmTodayExpiredInventory,
             confirmSubmission: confirmTodaySubmission,
             logException: logger,
-            businessToday: () => DateOnly.FromDateTime(DateTime.Today));
+            businessToday: () => DateOnly.FromDateTime(DateTime.Today),
+            searchTasks: searchTasks,
+            loadCategories: loadCategories,
+            loadTaskIds: todayTaskIdsLoader ?? (hasInjectedReadDependency
+                ? FailClosedLoader<string?, IReadOnlyList<long>>("todayTaskIds")
+                : CreateTodayTaskIdsLoader(contextFactory)),
+            loadOpenTaskIds: todayOpenTaskIdsLoader ?? (hasInjectedReadDependency
+                ? FailClosedLoader<IReadOnlyCollection<long>, IReadOnlyList<long>>("todayOpenTaskIds")
+                : CreateTodayOpenTaskIdsLoader(contextFactory)));
         BackupRestore = new DatabaseBackupRestoreViewModel(
             loadBackups: loadBackups,
             createBackup: createBackup,
@@ -1481,6 +1490,18 @@ public sealed class ShellViewModel : ViewModelBase
         return new InspectionTaskQuery().GetOpenTaskCategoryNames(context);
     };
 
+    private static Func<string?, IReadOnlyList<long>> CreateTodayTaskIdsLoader(Func<StoreDbContext> contextFactory) => category =>
+    {
+        using var context = contextFactory();
+        return new InspectionTaskQuery().GetOpenTaskIds(context, category);
+    };
+
+    private static Func<IReadOnlyCollection<long>, IReadOnlyList<long>> CreateTodayOpenTaskIdsLoader(Func<StoreDbContext> contextFactory) => taskIds =>
+    {
+        using var context = contextFactory();
+        return new InspectionTaskQuery().GetOpenTaskIds(context, taskIds);
+    };
+
     private static Func<T> FailClosedLoader<T>(string dependency) =>
         () => throw new InvalidOperationException($"{dependency} must be injected with the Shell read dependencies.");
 
@@ -1494,6 +1515,12 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = contextFactory();
         return new InspectionHistoryQuery().List(context);
+    };
+
+    private static Func<InspectionHistoryPageRequest, InspectionHistoryPageResult> CreateHistoryPageLoader(Func<StoreDbContext> contextFactory) => request =>
+    {
+        using var context = contextFactory();
+        return new InspectionHistoryQuery().ListPage(context, request);
     };
 
     private static Func<long, InspectionHistoryDetailResult> CreateHistoryDetailLoader(Func<StoreDbContext> contextFactory) => inspectionId =>
