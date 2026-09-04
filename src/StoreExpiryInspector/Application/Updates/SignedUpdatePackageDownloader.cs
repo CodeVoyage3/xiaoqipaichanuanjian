@@ -35,9 +35,8 @@ public sealed record UpdatePackageOptions(RSAParameters? TrustedPublicKey = null
     internal RSA? CreateVerifier()
     {
         if (TrustedPublicKey is not { } key || key.Modulus is null || key.Exponent is null) return null;
-        var rsa = RSA.Create();
-        rsa.ImportParameters(new RSAParameters { Modulus = key.Modulus, Exponent = key.Exponent });
-        return rsa.KeySize >= 2048 ? rsa : null;
+        try { var rsa = RSA.Create(); rsa.ImportParameters(new RSAParameters { Modulus = key.Modulus, Exponent = key.Exponent }); if (rsa.KeySize >= 2048) return rsa; rsa.Dispose(); return null; }
+        catch (CryptographicException) { return null; }
     }
 }
 
@@ -117,6 +116,7 @@ public sealed class SignedUpdatePackageDownloader
             using var packageLock = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (!CryptographicOperations.FixedTimeEquals(expectedHash, SHA256.HashData(packageLock))) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             progress?.Invoke(new("正在校验更新包", manifest.PackageBytes, manifest.PackageBytes));
+            cancellationToken.ThrowIfCancellationRequested();
             var audit = AuditArchive(packagePath, directory, manifest);
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
             verified = true;
@@ -291,7 +291,7 @@ public sealed class SignedUpdatePackageDownloader
     private static bool SafeEntry(ZipArchiveEntry entry, HashSet<string> paths)
     {
         var name = entry.FullName.Replace('\\', '/');
-        if (name.Length == 0 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Any(character => character is '<' or '>' or '"' or '|' or '?' or '*') || name.Split('/').Any(part => part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
+        if (name.Length == 0 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Any(character => char.IsControl(character) || character is '<' or '>' or '"' or '|' or '?' or '*') || name.Split('/').Any(part => part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
         if (!paths.Add(name) || paths.Any(existing => existing.StartsWith(name + "/", StringComparison.OrdinalIgnoreCase) || name.StartsWith(existing + "/", StringComparison.OrdinalIgnoreCase))) return false;
         var unixType = ((uint)entry.ExternalAttributes >> 16) & 0xF000;
         return (unixType is 0 or 0x8000 or 0x4000) && (((uint)entry.ExternalAttributes & 0x400) == 0) && !HasLinkExtra(entry);
@@ -299,8 +299,13 @@ public sealed class SignedUpdatePackageDownloader
 
     private static bool HasLinkExtra(ZipArchiveEntry entry) => (((uint)entry.ExternalAttributes >> 16) & 0xF000) is 0xA000 or 0x6000;
     private static bool IsReserved(string part) => new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" }.Contains(part.Split('.')[0], StringComparer.OrdinalIgnoreCase);
-    private static bool Allowed(string name) => !name.StartsWith("data/", StringComparison.OrdinalIgnoreCase) && !name.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) && !name.StartsWith("backup", StringComparison.OrdinalIgnoreCase) && (name is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pri", StringComparison.OrdinalIgnoreCase));
-    private static bool ContainsSecret(string path) { var info = new FileInfo(path); if (info.Length > 1024 * 1024) return true; var text = File.ReadAllText(path); return text.Contains("token", StringComparison.OrdinalIgnoreCase) || text.Contains("private", StringComparison.OrdinalIgnoreCase) || text.Contains("password", StringComparison.OrdinalIgnoreCase) || text.Contains("secret", StringComparison.OrdinalIgnoreCase); }
+    private static bool Allowed(string name) => !name.Split('/').Any(part => part.Equals("data", StringComparison.OrdinalIgnoreCase) || part.Equals("logs", StringComparison.OrdinalIgnoreCase) || part.StartsWith("backup", StringComparison.OrdinalIgnoreCase)) && (name is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase));
+    private static bool ContainsSecret(string path)
+    {
+        using var stream = File.OpenRead(path); if (stream.Length > 1024 * 1024) return true;
+        using var reader = new StreamReader(stream, Encoding.UTF8, true); var text = reader.ReadToEnd();
+        return text.Contains("BEGIN PRIVATE", StringComparison.OrdinalIgnoreCase) || text.Contains("ghp_", StringComparison.OrdinalIgnoreCase) || text.Contains("github_pat_", StringComparison.OrdinalIgnoreCase) || text.Contains("\"token\"", StringComparison.OrdinalIgnoreCase) || text.Contains("\"password\"", StringComparison.OrdinalIgnoreCase) || text.Contains("\"secret\"", StringComparison.OrdinalIgnoreCase);
+    }
     private static bool TryReadZipDirectory(string path, out Dictionary<string, uint> crcs)
     {
         crcs = new(StringComparer.Ordinal);
@@ -318,7 +323,7 @@ public sealed class SignedUpdatePackageDownloader
             {
                 var header = ReadAt(stream, cursor, 46); if (Read32(header, 0) != 0x02014b50) return false;
                 var flags = Read16(header, 8); var method = Read16(header, 10); var crc = Read32(header, 16); var compressed = Read32(header, 20); var uncompressed = Read32(header, 24); var nameLength = Read16(header, 28); var extraLength = Read16(header, 30); var commentLength = Read16(header, 32); var attrs = Read32(header, 38); var localOffset = Read32(header, 42);
-                if ((flags & 0x9) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || (long)localOffset + 30 > stream.Length) return false;
+                if ((flags & ~0x800) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || (index == 0 && localOffset != 0) || (long)localOffset + 30 > stream.Length) return false;
                 var nameBytes = ReadAt(stream, cursor + 46, nameLength); var local = ReadAt(stream, localOffset, 30); if (Read32(local, 0) != 0x04034b50) return false;
                 var name = Encoding.UTF8.GetString(nameBytes);
                 if (name.Any(character => character > 127) || Read16(local, 6) != flags || Read16(local, 8) != method || Read32(local, 14) != crc || Read32(local, 18) != compressed || Read32(local, 22) != uncompressed || Read16(local, 26) != nameLength || Read16(local, 28) != 0 || !nameBytes.AsSpan().SequenceEqual(ReadAt(stream, (long)localOffset + 30, nameLength)) || (((attrs >> 16) & 0xF000) is 0xA000 or 0x6000) || (attrs & 0x400) != 0 || !crcs.TryAdd(name, crc)) return false;
