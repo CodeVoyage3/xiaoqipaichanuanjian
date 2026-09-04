@@ -158,6 +158,7 @@ public partial class App : System.Windows.Application
     {
         _updateCheckRuntime?.Dispose();
         _updateCheckRuntime = null;
+        (MainWindow as UI.MainWindow)?.StopUpdatePreparation();
         StopRuntime();
         if (_ownsInstanceMutex)
         {

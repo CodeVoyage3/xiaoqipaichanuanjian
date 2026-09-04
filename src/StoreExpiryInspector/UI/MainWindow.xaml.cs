@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly HashSet<Version> _suppressedUpdateVersions = [];
     private readonly CancellationTokenSource _updatePackageCancellation = new();
     private readonly SignedUpdatePackageDownloader _updateDownloader;
+    private Task<UpdatePackageResult>? _updateWorker;
     internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
@@ -86,16 +87,23 @@ public partial class MainWindow : Window
         model.CancelRequested += linked.Cancel;
         try
         {
-            var prepared = await Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress =>
+            _updateWorker = Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress =>
             {
                 if (IsClosed || Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
                 try { Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }); } catch (InvalidOperationException) { }
             }, linked.Token), linked.Token);
+            var prepared = await _updateWorker;
             if (!IsClosed) model.Complete(prepared);
         }
         catch (OperationCanceledException) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
         catch (Exception) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
         finally { model.CancelRequested -= linked.Cancel; }
+    }
+
+    internal void StopUpdatePreparation()
+    {
+        _updatePackageCancellation.Cancel();
+        try { _updateWorker?.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch { }
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
