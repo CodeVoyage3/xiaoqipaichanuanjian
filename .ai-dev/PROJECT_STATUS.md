@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01、S8-T02 已技术验收关闭；当前停止并等待下一卡明确批准；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 状态：Stage 8 进行中，S8-T01、S8-T02 已技术验收关闭；S8-T03 已获批准并 IN_PROGRESS；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
 - 当前分支：`master`
 - 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -10,6 +10,8 @@
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T03开工（2026-09-04）：重新fetch确认HEAD=origin/main=e4c628c、clean、0/0；Task/Acceptance已建立，派发全新Terra medium/priority。仅大Excel导入性能、受控异常原子回滚。用户永久取消Import Undo，删除execution/eligibility高规模要求，不以Restore替代、不再列入后续规划。设置页重置数据仅为未来独立需求，需另定清理范围/自动备份/二次确认/设置保留，不建Task或实施。正式库禁止访问，不新增索引/migration，不创建S8-T04。以下S8-T02数据为历史已验收基线。
 
 - S8-T02 最终验收（2026-09-04）：新 Terra 隔离 `e294a6b`、查询 `50539c2`、修复 `88d1896`、测试 `81a0c1c`；Sol 独立隔离9/9、正确性150/150、高规模1/1、Release912/912、build0/0、EF无漂移、migration9。100k Batch / 300k Inspection 真实达到，20条测量路径无blocker；Stage median 7241.50→174.68ms，待排查首屏387.64ms，历史分页628.39ms。搜索及单次snapshot变慢，如实保留；详见 S8-T02 Acceptance。无索引/Schema/依赖变更，不创建S8-T03。
 

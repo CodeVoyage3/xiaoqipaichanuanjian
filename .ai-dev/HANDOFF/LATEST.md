@@ -2,11 +2,15 @@
 
 ## 当前状态与停止点
 
-- Stage8：`IN_PROGRESS / WAITING_NEXT_AUTHORIZATION`；S8-T01、S8-T02均技术验收关闭。停止，不创建/实施S8-T03；T03～T06仅候选，Stage9与在线升级未开始。
+- Stage8：`IN_PROGRESS / S8-T03_IN_PROGRESS`；S8-T01、S8-T02继续技术验收关闭。用户已批准S8-T03，并永久取消Import Undo；S8-T04～T06仍仅候选，Stage9与在线升级未开始。
 - V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01继续CLOSED；V1-UI-01保持GUI_ACCEPTANCE_PASSED。本轮未启动真实GUI，不冒充人工GUI验收。
 - 正式数据库仍禁止调查/读取/哈希/修复。本轮测试显式隔离TEMP；旧轮疑似默认库访问未核实，不能改写为未发生。
 
 ## Git / 角色 / 实现
+
+- S8-T03开工同步基线：HEAD=origin/main=`e4c628c0e2df261c2da5761b8398c2ecd919452c`，clean、0/0；Task/Acceptance已建立，随后派发本卡全新Terra medium/priority。Sol不写生产代码，现有S8-T01/T02代理不可复用。
+- 本卡只测10k/50k/100k合法合成Excel真实导入链、分阶段性能、受控失败/原子回滚；删除全部Undo execution/eligibility要求，不新增executor/UI、不以Stage7 Restore代替、不再列后续规划。设置页重置数据为未来独立需求，不建Task、不实施，另定清理范围/自动备份/二次确认/设置保留。发现测试默认正式路径回退即全卡停测。
+- 以下实现及验收结果为S8-T02归档历史，不冒充S8-T03新鲜测试；本卡当前尚未验收。
 
 - S8-T02初始main：`0ede8b901fb5e6cbc1c2f2824d6f8a6c7a54f901`；隔离恢复main：`0d1d42a0667909e52264c5cd091297a827338788`。推送前fetch仍为后者，无远端新增。
 - 旧diff已保存在外部 `S8-T02-recovery/old-terra-uncommitted.patch`，hash及原回执见Acceptance；恢复clean main后才派发新Terra，旧代理不复用。
@@ -34,4 +38,4 @@
 - 本机JSON/SQL归档：`C:\Users\39037\.codex\visualizations\2026\09\03\01a06754-503b-72c0-b8f1-9e10cd9cad3f\S8-T02-evidence`，before/after目录，不含数据库文件，未宣称上传GitHub。
 - Before SHA256 `2C2205DD35F7BF95F41BD8C36E934E977A056F622A3211A65D215E27B3D26BD4`；After `8FCF92343B77F926A79BD00D8D8F88D13769F260D9618B25D4A503ECA70E3F5F`。
 
-等待下一卡明确授权；本轮“后续都允许”不扩大为新卡或正式库访问权限。
+仅完成S8-T03独立验收及普通push后停止；不创建S8-T04，不做断电/强杀/损坏实验，不访问正式库。
