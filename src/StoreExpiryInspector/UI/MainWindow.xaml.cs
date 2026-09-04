@@ -56,7 +56,7 @@ public partial class MainWindow : Window
         ApplyNavigationLayout();
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
-        Closed += (_, _) => { IsClosed = true; _updatePackageCancellation.Cancel(); };
+        Closed += (_, _) => { IsClosed = true; StopUpdatePreparation(); };
     }
 
     internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
