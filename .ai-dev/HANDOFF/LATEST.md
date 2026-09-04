@@ -1,5 +1,12 @@
 # 最新交接
 
+## S8-T05正式开工（2026-09-04）
+
+- 当前S8-T05：AUTHORIZED / IMPLEMENTATION_PENDING；Task/Acceptance已建。重新fetch main=origin/main=80b2c57f599fec736a0e191b13e8ae923810a633，clean、0/0。待派发全新Terra medium/priority，Sol独立验收。
+- 用户裁决：严重坏当前库无法生成合格保护快照时必须安全阻断，不staging/replace、不删改坏文件、不损坏健康备份、不伪造成功记录；属于预期，不要求现有Restore救援无法保护的坏库。不得绕过保护或新增Restore模式。
+- 其余隔离损坏/备份拒绝/健康恢复/失败回退/大库/Release门禁按S8-T05 Task。仅TEMP/GUID合成数据，严禁正式库访问。S8-T01～T04仍关闭；下方旧停止点为历史回执。
+- 不创建S8-T06，不实施Undo/重置数据/Stage9/在线升级。完成独立验收后才关闭、普通push main并停。
+
 ## S8-T04正式关闭（2026-09-04）
 
 - S8-T04：`TECHNICALLY_ACCEPTED / CLOSED`。Stage8仍IN_PROGRESS，S8-T01～T04关闭，WAITING_NEXT_AUTHORIZATION；S8-T05未创建。

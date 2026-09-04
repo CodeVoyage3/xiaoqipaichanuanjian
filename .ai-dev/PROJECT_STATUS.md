@@ -2,7 +2,7 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01、S8-T02、S8-T03、S8-T04 已技术验收关闭，WAITING_NEXT_AUTHORIZATION；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已关闭；Stage 9 尚未开始
+- 状态：Stage 8 进行中，S8-T01～T04已关闭；S8-T05 AUTHORIZED / IMPLEMENTATION_PENDING；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01均已关闭；Stage9未开始
 - 当前工作分支：`main`（实现来自`codex/s8-t04-crash-consistency`，正常fast-forward归档）
 - 当前最新 HEAD：本文件所在最终收口提交，具体SHA和origin/main同步状态以本轮Git发布回执为准；S8-T04测试代码基线`9eff272`
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -10,6 +10,8 @@
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T05开工：2026-09-04重新fetch main=origin/main=80b2c57，clean/0/0；Task/Acceptance已建，待全新Terra medium/priority。严重坏库无法保护时Restore必须安全阻断，不要求救回、不绕过保护。其余灾难矩阵/健康恢复/失败回退/大库与独立门禁保持；正式库禁止访问，S8-T06不创建。以下为历史回执。
 
 - S8-T04（2026-09-04）TECHNICALLY_ACCEPTED / CLOSED：实现9eff272；Sol独立48/48 Process.Kill证据保留，36提交前完整回滚、12提交后完整保留，全部integrity ok/FK0/migration9/可重开可写。用户放行既有TEMP/GUID损坏回归后，Release无filter全量944/944、0failure，4类87项全部通过；build0/0、EF无漂移，无生产/Schema/ModelSnapshot/index/依赖/工程改动，正式库未访问。未确认生产一致性bug，不证明真实断电、磁盘或文件系统损坏安全。按授权普通push main并核对clean/0/0后停止；S8-T05未创建，等待用户批准。
 

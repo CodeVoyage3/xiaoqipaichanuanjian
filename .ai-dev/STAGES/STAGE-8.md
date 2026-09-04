@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T04_CLOSED / WAITING_NEXT_AUTHORIZATION`；阶段整体尚未完成。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T05_IMPLEMENTATION_PENDING`；S8-T01～T04关闭，阶段整体尚未完成。
 
 ## 开工事实
 
@@ -17,6 +17,8 @@
 
 ## 当前正式任务
 
+- S8-T05已于2026-09-04授权建档，基线80b2c57。全新Terra medium/priority实施隔离损坏与恢复矩阵，Sol独立验收；严重坏库无法合格保护时必须安全阻断，不要求现有Restore直接救援、不绕过保护。详见S8-T05 Task/Acceptance，历史停止点不覆盖本次授权。
+
 - `S8-T01｜高规模数据基线与性能压测基座`：已由全新 GPT-5.6 Terra 实施，Sol 独立技术验收通过并关闭。
 - S8-T01 已真实生成并核对 100,000 Batch / 300,000 Inspection；只建立隔离数据、测量工具和基线证据，没有优化生产代码或新增索引、migration、Schema、依赖。
 - S8-T02｜查询、分页与高规模读性能优化：Sol 独立技术验收通过并关闭。隔离9/9、正确性150/150、100k/300k专项1/1、Release912/912、build0/0、EF无漂移、migration9；未新增索引/migration。当前停止，详见 S8-T02 Acceptance。
@@ -29,8 +31,7 @@ S8-T03已于2026-09-04获单卡授权并正式建档，基线e4c628c；只做大
 
 以下仅为候选顺序，不构成编号任务、实施授权或 Acceptance：
 
-1. S8-T05：SQLite 损坏检测、备份恢复与灾难场景。
-2. S8-T06：Stage 8 最终高规模回归与稳定性收口。
+1. S8-T06：Stage 8 最终高规模回归与稳定性收口。
 
 ## 冻结边界
 
