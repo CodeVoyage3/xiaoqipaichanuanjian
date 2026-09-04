@@ -1,0 +1,39 @@
+{
+  "baseline": "c6200ca8507c7f8d99f7f40047b6be291d6ff70b",
+  "sourceCommit": "4dbf088ff024a9818418e33bc67868dd0447b604",
+  "reviewer": "Sol",
+  "implementer": "fresh GPT-5.6 Terra medium priority",
+  "productionAndTestFiles": [
+    {
+      "path": "src/StoreExpiryInspector/App.xaml.cs",
+      "sha256": "0fc4423d30d797a9d03f1bdbf17ada46213cff3f007c6ff9a2c4aaf02794fd27"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/GitHubReleaseUpdateChecker.cs",
+      "sha256": "10058669c610f8f428881d83ff29f46e08c3ffa67c37a17119616720019b7a7e"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/SignedUpdatePackageDownloader.cs",
+      "sha256": "bb41189e08c96decba9564f2d5d1603d77a6b16e595ffdb63f659b9b5ff3aa75"
+    },
+    {
+      "path": "src/StoreExpiryInspector/UI/MainWindow.xaml.cs",
+      "sha256": "837d4eefa1407cba1c5208db9a0b9cede720160f31154e65a02c8395964b37c0"
+    },
+    {
+      "path": "src/StoreExpiryInspector/UI/UpdateNotificationViewModel.cs",
+      "sha256": "6aa3087600707a892a16a3549e8eb19a9d1fde6bc23f179aa47e40c495d82103"
+    },
+    {
+      "path": "src/StoreExpiryInspector/UI/WpfDialogService.cs",
+      "sha256": "152910001c1bdaa964cc282a46c8e32a16de11615c5e2a5a13ebd2ebafaad3ec"
+    },
+    {
+      "path": "tests/StoreExpiryInspector.Tests/S9T04SignedUpdatePackageTests.cs",
+      "sha256": "a04581985922c948d40424ede01b767f2664a0631c83960ebb591fc19f02ad10"
+    }
+  ],
+  "forbiddenScopeChanges": [],
+  "review": "Complete production diff reviewed, all callers of new prepare/exit/UI flow traced; no updater execution/replacement, new database dependency, migration execution, installer identity or package dependency changes. RSA private material only generated in memory in synthetic tests. Formal data root not accessed.",
+  "nextTaskCreated": false
+}

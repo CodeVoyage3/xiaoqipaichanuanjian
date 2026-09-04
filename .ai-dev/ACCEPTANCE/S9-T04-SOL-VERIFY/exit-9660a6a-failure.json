@@ -1,0 +1,28 @@
+{
+  "failed": 1,
+  "records": [
+    {
+      "name": "actual_process_exit",
+      "pass": false,
+      "details": {
+        "ExitCode": 0,
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\8e99532e-dab4-4b21-9415-0ababde34d33",
+        "remaining": [
+          "C:\\Users\\39037\\AppData\\Local\\Temp\\8e99532e-dab4-4b21-9415-0ababde34d33\\f47d0085abc84dd8b7f9e6371236dc26",
+          "C:\\Users\\39037\\AppData\\Local\\Temp\\8e99532e-dab4-4b21-9415-0ababde34d33\\f47d0085abc84dd8b7f9e6371236dc26\\package.download"
+        ],
+        "details": {
+          "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\8e99532e-dab4-4b21-9415-0ababde34d33",
+          "cancellationDelayObserved": true,
+          "mainWindowPresentAtExit": false,
+          "workerCompletedAtExit": false,
+          "remainingAtExit": 2,
+          "databaseUsed": false,
+          "invoked": "App.ExitApplication and real App.OnExit"
+        },
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

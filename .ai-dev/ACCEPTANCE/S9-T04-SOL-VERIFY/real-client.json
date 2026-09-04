@@ -1,0 +1,15 @@
+{
+  "failed": 0,
+  "records": [
+    {
+      "name": "real_anonymous_no_release",
+      "pass": true,
+      "details": {
+        "at": "2026-09-05T01:34:39.6834995+08:00",
+        "current": "1.0.0",
+        "outcome": "NoPublishedRelease",
+        "releaseCreated": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+D:\wendang\ChatGPT\门店效期排查软件\tests\StoreExpiryInspector.Tests\bin\Release\net10.0-windows\StoreExpiryInspector.Tests.dll (.NETCoreApp,Version=v10.0)的测试运行
+总共 1 个测试文件与指定模式相匹配。
+结果文件: C:\Users\39037\AppData\Local\Temp\baa6263a-458c-403e-8b1d-264748236c91\final-release\full-release.trx
+
+已通过! - 失败:     0，通过:  1023，已跳过:     0，总计:  1023，持续时间: 10 m 45 s - StoreExpiryInspector.Tests.dll (net10.0)

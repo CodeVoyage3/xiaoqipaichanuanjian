@@ -1,0 +1,4 @@
+  正在确定要还原的项目…
+  已还原 D:\wendang\ChatGPT\门店效期排查软件\src\StoreExpiryInspector\StoreExpiryInspector.csproj (用时 288 毫秒)。
+  StoreExpiryInspector -> D:\wendang\ChatGPT\门店效期排查软件\src\StoreExpiryInspector\bin\Release\net10.0-windows\win-x64\StoreExpiryInspector.dll
+  StoreExpiryInspector -> C:\Users\39037\AppData\Local\Temp\baa6263a-458c-403e-8b1d-264748236c91\publish-final\

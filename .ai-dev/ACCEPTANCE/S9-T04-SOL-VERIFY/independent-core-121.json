@@ -1,0 +1,2376 @@
+{
+  "failed": 0,
+  "records": [
+    {
+      "name": "valid_http_stream",
+      "pass": true,
+      "details": {
+        "actual": "Verified",
+        "expected": [
+          "Verified"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\91e27bfd-56cf-4f35-a3ef-3a0202f575e1",
+        "cacheClean": false,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 4,
+        "Message": "\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u5B89\u88C5\u66F4\u65B0\u529F\u80FD\u5C06\u5728\u540E\u7EED\u7248\u672C\u542F\u7528\u3002",
+        "packagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\91e27bfd-56cf-4f35-a3ef-3a0202f575e1\\51b86052e76e4821bdd90d4094c5cbc2\\package.download"
+      }
+    },
+    {
+      "name": "detect_to_verified_http",
+      "pass": true,
+      "details": {
+        "actual": "Verified",
+        "expected": [
+          "Verified"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\b6733c8a-3f6f-4bba-9b8d-11d0e165ac62",
+        "cacheClean": false,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 5,
+        "verifiedIdentity": true,
+        "progressCount": 4,
+        "Message": "\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u5B89\u88C5\u66F4\u65B0\u529F\u80FD\u5C06\u5728\u540E\u7EED\u7248\u672C\u542F\u7528\u3002",
+        "packagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\b6733c8a-3f6f-4bba-9b8d-11d0e165ac62\\56346d040bb1449399be7e974d62cb66\\package.download"
+      }
+    },
+    {
+      "name": "full_self_contained_publish",
+      "pass": true,
+      "details": {
+        "actual": "Verified",
+        "expected": [
+          "Verified"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\414f3ab1-d3d4-41ee-b6bc-b77b0b764ff5",
+        "cacheClean": false,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 8,
+        "Message": "\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u5B89\u88C5\u66F4\u65B0\u529F\u80FD\u5C06\u5728\u540E\u7EED\u7248\u672C\u542F\u7528\u3002",
+        "packagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\414f3ab1-d3d4-41ee-b6bc-b77b0b764ff5\\20df06a3d1c647659b2d8630a8aea1be\\package.download"
+      }
+    },
+    {
+      "name": "unknown_content_length",
+      "pass": true,
+      "details": {
+        "actual": "Verified",
+        "expected": [
+          "Verified"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e257a4f5-6ce2-42d8-8659-eda33a918eb2",
+        "cacheClean": false,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 4,
+        "Message": "\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u5B89\u88C5\u66F4\u65B0\u529F\u80FD\u5C06\u5728\u540E\u7EED\u7248\u672C\u542F\u7528\u3002",
+        "packagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\e257a4f5-6ce2-42d8-8659-eda33a918eb2\\0c5e35c072744f37915fdc7da366296b\\package.download"
+      }
+    },
+    {
+      "name": "no_production_anchor",
+      "pass": true,
+      "details": {
+        "actual": "SigningNotConfigured",
+        "expected": [
+          "SigningNotConfigured"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\b9e24cc5-93a9-4057-8b78-36df97e9c7dd",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 0,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u9A8C\u7B7E\u672A\u914D\u7F6E\uFF0C\u5DF2\u5B89\u5168\u62D2\u7EDD\u4E0B\u8F7D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "invalid_anchor",
+      "pass": true,
+      "details": {
+        "actual": "SigningNotConfigured",
+        "expected": [
+          "SigningNotConfigured"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\701eb555-06a5-422b-b77e-adb8f2ca296d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 0,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u9A8C\u7B7E\u672A\u914D\u7F6E\uFF0C\u5DF2\u5B89\u5168\u62D2\u7EDD\u4E0B\u8F7D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "cancel_audit",
+      "pass": true,
+      "details": {
+        "actual": "Cancelled",
+        "expected": [
+          "Cancelled"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\d94658cc-a715-4fba-9079-d4d299147f5f",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u5DF2\u53D6\u6D88\u66F4\u65B0\u5305\u51C6\u5907\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "cancel_inside_large_audit",
+      "pass": true,
+      "details": {
+        "actual": "Cancelled",
+        "expected": [
+          "Cancelled"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\979d5cf9-7be9-4dd4-a412-d6a3c6275ba8",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 6,
+        "Message": "\u5DF2\u53D6\u6D88\u66F4\u65B0\u5305\u51C6\u5907\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "manifest_body_timeout",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\ebae8e9a-7465-4333-99b5-24ce61c7b201",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u53D1\u5E03\u5185\u5BB9\u4E0D\u53EF\u7528\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_header_timeout",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\1660fc30-730a-4e0e-824b-e371aae279a4",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "release_metadata_cap",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest",
+          "AssetTooLarge"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e2ffd537-35a1-40cb-9a6a-07b9ead23939",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u5143\u6570\u636E\u8D85\u8FC7\u9650\u5236\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "same_current_version",
+      "pass": true,
+      "details": {
+        "actual": "VersionMismatch",
+        "expected": [
+          "VersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\02fe1efc-cab3-49d3-a8a3-128f693592dc",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u5019\u9009\u7248\u672C\u5FC5\u987B\u9AD8\u4E8E\u5F53\u524D\u7248\u672C\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "manifest_byte_changed",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifestSignature",
+        "expected": [
+          "InvalidManifestSignature"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\c38ff868-70d0-424d-a66b-fa898a06cf70",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u7B7E\u540D\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "signature_byte_changed",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifestSignature",
+        "expected": [
+          "InvalidManifestSignature"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\8c0adff8-c416-46cb-9178-20856ad18505",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u7B7E\u540D\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "wrong_public_key",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifestSignature",
+        "expected": [
+          "InvalidManifestSignature"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\0e18c7e9-90f4-405f-a32c-0a9be94f5cfa",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u7B7E\u540D\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "wrong_padding",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifestSignature",
+        "expected": [
+          "InvalidManifestSignature"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\0bbd5004-c4bb-4dbc-ad65-748a39aca46f",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u7B7E\u540D\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "malformed_signature",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifestSignature",
+        "expected": [
+          "InvalidManifestSignature"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\64541f8f-dded-409e-9f7b-960f216d4da7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u7B7E\u540D\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "valid_cdn_redirect",
+      "pass": true,
+      "details": {
+        "actual": "Verified",
+        "expected": [
+          "Verified"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\64d9afb1-3eda-4911-a9b6-8a54242552b0",
+        "cacheClean": false,
+        "allNoAuth": true,
+        "packageRequests": 2,
+        "requestCount": 7,
+        "verifiedIdentity": true,
+        "progressCount": 4,
+        "Message": "\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u5B89\u88C5\u66F4\u65B0\u529F\u80FD\u5C06\u5728\u540E\u7EED\u7248\u672C\u542F\u7528\u3002",
+        "packagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\64d9afb1-3eda-4911-a9b6-8a54242552b0\\2459206d7a4d41558479146541bd0992\\package.download"
+      }
+    },
+    {
+      "name": "signature_missing",
+      "pass": true,
+      "details": {
+        "actual": "SignatureMissing",
+        "expected": [
+          "SignatureMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\f4524ea7-b54c-439a-95ca-b0129eb6916a",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u4E2D\u7F3A\u5C11\u6E05\u5355\u7B7E\u540D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "manifest_missing",
+      "pass": true,
+      "details": {
+        "actual": "ManifestMissing",
+        "expected": [
+          "ManifestMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e6717002-69d6-4a5a-b145-58580921b35c",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u4E2D\u7F3A\u5C11\u66F4\u65B0\u6E05\u5355\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "hash_wrong",
+      "pass": true,
+      "details": {
+        "actual": "HashMismatch",
+        "expected": [
+          "HashMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\385fccf4-a0c2-4cc3-9bc4-d651bdac730a",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 2,
+        "Message": "\u66F4\u65B0\u5305\u6458\u8981\u4E0D\u5339\u914D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "size_larger_than_actual",
+      "pass": true,
+      "details": {
+        "actual": "SizeMismatch",
+        "expected": [
+          "SizeMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\308708c8-79fc-4403-b2ab-2b8c08a81a32",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 2,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "size_smaller_than_actual",
+      "pass": true,
+      "details": {
+        "actual": "SizeMismatch",
+        "expected": [
+          "SizeMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\5c14bc9a-81b6-4529-90e9-06c286ce004e",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_cap",
+      "pass": true,
+      "details": {
+        "actual": "AssetTooLarge",
+        "expected": [
+          "AssetTooLarge"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\be47af06-8d70-46a2-8345-56db48b7f3d8",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u5305\u8D85\u8FC7\u5B89\u5168\u5927\u5C0F\u9650\u5236\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "arm64",
+      "pass": true,
+      "details": {
+        "actual": "UnsupportedPlatform",
+        "expected": [
+          "UnsupportedPlatform"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\93397b03-4be9-4dad-add1-cfd988c79a46",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u5305\u5E73\u53F0\u4E0D\u53D7\u652F\u6301\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "version_mismatch",
+      "pass": true,
+      "details": {
+        "actual": "VersionMismatch",
+        "expected": [
+          "VersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e5df4809-e997-45d6-a510-cccf30618a93",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u4E0E\u53D1\u884C\u7248\u672C\u4E0D\u4E00\u81F4\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "source_outside_range",
+      "pass": true,
+      "details": {
+        "actual": "SourceNotSupported",
+        "expected": [
+          "SourceNotSupported"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\3e8ba615-7103-4773-aa64-b2cac064e795",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u5F53\u524D\u7248\u672C\u4E0D\u5728\u8BE5\u66F4\u65B0\u5305\u652F\u6301\u8303\u56F4\u5185\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "unsupported_protocol",
+      "pass": true,
+      "details": {
+        "actual": "UnsupportedProtocol",
+        "expected": [
+          "UnsupportedProtocol"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\a8477853-f347-4fa6-8f10-43d01c2baff8",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u534F\u8BAE\u4E0D\u53D7\u652F\u6301\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "unsupported_schema",
+      "pass": true,
+      "details": {
+        "actual": "UnsupportedProtocol",
+        "expected": [
+          "UnsupportedProtocol"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\6af55b3d-fa99-457e-b254-9eea2055d1ff",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u534F\u8BAE\u4E0D\u53D7\u652F\u6301\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "duplicate_json_property",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifestSignature",
+        "expected": [
+          "InvalidManifestSignature"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\d07e21eb-3790-4458-bbb9-dae88d33f22f",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u7B7E\u540D\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "signed_duplicate_json_property",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\00500687-a313-42aa-b16d-253cdd54130b",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u683C\u5F0F\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "migration_target_mismatch",
+      "pass": true,
+      "details": {
+        "actual": "PackageVersionMismatch",
+        "expected": [
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\47c674a2-3d4f-4410-aaf7-84b6cc0ed1a7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "migration_target_reordered",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\27350edb-4e14-49aa-8395-2aa4c6162f45",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u683C\u5F0F\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "migration_duplicate",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\22046ed3-566e-4b00-911c-297945e43268",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u683C\u5F0F\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "migration_invalid_id",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\6c483723-e04b-4e23-be30-588376a516f1",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u683C\u5F0F\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "source_migration_future",
+      "pass": true,
+      "details": {
+        "actual": "SourceNotSupported",
+        "expected": [
+          "SourceNotSupported"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\0bb58e2f-66a8-4953-abc1-3bf4940b241d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u5F53\u524D\u7248\u672C\u4E0D\u5728\u8BE5\u66F4\u65B0\u5305\u652F\u6301\u8303\u56F4\u5185\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "release_id_changed",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing",
+          "VersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\63f5d47f-a5b9-4a78-a956-88c34a777ec4",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u6307\u5B9A\u53D1\u884C\u8EAB\u4EFD\u4E0D\u5339\u914D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "release_tag_changed",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing",
+          "VersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\3f77a513-19cb-44a1-97da-d72bd24a1fe9",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u6307\u5B9A\u53D1\u884C\u8EAB\u4EFD\u4E0D\u5339\u914D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "release_draft",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\87e09d8d-5d33-4a3f-be05-18fcb9f506ac",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u6307\u5B9A\u53D1\u884C\u8EAB\u4EFD\u4E0D\u5339\u914D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "release_prerelease",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\8a8a86d0-054d-420a-8410-f8b4119889e2",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u6307\u5B9A\u53D1\u884C\u8EAB\u4EFD\u4E0D\u5339\u914D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "asset_foreign_url",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\96c415e9-1cd6-4ad0-bdb1-cbeee60a47bc",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u8D44\u4EA7\u6765\u6E90\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "asset_not_uploaded",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\a945d55b-c39d-471a-9ecc-60713e62339c",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u8D44\u4EA7\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "duplicate_manifest_asset",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing",
+          "ManifestMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\77d0af0e-e08b-454b-b9b4-915d2d7f03c4",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u8D44\u4EA7\u540D\u79F0\u91CD\u590D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "duplicate_package_asset",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\ea3f91f2-a145-4f83-a207-7bb1d94b45fe",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 1,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u8D44\u4EA7\u540D\u79F0\u91CD\u590D\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "manifest_large",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest",
+          "AssetTooLarge"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\8e0e8b5a-2f3e-46f9-95bf-c34b68aa6662",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u53D1\u5E03\u5185\u5BB9\u4E0D\u53EF\u7528\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "invalid_semver",
+      "pass": true,
+      "details": {
+        "actual": "InvalidManifest",
+        "expected": [
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\31bb411b-33c0-4a75-96b0-81ab56c22e23",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u6E05\u5355\u683C\u5F0F\u65E0\u6548\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_missing",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\4cad3c99-e5ab-4f2e-993e-dbff9a15ec9a",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u53D1\u884C\u4E2D\u6CA1\u6709\u552F\u4E00\u5339\u914D\u7684\u66F4\u65B0\u5305\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_404",
+      "pass": true,
+      "details": {
+        "actual": "AssetMissing",
+        "expected": [
+          "AssetMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\7f252ac9-c2c6-42f0-a7b8-e5250791c7ee",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_403",
+      "pass": true,
+      "details": {
+        "actual": "RateLimited",
+        "expected": [
+          "RateLimited"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\3f985eb5-bdad-4e09-a70c-826677b0473b",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_429",
+      "pass": true,
+      "details": {
+        "actual": "RateLimited",
+        "expected": [
+          "RateLimited"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\5a6253df-a9f0-448e-940d-1c45dc0bbcda",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "package_503",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\122dee8f-2fa5-4c41-904d-322765cc766c",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "manifest_404",
+      "pass": true,
+      "details": {
+        "actual": "ManifestMissing",
+        "expected": [
+          "ManifestMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\b18cdf2b-d716-472e-8439-07a81a33347d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u53D1\u5E03\u5185\u5BB9\u4E0D\u53EF\u7528\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "signature_404",
+      "pass": true,
+      "details": {
+        "actual": "SignatureMissing",
+        "expected": [
+          "SignatureMissing"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\761f5fe4-4f35-484d-a672-ee5f4928be5e",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 3,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u53D1\u5E03\u5185\u5BB9\u4E0D\u53EF\u7528\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "manifest_429",
+      "pass": true,
+      "details": {
+        "actual": "RateLimited",
+        "expected": [
+          "RateLimited"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\295910bb-5101-46ee-8940-d7b47bfc933a",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u66F4\u65B0\u53D1\u5E03\u5185\u5BB9\u4E0D\u53EF\u7528\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "interrupted_body",
+      "pass": true,
+      "details": {
+        "actual": "IoFailure",
+        "expected": [
+          "NetworkUnavailable",
+          "IoFailure",
+          "SizeMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\be5abda1-6e99-452d-9b66-293bfdb7f720",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u7F13\u5B58\u8BFB\u5199\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "body_timeout",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e2d1acf7-1056-459d-8351-8b88ae50ba0c",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 2,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "cancel_body",
+      "pass": true,
+      "details": {
+        "actual": "Cancelled",
+        "expected": [
+          "Cancelled"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\ac1865c6-d749-441a-a699-e26c71626254",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 1,
+        "Message": "\u66F4\u65B0\u5305\u4E0B\u8F7D\u6821\u9A8C\u5931\u8D25\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "same_version_singleflight",
+      "pass": true,
+      "details": {
+        "actual": "Verified",
+        "expected": [
+          "Verified"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\5340ffbb-24df-48ee-bfc4-10d22d05621a",
+        "cacheClean": false,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 20,
+        "Message": "\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u5B89\u88C5\u66F4\u65B0\u529F\u80FD\u5C06\u5728\u540E\u7EED\u7248\u672C\u542F\u7528\u3002",
+        "packagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\5340ffbb-24df-48ee-bfc4-10d22d05621a\\894a7b092fc14027a37befc341719ec1\\package.download"
+      }
+    },
+    {
+      "name": "zip_absolute",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\4deabaa4-5e7d-4ef2-a662-009e5d83a96e",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_ads",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\187e2203-00d7-4ae6-bf97-cabb9290ae2d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_backslash",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\6a3a551d-1c8a-4806-8d14-ffcb78cf36d2",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_backup",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\029f7392-78d5-45f9-a2a5-10425b6b913c",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_bad_crc",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\27536dcd-ae1d-4ddb-a732-dba2d75b4c82",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_bad_dll",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\9d17eb50-43ea-4c1a-817e-a6d7339df768",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u65E0\u6CD5\u5B89\u5168\u9A8C\u8BC1\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_bad_exe",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\bd130860-cc5c-4f66-b5cf-b533ff631bd0",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u65E0\u6CD5\u5B89\u5168\u9A8C\u8BC1\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_control_char",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\927868a4-19fe-41a4-8170-25a7943a3fd9",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_data",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\62c0821c-bdb6-404a-a9c2-87538cb2248d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_database",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\066bb5ee-98f4-4e7a-bd14-8ee62ae7642c",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_declared_single_large",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\fcc9013f-7284-4053-b842-4546ae7d131a",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_disk_count_mismatch",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\182e1a02-f1b7-480a-8e79-b12648cb3cf7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u65E0\u6CD5\u5B89\u5168\u9A8C\u8BC1\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_dot_segment",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\9c136a50-29ba-4b47-a6bd-1e53d3fa80f7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_drive",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\19634e1e-fc81-4e8d-b186-d91833d96de8",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_duplicate_case",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\3a46d3f7-f0ab-4bc1-a7a0-3a61705f9e8d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_duplicate_exact",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\1a1bd2fa-3cac-401f-aee9-43a28573b6a7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_empty_segment",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e66d3f11-330c-47e8-8057-1784775f6674",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_encrypted",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e093e3f1-d3ae-4996-9ba6-6b2418b10091",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_excel",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\a6d5da00-3071-478e-b007-5ebb8480b120",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_exe_version_mismatch",
+      "pass": true,
+      "details": {
+        "actual": "PackageVersionMismatch",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\05bd73a5-f59e-4f7a-a4d9-32199e27cacb",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_hardlink_extra",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\3829474e-734c-402d-8562-7fc5990fd128",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_invalid_char",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\429c7fde-aeac-4307-b4f4-12e82ea9e3af",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_invalid_utf8",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e1041f53-2a99-4909-bfbb-a1e6d4fedd2d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_local_name_mismatch",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\481d7925-4fc9-4b52-a406-16b565317c00",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_logs",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\eb55dd3c-309f-4a2d-ab57-25a5a545240e",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_many_entries",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\23bc4eb3-8048-4032-ac8b-6d442ee4dd7b",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_missing_dll",
+      "pass": true,
+      "details": {
+        "actual": "PackageVersionMismatch",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\b1221746-2ae5-47b8-99d6-48400b75fa2b",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_missing_exe",
+      "pass": true,
+      "details": {
+        "actual": "PackageVersionMismatch",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\9ebd6a7d-30a0-40f0-a102-34b65da6fbbe",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_nested_business",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\ff963d1f-f284-4596-8acf-2e9c71f620d1",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_offset_adjusted_sfx",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\c1553294-9408-4b7d-b67d-05ff136831be",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_parent_file_conflict",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\9f8f701c-ac68-4d4e-89dd-8b2ae4b989df",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_pfx",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\628110e0-d1bd-4b64-80b4-c56d411b6b77",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_prepended_junk",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\2c1f960c-61be-4d7e-9e3c-41eb95739fe8",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_private_block",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\999cf80f-5cb6-4f2c-97d9-17b22c1fe9d7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_private_disguised_dll",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\abd2a0b6-2801-4ece-8b0d-b870924c2519",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_private_in_runtimeconfig",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\cf01c1de-e454-4037-bc44-62789a4e835f",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_ratio_bomb",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e4268864-8c07-4245-aa89-0c99d8bdc530",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_reparse",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\97916d16-017e-4e8e-9f5e-dc1eb203817e",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_reserved",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\a9cb3cc7-6cf1-482e-9579-dd61923236e6",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_rsa_private_json",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\9367b442-41d7-45f5-ac09-719218bc4e27",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_script",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\43139748-8a3f-4157-a435-7b4c7ee94358",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_shm",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\63130360-a678-4de6-8c5f-94ba0fa9b9a4",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_symlink",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\6e88c073-7748-42bb-a93f-92217002ae47",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_token",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\5639af2c-b87e-4b35-8109-2fba6d601669",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_token_disguised_dll",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\281c9322-acab-49a2-89de-4d64c3651534",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_token_in_deps",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\9037fd11-d1e1-429c-a6f4-6c41a1fe74e8",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_trailing_dot",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\68b2f343-0ed6-4f4c-9ae4-cf01baea3e52",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_trailing_junk",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\56811a89-188b-4306-b72c-9a40a63d0691",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_trailing_space",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\470abb22-3790-4a2c-8a08-43b9a969a363",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_traversal",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\a39b397f-6a90-479a-863f-aa5ff7526ba7",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_unc",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\782299f2-14fa-423a-be86-60adf716ee38",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_unknown_extra",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\a2025a70-f9b4-42c9-9b2c-61f98b0a1e28",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_unknown_flag",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\8f2a1dd1-8101-464b-bdb8-5fd5f01bff8d",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_unsupported_compression",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\5d726358-e347-463e-a7d9-7cb63dab5aa0",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "zip_wal",
+      "pass": true,
+      "details": {
+        "actual": "UnsafeArchive",
+        "expected": [
+          "UnsafeArchive",
+          "PackageVersionMismatch"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\2d8174f5-d8b4-480e-bf8c-88f163fb4e6b",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 1,
+        "requestCount": 4,
+        "verifiedIdentity": true,
+        "progressCount": 3,
+        "Message": "\u66F4\u65B0\u5305\u5185\u5BB9\u4E0D\u7B26\u5408\u5B89\u5168\u8981\u6C42\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_http://release-assets.githubusercontent.com/github-production-release-asset/1/11111111-1111-1111-1111-111111111111",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\bc126ac4-78ab-4f19-8454-78a4ec5cd988",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_https://localhost/a",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\b73a8d6a-0886-462d-8bcd-adfba79413d6",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_file:///C:/test",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\14198c87-fbc7-45ce-a2d7-9745183a9226",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_https://release-assets.githubusercontent.com.evil.test/a",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\4672ad3e-c61c-48d4-af66-84364bda8d50",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_https://evil.test/a",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\3cdbabb1-00bd-4cf1-b3eb-ca9d09107202",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_https://release-assets.githubusercontent.com:444/github-production-release-asset/1/11111111-1111-1111-1111-111111111111",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\e1632fd1-3884-4a79-833d-731f24f91947",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_https://user@release-assets.githubusercontent.com/github-production-release-asset/1/11111111-1111-1111-1111-111111111111",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\1b6216f9-7055-41f3-9bb9-3a115ce2e41f",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    },
+    {
+      "name": "redirect_https://release-assets.githubusercontent.com/wrong-path",
+      "pass": true,
+      "details": {
+        "actual": "NetworkUnavailable",
+        "expected": [
+          "NetworkUnavailable",
+          "InvalidManifest"
+        ],
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\034546ae-4887-485e-8df9-f2d63a5080be",
+        "cacheClean": true,
+        "allNoAuth": true,
+        "packageRequests": 0,
+        "requestCount": 2,
+        "verifiedIdentity": true,
+        "progressCount": 0,
+        "Message": "\u65E0\u6CD5\u8FDE\u63A5\u66F4\u65B0\u670D\u52A1\u5668\u3002",
+        "packagePath": null
+      }
+    }
+  ]
+}
