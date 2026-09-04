@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T02_PAUSED_ISOLATION_REVIEW`。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T02_ISOLATION_REPAIR`。
 
 ## 开工事实
 

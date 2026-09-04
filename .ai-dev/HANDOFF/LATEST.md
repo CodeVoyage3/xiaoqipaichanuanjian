@@ -2,10 +2,10 @@
 
 ## 当前任务与状态
 
-- Stage 8：`IN_PROGRESS / S8-T02_PAUSED_ISOLATION_REVIEW`。
-- 2026-09-04 用户正式批准 S8-T02，并允许全新 Terra / medium / priority；代理已实施部分查询改写，但当前停工停测、未验收。
-- 最新停止原因：Terra 已执行过含 Shell 测试的定向组合，初版 category loader 未遵守测试注入隔离，可能进入默认正式库。CreateContext 会创建目录，SQLite 连接未限定只读；无法排除实际访问或文件系统变化。Sol 未打开正式库调查，不声称“未访问”。
-- Terra 回执：查询专项 11失败/4通过，组合15失败/55通过；主要为 EF 翻译与旧UI测试期望。两个生产文件改动未提交，代理已停止；只归档治理状态，不推送生产改动。完整命令/风险见 S8-T02 Acceptance。
+- Stage 8：`IN_PROGRESS / S8-T02_ISOLATION_REPAIR / NOT_ACCEPTED`。
+- 用户已批准隔离优先继续；不调查/读取/哈希/修复正式库，旧 Terra 不复用。新 Terra `/root/s8_t02_isolation_new_terra` 使用 medium / priority（用户允许后续继续此档位，不再重复询问）。
+- 旧 diff 已保存到 `C:\Users\39037\.codex\visualizations\2026\09\03\01a06754-503b-72c0-b8f1-9e10cd9cad3f\S8-T02-recovery\old-terra-uncommitted.patch`，SHA256 `8242678ECCAB4D526D93C9E0BB0CA7FD732A4A845E823F46E6458FE9F2C174C9`。两份文件已恢复，clean main=`0d1d42a0667909e52264c5cd091297a827338788` 后才创建新代理。
+- 历史疑似默认正式库访问仍未核实，详见 Acceptance；不能因新隔离测试通过而声称历史未发生。
 - S8-T01 已由本卡全新 GPT-5.6 Terra 实施，并经 Codex Sol 独立技术验收通过；本卡到此停止。
 - V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 继续保持 `CLOSED`；V1-UI-01 为 `GUI_ACCEPTANCE_PASSED`。
 - S8-T03～T06 仍只是候选方向，没有创建正式 Task 或 Acceptance；Stage 9 与在线升级未启动。
@@ -35,5 +35,5 @@
 
 ## 下一步停止门禁
 
-- 当前等待用户决定是否允许先修复并验证测试隔离边界后继续 S8-T02；这不构成正式数据库访问授权。不得继续测试、关闭本卡或创建 S8-T03。
+- 当前仅第一阶段隔离修复。Terra 先报告设计/静态安全，Sol 确认后运行隔离专项；提交并经 Sol 独立复验后才继续查询优化。不得访问正式库、提前关闭本卡或创建 S8-T03。
 - 任何新增索引、Schema 或 migration 仍需明确批准；不得启动 Stage 9 或在线升级。
