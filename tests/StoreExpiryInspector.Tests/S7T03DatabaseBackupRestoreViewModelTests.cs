@@ -822,9 +822,8 @@ public sealed class S7T03DatabaseBackupRestoreViewModelTests
         Assert.Contains("DatabaseRuntimeGate.Run", app, StringComparison.Ordinal);
         Assert.Contains("DatabaseRuntimeStoppedException", app, StringComparison.Ordinal);
         Assert.Contains("await shell.Detail.WaitForStableSaveAsync()", app, StringComparison.Ordinal);
-        Assert.Contains("shell.Import.IsLoading", app, StringComparison.Ordinal);
-        Assert.Contains("shell.History.IsEditBusy", app, StringComparison.Ordinal);
-        Assert.Contains("shell.Detail.IsActionBusy", app, StringComparison.Ordinal);
+        Assert.Contains("MainWindow.IsEnabled = false", app, StringComparison.Ordinal);
+        Assert.Contains("if (lease is null)", app, StringComparison.Ordinal);
         Assert.Contains("_reminderScheduler?.Stop()", app, StringComparison.Ordinal);
         Assert.Contains("var lease = await DatabaseRuntimeGate.EnterMaintenanceAsync()", app, StringComparison.Ordinal);
         Assert.Contains("_trayIcon is null", app, StringComparison.Ordinal);

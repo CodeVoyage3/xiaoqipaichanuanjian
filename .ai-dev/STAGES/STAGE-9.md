@@ -1,12 +1,11 @@
 # Stage 9｜安装、发布与在线升级交付
 
-## S9-T05正式启动（2026-09-05，覆盖下方历史停止点）
+## S9-T05正式关闭（2026-09-05，覆盖下方历史停止点）
 
-- 用户仅授权 S9-T05；Stage9 IN_PROGRESS / S9-T05_CURRENT，S9-T05 IN_PROGRESS / NOT_ACCEPTED。重新 fetch 后 main=origin/main=a8e1414030864c67e5cc82ee81c6062dc20c724d，clean/0/0；无既有 T05，已建立 Task/Acceptance。
-- 全新 GPT-5.6 Terra medium/priority `/root/s9_t05_terra` 实施，提交后停止、不 push；Sol 只治理、完整 diff 和独立复验。仅同 Schema 程序切换、独立 Updater、持久 journal、staging、健康 ACK 与失败回滚。
-- 全部运行测试仅 TEMP/GUID 独立安装/数据/updater/进程身份与合成 migration9 DB；正式安装根/数据根禁止探测、哈希、复制或访问。候选 ACK 前禁止业务写；旧完整树保留，真实硬 Kill 各关键 checkpoint 至少3次，不能用异常捕获代替。
-- 产品仍1.0.0；不做 migration/Schema/生产 PRAGMA、正式 Release/tag/asset、生产私钥/trust anchor、提权、Undo。Stage8和T01～T04仍CLOSED；不创建S9-T06。
-- 尚未实施或验收通过；待完整矩阵、app/updater self-contained、fresh无filter Release、build0/0、EF无漂移/migration9、secret与diffcheck。全部通过才关闭并普通push，遇真实架构冲突则PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED。
+- S9-T05 `TECHNICALLY_ACCEPTED / CLOSED`；Stage9 `IN_PROGRESS / WAITING_NEXT_AUTHORIZATION`。独立 self-contained Updater、持久 journal、完整树 staging/switch/rollback、候选只读健康 ACK、失败重入与人工恢复边界已完成。产品仍 1.0.0；Stage8、S9-T01～T04 保持 CLOSED，未创建 S9-T06。
+- Sol 新鲜 TEMP/GUID migration9 证据：self-contained WPF smoke/verification exit0；preparer3/3、成功硬杀27/27、回滚硬杀9/9、失败矩阵8/8、live-parent与双Updater通过；DB SHA不变、无WAL/SHM、锁/ACL/junction无混树。
+- 最终无过滤 Release 1040/1040、build0/0、EF无漂移、migration清单9且末条固定、diff/secret/禁止项通过。正式安装/数据/数据库/备份未访问；无Release/tag/asset、生产trust anchor/private key、真实更新包或migration执行。
+- 下一卡仅建议 S9-T06 首次签名正式 Release 与干净 Win10/11 同 Schema 1.0.0→1.0.1 端到端升级验收；须新授权，不自动建卡。
 
 ## S9-T04正式关闭（2026-09-05，当前权威状态）
 

@@ -1,12 +1,13 @@
 # 最新交接
 
-## S9-T05正式启动（2026-09-05，覆盖下方历史停止点）
+## S9-T05正式关闭（2026-09-05，覆盖下方历史停止点）
 
-- 用户仅授权 S9-T05；Stage9 IN_PROGRESS / S9-T05_CURRENT，S9-T05 IN_PROGRESS / NOT_ACCEPTED。重新 fetch 后 main=origin/main=a8e1414030864c67e5cc82ee81c6062dc20c724d，clean/0/0；无既有 T05，已建立 Task/Acceptance。
-- 全新 GPT-5.6 Terra medium/priority `/root/s9_t05_terra` 实施，提交后停止、不 push；Sol 只治理、完整 diff 和独立复验。仅同 Schema 程序切换、独立 Updater、持久 journal、staging、健康 ACK 与失败回滚。
-- 全部运行测试仅 TEMP/GUID 独立安装/数据/updater/进程身份与合成 migration9 DB；正式安装根/数据根禁止探测、哈希、复制或访问。候选 ACK 前禁止业务写；旧完整树保留，真实硬 Kill 各关键 checkpoint 至少3次，不能用异常捕获代替。
-- 产品仍1.0.0；不做 migration/Schema/生产 PRAGMA、正式 Release/tag/asset、生产私钥/trust anchor、提权、Undo。Stage8和T01～T04仍CLOSED；不创建S9-T06。
-- 尚未实施或验收通过；待完整矩阵、app/updater self-contained、fresh无filter Release、build0/0、EF无漂移/migration9、secret与diffcheck。全部通过才关闭并普通push，遇真实架构冲突则PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED。
+- S9-T05 `TECHNICALLY_ACCEPTED / CLOSED`；Stage9 `IN_PROGRESS / WAITING_NEXT_AUTHORIZATION`。开工 main=origin/main=`a8e1414030864c67e5cc82ee81c6062dc20c724d`、clean/0/0；fresh Terra 实施并提交、不 push，Sol 治理、完整 diff 与独立复验。产品仍 1.0.0，未创建 S9-T06。
+- 已有独立 self-contained Updater、持久 journal、精确 operation 路径、完整树 staging/switch/rollback、父进程身份、mutex、候选只读 UI/DB ACK 与 manual recovery。正常流程只请求主程序优雅退出；ACK 前不执行 Initialize/Migrate/补算/reminder 写入。
+- Sol 新鲜隔离证据：WPF self-contained smoke/verification exit0；preparer3/3、成功硬杀27/27、回滚硬杀9/9、失败矩阵8/8、live-parent及双Updater通过；migration9 DB SHA不变、无WAL/SHM、锁/ACL/junction无混树。
+- 最终无过滤 Release 1040/1040、0 failure/skip、10m56s；build0/0；EF无漂移、migration9末条固定；diff/secret/禁止项通过。详见 `../ACCEPTANCE/S9-T05.md`、`../ACCEPTANCE/S9-T05-HARD-KILL-RESULT.json`、`../ACCEPTANCE/S9-T05-UPDATER-RESULT.json`。
+- 未访问正式安装/数据/数据库/备份；未创建 GitHub Release/tag/asset，未配置生产 trust anchor/private key，未发布真实更新包，未执行 migration。开发机合成通过不代表门店投产。
+- 下一卡仅建议 S9-T06 首次签名正式 Release 与干净 Win10/11 同 Schema 1.0.0→1.0.1 端到端升级验收；所有正式发布身份和版本变化须新授权，不含 Schema/migration、正式业务数据、重置或 Undo。
 
 ## S9-T04正式关闭（2026-09-05，当前权威状态）
 

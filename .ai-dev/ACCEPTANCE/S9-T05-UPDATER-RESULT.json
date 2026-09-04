@@ -1,9 +1,210 @@
 {
-  "status": "implementation-evidence-only",
-  "provenance": "Terra isolated TEMP/GUID reruns; not Sol independent acceptance.",
-  "database": { "migrationCount": 9, "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation", "sha256": "37556296F43368424B3B813398FAF98B8776E643B94A3FBA68A7D9E4A9E84D2B" },
-  "wpf": { "normalSmoke": "exit 0", "verification": "exit 0; ACK migration9/integrity/FK/core/UI; DB unchanged; no WAL/SHM" },
-  "hardKill": { "preparerStagingStarted": "3/3", "success": "27/27", "rollback": "9/9", "normalRestartMarker": true },
-  "matrix": { "B_E_F_G": "controlled phase failures rollback to old and restart", "C": "malformed and wrong-type ACK rollback", "H": "old and candidate file locks fail closed", "O": "missing candidate DLL rollback", "P": "success removes operation candidate.zip and bounded download cache; old/journal/updater retained", "Q": "old ACK failure is manual recovery", "ackJunction": "forged operation junction rejected without external journal write", "accessDenied": "isolated ACL denial fails closed without mixed tree" },
-  "limitations": "A-Q are Terra implementation evidence only; no formal data root was read or modified."
+  "status": "TECHNICALLY_ACCEPTED",
+  "provenance": "Sol fresh independent acceptance after Terra implementation; TEMP/GUID synthetic migration9 only",
+  "implementationCommits": [
+    "b115d9306ab5ade3a7c5da31b45a358704db2ce0",
+    "0b3803fa237273e88f28c77b01055249be1783da",
+    "011883e1f999ccb20969ef6fc5f84b2fafeb6b93",
+    "efebdf9257f836bd4e8e5ff7b8c68865f88f49f7",
+    "c71a843eb8e01d09639a786a98af24d9a1f11cd4",
+    "cbe906d0e745702287b817a189d61b83e3edb2db"
+  ],
+  "database": {
+    "sha256": "13102791AA58A6C886B1DED28446E469ED150181DAB84F76F3ECE81C44FB79AE",
+    "unchanged": true,
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "wal": false,
+    "shm": false
+  },
+  "wpf": {
+    "selfContainedApp": true,
+    "smokeExit": 0,
+    "verificationExit": 0,
+    "operationId": "e1bc74d5-b465-46ad-b172-9bc69210e998",
+    "version": "1.0.0",
+    "integrity": "ok",
+    "foreignKeys": "ok",
+    "coreRead": true,
+    "uiLoaded": true
+  },
+  "updater": {
+    "outsideApp": true,
+    "selfContained": true,
+    "noArgsExit": 2,
+    "formalBuildRejectsTempJournalExit": 1,
+    "rejectedJournalUnchanged": true
+  },
+  "journalPhases": [
+    "Prepared",
+    "MainExitRequested",
+    "MainExited",
+    "CandidateStaged",
+    "OldAppPreserved",
+    "SwitchStarted",
+    "CandidateActivated",
+    "CandidateStarted",
+    "WaitingForHealthAck",
+    "Committed",
+    "Completed",
+    "RollbackRequired",
+    "RollbackStarted",
+    "OldAppRestored",
+    "RollbackVerified",
+    "RolledBack",
+    "FailedNeedsManualRecovery"
+  ],
+  "hardKill": {
+    "preparer": "3/3",
+    "success": "27/27",
+    "rollback": "9/9",
+    "successPackageDeleted": 27,
+    "rollbackPackageRetained": 9
+  },
+  "failureMatrix": [
+    {
+      "case": "ack-malformed",
+      "exit": 0,
+      "phase": 15,
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": true,
+      "pass": true
+    },
+    {
+      "case": "ack-wrong-type",
+      "exit": 0,
+      "phase": 15,
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": true,
+      "pass": true
+    },
+    {
+      "case": "old-ack-fail",
+      "exit": 1,
+      "phase": 16,
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": false,
+      "pass": true
+    },
+    {
+      "case": "missing-candidate-dll",
+      "exit": 0,
+      "phase": 15,
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": null,
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": true,
+      "pass": true
+    },
+    {
+      "case": "old-exe-lock",
+      "exit": 1,
+      "phase": 16,
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": null,
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": false,
+      "pass": true
+    },
+    {
+      "case": "candidate-exe-lock",
+      "exit": 1,
+      "phase": 16,
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": false,
+      "pass": true
+    },
+    {
+      "case": "temp-root-access-denied",
+      "exit": 1,
+      "phase": "Prepared",
+      "appTree": "6B94821F551493E58E702B468B4CC39FB5E69F36980C6DB3D4F788826C8B18FE",
+      "oldTree": null,
+      "activeTreeIsOld": true,
+      "noMixed": true,
+      "dbUnchanged": true,
+      "normalStarted": false,
+      "pass": true
+    },
+    {
+      "case": "ack-operation-junction",
+      "candidateReady": true,
+      "exit": 1,
+      "outsideJournalWrite": false,
+      "forgedAckRemains": true,
+      "pass": true
+    }
+  ],
+  "liveParent": [
+    {
+      "parentDelay": 800,
+      "wait": 3000,
+      "exit": 0,
+      "phase": 10,
+      "normalStarted": true
+    },
+    {
+      "parentDelay": 3000,
+      "wait": 100,
+      "exit": 1,
+      "phase": 16,
+      "normalStarted": false
+    }
+  ],
+  "doubleUpdater": {
+    "secondExit": 1,
+    "journalUnchanged": true,
+    "resumeExit": 0,
+    "finalPhase": "Completed",
+    "pass": true
+  },
+  "release": {
+    "tests": "1040/1040",
+    "failed": 0,
+    "skipped": 0,
+    "duration": "10m56s",
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "efDrift": false,
+    "migrationCount": 9,
+    "diffCheck": true,
+    "secretHits": 0
+  },
+  "boundaries": {
+    "formalDataAccess": false,
+    "githubReleaseCreated": false,
+    "tagCreated": false,
+    "assetUploaded": false,
+    "productionTrustAnchorConfigured": false,
+    "productVersion": "1.0.0",
+    "s9t06Created": false
+  },
+  "github": {
+    "checkedUtc": "2026-09-04T21:37:03.2572067+00:00",
+    "repository": "CodeVoyage3/xiaoqipaichanuanjian",
+    "public": true,
+    "releaseApiStatus": 200,
+    "releaseCount": 0,
+    "assetCount": 0
+  }
 }

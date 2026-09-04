@@ -406,7 +406,9 @@ public sealed class S3T07CombinationEvidenceTests
             "Application",
             "StartupRecalculationUseCase.cs"));
 
-        Assert.Contains("StartupUri=\"UI/MainWindow.xaml\"", appXaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("StartupUri=", appXaml, StringComparison.Ordinal);
+        Assert.Contains("MainWindow = new UI.MainWindow();", appSource, StringComparison.Ordinal);
+        Assert.Contains("MainWindow.Show();", appSource, StringComparison.Ordinal);
         Assert.Contains("DatabaseInitializer.Initialize();", appSource, StringComparison.Ordinal);
         Assert.Contains("DateOnly.FromDateTime(DateTime.Now)", appSource, StringComparison.Ordinal);
         Assert.Contains("DateTime.UtcNow", appSource, StringComparison.Ordinal);
