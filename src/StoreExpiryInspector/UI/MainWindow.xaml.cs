@@ -75,17 +75,27 @@ public partial class MainWindow : Window
 
     private async Task PrepareUpdateAsync(UpdateCheckResult result, UpdateNotificationViewModel model)
     {
+        if (IsClosed || model.IsBusy) return;
         if (result.Release is null)
         {
-            WpfDialogService.Show(this, "暂无法准备更新", "本次发行身份信息不完整，已安全拒绝下载。", "知道了", WpfDialogKind.Warning, showCancel: false);
+            model.Complete(new UpdatePackageResult(UpdatePackageOutcome.AssetMissing, "本次发行身份信息不完整，已安全拒绝下载。"));
             return;
         }
         model.Begin();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_updatePackageCancellation.Token);
         model.CancelRequested += linked.Cancel;
-        var prepared = await Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress => Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }), linked.Token), linked.Token);
-        if (!IsClosed) model.Complete(prepared);
-        if (!IsClosed) WpfDialogService.Show(this, prepared.Outcome == UpdatePackageOutcome.Verified ? "更新包已准备完成" : "更新包未准备", prepared.Message, "知道了", prepared.Outcome == UpdatePackageOutcome.Verified ? WpfDialogKind.Information : WpfDialogKind.Warning, showCancel: false);
+        try
+        {
+            var prepared = await Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress =>
+            {
+                if (IsClosed || Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+                try { Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }); } catch (InvalidOperationException) { }
+            }, linked.Token), linked.Token);
+            if (!IsClosed) model.Complete(prepared);
+        }
+        catch (OperationCanceledException) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
+        catch (Exception) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
+        finally { model.CancelRequested -= linked.Cancel; }
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)

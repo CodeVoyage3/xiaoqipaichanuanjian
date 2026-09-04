@@ -35,7 +35,7 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     public long TotalBytes { get => _totalBytes; private set { _totalBytes = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); } }
     public bool IsBusy { get => _isBusy; private set { _isBusy = value; OnPropertyChanged(); _update.RaiseCanExecuteChanged(); _cancel.RaiseCanExecuteChanged(); } }
     public string ProgressText => TotalBytes > 0 ? $"{ReceivedBytes:N0} / {TotalBytes:N0} 字节（{ReceivedBytes * 100 / TotalBytes}%）" : string.Empty;
-    public void Begin() { IsBusy = true; StatusText = "正在准备更新包"; }
+    public void Begin() { ReceivedBytes = 0; TotalBytes = 0; IsBusy = true; StatusText = "正在准备更新包"; }
     public void Report(UpdatePackageProgress progress) { StatusText = progress.Stage; ReceivedBytes = progress.BytesReceived; TotalBytes = progress.TotalBytes; }
     public void Complete(UpdatePackageResult result) { IsBusy = false; StatusText = result.Message; }
 }
