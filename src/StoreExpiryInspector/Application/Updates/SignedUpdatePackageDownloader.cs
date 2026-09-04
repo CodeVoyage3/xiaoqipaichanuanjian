@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -35,8 +36,9 @@ public sealed record UpdatePackageOptions(RSAParameters? TrustedPublicKey = null
     internal RSA? CreateVerifier()
     {
         if (TrustedPublicKey is not { } key || key.Modulus is null || key.Exponent is null) return null;
-        try { var rsa = RSA.Create(); rsa.ImportParameters(new RSAParameters { Modulus = key.Modulus, Exponent = key.Exponent }); if (rsa.KeySize >= 2048) return rsa; rsa.Dispose(); return null; }
-        catch (CryptographicException) { return null; }
+        RSA? rsa = null;
+        try { rsa = RSA.Create(); rsa.ImportParameters(new RSAParameters { Modulus = key.Modulus, Exponent = key.Exponent }); if (rsa.KeySize >= 2048) return rsa; rsa.Dispose(); return null; }
+        catch (CryptographicException) { rsa?.Dispose(); return null; }
     }
 }
 
@@ -64,7 +66,9 @@ public sealed class SignedUpdatePackageDownloader
 
     public Task<UpdatePackageResult> PrepareAsync(CheckedRelease release, Version currentVersion, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
     {
-        if (_options.CreateVerifier() is null) return Task.FromResult(Fail(UpdatePackageOutcome.SigningNotConfigured, "发行验签未配置，已安全拒绝下载。"));
+        using var anchor = _options.CreateVerifier();
+        if (anchor is null) return Task.FromResult(Fail(UpdatePackageOutcome.SigningNotConfigured, "发行验签未配置，已安全拒绝下载。"));
+        if (!OperatingSystem.IsWindows() || RuntimeInformation.OSArchitecture != Architecture.X64 || RuntimeInformation.ProcessArchitecture != Architecture.X64) return Task.FromResult(Fail(UpdatePackageOutcome.UnsupportedPlatform, "当前运行环境不支持 win-x64 更新包。"));
         if (!IsVersion(release.Version) || release.Tag != "v" + release.Version.ToString(3) || release.ReleaseId <= 0 || !CurrentMigrations.All(MigrationPattern.IsMatch)) return Task.FromResult(Fail(UpdatePackageOutcome.InvalidManifest, "更新发布身份无效。"));
         var key = release.Version.ToString(3);
         var lazy = _flights.GetOrAdd(key, _ => new Lazy<Task<UpdatePackageResult>>(() => PrepareCoreAsync(release, currentVersion, progress, cancellationToken)));
@@ -78,6 +82,12 @@ public sealed class SignedUpdatePackageDownloader
     }
 
     private async Task<UpdatePackageResult> PrepareCoreAsync(CheckedRelease release, Version currentVersion, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
+    {
+        try { return await PrepareCoreInnerAsync(release, currentVersion, progress, cancellationToken); }
+        catch (IOException) { return Fail(UpdatePackageOutcome.IoFailure, "更新缓存清理失败。"); }
+    }
+
+    private async Task<UpdatePackageResult> PrepareCoreInnerAsync(CheckedRelease release, Version currentVersion, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
     {
         string? directory = null;
         var verified = false;
@@ -114,12 +124,14 @@ public sealed class SignedUpdatePackageDownloader
             if (download.Outcome != UpdatePackageOutcome.Verified) return Fail(download.Outcome, "更新包下载校验失败。");
             if (!CryptographicOperations.FixedTimeEquals(expectedHash, download.Hash!)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             using var packageLock = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (!CryptographicOperations.FixedTimeEquals(expectedHash, SHA256.HashData(packageLock))) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
+            using var lockedHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256); var lockedBuffer = new byte[81920];
+            for (int read; (read = packageLock.Read(lockedBuffer, 0, lockedBuffer.Length)) > 0;) { cancellationToken.ThrowIfCancellationRequested(); lockedHash.AppendData(lockedBuffer, 0, read); }
+            if (!CryptographicOperations.FixedTimeEquals(expectedHash, lockedHash.GetHashAndReset())) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             progress?.Invoke(new("正在校验更新包", manifest.PackageBytes, manifest.PackageBytes));
             cancellationToken.ThrowIfCancellationRequested();
-            var audit = AuditArchive(packagePath, directory, manifest);
+            var audit = await Task.Run(() => AuditArchive(packagePath, directory, manifest, cancellationToken), cancellationToken);
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
-            verified = true;
+            cancellationToken.ThrowIfCancellationRequested(); verified = true;
             progress?.Invoke(new("更新包已准备完成，安装更新功能将在后续版本启用。", manifest.PackageBytes, manifest.PackageBytes));
             return new(UpdatePackageOutcome.Verified, "更新包已准备完成，安装更新功能将在后续版本启用。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations));
         }
@@ -131,7 +143,7 @@ public sealed class SignedUpdatePackageDownloader
         catch (Exception) { return Fail(UpdatePackageOutcome.UnsafeArchive, "更新包无法安全验证。"); }
         finally
         {
-            if (!verified && directory is not null && !TryDelete(directory)) { verified = false; }
+            if (!verified && directory is not null && !TryDelete(directory)) throw new IOException("update cache cleanup failed");
         }
     }
 
@@ -146,8 +158,8 @@ public sealed class SignedUpdatePackageDownloader
             if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return (null, Fail(UpdatePackageOutcome.RateLimited, "更新服务器请求受限。"));
             if (response.StatusCode == HttpStatusCode.NotFound) return (null, Fail(UpdatePackageOutcome.AssetMissing, "指定发行不存在。"));
             if (!response.IsSuccessStatusCode) return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "无法读取指定发行。"));
-            await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token); using var data = new MemoryStream(); await stream.CopyToAsync(data, timeout.Token);
-            if (data.Length > 1024 * 1024) return (null, Fail(UpdatePackageOutcome.InvalidManifest, "发行元数据超过限制。"));
+            await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token); using var data = new MemoryStream(); var buffer = new byte[8192];
+            for (int read; (read = await stream.ReadAsync(buffer, timeout.Token)) > 0;) { if (data.Length + read > 1024 * 1024) return (null, Fail(UpdatePackageOutcome.InvalidManifest, "发行元数据超过限制。")); data.Write(buffer, 0, read); }
             using var json = JsonDocument.Parse(data.ToArray()); var root = json.RootElement;
             if (!root.TryGetProperty("id", out var id) || !id.TryGetInt64(out var actualId) || actualId != expected.ReleaseId || !root.TryGetProperty("tag_name", out var tag) || tag.GetString() != expected.Tag || !root.TryGetProperty("draft", out var draft) || draft.ValueKind != JsonValueKind.False || !root.TryGetProperty("prerelease", out var prerelease) || prerelease.ValueKind != JsonValueKind.False || !root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) return (null, Fail(UpdatePackageOutcome.AssetMissing, "指定发行身份不匹配。"));
             var names = new List<string>();
@@ -170,6 +182,8 @@ public sealed class SignedUpdatePackageDownloader
     private async Task<(UpdatePackageOutcome Outcome, byte[]? Hash)> DownloadAsync(Uri uri, string target, long expected, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(_options.PackageTimeout ?? TimeSpan.FromMinutes(10));
+        try
+        {
         using var response = await SendFollowingRedirects(uri, timeout.Token);
         if (response.StatusCode is HttpStatusCode.NotFound) return (UpdatePackageOutcome.AssetMissing, null);
         if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return (UpdatePackageOutcome.RateLimited, null);
@@ -179,27 +193,36 @@ public sealed class SignedUpdatePackageDownloader
         await using var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         var buffer = new byte[81920]; long total = 0; var last = Environment.TickCount64;
-        try { for (int read; (read = await input.ReadAsync(buffer, timeout.Token)) > 0;)
+        for (int read; (read = await input.ReadAsync(buffer, timeout.Token)) > 0;)
         {
             total += read; if (total > PackageLimit || total > expected) return (total > PackageLimit ? UpdatePackageOutcome.AssetTooLarge : UpdatePackageOutcome.SizeMismatch, null);
             hash.AppendData(buffer, 0, read); await output.WriteAsync(buffer.AsMemory(0, read), timeout.Token);
             if (Environment.TickCount64 - last >= 100) { progress?.Invoke(new("正在下载更新包", total, expected)); last = Environment.TickCount64; }
-        } } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (UpdatePackageOutcome.Cancelled, null); } catch (OperationCanceledException) { return (UpdatePackageOutcome.NetworkUnavailable, null); }
+        }
         progress?.Invoke(new("正在下载更新包", total, expected));
         return total == expected ? (UpdatePackageOutcome.Verified, hash.GetHashAndReset()) : (UpdatePackageOutcome.SizeMismatch, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (UpdatePackageOutcome.Cancelled, null); }
+        catch (OperationCanceledException) { return (UpdatePackageOutcome.NetworkUnavailable, null); }
     }
 
     private async Task<byte[]> ReadSmallAsync(Uri uri, int limit, UpdatePackageOutcome missing, CancellationToken cancellationToken)
     {
-        using var response = await SendFollowingRedirects(uri, cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(_options.MetadataTimeout ?? TimeSpan.FromSeconds(30));
+        try
+        {
+        using var response = await SendFollowingRedirects(uri, timeout.Token);
         if (response.StatusCode == HttpStatusCode.NotFound) throw new UpdatePackageException(missing);
         if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) throw new UpdatePackageException(UpdatePackageOutcome.RateLimited);
         if (!response.IsSuccessStatusCode) throw new HttpRequestException();
         if (response.Content.Headers.ContentLength > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest);
-        await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var input = await response.Content.ReadAsStreamAsync(timeout.Token);
         using var output = new MemoryStream(); var buffer = new byte[8192];
-        for (int read; (read = await input.ReadAsync(buffer, cancellationToken)) > 0;) { if (output.Length + read > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest); output.Write(buffer, 0, read); }
+        for (int read; (read = await input.ReadAsync(buffer, timeout.Token)) > 0;) { if (output.Length + read > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest); output.Write(buffer, 0, read); }
         return output.ToArray();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) { throw new UpdatePackageException(UpdatePackageOutcome.NetworkUnavailable); }
     }
 
     private async Task<HttpResponseMessage> SendFollowingRedirects(Uri initial, CancellationToken cancellationToken)
@@ -217,7 +240,7 @@ public sealed class SignedUpdatePackageDownloader
         throw new HttpRequestException("redirect limit");
     }
 
-    private static UpdatePackageOutcome AuditArchive(string packagePath, string scratch, Manifest manifest)
+    private static UpdatePackageOutcome AuditArchive(string packagePath, string scratch, Manifest manifest, CancellationToken cancellationToken)
     {
         if (!TryReadZipDirectory(packagePath, out var expectedCrc)) return UpdatePackageOutcome.UnsafeArchive;
         using var archive = ZipFile.OpenRead(packagePath);
@@ -225,6 +248,7 @@ public sealed class SignedUpdatePackageDownloader
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase); long expanded = 0; string? exe = null; string? dll = null;
         foreach (var entry in archive.Entries)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!SafeEntry(entry, paths) || entry.Length > PackageLimit || entry.CompressedLength < 0 || (entry.Length > 0 && (entry.CompressedLength == 0 || entry.Length / Math.Max(1, entry.CompressedLength) > 200))) return UpdatePackageOutcome.UnsafeArchive;
             expanded += entry.Length; if (expanded > ExpandedLimit) return UpdatePackageOutcome.UnsafeArchive;
             if (entry.FullName.EndsWith("/", StringComparison.Ordinal)) continue;
@@ -235,12 +259,13 @@ public sealed class SignedUpdatePackageDownloader
                 using (var input = entry.Open()) using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     var buffer = new byte[81920]; long actual = 0; var crc = new Crc32();
-                    for (int read; (read = input.Read(buffer, 0, buffer.Length)) > 0;) { actual += read; if (actual > entry.Length || actual > PackageLimit) return UpdatePackageOutcome.UnsafeArchive; crc.Append(buffer.AsSpan(0, read)); output.Write(buffer, 0, read); }
+                    for (int read; (read = input.Read(buffer, 0, buffer.Length)) > 0;) { cancellationToken.ThrowIfCancellationRequested(); actual += read; if (actual > entry.Length || actual > PackageLimit) return UpdatePackageOutcome.UnsafeArchive; crc.Append(buffer.AsSpan(0, read)); output.Write(buffer, 0, read); }
                     if (actual != entry.Length || !expectedCrc.TryGetValue(entry.FullName, out var expected) || crc.Value != expected) return UpdatePackageOutcome.UnsafeArchive;
                 }
-                if ((entry.FullName.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || entry.FullName.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase)) && ContainsSecret(temp)) return UpdatePackageOutcome.UnsafeArchive;
+                if (ContainsSecret(temp)) return UpdatePackageOutcome.UnsafeArchive;
                 if (entry.FullName == "StoreExpiryInspector.exe") exe = temp; else if (entry.FullName == "StoreExpiryInspector.dll") dll = temp; else File.Delete(temp);
             }
+            catch (OperationCanceledException) { throw; }
             catch { return UpdatePackageOutcome.UnsafeArchive; }
         }
         if (exe is null || dll is null) return UpdatePackageOutcome.PackageVersionMismatch;
@@ -302,9 +327,14 @@ public sealed class SignedUpdatePackageDownloader
     private static bool Allowed(string name) => !name.Split('/').Any(part => part.Equals("data", StringComparison.OrdinalIgnoreCase) || part.Equals("logs", StringComparison.OrdinalIgnoreCase) || part.StartsWith("backup", StringComparison.OrdinalIgnoreCase)) && (name is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase));
     private static bool ContainsSecret(string path)
     {
-        using var stream = File.OpenRead(path); if (stream.Length > 1024 * 1024) return true;
-        using var reader = new StreamReader(stream, Encoding.UTF8, true); var text = reader.ReadToEnd();
-        return text.Contains("BEGIN PRIVATE", StringComparison.OrdinalIgnoreCase) || text.Contains("ghp_", StringComparison.OrdinalIgnoreCase) || text.Contains("github_pat_", StringComparison.OrdinalIgnoreCase) || text.Contains("\"token\"", StringComparison.OrdinalIgnoreCase) || text.Contains("\"password\"", StringComparison.OrdinalIgnoreCase) || text.Contains("\"secret\"", StringComparison.OrdinalIgnoreCase);
+        using var stream = File.OpenRead(path); var buffer = new byte[8192]; var tail = string.Empty;
+        for (int read; (read = stream.Read(buffer, 0, buffer.Length)) > 0;)
+        {
+            var text = tail + Encoding.ASCII.GetString(buffer, 0, read);
+            if (text.Contains("-----BEGIN PRIVATE KEY-----", StringComparison.OrdinalIgnoreCase) || text.Contains("-----BEGIN RSA PRIVATE KEY-----", StringComparison.OrdinalIgnoreCase) || text.Contains("-----BEGIN ENCRYPTED PRIVATE KEY-----", StringComparison.OrdinalIgnoreCase) || text.Contains("github_pat_", StringComparison.OrdinalIgnoreCase) || System.Text.RegularExpressions.Regex.IsMatch(text, "ghp_[A-Za-z0-9]{20,}")) return true;
+            tail = text.Length > 64 ? text[^64..] : text;
+        }
+        return false;
     }
     private static bool TryReadZipDirectory(string path, out Dictionary<string, uint> crcs)
     {
@@ -318,19 +348,20 @@ public sealed class SignedUpdatePackageDownloader
             if (end < 0 || tailStart + end + 22 + Read16(tail, end + 20) != stream.Length || Read16(tail, end + 4) != 0 || Read16(tail, end + 6) != 0) return false;
             var count = Read16(tail, end + 10); var size = Read32(tail, end + 12); var offset = Read32(tail, end + 16);
             if (count > EntryLimit || (long)offset + size != tailStart + end || offset > stream.Length) return false;
-            var cursor = (long)offset;
+            var cursor = (long)offset; long nextLocal = 0;
             for (var index = 0; index < count; index++)
             {
                 var header = ReadAt(stream, cursor, 46); if (Read32(header, 0) != 0x02014b50) return false;
                 var flags = Read16(header, 8); var method = Read16(header, 10); var crc = Read32(header, 16); var compressed = Read32(header, 20); var uncompressed = Read32(header, 24); var nameLength = Read16(header, 28); var extraLength = Read16(header, 30); var commentLength = Read16(header, 32); var attrs = Read32(header, 38); var localOffset = Read32(header, 42);
-                if ((flags & ~0x800) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || (index == 0 && localOffset != 0) || (long)localOffset + 30 > stream.Length) return false;
+                if ((flags & ~0x800) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || localOffset != nextLocal || (long)localOffset + 30 > stream.Length) return false;
                 var nameBytes = ReadAt(stream, cursor + 46, nameLength); var local = ReadAt(stream, localOffset, 30); if (Read32(local, 0) != 0x04034b50) return false;
                 var name = Encoding.UTF8.GetString(nameBytes);
                 if (name.Any(character => character > 127) || Read16(local, 6) != flags || Read16(local, 8) != method || Read32(local, 14) != crc || Read32(local, 18) != compressed || Read32(local, 22) != uncompressed || Read16(local, 26) != nameLength || Read16(local, 28) != 0 || !nameBytes.AsSpan().SequenceEqual(ReadAt(stream, (long)localOffset + 30, nameLength)) || (((attrs >> 16) & 0xF000) is 0xA000 or 0x6000) || (attrs & 0x400) != 0 || !crcs.TryAdd(name, crc)) return false;
                 var payload = (long)localOffset + 30 + nameLength; if (payload + compressed > offset || payload + compressed > stream.Length) return false;
+                nextLocal = payload + compressed;
                 cursor += 46 + nameLength + extraLength + commentLength;
             }
-            return cursor == tailStart + end;
+            return cursor == tailStart + end && nextLocal == offset;
         }
         catch { return false; }
     }
@@ -344,7 +375,12 @@ public sealed class SignedUpdatePackageDownloader
     private static Uri AssetUri(CheckedRelease release, string name) => new($"https://github.com/{Owner}/{Repo}/releases/download/{release.Tag}/{name}");
     private static bool IsVersion(Version version) => version.Major >= 0 && version.Minor >= 0 && version.Build >= 0 && version.Revision < 0;
     private static bool TryDelete(string? path) { try { if (!string.IsNullOrEmpty(path) && File.Exists(path)) File.Delete(path); else if (!string.IsNullOrEmpty(path) && Directory.Exists(path)) Directory.Delete(path, true); return true; } catch { return false; } }
-    private string CreateCacheDirectory() { var root = _options.CacheRoot ?? Path.Combine(Path.GetTempPath(), "StoreExpiryInspector", "updates"); if (!IsOrdinaryDirectory(root)) throw new IOException(); var path = Path.Combine(root, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); if (!IsOrdinaryDirectory(path)) throw new IOException(); return path; }
+    private string CreateCacheDirectory()
+    {
+        var temp = Path.GetFullPath(Path.GetTempPath()); var root = Path.GetFullPath(_options.CacheRoot ?? Path.Combine(temp, "StoreExpiryInspector", "updates"));
+        if (root.StartsWith("\\\\", StringComparison.Ordinal) || !root.StartsWith(temp, StringComparison.OrdinalIgnoreCase) || !IsOrdinaryDirectory(root)) throw new IOException();
+        var path = Path.Combine(root, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); if (!IsOrdinaryDirectory(path)) throw new IOException(); return path;
+    }
     private static bool IsOrdinaryDirectory(string path) { for (var item = new DirectoryInfo(path); item is not null; item = item.Parent) { if (!item.Exists) continue; if ((item.Attributes & FileAttributes.ReparsePoint) != 0) return false; } return true; }
     private static UpdatePackageResult Fail(UpdatePackageOutcome outcome, string message) => new(outcome, message);
     private sealed class UpdatePackageException(UpdatePackageOutcome outcome) : Exception { public UpdatePackageOutcome Outcome { get; } = outcome; }
