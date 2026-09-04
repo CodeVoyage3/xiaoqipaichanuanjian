@@ -1,5 +1,9 @@
 # Stage 9｜安装、发布与在线升级交付
 
+## 2026-09-04 S9-T02当前授权（覆盖下方历史状态）
+
+IN_PROGRESS / S9-T02_CURRENT。用户仅批准T02，开工fetch main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0，无既有T02后创建Task/Acceptance。全新Terra medium/priority实施提交后停，Sol仅治理/diff/独立复验。真实Inno6当前用户安装器及独立测试身份A-I矩阵、数据保留、自启动关闭偏好、降级和非健康migration9只读阻断均待验收。T03未创建，Updater/Release/重置/Undo禁止。T01与Stage8仍CLOSED。
+
 2026-09-04 用户正式授权启动。状态：IN_PROGRESS / S9-T01_CLOSED / WAITING_NEXT_AUTHORIZATION；仅 S9-T01 已创建，S9-T02未创建。
 开工重新 fetch：HEAD=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095，clean、0/0；STAGES/TASKS/ACCEPTANCE 实际检查无既有 Stage 9 / S9 文件。
 

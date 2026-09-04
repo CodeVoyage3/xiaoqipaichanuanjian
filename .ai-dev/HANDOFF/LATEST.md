@@ -1,5 +1,11 @@
 # 最新交接
 
+## Stage9 / S9-T02正式启动（2026-09-04，覆盖下方历史停止点）
+
+- 用户仅授权S9-T02当前用户首次安装器与数据保留安全门禁；Stage9 IN_PROGRESS / S9-T02_CURRENT，T02 IN_PROGRESS / NOT_ACCEPTED。开工fetch main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0，无既有T02，现已建立Task/Acceptance。
+- Sol仅治理/完整diff/独立复验；全新Terra medium/priority实施并提交后停、不push。仅官方Inno6、lowest当前用户、稳定AppId/Programs/app入口、首装Run on与重装尊重off、卸载保留全部数据、降级及非健康migration9只读阻断。全部测试严格TEMP/GUID独立身份，禁止探测正式库。
+- 待实际安装器A-I矩阵、包安全、fresh Release/build/EF/migration门禁；尚未验收。Stage8及T01仍CLOSED。不创建T03、不实现Updater/Release/重置/Undo。验收后普通push main并停止。
+
 ## Stage9 / S9-T01正式关闭（2026-09-04，覆盖下方开工状态）
 
 - S9-T01 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02未创建。开工main=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095、clean/0/0；最终生产/测试0c6d0e4e37b3d18f3fdefa65c7c80f0108d41b11。最终治理提交后普通push main、fetch核对clean/0/0，实际SHA以发布回执为准。

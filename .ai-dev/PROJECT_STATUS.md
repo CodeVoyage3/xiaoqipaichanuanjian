@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-09-04 当前授权覆盖状态
+
+Stage9 IN_PROGRESS / S9-T02_CURRENT；S9-T02 IN_PROGRESS / NOT_ACCEPTED，Task/Acceptance已创建；开工fetch main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0。仅当前用户Inno6首次安装器及数据保留/重装偏好/降级/只读Schema安全门禁。全新Terra实施，Sol治理与独立验收。T01及Stage8保持CLOSED；T03未创建。下方既有状态是历史回执。
+
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 9｜安装、发布与在线升级交付（2026-09-04用户授权启动）
 - 状态：Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T01 TECHNICALLY_ACCEPTED / CLOSED，唯一已创建Stage9 Task，S9-T02未创建。Stage8 TECHNICALLY_ACCEPTED / CLOSED、S8-T01～T06及V1各卡继续关闭。
