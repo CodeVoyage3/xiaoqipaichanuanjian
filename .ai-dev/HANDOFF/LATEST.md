@@ -1,5 +1,12 @@
 # 最新交接
 
+## S8-T04当前开工（2026-09-04）
+
+- 用户已单卡授权S8-T04。重新fetch HEAD=origin/main=2142cf72588fb727cca6efd58509c113646de1e2，clean、0/0，无冲突；工作分支codex/s8-t04-crash-consistency。
+- Task/Acceptance已建，状态IN_PROGRESS / NOT_ACCEPTED，待全新Terra medium/priority实施；Sol只治理和独立验收。
+- 仅TEMP/GUID真实子进程硬终止，权威大Import/InspectionSubmission/InventoryAdjustment；不访问正式库，不新增工程/依赖/Schema/index/migration/PRAGMA，不创建S8-T05，不启动Stage9/升级/重置数据。Undo永久取消。
+- 完成后按授权普通push main并停止。以下是S8-T03历史归档回执，不再是当前停止点。
+
 ## 当前状态与停止点
 
 - Stage8：`IN_PROGRESS / S8-T03_CLOSED / WAITING_NEXT_AUTHORIZATION`。S8-T01、S8-T02、S8-T03技术验收关闭；S8-T04～T06仅候选，未创建Task。Stage9、在线升级未开始。

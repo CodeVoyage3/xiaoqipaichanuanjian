@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T03_CLOSED / WAITING_NEXT_AUTHORIZATION`；阶段整体尚未完成。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T04_IN_PROGRESS`；阶段整体尚未完成。
 
 ## 开工事实
 
@@ -29,11 +29,12 @@ S8-T03已于2026-09-04获单卡授权并正式建档，基线e4c628c；只做大
 
 以下仅为候选顺序，不构成编号任务、实施授权或 Acceptance：
 
-1. S8-T04：异常退出、事务中断与数据库一致性。
 2. S8-T05：SQLite 损坏检测、备份恢复与灾难场景。
 3. S8-T06：Stage 8 最终高规模回归与稳定性收口。
 
 ## 冻结边界
+
+S8-T04已于2026-09-04获单卡授权并建档，最新main基线2142cf7、clean/0/0。仅TEMP/GUID子进程硬终止：大Import、InspectionSubmission和InventoryAdjustment；全新Terra实施，Sol独立验收，完成后停止。详见同名Task/Acceptance。S8-T05仍仅候选，不创建。
 
 - blank / 0 / positive、ProductTask 生命周期、Stage 算法、Reminder、Excel 导入/导出/回导、History/Revision、Backup/Restore 语义全部冻结。
 - “应季搭配 / 赠品小样”继续正常导入，但不参与效期管理。

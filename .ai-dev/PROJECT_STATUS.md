@@ -2,14 +2,16 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01、S8-T02、S8-T03 已技术验收关闭；停止等待下一卡明确授权；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
-- 当前工作分支：`codex/s8-t03-import-stability`；归档目标远端`main`
+- 状态：Stage 8 进行中，S8-T01、S8-T02、S8-T03 已技术验收关闭；S8-T04已授权启动；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 当前工作分支：`codex/s8-t04-crash-consistency`；归档目标远端`main`
 - 当前最新 HEAD：本文件所在归档提交（具体 SHA 以 `git rev-parse HEAD` 为准）；本卡代码验收基线`31ace5b`
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T04开工（2026-09-04）：重新fetch HEAD=origin/main=2142cf72588fb727cca6efd58509c113646de1e2、clean、0/0。Task/Acceptance已建；待全新Terra medium/priority实施TEMP/GUID子进程硬终止矩阵，Sol独立验收。禁止正式库访问、新工程/依赖/索引/migration，不创建S8-T05；以下旧卡停止点为历史回执，不覆盖本次授权。
 
 - S8-T03最终独立验收：代码`31ace5b`，生产`617e3dd`/`20fc8df`；隔离9/9，相关回归158/158，实际高规模3/3，回滚专项10/10含100k及跨250分组；Release925/925、build0/0、EF无漂移、migration仍9，无Schema/index/依赖变化。10k/50k/100k分别4467.94/23510.82/49210.72ms（n=1）；100k原变量上限阻断消除，事务失败指纹恢复、integrity ok/FK0。仍有逐商品SQL/SaveChanges开销，不宣称全部N+1消除。详见S8-T03 Acceptance。正式库未访问，不创建S8-T04。
 
