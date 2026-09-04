@@ -75,6 +75,8 @@ function GetFileAttributes(Path: String): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
 function CreateInstallMutex(Attributes: Integer; InitialOwner: Boolean; Name: String): THandle;
   external 'CreateMutexW@kernel32.dll stdcall';
+procedure CloseHandle(Handle: THandle);
+  external 'CloseHandle@kernel32.dll stdcall';
 
 function RuntimeArguments(Param: String): String;
 begin
@@ -133,7 +135,7 @@ begin
     exit;
   end;
   WasInstalled := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1');
-  if WasInstalled and IsExistingVersionNewer() then
+  if IsExistingVersionNewer() then
   begin
     SuppressibleMsgBox('已安装更高版本。为保护程序和数据，旧安装器已停止。', mbError, MB_OK, IDOK);
     Result := False;
@@ -154,11 +156,15 @@ begin
     Result := '安装目录不安全。为保护原数据，安装已停止。';
     exit;
   end;
-  if InstallMutex = 0 then InstallMutex := CreateInstallMutex(0, True, '{#AppMutexName}');
-  if (InstallMutex = 0) or (DLLGetLastError = 183) then
+  if InstallMutex = 0 then
   begin
-    Result := '无法建立安装保护。安装已停止。';
-    exit;
+    InstallMutex := CreateInstallMutex(0, True, '{#AppMutexName}');
+    if (InstallMutex = 0) or (DLLGetLastError = 183) then
+    begin
+      if InstallMutex <> 0 then begin CloseHandle(InstallMutex); InstallMutex := 0; end;
+      Result := '无法建立安装保护。安装已停止。';
+      exit;
+    end;
   end;
   if CompareText(WizardDirValue, ExpandConstant('{#InstallRoot}')) <> 0 then
   begin
@@ -184,6 +190,7 @@ var
   Current: String;
   Attributes: Cardinal;
   FindRec: TFindRec;
+  FindError: Integer;
 begin
   Result := True;
   Current := RemoveBackslashUnlessRoot(Path);
@@ -209,8 +216,11 @@ begin
     until not FindNext(FindRec);
   finally
     FindClose(FindRec);
+  end
+  else begin
+    FindError := DLLGetLastError;
+    if (FindError <> 2) and (FindError <> 18) then Result := False;
   end;
-  if (not DirExists(Path)) and (DLLGetLastError <> 2) and (DLLGetLastError <> 3) then Result := False;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
