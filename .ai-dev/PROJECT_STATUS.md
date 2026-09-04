@@ -2,14 +2,16 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01、S8-T02 已技术验收关闭；S8-T03 已获批准并 IN_PROGRESS；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
-- 当前分支：`master`
-- 当前最新 HEAD：`refs/heads/master`（本文件所在归档提交；具体 SHA 以 `git rev-parse HEAD` 为准）
+- 状态：Stage 8 进行中，S8-T01、S8-T02、S8-T03 已技术验收关闭；停止等待下一卡明确授权；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01 均已归档关闭；Stage 9 尚未开始
+- 当前工作分支：`codex/s8-t03-import-stability`；归档目标远端`main`
+- 当前最新 HEAD：本文件所在归档提交（具体 SHA 以 `git rev-parse HEAD` 为准）；本卡代码验收基线`31ace5b`
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T03最终独立验收：代码`31ace5b`，生产`617e3dd`/`20fc8df`；隔离9/9，相关回归158/158，实际高规模3/3，回滚专项10/10含100k及跨250分组；Release925/925、build0/0、EF无漂移、migration仍9，无Schema/index/依赖变化。10k/50k/100k分别4467.94/23510.82/49210.72ms（n=1）；100k原变量上限阻断消除，事务失败指纹恢复、integrity ok/FK0。仍有逐商品SQL/SaveChanges开销，不宣称全部N+1消除。详见S8-T03 Acceptance。正式库未访问，不创建S8-T04。
 
 - S8-T03开工（2026-09-04）：重新fetch确认HEAD=origin/main=e4c628c、clean、0/0；Task/Acceptance已建立，派发全新Terra medium/priority。仅大Excel导入性能、受控异常原子回滚。用户永久取消Import Undo，删除execution/eligibility高规模要求，不以Restore替代、不再列入后续规划。设置页重置数据仅为未来独立需求，需另定清理范围/自动备份/二次确认/设置保留，不建Task或实施。正式库禁止访问，不新增索引/migration，不创建S8-T04。以下S8-T02数据为历史已验收基线。
 
@@ -24,7 +26,7 @@
 - Stage 8 于 2026-09-03 在重新 fetch 后从 `master == origin/main == 1e41876bfa9c203a88cf53955867f0c3dd639e84` 启动。S8-T01 已真实生成并核对隔离的 100,000 Batch / 300,000 Inspection 历史压测库；高规模专项 1/1、Release 897/897、build 0/0、EF 无漂移、migration=9。100k 下 Dashboard、无搜索待排查/今日排查、Reminder 等路径暴露 `too many SQL variables` 阻断；本卡已技术验收关闭，不预设毫秒 SLA，不创建 S8-T02。
 
 - 单一 .NET 10 WPF 应用与测试项目；I01 已新增 policy / scope / batch baseline 持久化底座，当前 migration 为 9 条。
-- Stage 2：固定模板只读解析、局部增量规划、确认守卫、安全快照、原子导入、Workbook 保留与最新 Import 撤销资格。
+- Stage 2：固定模板只读解析、局部增量规划、确认守卫、安全快照、原子导入与Workbook保留；Import Undo产品能力已永久取消，旧实现代码不在本卡顺带删除。
 - Stage 3：纯效期计算、商品任务聚合、启动补算、商品归零、新批次/新到货/恢复、正式 0 件停止、原子导入后置编排和真实 WPF 启动接入。
 - canonical phase：`none / discount_50 / discount_20 / withdraw / expired`。
 - Stage 4 最终验证：受影响 UI/S4-T10 回归 84/84，Stage 4 八个权威测试类 179/179，Stage 3 十个权威测试类 184/184，Release 全量 532/532；Release build 0 警告/0 错误；EF 无漂移；migration 仍为 8 条。

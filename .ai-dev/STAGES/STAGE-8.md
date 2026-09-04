@@ -1,6 +1,6 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T03_IN_PROGRESS`；阶段整体尚未完成。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T03_CLOSED / WAITING_NEXT_AUTHORIZATION`；阶段整体尚未完成。
 
 ## 开工事实
 
@@ -21,13 +21,15 @@
 - S8-T01 已真实生成并核对 100,000 Batch / 300,000 Inspection；只建立隔离数据、测量工具和基线证据，没有优化生产代码或新增索引、migration、Schema、依赖。
 - S8-T02｜查询、分页与高规模读性能优化：Sol 独立技术验收通过并关闭。隔离9/9、正确性150/150、100k/300k专项1/1、Release912/912、build0/0、EF无漂移、migration9；未新增索引/migration。当前停止，详见 S8-T02 Acceptance。
 
-## 后续候选规划（尚未创建 Task）
+- S8-T03｜大Excel导入性能、事务与回滚压力：Sol独立验收关闭。最终代码31ace5b；三档真实导入3/3、回滚10/10含100k及跨250组、隔离9/9、Release925/925、build0/0、EF无漂移、migration9。10k/50k/100k单次4467.94/23510.82/49210.72ms；详见S8-T03 Acceptance，保留N+1等局限。
 
 S8-T03已于2026-09-04获单卡授权并正式建档，基线e4c628c；只做大Excel权威导入性能及受控异常原子回滚。用户已永久取消Import Undo，删除全部execution/eligibility验证要求，不以Restore替代、不再规划。设置页重置数据仅记录未来独立需求，不建Task或实施。
 
+## 后续候选规划（尚未创建 Task）
+
 以下仅为候选顺序，不构成编号任务、实施授权或 Acceptance：
 
-1. S8-T04：异常退出、事务中断与数据库一致性（不承接Undo执行缺口）。
+1. S8-T04：异常退出、事务中断与数据库一致性。
 2. S8-T05：SQLite 损坏检测、备份恢复与灾难场景。
 3. S8-T06：Stage 8 最终高规模回归与稳定性收口。
 

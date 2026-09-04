@@ -2,40 +2,36 @@
 
 ## 当前状态与停止点
 
-- Stage8：`IN_PROGRESS / S8-T03_IN_PROGRESS`；S8-T01、S8-T02继续技术验收关闭。用户已批准S8-T03，并永久取消Import Undo；S8-T04～T06仍仅候选，Stage9与在线升级未开始。
-- V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01继续CLOSED；V1-UI-01保持GUI_ACCEPTANCE_PASSED。本轮未启动真实GUI，不冒充人工GUI验收。
-- 正式数据库仍禁止调查/读取/哈希/修复。本轮测试显式隔离TEMP；旧轮疑似默认库访问未核实，不能改写为未发生。
+- Stage8：`IN_PROGRESS / S8-T03_CLOSED / WAITING_NEXT_AUTHORIZATION`。S8-T01、S8-T02、S8-T03技术验收关闭；S8-T04～T06仅候选，未创建Task。Stage9、在线升级未开始。
+- V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01继续CLOSED；V1-UI-01保持GUI_ACCEPTANCE_PASSED。本卡没有启动真实GUI，不冒充新的GUI人工验收。
+- 用户永久取消“撤销上一次Excel导入”。不新增Undo executor/UI，不验证或规划Undo eligibility，不用Restore冒充Undo。既有代码未顺带删除。
+- 设置页“重置数据”仅为未来独立需求，未建Task/实施；以后另定清理范围、自动备份、二次确认与设置保留。
+- 正式数据库禁止调查/读取/哈希/修复。本卡全部显式TEMP/GUID，未访问正式库；S8-T02旧轮疑似访问仍未核实，不借本卡通过改写历史事件。
 
-## Git / 角色 / 实现
+## Git / 角色
 
-- S8-T03开工同步基线：HEAD=origin/main=`e4c628c0e2df261c2da5761b8398c2ecd919452c`，clean、0/0；Task/Acceptance已建立，随后派发本卡全新Terra medium/priority。Sol不写生产代码，现有S8-T01/T02代理不可复用。
-- 本卡只测10k/50k/100k合法合成Excel真实导入链、分阶段性能、受控失败/原子回滚；删除全部Undo execution/eligibility要求，不新增executor/UI、不以Stage7 Restore代替、不再列后续规划。设置页重置数据为未来独立需求，不建Task、不实施，另定清理范围/自动备份/二次确认/设置保留。发现测试默认正式路径回退即全卡停测。
-- 以下实现及验收结果为S8-T02归档历史，不冒充S8-T03新鲜测试；本卡当前尚未验收。
-
-- S8-T02初始main：`0ede8b901fb5e6cbc1c2f2824d6f8a6c7a54f901`；隔离恢复main：`0d1d42a0667909e52264c5cd091297a827338788`。推送前fetch仍为后者，无远端新增。
-- 旧diff已保存在外部 `S8-T02-recovery/old-terra-uncommitted.patch`，hash及原回执见Acceptance；恢复clean main后才派发新Terra，旧代理不复用。
-- 新 `/root/s8_t02_isolation_new_terra`：GPT-5.6 Terra / medium / priority（用户已允许后续该速度，不重复询问）。隔离 `e294a6b`、查询 `50539c2`、修复 `88d1896`、最终测试 `81a0c1c`，提交后停止。Sol只写治理并独立验收，未写生产代码。
-- Dashboard汇总、待排查/Today数据库分页筛选、Reminder轻量候选、历史分页/排序/页内聚合已接入；保留Today跨页选择，只新增必要原样式分页控件。无索引/Schema/migration/ModelSnapshot/PRAGMA/依赖/csproj/slnx变更。
+- 开工重新fetch：HEAD=origin/main=`e4c628c0e2df261c2da5761b8398c2ecd919452c`，clean、0/0。推送前重新fetch仍同SHA，无远端新提交。
+- 治理`8b59746`；基座`01efa1b`、测量`2149d63`；生产优化`617e3dd`、zero跟踪修正`20fc8df`；真实矩阵`6ed428d`；强断言/计量最终`31ace5b70ee03969c11213c4aeb623de7bd196fc`。
+- 本卡全新Terra medium/priority实施；中间交付不完整曾退回及更换全新Terra，详细链见Acceptance。未复用旧卡Terra，全部已停止。Sol只写治理并独立审查/运行验收，未写生产代码。
+- 工作分支`codex/s8-t03-import-stability`，按用户原授权普通`git push origin HEAD:main`归档，不force。最新归档SHA以包含本记录的提交/推送回执为准，代码验收基线为31ace5b。
 
 ## Sol独立验收（2026-09-04）
 
-- 最终隔离9/9，默认factory调用0，TEMP路径门禁通过；正确性150/150；Release912/912、0失败/跳过；build0 warning/0 error。
-- EF无漂移；migration代码清单9（--no-connect），末条 `20260901155124_AddPolicyAndBaselineFoundation`；设计时factory用内存SQLite，不连接正式库。
-- 高规模After1/1，20条路径无blocker；真实100,000 Batch / 300,000 Inspection及Item。SQLite及snapshot225,427,456bytes、integrity=ok、FK=0、migration9；前后计数及采样指纹一致，不是全库逐字段证明。
-- Sol独立TEMP旧main工作树只重跑安全压测fixture得到新鲜Before，未跑旧Shell测试。After运行于88d1896，最终81a0c1c只补测试，生产/基座diff为空。
-- 完整diff、禁止文件及diff check通过。归档普通 `git push origin HEAD:main`，不force或改写历史；归档SHA以本文件所在提交为准，避免自引用SHA。
+- 隔离9/9，默认factory=0；相关Import/隔离/本卡回归158/158（其中4高规模门禁空返回不算压测）。
+- 实际10k/50k/100k压测3/3；最新回滚专项10/10，含真实100k Stage2完成后失败和跨250商品后置分组失败。
+- Release全量925/925，0failure；Release build0warning/0error；EF无漂移；migration代码清单9，末条20260901155124_AddPolicyAndBaselineFoundation。设计时`:memory:`，migration list用--no-connect，不连接正式库；未做在线NuGet漏洞审计。
+- 成功/失败integrity_check=ok、FK=0。失败前后完整业务/BLOB指纹一致；snapshot失败阻断写入，已生成快照可依旧契约残留但业务全回滚。
+- 完整diff、Schema/ModelSnapshot/index/dependency/csproj/slnx与git diff --check通过。生产仅4个Import链文件，无业务算法或S8-T02读取改变。
 
-## 性能与残留
+## 性能与局限
 
-- Stage median7241.50→174.68ms；待排查首页387.64ms、深页752.40ms、Dashboard389.02ms、Today355.55ms、历史分页628.39ms、提醒全评估1657.34ms。旧100k变量数阻断消失。
-- 搜索39.65→128.18ms；snapshot单次6436.42→12815.98ms，原因未证明。历史Before全量300k与After50条分页不同形状；测量是查询调用，不是GUI渲染。
-- 最慢5条：snapshot、提醒全评估、提醒候选、深页、历史分页。仍有索引扫描、相关MIN、TEMP B-TREE；历史submitted_at_utc/id排序索引仅待验证候选，未实施。
-- 未验证100k全选Excel实际导出；52项跨页选择转交有证据，既有导出超大IN潜在限制未宣称修复。导入/中断/损坏/大库灾难恢复稳定性仍待后续授权。
+- 单样本n=1，10k4467.94ms、50k23510.82ms、100k49210.72ms；100k Excel7255524bytes，DB逻辑45010944bytes，物理main+wal+shm91611720bytes。
+- 10k Release Before313705.59ms；100k Before在planner发生too many SQL variables。优化后均成功。热身/运行顺序不同，不宣称固定倍率或SLA；未测50k Before。
+- 最慢100k post20760.58ms，Batch Save11150.99ms；仍有逐商品查询/SaveChanges。100k execute-context SQL321895、SaveChanges15146，最大参数500；没有宣称N+1全部消除。结束时working-set约1.07GB，不是峰值。未观测OOM/timeout/lock/crash。
+- 数据分布为每商品2批、10大类、最多1000既有商品、含库存0；scope先由seed建立，不宣称覆盖100k首次scope冷启动或所有倾斜分布。真实强杀/断电/损坏未做，未来仍需单卡授权。
 
-## 证据
+## 证据与后续边界
 
-- 完整命令、20路径Before/After、SQL口径、局限及旧隔离事件：`.ai-dev/ACCEPTANCE/S8-T02.md`；Task `.ai-dev/TASKS/S8-T02.md`；阶段 `.ai-dev/STAGES/STAGE-8.md`。
-- 本机JSON/SQL归档：`C:\Users\39037\.codex\visualizations\2026\09\03\01a06754-503b-72c0-b8f1-9e10cd9cad3f\S8-T02-evidence`，before/after目录，不含数据库文件，未宣称上传GitHub。
-- Before SHA256 `2C2205DD35F7BF95F41BD8C36E934E977A056F622A3211A65D215E27B3D26BD4`；After `8FCF92343B77F926A79BD00D8D8F88D13769F260D9618B25D4A503ECA70E3F5F`。
-
-仅完成S8-T03独立验收及普通push后停止；不创建S8-T04，不做断电/强杀/损坏实验，不访问正式库。
+- Task：`.ai-dev/TASKS/S8-T03.md`；详细命令、JSON路径/SHA、Before/After、失败矩阵与统计局限：`.ai-dev/ACCEPTANCE/S8-T03.md`；阶段：`.ai-dev/STAGES/STAGE-8.md`。
+- 原始产物只在本机TEMP下`StoreExpiryInspectorS8T03/<GUID>`与`StoreExpiryInspectorS8T03Sol/<GUID>`，不包含正式数据，不上传大SQLite/XLSX。S8-T02归档事实仍见其Acceptance，不冒充本卡新鲜压测。
+- 完成本卡普通push后停止；不得创建S8-T04或重置数据Task，不做强杀/断电/人工损坏、不启动Stage9或在线升级。下一卡需用户明确批准。
