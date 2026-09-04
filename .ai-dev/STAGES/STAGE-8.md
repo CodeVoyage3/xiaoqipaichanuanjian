@@ -1,6 +1,8 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T05_IMPLEMENTATION_PENDING`；S8-T01～T04关闭，阶段整体尚未完成。
+启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T05_CLOSED / WAITING_NEXT_AUTHORIZATION`；S8-T01～T05关闭，阶段整体尚未完成。
+
+S8-T05已TECHNICALLY_ACCEPTED / CLOSED：代码/测试e0e5a0d；Sol新鲜无filter984/984、专项100/100、新鲜48/48硬杀、build0/0、EF无漂移、migration9、禁止项与diff检查通过。用户接受合法外来WAL业务漂移为residual risk，不新增来源防护；旧失败保留，不冒充识别成功。严重坏当前不能保护时Restore仍阻断。治理普通push后停止，不创建S8-T06；未来阶段收口须继续列入上述两项能力限制和未证明的物理介质风险。
 
 ## 开工事实
 

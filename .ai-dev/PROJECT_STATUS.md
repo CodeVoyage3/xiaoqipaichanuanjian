@@ -2,14 +2,16 @@
 
 - 项目：门店效期排查软件 V1
 - 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage 8 进行中，S8-T01～T04已关闭；S8-T05 AUTHORIZED / IMPLEMENTATION_PENDING；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01均已关闭；Stage9未开始
-- 当前工作分支：`main`（实现来自`codex/s8-t04-crash-consistency`，正常fast-forward归档）
-- 当前最新 HEAD：本文件所在最终收口提交，具体SHA和origin/main同步状态以本轮Git发布回执为准；S8-T04测试代码基线`9eff272`
+- 状态：Stage 8 进行中，S8-T01～T05 TECHNICALLY_ACCEPTED / CLOSED，WAITING_NEXT_AUTHORIZATION；V1-F01、V1-F02、V1-F03、V1-F03-I04、V1-UI-01均已关闭；Stage9未开始
+- 当前工作分支：`main`（S8-T05治理收口，普通push后停止）
+- 最终代码/测试：S8-T05 `e0e5a0d`，Sol新鲜无filter Release984/984、专项100/100、48/48硬杀、build0/0、EF无漂移、migration9。已接受合法外来WAL来源不可验证的residual risk，不新增防护。最终归档SHA以治理commit/push回执为准，详见Acceptance/HANDOFF
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- S8-T05正式关闭：五类明显损坏/不可信备份fail-closed；严重坏当前不能保护时Restore阻断；健康库恢复及final失败回退、权威业务读取/大库验证成立。合法外来WAL仍可业务漂移，不是已实现来源防护。无正式库访问、Schema/index/migration/依赖越界。原失败和7258/23089ms样本保留，新样本6946/22552ms；全量真实984/984。S8-T06仅建议，不创建；无Stage9/升级/重置/Undo。
 
 - S8-T05开工：2026-09-04重新fetch main=origin/main=80b2c57，clean/0/0；Task/Acceptance已建，待全新Terra medium/priority。严重坏库无法保护时Restore必须安全阻断，不要求救回、不绕过保护。其余灾难矩阵/健康恢复/失败回退/大库与独立门禁保持；正式库禁止访问，S8-T06不创建。以下为历史回执。
 

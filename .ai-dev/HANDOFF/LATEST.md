@@ -1,10 +1,34 @@
 # 最新交接
 
+## S8-T05正式关闭（2026-09-04，覆盖下方历史状态）
+
+- S8-T05 TECHNICALLY_ACCEPTED / CLOSED；最终代码/测试e0e5a0dc6eaba2d347246daa571a35cbbbcf3004。Stage8仍IN_PROGRESS，S8-T01～T05关闭，等待后续授权；不创建S8-T06。
+- Sol最终无filter Release984/984、0failure/skip、exit0，23m36s；独立专项100/100；新鲜48/48硬Kill（排查15/库存9/10k导入18/100k导入6），36提交前回滚、12提交后保留，全部integrity ok/FK0/migration9，48原worker均退出。
+- build0warning/0error、EF无漂移、migration9末条20260901155124_AddPolicyAndBaselineFoundation；完整diff和diff --check通过，无Schema/ModelSnapshot/index/生产PRAGMA/dependency/csproj/slnx变化。源码最终仅已有库预检、启动失败终止和Restore测试接缝；最后两个治理前修复为旧换行断言及marker共享冲突测试同步。
+- 安全边界：坏备份拒绝；严重坏当前无法保护时Restore安全阻断、不覆盖。合法外来WAL可在结构健康时改变业务状态，来源防护未实现，作为用户接受的known limitation保留；不新增provenance/sidecar删除/自动恢复模式。
+- 真实100k Batch/300k History，DB和backup225427456bytes。原backup7258ms/restore23089ms保留；最终新样本6946ms/22552ms，额外integrity/FK2275ms，完整指纹一致。均单样本非SLA。
+- 旧982/983全量、WAL原4/5及marker失败均保留，不改写为通过。详见S8-T05 Acceptance与S8-T05-CORRUPTION-RESULT.json（原始大DB只留TEMP）。未访问正式数据库，不声称物理硬盘/SSD/文件系统/真实断电安全，不冒称真实GUI验证。
+- 此治理提交后按授权普通push main并核对clean/0/0；最终main SHA以提交/推送回执与最终回复为准，验收后不改生产/测试。停止，不启动S8-T06/Stage9/在线升级/重置/Undo。
+
+## 本轮恢复验收过程（历史）
+
+- 用户正式接受结构合法外来WAL来源不可识别为已知能力限制，不新增防护；旧失败及业务漂移事实保留，不算防护成功。S8-T05 IN_PROGRESS / NOT_ACCEPTED，待最终HEAD新鲜无filter Release全量0failure后关闭。
+- 当前最终候选e0e5a0dc6eaba2d347246daa571a35cbbbcf3004；ad7ec3b全量982/983因旧marker共享冲突失败，已仅修复测试同步并新增无数据库专项。Sol最终专项100/100；新的无filter全量启用既有100k硬杀，正在运行，不能预报通过。
+- 已重新fetch，origin/main仍80b2c57；本地已知aa27b18及治理/测试返修均保留。接续本卡Terra仅调整测试契约并提交，Sol独立验收，不代写生产代码。禁止正式库访问及新Task/Schema/PRAGMA/防护模式。
+
+## 历史停止点（裁决前）
+
+- S8-T05 = PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED。真实非空外来WAL导致商品指纹漂移，但SQLite integrity ok/FK0/migration9且Initialize接受。Sol独立WAL4+UI1：4/5，mismatched失败，证据见S8-T05 Acceptance；不得改断言冒充安全。
+- 用户header坏库无法保护时安全阻断裁决已落实；不解决本次结构健康的外来WAL来源错配。需独立明确风险边界/防护契约，不自行删sidecar、拒绝正常WAL、改Schema或PRAGMA。
+- 无filter Release983总计982通过1失败（旧UI换行断言）；仅输入换行正规化后的专项通过，但随后真实WAL失败，未再声称全量通过。build0/0、EF无漂移、migration9、禁止项diff无变化、diff --check通过。
+- HEAD aa27b1838759a39a18c0d2147f2fec78a12eb602；已知origin/main80b2c57，9/0，未push。治理及S8T05/Stage4测试返修未提交且保留；无reset，无生产数据库访问。两名实施者已停止，Sol不代写生产代码。不创建S8-T06。
+
 ## S8-T05正式开工（2026-09-04）
 
-- 当前S8-T05：AUTHORIZED / IMPLEMENTATION_PENDING；Task/Acceptance已建。重新fetch main=origin/main=80b2c57f599fec736a0e191b13e8ae923810a633，clean、0/0。待派发全新Terra medium/priority，Sol独立验收。
+- 当前S8-T05：IN_PROGRESS / NOT_ACCEPTED；Task/Acceptance已建。开工重新fetch main=origin/main=80b2c57f599fec736a0e191b13e8ae923810a633，clean、0/0。全新Terra `/root/s8_t05_fresh_terra` medium/priority实施中；中间提交6b5a726/2568037，未push；Sol独立Release新测试17/17仅局部覆盖，不是整卡验收。详见Acceptance中间记录，继续完成剩余矩阵。
 - 用户裁决：严重坏当前库无法生成合格保护快照时必须安全阻断，不staging/replace、不删改坏文件、不损坏健康备份、不伪造成功记录；属于预期，不要求现有Restore救援无法保护的坏库。不得绕过保护或新增Restore模式。
 - 其余隔离损坏/备份拒绝/健康恢复/失败回退/大库/Release门禁按S8-T05 Task。仅TEMP/GUID合成数据，严禁正式库访问。S8-T01～T04仍关闭；下方旧停止点为历史回执。
+- 实施交接：旧`s8_t05_fresh_terra`因未完成矩阵及WAL证据缺陷已停止；全新`s8_t05_completion_terra` medium/priority接续同卡，保留旧commit/diff，未push。详见Acceptance开发记录。
 - 不创建S8-T06，不实施Undo/重置数据/Stage9/在线升级。完成独立验收后才关闭、普通push main并停。
 
 ## S8-T04正式关闭（2026-09-04）
