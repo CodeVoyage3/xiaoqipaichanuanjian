@@ -18,6 +18,35 @@ namespace StoreExpiryInspector.Tests;
 // Process.Kill is intentionally exercised through a separately launched vstest worker.
 public sealed class S8T04CrashConsistencyTests
 {
+    [Fact]
+    public async Task WaitForMarkerRetriesTransientSharingViolationThenReadsTheValidMarker()
+    {
+        var token = Guid.NewGuid().ToString("N");
+        var root = NewRoot(token);
+        var marker = Path.Combine(root, "marker.json");
+        AssertSafeRoot(root, token);
+        AssertSafePath(root, marker);
+        Directory.CreateDirectory(root);
+        AssertSafeRoot(root, token);
+        File.WriteAllText(marker, JsonSerializer.Serialize(new { token, parent_pid = Environment.ProcessId, worker_pid = Environment.ProcessId }));
+        var held = new FileStream(marker, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        try
+        {
+            var sharingViolation = Assert.Throws<IOException>(() => File.ReadAllText(marker));
+            Assert.True(IsTransientMarkerLock(sharingViolation));
+            var waiting = Task.Run(() => WaitForMarker(marker, token));
+            await Task.Delay(100);
+            Assert.False(waiting.IsCompleted);
+            held.Dispose();
+            var result = await waiting.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(token, result.GetProperty("token").GetString());
+        }
+        finally
+        {
+            held.Dispose();
+        }
+    }
+
     private const string WorkerName = "StoreExpiryInspector.Tests.S8T04CrashConsistencyTests.Worker";
     private static readonly DateTime Utc = new(2026, 9, 4, 9, 0, 0, DateTimeKind.Utc);
     private static readonly DateOnly Day = new(2026, 9, 4);
@@ -297,11 +326,15 @@ public sealed class S8T04CrashConsistencyTests
                     }
                 }
                 catch (JsonException) { }
+                catch (IOException exception) when (IsTransientMarkerLock(exception)) { }
             }
             Thread.Sleep(25);
         }
         throw new TimeoutException("S8-T04 worker did not reach its requested checkpoint.");
     }
+
+    private static bool IsTransientMarkerLock(IOException exception) =>
+        exception.HResult is unchecked((int)0x80070020) or unchecked((int)0x80070021);
 
     private static void AssertWorkerExited(int pid, long startedAtUtcTicks)
     {
