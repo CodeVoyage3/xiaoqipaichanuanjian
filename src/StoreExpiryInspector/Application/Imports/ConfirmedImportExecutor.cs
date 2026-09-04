@@ -1,4 +1,5 @@
 using System.IO;
+using System.Diagnostics;
 using System.Security;
 using System.Security.Cryptography;
 using Microsoft.Data.Sqlite;
@@ -91,13 +92,16 @@ public sealed class ConfirmedImportExecutor
 {
     private readonly PreImportSnapshotService _snapshotService;
     private readonly Func<DateTime> _utcNow;
+    private readonly Action<string, TimeSpan>? _measure;
 
     public ConfirmedImportExecutor(
         PreImportSnapshotService? snapshotService = null,
-        Func<DateTime>? utcNow = null)
+        Func<DateTime>? utcNow = null,
+        Action<string, TimeSpan>? measure = null)
     {
         _snapshotService = snapshotService ?? new PreImportSnapshotService();
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
+        _measure = measure;
     }
 
     public ConfirmedImportExecutor(Func<DateTime> utcNow)
@@ -184,7 +188,7 @@ public sealed class ConfirmedImportExecutor
         PreImportSnapshotResult snapshot;
         try
         {
-            snapshot = _snapshotService.Create(databasePath, snapshotDirectory);
+            snapshot = Measure("snapshot", () => _snapshotService.Create(databasePath, snapshotDirectory));
         }
         catch (Exception)
         {
@@ -246,13 +250,13 @@ public sealed class ConfirmedImportExecutor
                 UndoneAtUtc = null
             };
             context.Imports.Add(import);
-            context.SaveChanges();
+            Measure("import_record_write", context.SaveChanges);
 
             var productsByCode = ApplyProducts(context, plan, currentPlan, import.Id, confirmedAtUtc);
-            context.SaveChanges();
+            Measure("product_write", context.SaveChanges);
 
             ApplyBatches(context, plan, currentPlan, productsByCode, import.Id, confirmedAtUtc);
-            context.SaveChanges();
+            Measure("batch_write", context.SaveChanges);
 
             context.ImportIssues.AddRange(pendingIssues.Select(issue => new ImportIssue
             {
@@ -262,7 +266,7 @@ public sealed class ConfirmedImportExecutor
                 FieldName = issue.FieldName,
                 SafeSummary = issue.SafeSummary
             }));
-            context.SaveChanges();
+            Measure("issue_write", context.SaveChanges);
 
             var workbookContent = frozenBytes.ToArray();
             if (workbookContent.Length == 0 ||
@@ -290,10 +294,10 @@ public sealed class ConfirmedImportExecutor
                 CreatedAtUtc = metadata.CreatedAtUtc,
                 VerificationStatus = metadata.VerificationStatus
             });
-            context.SaveChanges();
+            Measure("workbook_backup_write", context.SaveChanges);
 
             RetainRecentImportWorkbooks(context);
-            context.SaveChanges();
+            Measure("workbook_retention", context.SaveChanges);
 
             if (context.ImportIssues.Count(issue => issue.ImportId == import.Id) != pendingIssues.Count)
             {
@@ -360,6 +364,15 @@ public sealed class ConfirmedImportExecutor
 
         context.ImportWorkbooks.RemoveRange(staleWorkbooks);
     }
+
+    private T Measure<T>(string stage, Func<T> action)
+    {
+        var watch = Stopwatch.StartNew();
+        try { return action(); }
+        finally { watch.Stop(); _measure?.Invoke(stage, watch.Elapsed); }
+    }
+
+    private void Measure(string stage, Action action) => Measure(stage, () => { action(); return 0; });
 
     private bool TryValidateContract(
         ImportConfirmationContract contract,

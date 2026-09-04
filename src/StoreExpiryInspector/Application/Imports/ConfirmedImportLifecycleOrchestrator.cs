@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.IO;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Domain;
@@ -20,17 +21,20 @@ public sealed class ConfirmedImportLifecycleOrchestrator
     private readonly ProductStockZeroLifecycleUseCase _stockZeroLifecycle;
     private readonly PostImportLifecycleUseCase _postImportLifecycle;
     private readonly ColdStartScopeBaselineUseCase _coldStart;
+    private readonly Action<string, TimeSpan>? _measure;
 
     public ConfirmedImportLifecycleOrchestrator(
         ConfirmedImportExecutor? executor = null,
         ProductStockZeroLifecycleUseCase? stockZeroLifecycle = null,
         PostImportLifecycleUseCase? postImportLifecycle = null,
-        ColdStartScopeBaselineUseCase? coldStart = null)
+        ColdStartScopeBaselineUseCase? coldStart = null,
+        Action<string, TimeSpan>? measure = null)
     {
         _executor = executor;
         _stockZeroLifecycle = stockZeroLifecycle ?? new ProductStockZeroLifecycleUseCase();
         _postImportLifecycle = postImportLifecycle ?? new PostImportLifecycleUseCase();
         _coldStart = coldStart ?? new ColdStartScopeBaselineUseCase();
+        _measure = measure;
     }
 
     public ConfirmedImportResult Execute(
@@ -44,7 +48,7 @@ public sealed class ConfirmedImportLifecycleOrchestrator
         FrozenImportFacts frozenFacts;
         try
         {
-            frozenFacts = FreezeFacts(context, request.Contract.Plan);
+            frozenFacts = Measure("freeze_facts", () => FreezeFacts(context, request.Contract.Plan));
         }
         catch (InvalidOperationException)
         {
@@ -73,11 +77,11 @@ public sealed class ConfirmedImportLifecycleOrchestrator
 
             var importId = stage2Result.ImportId
                 ?? throw new InvalidOperationException("A successful import must have an id.");
-            var resolved = ResolveFacts(
+            var resolved = Measure("resolve_facts", () => ResolveFacts(
                 context,
                 request.Contract.Plan,
                 frozenFacts,
-                importId);
+                importId));
             var productsByCode = resolved.ProductsByCode;
             var coldStartedProductIds = new HashSet<long>();
             var coldStartScopes = context.Products.AsNoTracking()
@@ -85,14 +89,17 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                          .Select(product => new { product.CategoryCode, product.PolicyCode, product.PolicyVersion })
                          .Distinct().OrderBy(product => product.CategoryCode).ThenBy(product => product.PolicyCode).ThenBy(product => product.PolicyVersion)
                          .ToArray();
-            foreach (var scope in coldStartScopes)
+            Measure("cold_start", () =>
             {
-                var coldStart = _coldStart.Execute(context, new ColdStartScopeBaselineRequest(scope.CategoryCode, scope.PolicyCode!, scope.PolicyVersion!.Value, importId, request.BusinessDate, request.OccurredAtUtc));
-                if (coldStart.Started)
+                foreach (var scope in coldStartScopes)
                 {
-                    foreach (var productId in context.Products.AsNoTracking().Where(product => product.CategoryCode == scope.CategoryCode && product.PolicyCode == scope.PolicyCode && product.PolicyVersion == scope.PolicyVersion).Select(product => product.Id)) coldStartedProductIds.Add(productId);
+                    var coldStart = _coldStart.Execute(context, new ColdStartScopeBaselineRequest(scope.CategoryCode, scope.PolicyCode!, scope.PolicyVersion!.Value, importId, request.BusinessDate, request.OccurredAtUtc));
+                    if (coldStart.Started)
+                    {
+                        foreach (var productId in context.Products.AsNoTracking().Where(product => product.CategoryCode == scope.CategoryCode && product.PolicyCode == scope.PolicyCode && product.PolicyVersion == scope.PolicyVersion).Select(product => product.Id)) coldStartedProductIds.Add(productId);
+                    }
                 }
-            }
+            });
             var eligibleProductIds = CompletedScopeProductIds(context);
             var explicitStocks = request.Contract.Plan.ExplicitProductStocks
                 .ToDictionary(stock => stock.ProductCode, StringComparer.Ordinal);
@@ -101,24 +108,16 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                     eligibleProductIds.Contains(product.Id) && !coldStartedProductIds.Contains(product.Id))
                 .ToArray();
 
-            foreach (var stock in eligibleStocks
-                         .Where(stock => stock.Quantity == 0)
-                         .OrderBy(stock => stock.ProductCode, StringComparer.Ordinal))
+            Measure("stock_zero", () =>
             {
-                if (!productsByCode.TryGetValue(stock.ProductCode, out var product))
+                foreach (var stock in eligibleStocks.Where(stock => stock.Quantity == 0).OrderBy(stock => stock.ProductCode, StringComparer.Ordinal))
                 {
-                    throw new InvalidOperationException(
-                        $"Product {stock.ProductCode} was not persisted by the import.");
-                }
+                    if (!productsByCode.TryGetValue(stock.ProductCode, out var product)) throw new InvalidOperationException($"Product {stock.ProductCode} was not persisted by the import.");
 
-                context.SaveChanges();
-                _stockZeroLifecycle.Execute(
-                    context,
-                    new ProductStockZeroRequest(
-                        product.Id,
-                        request.OccurredAtUtc,
-                        SourceImportId: importId));
-            }
+                    context.SaveChanges();
+                    _stockZeroLifecycle.Execute(context, new ProductStockZeroRequest(product.Id, request.OccurredAtUtc, SourceImportId: importId));
+                }
+            });
 
             var zeroProductCodes = eligibleStocks
                 .Where(stock => stock.Quantity == 0)
@@ -132,16 +131,13 @@ public sealed class ConfirmedImportLifecycleOrchestrator
                 .Select(group => group!)
                 .ToArray();
 
-            foreach (var group in positiveGroups)
+            Measure("post_import", () =>
             {
-                _postImportLifecycle.Execute(
-                    context,
-                    new PostImportLifecycleRequest(
-                        importId,
-                        request.BusinessDate,
-                        request.OccurredAtUtc,
-                        [group]));
-            }
+                foreach (var group in positiveGroups)
+                {
+                    _postImportLifecycle.Execute(context, new PostImportLifecycleRequest(importId, request.BusinessDate, request.OccurredAtUtc, [group]));
+                }
+            });
 
             transaction.Commit();
             context.ChangeTracker.Clear();
@@ -432,6 +428,15 @@ public sealed class ConfirmedImportLifecycleOrchestrator
         .Concat(plan.UnchangedBatches.Select(batch => batch.BatchKey.ProductCode))
         .Concat(plan.ExplicitProductStocks.Select(stock => stock.ProductCode))
         .Distinct(StringComparer.Ordinal);
+
+    private T Measure<T>(string stage, Func<T> action)
+    {
+        var watch = Stopwatch.StartNew();
+        try { return action(); }
+        finally { watch.Stop(); _measure?.Invoke(stage, watch.Elapsed); }
+    }
+
+    private void Measure(string stage, Action action) => Measure(stage, () => { action(); return 0; });
 
     private readonly record struct BatchKey(
         string ProductCode,

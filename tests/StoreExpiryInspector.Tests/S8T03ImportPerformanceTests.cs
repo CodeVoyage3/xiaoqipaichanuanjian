@@ -59,6 +59,7 @@ public sealed class S8T03ImportPerformanceTests
         AssertIsUnderRoot(root, databasePath, sourcePath, seedPath, snapshotDirectory, evidenceDirectory);
         Assert.False(File.Exists(databasePath));
         var measures = new Dictionary<string, double>(StringComparer.Ordinal);
+        var stageMeasures = new Dictionary<string, double>(StringComparer.Ordinal);
         var total = new Stopwatch();
         long workbookBytes = 0;
         long allocationStart = 0;
@@ -98,12 +99,16 @@ public sealed class S8T03ImportPerformanceTests
         Measure(measures, "snapshot_write_post", () =>
         {
             using var execute = DatabaseInitializer.CreateContext(databasePath);
-            result = new ConfirmedImportLifecycleOrchestrator().Execute(execute, new(
+            void Capture(string stage, TimeSpan elapsed) => stageMeasures[stage] = stageMeasures.GetValueOrDefault(stage) + elapsed.TotalMilliseconds;
+            var occurredAtUtc = new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc);
+            result = new ConfirmedImportLifecycleOrchestrator(
+                executor: new ConfirmedImportExecutor(utcNow: () => occurredAtUtc, measure: Capture),
+                measure: Capture).Execute(execute, new(
                 contract,
                 snapshotDirectory,
                 new DateTime(2026, 9, 4, 8, 0, 0, DateTimeKind.Utc),
                 new DateOnly(2026, 9, 4),
-                new DateTime(2026, 9, 4, 8, 1, 0, DateTimeKind.Utc)));
+                occurredAtUtc));
         });
         total.Stop();
 
@@ -139,6 +144,7 @@ public sealed class S8T03ImportPerformanceTests
             database_logical_bytes = DatabaseLogicalBytes(databasePath),
             snapshot_bytes = new FileInfo(result.SnapshotPath!).Length,
             measures_ms = measures,
+            import_stage_ms = stageMeasures,
             total_ms = total.Elapsed.TotalMilliseconds,
             managed_allocated_bytes = GC.GetTotalAllocatedBytes() - allocationStart,
             working_set_bytes = Environment.WorkingSet,
