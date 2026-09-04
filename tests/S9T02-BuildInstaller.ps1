@@ -22,4 +22,9 @@ if ($TestMode) {
 }
 & $Compiler @arguments (Join-Path $root 'installer\StoreExpiryInspector.iss')
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed: $LASTEXITCODE" }
-Get-ChildItem -LiteralPath $output -Filter '*Setup*.exe' | Select-Object -First 1
+$installer = Get-ChildItem -LiteralPath $output -Filter '*Setup*.exe' | Select-Object -First 1
+if ($TestMode) {
+    [pscustomobject]@{ Installer = $installer.FullName; InstallRoot = $install; DataRoot = $data; AppId = $id; RunValueName = "StoreExpiryInspector-S9T02-$id"; ShortcutName = "StoreExpiryInspector S9-T02 $id" } |
+        ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 's9-t02-test-identity.json') -Encoding utf8
+}
+$installer
