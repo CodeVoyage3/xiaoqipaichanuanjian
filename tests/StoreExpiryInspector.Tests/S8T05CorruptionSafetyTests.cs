@@ -31,15 +31,17 @@ public sealed class S8T05CorruptionSafetyTests
                 File.Copy(health.Path, current);
                 corrupt(current);
                 var damagedHash = Hash(current);
+                var checkpoints = new List<string>();
 
-                var result = new DatabaseRestoreUseCase().Restore(backup.BackupPath!, true, current, backups);
+                var result = new DatabaseRestoreUseCase((point, _) => checkpoints.Add(point))
+                    .Restore(backup.BackupPath!, true, current, backups);
 
                 Assert.Equal(DatabaseRestoreCodes.PreRestoreBackupFailed, result.Code);
                 Assert.Equal(damagedHash, Hash(current));
                 Assert.Equal(backupHash, Hash(backup.BackupPath!));
                 Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(current)!, "*.restore-*"));
                 Assert.Empty(Directory.GetFiles(backups, "pre-restore-*.db"));
-                evidence.Add(new { scenario = corrupt.Method.Name, damagedSha256 = damagedHash, result = result.Code, staging = false, replace = false });
+                evidence.Add(new { scenario = corrupt.Method.Name, damagedSha256 = damagedHash, result = result.Code, checkpoints, staging = checkpoints.Contains("staging_validated"), replace = checkpoints.Contains("before_replace") });
             }
             File.WriteAllText(Path.Combine(root, "S8-T05-corruption-evidence.json"), JsonSerializer.Serialize(evidence));
         }
@@ -76,6 +78,39 @@ public sealed class S8T05CorruptionSafetyTests
 
             Assert.ThrowsAny<Exception>(() => DatabaseInitializer.Initialize(current));
             Assert.Equal(0, new FileInfo(current).Length);
+        }
+        finally { SqliteConnection.ClearAllPools(); }
+    }
+
+    [Fact]
+    public void HealthyBackupRestoresRepresentativeFingerprintAfterProtection()
+    {
+        using var database = CreateRepresentativeDatabase();
+        var root = NewDirectory();
+        try
+        {
+            AssertSafeSyntheticRoot(root);
+            var backups = Path.Combine(root, "backups");
+            var before = Fingerprint(database.Path);
+            var backup = new LocalDatabaseBackupUseCase().Create(database.Path, backups);
+            Assert.True(backup.Succeeded);
+            using (var current = database.Open())
+            {
+                current.Products.Add(new Product { ProductCode = "CURRENT-ONLY", EffectiveStockQty = 1, ExcelStockQty = 1 });
+                current.SaveChanges();
+            }
+            Checkpoint(database.Path);
+            var checkpoints = new List<string>();
+            var result = new DatabaseRestoreUseCase((point, _) => checkpoints.Add(point))
+                .Restore(backup.BackupPath!, true, database.Path, backups);
+
+            Assert.True(result.Succeeded);
+            Assert.Contains("staging_validated", checkpoints);
+            Assert.Contains("before_replace", checkpoints);
+            Assert.Equal(before, Fingerprint(database.Path));
+            Assert.Equal("ok", Scalar(database.Path, "PRAGMA integrity_check;"));
+            Assert.Equal(0L, ScalarLong(database.Path, "PRAGMA foreign_key_check;"));
+            Assert.NotNull(result.PreRestoreBackupPath);
         }
         finally { SqliteConnection.ClearAllPools(); }
     }
@@ -134,15 +169,18 @@ public sealed class S8T05CorruptionSafetyTests
     private static void CorruptDataPage(string path)
     {
         long rootPage;
+        long pageSize;
         using (var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly;Pooling=False"))
         {
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT rootpage FROM sqlite_master WHERE type='table' AND name='products';";
             rootPage = Convert.ToInt64(command.ExecuteScalar());
+            command.CommandText = "PRAGMA page_size;";
+            pageSize = Convert.ToInt64(command.ExecuteScalar());
         }
         using var stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-        stream.Position = (rootPage - 1) * 4096;
+        stream.Position = (rootPage - 1) * pageSize;
         stream.WriteByte(0);
     }
 
@@ -166,6 +204,24 @@ public sealed class S8T05CorruptionSafetyTests
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
+
+    private static string Fingerprint(string path) => string.Join("|", new[]
+    {
+        Scalar(path, "SELECT COUNT(*) FROM products;"), Scalar(path, "SELECT COUNT(*) FROM batches;"),
+        Scalar(path, "SELECT COUNT(*) FROM tasks;"), Scalar(path, "SELECT COUNT(*) FROM inspections;"),
+        Scalar(path, "SELECT group_concat(product_code, ',') FROM (SELECT product_code FROM products ORDER BY product_code);")
+    });
+
+    private static string Scalar(string path, string sql)
+    {
+        using var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly;Pooling=False");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        return Convert.ToString(command.ExecuteScalar()) ?? string.Empty;
+    }
+
+    private static long ScalarLong(string path, string sql) => long.Parse(Scalar(path, sql));
 
     private static string NewDirectory()
     {

@@ -71,6 +71,13 @@ public partial class App : System.Windows.Application
                 "startup_failed",
                 "启动初始化或补算失败，已停止启动。",
                 exception.ToString());
+            WpfDialogService.Show(
+                owner: null,
+                "门店效期排查软件",
+                "数据库初始化失败，应用未启动且未自动恢复。请联系管理员并查看日志。",
+                "知道了",
+                WpfDialogKind.Error,
+                showCancel: false);
             Shutdown();
             return;
         }
