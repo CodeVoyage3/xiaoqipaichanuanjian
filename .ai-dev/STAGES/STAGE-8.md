@@ -1,8 +1,8 @@
 # Stage 8｜性能与稳定性
 
-启动日期：2026-09-03。状态：`IN_PROGRESS / S8-T06_CURRENT / NOT_ACCEPTED`；T01～T05关闭。2026-09-04用户批准最后卡T06，fetch main=f981211、clean/0/0；Task/Acceptance已建立，阶段整体待最终新鲜验收。
+启动日期：2026-09-03。关闭日期：2026-09-04。状态：`TECHNICALLY_ACCEPTED / CLOSED`；S8-T01～T06全部CLOSED，Stage9 NOT_STARTED。最后卡T06开工fetch main=f981211、clean/0/0，最终验收候选17ebb6c。
 
-本次授权覆盖下方历史“不创建S8-T06”停止点。全新Terra medium/priority，仅复用及必要最小测试；Sol独立验收、默认零生产改动，全部合成TEMP/GUID。WAL来源不可证明、坏当前不能保护时阻断及物理风险继续保留。完成后创建STAGE-8-CLOSEOUT.md并关闭阶段；不启动Stage9或任何新Task。
+本次关闭覆盖下方历史状态/停止点。全新Terra medium/priority仅交付复用运行说明；Sol独立验收100k/300k读、100k Excel50.19s、回滚2/2、恢复6/6、代表18/18硬Kill、无filter Release984/984及内含42/42常规Kill、build0/0、EF无漂移、migration9、禁止项/Git门禁全部通过。本卡零生产/测试改动，全部合成TEMP/GUID，未访问正式库。STAGE-8-CLOSEOUT.md正式建立；WAL来源不可证明、坏当前不能保护时阻断及物理风险继续保留。不启动Stage9或任何新Task。
 
 S8-T05已TECHNICALLY_ACCEPTED / CLOSED：代码/测试e0e5a0d；Sol新鲜无filter984/984、专项100/100、新鲜48/48硬杀、build0/0、EF无漂移、migration9、禁止项与diff检查通过。用户接受合法外来WAL业务漂移为residual risk，不新增来源防护；旧失败保留，不冒充识别成功。严重坏当前不能保护时Restore仍阻断。治理普通push后停止，不创建S8-T06；未来阶段收口须继续列入上述两项能力限制和未证明的物理介质风险。
 

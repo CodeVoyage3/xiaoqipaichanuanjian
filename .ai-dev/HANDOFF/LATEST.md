@@ -1,10 +1,12 @@
 # 最新交接
 
-## S8-T06正式开工（2026-09-04，覆盖下方历史停止点）
+## Stage8 / S8-T06正式关闭（2026-09-04，覆盖下方历史状态）
 
-- 用户批准Stage8最后一张卡S8-T06；IN_PROGRESS / S8-T06_CURRENT / NOT_ACCEPTED。已重新fetch，main=origin/main=f9812110d8616801852c56aca40b802f3c578438，clean、0/0；T01～T05 CLOSED。
-- Task/Acceptance已建立；派发全新Terra medium/priority复用最终回归设施，默认不改生产；Sol独立验收。仅TEMP/GUID，不访问正式库。保留WAL来源与坏库无法保护的能力限制，不创建Stage9/升级/重置/Undo。
-- 全部门禁通过才关闭Stage8；当前尚未取得本卡新鲜结果，不沿用旧数字预报通过。
+- Stage8及S8-T06 TECHNICALLY_ACCEPTED / CLOSED，T01～T06 CLOSED；Stage9 NOT_STARTED。开工fetch main=f981211、clean/0/0；最终测试候选17ebb6c，之后只有治理归档。全新Terra medium/priority文档31d3522/b8644ce，已停止；Sol完整审查、独立复验，无生产/测试代码变化。
+- 新鲜100k/300k读20路径无异常，首屏193.33ms/深页367.69/History344.05/Reminder784.25（median）；100k Excel50191.79ms，完整业务断言/integrity ok/FK0；无数量级回退。写中及跨250post故障回滚2/2，恢复代表6/6，大库225.43MB/Backup5.83s/Restore20.55s。
+- 独立18/18 Kill（9pre/9post）；最终无filter Release984/984、0failure/skip/error/aborted，内含42/42常规Kill（33pre/9post）、Revision16/16、S8T05 39/39；历史48/48独立保留。10个空门禁不当压力或真实Excel证据。build0/0、EF无漂移、migration9末条固定；禁止项及diff check通过。
+- 未发现本卡生产一致性bug。合法外来WAL可改变业务而结构/FK/migration仍健康，来源防护未实现；严重坏当前不能保护时Restore阻断，不直接救援；物理断电/磁盘/SSD/文件系统/介质安全未证明。所有实验合成TEMP/GUID，正式库未访问，旧隔离事件不调查、不改写。
+- 已建立STAGE-8-CLOSEOUT.md及S8-T06-RESULT.json。发布前fetch远端仍f981211；本治理提交后普通push main、再fetch核对clean/0/0，最终SHA见发布回执/回复。停止，不创建Stage9/升级/安装器/重置/Undo/新防护任务。
 
 ## S8-T05正式关闭（2026-09-04，覆盖下方历史状态）
 

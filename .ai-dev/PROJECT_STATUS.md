@@ -1,15 +1,17 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 8｜性能与稳定性
-- 状态：Stage8 IN_PROGRESS / S8-T06_CURRENT / NOT_ACCEPTED；T01～T05 CLOSED。用户已批准最后卡T06，Stage9 NOT_STARTED；V1各卡继续关闭。
-- 当前工作分支：`main`（S8-T06开工fetch=f981211，clean/0/0；最终新鲜门禁待执行）
-- 最终代码/测试：S8-T05 `e0e5a0d`，Sol新鲜无filter Release984/984、专项100/100、48/48硬杀、build0/0、EF无漂移、migration9。已接受合法外来WAL来源不可验证的residual risk，不新增防护。最终归档SHA以治理commit/push回执为准，详见Acceptance/HANDOFF
+- 当前阶段：Stage 8｜性能与稳定性（已完成）
+- 状态：Stage8 TECHNICALLY_ACCEPTED / CLOSED；S8-T01～T06 CLOSED，Stage9 NOT_STARTED；V1各卡继续关闭。
+- 当前工作分支：`main`（S8-T06开工fetch=f981211，clean/0/0；最终验收候选17ebb6c，随后仅治理收口及普通push）
+- 最终代码/测试沿用S8-T05 e0e5a0d，本卡零生产/测试改动。S8-T06 Sol新鲜Release984/984、隔离15/15、读100k/300k、导入100k50.19s、回滚2/2、恢复6/6、代表18/18及全量42/42 Kill，build0/0、EF无漂移、migration9、Git禁止项通过。最终main SHA以发布回执为准。
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
 - Stage 2 整体验收归档基线：`64dd0c6d07b192ca246c77a604fb31065282e166`
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- Stage8最终收口（2026-09-04）：新鲜20读路径无blocker/数量级回退，225.43MB备份5.83s/恢复20.55s；完整回滚、恢复后权威读成立。见STAGE-8-CLOSEOUT.md、S8-T06 Acceptance及JSON索引。合法外来WAL来源不可验证、无法保护严重坏当前时不直接救援、物理介质安全未证明，均持续保留。正式库未访问，无新生产一致性bug；不启动Stage9/升级/安装器/重置/Undo或新Task。下方全部为历史回执，不覆盖本次关闭状态。
 
 - S8-T05正式关闭：五类明显损坏/不可信备份fail-closed；严重坏当前不能保护时Restore阻断；健康库恢复及final失败回退、权威业务读取/大库验证成立。合法外来WAL仍可业务漂移，不是已实现来源防护。无正式库访问、Schema/index/migration/依赖越界。原失败和7258/23089ms样本保留，新样本6946/22552ms；全量真实984/984。S8-T06仅建议，不创建；无Stage9/升级/重置/Undo。
 
