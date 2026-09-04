@@ -7,6 +7,16 @@ restores or builds implicitly.
 
 ```powershell
 dotnet build StoreExpiryInspector.slnx -c Release --no-restore -p:NuGetAudit=false
+if ($LASTEXITCODE -ne 0) { throw 'Release build failed; stop.' }
+```
+
+For auditable runs, create one TEMP/GUID result directory and add a unique
+`--logger 'trx;LogFileName=<run>.trx' --results-directory $results` to each
+test command. Stop on a nonzero exit; do not overwrite earlier TRX files.
+
+```powershell
+$results = Join-Path ([IO.Path]::GetTempPath()) ('StoreExpiryInspectorS8T06Sol/' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $results
 ```
 
 ## Isolation preflight
@@ -95,9 +105,10 @@ Remove-Item Env:S8_T05_RUN_ID
 
 This exact representative subset covers bad-backup rejection, corrupt-current
 protection block, healthy restore, final-validation rollback, authority reads,
-and the large 100k/300k seed backup/restore sample. These cases write one
-small JSON under their TEMP/GUID root with the supplied `runId`; locate the
-run's `S8-T05-*.json` and extract `backupMilliseconds`, `restoreMilliseconds`,
+and the large 100k/300k seed backup/restore sample. Only cases with an existing
+`WriteEvidence` call write JSON with the supplied `runId`; healthy restore,
+tamper rejection and authoritative reads are recorded by TRX/assertions instead.
+Locate the run's `S8-T05-*.json` and extract `backupMilliseconds`, `restoreMilliseconds`,
 `finalValidationMilliseconds`, `databaseBytes`, and `finalFingerprint` from
 `large-backup-restore`. Other class cases may not write JSON; a passing test
 result alone must not be presented as a missing artifact.
