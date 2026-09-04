@@ -1,10 +1,17 @@
 # 最新交接
 
-## S9-T03当前授权（2026-09-04，覆盖下方历史状态）
+## S9-T03正式关闭（2026-09-05，当前权威状态）
 
-Stage9 IN_PROGRESS / S9-T03_CURRENT；S9-T03 IN_PROGRESS / NOT_ACCEPTED。开工fetch main=origin/main=82c3fd16423c9772e4c2f4f41a8b56cbbf67c669、clean/0/0，无既有T03，现已按用户授权创建Task/Acceptance。只做公开稳定元数据契约、匿名离线友好检查及轻量提示；全新Terra medium/priority实施，Sol治理/diff/独立复验。T01/T02和Stage8仍CLOSED；不创建T04、不下载/Updater/程序替换/正式Release/跨版本迁移/重置/Undo。正式数据禁止访问，版本仍1.0.0；S9-T02安装器仅历史产物，Stage9最终交付须重新构建。待独立门禁通过后普通push并停止。
+- S9-T03 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION。Stage8、T01/T02保持CLOSED；T04未创建。开工main=origin/main=82c3fd16423c9772e4c2f4f41a8b56cbbf67c669、clean/0/0。全新GPT-5.6 Terra medium/priority实现523918b及可读性修复15434e53a6809fd654337fee0332c851c238a922，已提交停止；Sol只治理、完整diff、独立复验。最终main见普通push/fetch回执。
+- Sol独立协议40/40、最终实际WPF16/16、相关回归32/32；fresh无filter Release1017/1017、0failure/error/timeout/aborted/skip，约11m01s；build0warning/0error、EF无漂移、migration9末条20260901155124_AddPolicyAndBaselineFoundation、diffcheck通过。空return不当高规模/真实Excel证据；初次37/40和修复过程保留。
+- 当前版本从正式程序集读取，仍1.0.0；匿名固定HTTPS latest元数据，严格稳定三段tag和数值比较，8种结果，5秒总超时/256KiB响应/1000字符纯文本。核心初次读取完成后每进程一次非阻塞检查；退出取消/晚到保护，只有新版提示，无轮询或持久snooze。稍后本进程不再提示，下次启动可再查；立即更新明确显示尚未启用，不下载、不退出、不替换。
+- 真实匿名HTTP：2026-09-04 23:27:41～44 +08:00，repo200/public、list200/0、latest404；无Authorization。生产客户端23:44:06实际NoPublishedRelease。新版由合成协议/WPF验证，没有创建Release/tag/资产。private与无Release可能同为404，仍静默安全、不索要token。
+- 最终fresh self-contained发布420文件/164235092字节；显式TEMP/GUID实际WPF核心启动exit0/ready1/程序树SHA256不变；合成DB副本integrity ok/FK0/migration9。smoke-exit分支跳过更新检查，更新链由独立协议、真实客户端网络、实际WPF及源码链分别证明。正式数据根未探测/访问/哈希/复制，无Schema/依赖/installer契约变化。
+- 证据：ACCEPTANCE/S9-T03.md、S9-T03-UPDATE-CHECK-RESULT.json、S9-T03-GITHUB-SMOKE.json、S9-T03-SOL-VERIFY；契约见ANALYSIS/S9-T03-PUBLIC-RELEASE-CONTRACT.md。TEMP产物可能被清理。T02旧49MB安装器仅历史产物，不是本卡最新可交付版本，Stage9最终须重新构建。
+- 剩余边界：当前没有真实新版Release/资产下载/Updater/程序替换/跨版本保护；开发机WPF不替代干净Win10/11门店GUI，未签名/SmartScreen及Stage8既有风险不变。无重置/Undo/secret。
+- 下一步仅建议更新包下载与校验：先冻结manifest/原始字节RSA-PSS签名及公钥信任，再以合成资产验证隔离下载、大小/版本/平台/签名/SHA256及失败清理；不做Updater/替换/迁移/正式Release。未创建T04，等待用户新授权。普通push main、fetch确认clean/HEAD=origin/0/0后停止。
 
-## Stage9 / S9-T02正式关闭（2026-09-04，当前权威状态）
+## Stage9 / S9-T02正式关闭（2026-09-04，历史回执）
 
 - S9-T02 TECHNICALLY_ACCEPTED / CLOSED；Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；Stage8、T01保持CLOSED。T03未创建。开工main=origin/main=34c336a3f03e823048e5987d102001911527e5b2、clean/0/0；最终生产/测试5a8fe57d53697afcec066c8e70d63a346d45c5df，之后仅治理收口。最终main以本次普通push/fetch回执为准。
 - 全新GPT-5.6 Terra medium/priority实施并已提交停止；Sol仅治理、完整diff、独立复验。Sol两轮真实独立身份A-I各9/9、preflight12/12；最终无filter Release996/996，0failure/error/timeout/aborted/skip、10m35s；build0warning/0error；EF无漂移，migration9末条20260901155124_AddPolicyAndBaselineFoundation。门禁空return不当高规模或真实Excel证据。

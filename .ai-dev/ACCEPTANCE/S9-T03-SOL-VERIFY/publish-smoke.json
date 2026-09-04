@@ -1,0 +1,18 @@
+{
+  "time": "2026-09-04T23:56:00.4567828+08:00",
+  "source": "15434e53a6809fd654337fee0332c851c238a922",
+  "publish": "C:\\Users\\39037\\AppData\\Local\\Temp\\df25bf9d-0599-42e2-8979-3c2e6c30995a\\publish-final",
+  "dataRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\52fbc82e-437e-4ab6-bc5b-75cbd400c231",
+  "exitCode": 0,
+  "readyMarkers": 1,
+  "files": 420,
+  "bytes": 164235092.0,
+  "treeUnchanged": true,
+  "fileVersion": "1.0.0.0",
+  "productVersion": "1.0.0+15434e53a6809fd654337fee0332c851c238a922",
+  "coreclr": true,
+  "hostfxr": true,
+  "sqlite": true,
+  "forbiddenFiles": [],
+  "updateHookSkippedBySmokeMode": true
+}

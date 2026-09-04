@@ -1,0 +1,49 @@
+[
+  {
+    "time": "2026-09-04T23:27:41.8758022+08:00",
+    "endpointType": "repository",
+    "endpoint": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian",
+    "status": 200,
+    "anonymous": true,
+    "authorizationPresent": false,
+    "rateLimit": {
+      "X-RateLimit-Limit": "60",
+      "X-RateLimit-Remaining": "59",
+      "X-RateLimit-Reset": "1788539262",
+      "X-RateLimit-Resource": "core"
+    },
+    "visibility": "public",
+    "private": false
+  },
+  {
+    "time": "2026-09-04T23:27:43.2068020+08:00",
+    "endpointType": "releases",
+    "endpoint": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases?per_page=100",
+    "status": 200,
+    "anonymous": true,
+    "authorizationPresent": false,
+    "rateLimit": {
+      "X-RateLimit-Limit": "60",
+      "X-RateLimit-Remaining": "59",
+      "X-RateLimit-Reset": "1788539263",
+      "X-RateLimit-Resource": "core"
+    },
+    "count": 0
+  },
+  {
+    "time": "2026-09-04T23:27:44.4669835+08:00",
+    "endpointType": "latest",
+    "endpoint": "https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases/latest",
+    "status": 404,
+    "anonymous": true,
+    "authorizationPresent": false,
+    "rateLimit": {
+      "X-RateLimit-Limit": "60",
+      "X-RateLimit-Remaining": "58",
+      "X-RateLimit-Reset": "1788539263",
+      "X-RateLimit-Resource": "core"
+    },
+    "message": "Not Found",
+    "expectedApplicationMapping": "NoPublishedRelease"
+  }
+]

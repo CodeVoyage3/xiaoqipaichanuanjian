@@ -1,0 +1,88 @@
+{
+  "failures": 0,
+  "records": [
+    {
+      "name": "wpf_initial_core_success",
+      "pass": true,
+      "details": {
+        "root": "C:\\Users\\39037\\AppData\\Local\\Temp\\2e990d28-e056-4a8d-876f-561787585612",
+        "databaseUsed": false
+      }
+    },
+    {
+      "name": "wpf_quiet_UpToDate",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_quiet_NoPublishedRelease",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_quiet_RemoteOlder",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_quiet_NetworkUnavailable",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_quiet_RateLimited",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_quiet_InvalidRemoteMetadata",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_quiet_Cancelled",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_core_does_not_wait_for_network",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_update_text",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_keyboard_buttons",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_primary_white_text",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_visible_duplicate_suppressed",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_update_requested_explicit_not_enabled",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_later_suppresses_repeat",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "wpf_closed_no_late_prompt",
+      "pass": true,
+      "details": null
+    }
+  ]
+}

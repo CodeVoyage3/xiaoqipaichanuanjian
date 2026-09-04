@@ -1,0 +1,202 @@
+{
+  "card": "S9-T03",
+  "status": "TECHNICALLY_ACCEPTED / CLOSED",
+  "closedAt": "2026-09-05T00:10:15.570531+08:00",
+  "stage9": "IN_PROGRESS / WAITING_NEXT_AUTHORIZATION",
+  "openingMain": "82c3fd16423c9772e4c2f4f41a8b56cbbf67c669",
+  "openingCleanAndZeroZero": true,
+  "productionAndTests": "15434e53a6809fd654337fee0332c851c238a922",
+  "implementation": "523918b537d7d4fcebcf334e569cf31110b79741",
+  "finalMain": "See ordinary push/fetch receipt; subsequent commit contains governance only",
+  "productVersion": "1.0.0",
+  "currentVersionSource": "Assembly.GetEntryAssembly().GetName().Version normalized Major.Minor.Build",
+  "roles": {
+    "implementer": "new GPT-5.6 Terra medium priority /root/s9_t03_fresh_terra",
+    "reviewer": "Sol independent; no production code authored"
+  },
+  "protocol": {
+    "passed": 40,
+    "failed": 0,
+    "initialPassed": 37,
+    "initialFailed": 3,
+    "evidence": "S9-T03-SOL-VERIFY/protocol-independent.json"
+  },
+  "wpf": {
+    "passed": 16,
+    "failed": 0,
+    "databaseUsed": false,
+    "evidence": "S9-T03-SOL-VERIFY/ui-independent.json"
+  },
+  "targeted": {
+    "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\df25bf9d-0599-42e2-8979-3c2e6c30995a\\tests\\targeted-final.trx",
+    "sha256": "0d760565b1f25c5c2d2ed884dcdd6545227a522159b2763ed41eff7d582b6ff4",
+    "counters": {
+      "total": 32,
+      "executed": 32,
+      "passed": 32,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    "times": {
+      "creation": "2026-09-04T23:54:47.1589996+08:00",
+      "queuing": "2026-09-04T23:54:47.1590002+08:00",
+      "start": "2026-09-04T23:54:45.2104286+08:00",
+      "finish": "2026-09-04T23:54:49.0049479+08:00"
+    }
+  },
+  "release": {
+    "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\df25bf9d-0599-42e2-8979-3c2e6c30995a\\final-release\\full-release.trx",
+    "sha256": "c34e9e4bb8f8b5c3e286a613c287b859898798cf20823f74d6423d31593111c4",
+    "counters": {
+      "total": 1017,
+      "executed": 1017,
+      "passed": 1017,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    "times": {
+      "creation": "2026-09-04T23:56:28.1356015+08:00",
+      "queuing": "2026-09-04T23:56:28.1356022+08:00",
+      "start": "2026-09-04T23:56:26.1993017+08:00",
+      "finish": "2026-09-05T00:07:27.3567851+08:00"
+    }
+  },
+  "releaseGateNote": "No filter. High-scale/real-Excel/manual worker gates disabled; empty-return cases are not those专项 evidence.",
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "source": "15434e53a6809fd654337fee0332c851c238a922"
+  },
+  "ef": {
+    "pendingModelChanges": false,
+    "migrationCount": 9,
+    "last": "20260901155124_AddPolicyAndBaselineFoundation",
+    "factory": "Data Source=:memory:",
+    "listNoConnect": true,
+    "formalDatabaseAppliedStateInspected": false
+  },
+  "githubRawEvidence": "S9-T03-GITHUB-SMOKE.json",
+  "productionClient": {
+    "failures": 0,
+    "records": [
+      {
+        "name": "production_client_real_github",
+        "pass": true,
+        "details": {
+          "time": "2026-09-04T23:44:06.1327841+08:00",
+          "outcome": "NoPublishedRelease",
+          "current": "1.0.0",
+          "anonymous": true,
+          "authorization": false
+        }
+      }
+    ]
+  },
+  "publish": {
+    "time": "2026-09-04T23:56:00.4567828+08:00",
+    "source": "15434e53a6809fd654337fee0332c851c238a922",
+    "publish": "C:\\Users\\39037\\AppData\\Local\\Temp\\df25bf9d-0599-42e2-8979-3c2e6c30995a\\publish-final",
+    "dataRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\52fbc82e-437e-4ab6-bc5b-75cbd400c231",
+    "exitCode": 0,
+    "readyMarkers": 1,
+    "files": 420,
+    "bytes": 164235092.0,
+    "treeUnchanged": true,
+    "fileVersion": "1.0.0.0",
+    "productVersion": "1.0.0+15434e53a6809fd654337fee0332c851c238a922",
+    "coreclr": true,
+    "hostfxr": true,
+    "sqlite": true,
+    "forbiddenFiles": [],
+    "updateHookSkippedBySmokeMode": true
+  },
+  "syntheticDbCopy": {
+    "integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "foreignKeys": [],
+    "migrationIds": [
+      "20260826123739_InitialCreate",
+      "20260826130822_AddTasksAndDrafts",
+      "20260826135612_AddInspectionHistory",
+      "20260826142429_AddInventoryAdjustments",
+      "20260826152131_AddImportPersistence",
+      "20260826155455_AddBackupMetadata",
+      "20260826162033_AddSettingsAndAppState",
+      "20260826170403_AddLifecycleEvents",
+      "20260901155124_AddPolicyAndBaselineFoundation"
+    ],
+    "fullFingerprint": "e67e18e98e1afdd3a52e37ad46659286a75a36e92cc2d66cd3b45c37e2caf921",
+    "workbooks": [],
+    "settings": [
+      [
+        1,
+        600,
+        1
+      ]
+    ]
+  },
+  "scopeReview": {
+    "source": "15434e53a6809fd654337fee0332c851c238a922",
+    "base": "82c3fd16423c9772e4c2f4f41a8b56cbbf67c669",
+    "reviewer": "Sol",
+    "productionAuthor": "fresh GPT-5.6 Terra medium priority",
+    "fullDiffReviewed": true,
+    "schemaChanged": false,
+    "modelSnapshotChanged": false,
+    "migrationsChanged": false,
+    "indexesChanged": false,
+    "productionPragmaChanged": false,
+    "dependenciesChanged": false,
+    "installerContractChanged": false,
+    "formalDatabaseAccessed": false,
+    "clientTokenOrSecretAdded": false,
+    "updatePackageDownloaded": false,
+    "updaterImplemented": false,
+    "programReplacement": false,
+    "releaseTagOrAssetsCreated": false,
+    "t04Created": false,
+    "normalStartupOnceAfterCoreReady": true,
+    "cancelAndLateUiGuards": true,
+    "notesPlainTextLimit": 1000,
+    "responseByteLimit": 262144,
+    "totalTimeoutSeconds": 5,
+    "redirectsAllowed": false
+  },
+  "diffCheck": true,
+  "t02Installer": "Historical accepted artifact only; not current T03 payload; rebuild at final Stage9 delivery",
+  "remainingRisks": [
+    "No real stable Release or binary assets yet",
+    "Anonymous shared-IP limits and offline network remain possible; core stays usable",
+    "UpdateRequested shows not-enabled; no downloader/updater/replacement/migration",
+    "Developer-machine WPF and isolated publish do not replace clean Win10/11 store GUI",
+    "Unsigned/SmartScreen and existing Stage8 medium/restore limitations unchanged",
+    "TEMP originals may be cleaned"
+  ],
+  "nextSuggestionOnly": "Freeze exact manifest fields, RSA-PSS raw-byte signature and public-key trust; then synthetic-asset isolated download with size/version/platform/signature/SHA256 and failure cleanup. No Updater, replacement, database migration or formal Release. Do not create T04 without authorization."
+}

@@ -1,0 +1,16 @@
+{
+  "failures": 0,
+  "records": [
+    {
+      "name": "production_client_real_github",
+      "pass": true,
+      "details": {
+        "time": "2026-09-04T23:44:06.1327841+08:00",
+        "outcome": "NoPublishedRelease",
+        "current": "1.0.0",
+        "anonymous": true,
+        "authorization": false
+      }
+    }
+  ]
+}

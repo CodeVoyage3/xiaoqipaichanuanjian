@@ -1,0 +1,347 @@
+{
+  "failures": 0,
+  "records": [
+    {
+      "name": "new",
+      "pass": true,
+      "details": {
+        "expected": "UpdateAvailable",
+        "actual": "UpdateAvailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "same",
+      "pass": true,
+      "details": {
+        "expected": "UpToDate",
+        "actual": "UpToDate",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "old",
+      "pass": true,
+      "details": {
+        "expected": "RemoteOlder",
+        "actual": "RemoteOlder",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "patch_numeric",
+      "pass": true,
+      "details": {
+        "expected": "UpdateAvailable",
+        "actual": "UpdateAvailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "minor_numeric",
+      "pass": true,
+      "details": {
+        "expected": "UpdateAvailable",
+        "actual": "UpdateAvailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "http_404",
+      "pass": true,
+      "details": {
+        "expected": "NoPublishedRelease",
+        "actual": "NoPublishedRelease",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "http_403",
+      "pass": true,
+      "details": {
+        "expected": "RateLimited",
+        "actual": "RateLimited",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "http_429",
+      "pass": true,
+      "details": {
+        "expected": "RateLimited",
+        "actual": "RateLimited",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "http_500",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "http_503",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u00221.0.1\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v01.0.1\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v1.0.1-alpha\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v1.0.1\\u002Bbuild\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v1.0.1\\n\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v1.0.1 \u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v1.0.1.0\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tag_\u0022v2147483648.0.0\u0022",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_[]",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_null",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{}",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{\u0022tag_name\u0022:4,\u0022draft\u0022:false,\u0022prerelease\u0022:false}",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{\u0022tag_name\u0022:\u0022v1.0.1\u0022,\u0022draft\u0022:false}",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{\u0022tag_name\u0022:\u0022v1.0.1\u0022,\u0022draft\u0022:\u0022false\u0022,\u0022prerelease\u0022:false}",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{\u0022tag_name\u0022:\u0022v1.0.1\u0022,\u0022draft\u0022:true,\u0022prerelease\u0022:false}",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "metadata_{\u0022tag_name\u0022:\u0022v1.0.1\u0022,\u0022draft\u0022:false,\u0022prerelease\u0022:true}",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "dns",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "tls",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "operation_cancel_timeout",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "body_io_failure",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "body_total_timeout",
+      "pass": true,
+      "details": {
+        "expected": "NetworkUnavailable",
+        "actual": "NetworkUnavailable",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "cancelled",
+      "pass": true,
+      "details": {
+        "expected": "Cancelled",
+        "actual": "Cancelled",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "bounded_unknown_length",
+      "pass": true,
+      "details": {
+        "expected": "InvalidRemoteMetadata",
+        "actual": "InvalidRemoteMetadata",
+        "notesLength": null
+      }
+    },
+    {
+      "name": "fixed_anonymous_metadata",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "notes_bounded_text",
+      "pass": true,
+      "details": {
+        "length": 1000
+      }
+    },
+    {
+      "name": "vm_versions_and_commands",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "single_flight_nonblocking",
+      "pass": true,
+      "details": {
+        "calls": 1
+      }
+    },
+    {
+      "name": "cancel_late_no_callback",
+      "pass": true,
+      "details": {
+        "completed": 0
+      }
+    },
+    {
+      "name": "dispose_idempotent",
+      "pass": true,
+      "details": null
+    }
+  ]
+}
