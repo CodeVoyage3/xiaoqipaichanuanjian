@@ -131,8 +131,8 @@ public sealed class SignedUpdatePackageDownloader
             cancellationToken.ThrowIfCancellationRequested();
             var audit = await Task.Run(() => AuditArchive(packagePath, directory, manifest, cancellationToken), cancellationToken);
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
-            cancellationToken.ThrowIfCancellationRequested(); verified = true;
             progress?.Invoke(new("更新包已准备完成，安装更新功能将在后续版本启用。", manifest.PackageBytes, manifest.PackageBytes));
+            cancellationToken.ThrowIfCancellationRequested(); verified = true;
             return new(UpdatePackageOutcome.Verified, "更新包已准备完成，安装更新功能将在后续版本启用。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations));
         }
         catch (OperationCanceledException) { return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。"); }
@@ -315,8 +315,9 @@ public sealed class SignedUpdatePackageDownloader
 
     private static bool SafeEntry(ZipArchiveEntry entry, HashSet<string> paths)
     {
-        var name = entry.FullName.Replace('\\', '/');
-        if (name.Length == 0 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Any(character => char.IsControl(character) || character is '<' or '>' or '"' or '|' or '?' or '*') || name.Split('/').Any(part => part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
+        if (entry.FullName.Contains('\\')) return false;
+        var name = entry.FullName;
+        if (name.Length is 0 or > 1024 || name.StartsWith('/') || name.StartsWith("//") || name.Contains(':') || name.Any(character => char.IsControl(character) || character is '<' or '>' or '"' or '|' or '?' or '*') || name.Split('/').Any(part => part.Length > 255 || part is "" or "." or ".." || part.EndsWith(' ') || part.EndsWith('.') || IsReserved(part))) return false;
         if (!paths.Add(name) || paths.Any(existing => existing.StartsWith(name + "/", StringComparison.OrdinalIgnoreCase) || name.StartsWith(existing + "/", StringComparison.OrdinalIgnoreCase))) return false;
         var unixType = ((uint)entry.ExternalAttributes >> 16) & 0xF000;
         return (unixType is 0 or 0x8000 or 0x4000) && (((uint)entry.ExternalAttributes & 0x400) == 0) && !HasLinkExtra(entry);
@@ -345,7 +346,7 @@ public sealed class SignedUpdatePackageDownloader
             if (stream.Length < 22) return false;
             var tailStart = Math.Max(0, stream.Length - 65557); var tail = ReadAt(stream, tailStart, checked((int)(stream.Length - tailStart))); var end = tail.Length - 22;
             while (end >= 0 && Read32(tail, end) != 0x06054b50) end--;
-            if (end < 0 || tailStart + end + 22 + Read16(tail, end + 20) != stream.Length || Read16(tail, end + 4) != 0 || Read16(tail, end + 6) != 0) return false;
+            if (end < 0 || tailStart + end + 22 != stream.Length || Read16(tail, end + 20) != 0 || Read16(tail, end + 4) != 0 || Read16(tail, end + 6) != 0 || Read16(tail, end + 8) != Read16(tail, end + 10)) return false;
             var count = Read16(tail, end + 10); var size = Read32(tail, end + 12); var offset = Read32(tail, end + 16);
             if (count > EntryLimit || (long)offset + size != tailStart + end || offset > stream.Length) return false;
             var cursor = (long)offset; long nextLocal = 0;
@@ -353,7 +354,7 @@ public sealed class SignedUpdatePackageDownloader
             {
                 var header = ReadAt(stream, cursor, 46); if (Read32(header, 0) != 0x02014b50) return false;
                 var flags = Read16(header, 8); var method = Read16(header, 10); var crc = Read32(header, 16); var compressed = Read32(header, 20); var uncompressed = Read32(header, 24); var nameLength = Read16(header, 28); var extraLength = Read16(header, 30); var commentLength = Read16(header, 32); var attrs = Read32(header, 38); var localOffset = Read32(header, 42);
-                if ((flags & ~0x800) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || localOffset != nextLocal || (long)localOffset + 30 > stream.Length) return false;
+                if (Read16(header, 34) != 0 || (flags & ~0x800) != 0 || method is not 0 and not 8 || extraLength != 0 || commentLength != 0 || compressed == uint.MaxValue || uncompressed == uint.MaxValue || localOffset != nextLocal || (long)localOffset + 30 > stream.Length) return false;
                 var nameBytes = ReadAt(stream, cursor + 46, nameLength); var local = ReadAt(stream, localOffset, 30); if (Read32(local, 0) != 0x04034b50) return false;
                 var name = Encoding.UTF8.GetString(nameBytes);
                 if (name.Any(character => character > 127) || Read16(local, 6) != flags || Read16(local, 8) != method || Read32(local, 14) != crc || Read32(local, 18) != compressed || Read32(local, 22) != uncompressed || Read16(local, 26) != nameLength || Read16(local, 28) != 0 || !nameBytes.AsSpan().SequenceEqual(ReadAt(stream, (long)localOffset + 30, nameLength)) || (((attrs >> 16) & 0xF000) is 0xA000 or 0x6000) || (attrs & 0x400) != 0 || !crcs.TryAdd(name, crc)) return false;
