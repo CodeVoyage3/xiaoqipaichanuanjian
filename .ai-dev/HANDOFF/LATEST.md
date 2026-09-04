@@ -1,5 +1,14 @@
 # 最新交接
 
+## Stage9 / S9-T01正式启动（2026-09-04，覆盖下方阶段停止点）
+
+- 用户授权Stage9及仅S9-T01：产品基线修订、win-x64 self-contained发布/版本/数据路径底座、安装与在线升级架构。状态IN_PROGRESS / NOT_ACCEPTED，未创建S9-T02。Sol先fetch：main=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095，clean、0/0；治理目录实查无既有Stage9文件。
+- 总纲保留旧规则并注明被2026-09-04新决策覆盖：首次当前用户安装EXE；后续GitHub在线检查→提示→用户立即更新/稍后提醒→自动下载校验升级重启；核心业务完全离线，无后台静默强制升级。禁止PAT/secret客户端分发、总部管理、Undo、重置。
+- 正式实施者为全新GPT-5.6 Terra medium `/root/s9_t01_terra_medium`，提交后停、不push；Sol不写生产代码，待完整diff和独立门禁后验收。首次误用全历史fork的agent已立即中断，未作为正式实施者。
+- 所有发布/运行验证仅TEMP/GUID合成SQLite，不访问正式库、不用旧Junction脚本。原数据路径已在用户LocalAppData；需集中路径及隔离启动验证，默认路径保持不变。
+- GitHub匿名HTTPS实际返回仓库200/private=false/public，Release列表200/0条、latest404；当前无private token blocker，未证明资产下载。后续外部发布不在本卡范围。
+- Stage8继续CLOSED，不重开。合法外来WAL来源不可证明、严重坏当前无法保护时Restore阻断及物理介质风险未证明，全部保留。最终验收后普通push main并停止，下一卡另需用户授权。
+
 ## Stage8 / S8-T06正式关闭（2026-09-04，覆盖下方历史状态）
 
 - Stage8及S8-T06 TECHNICALLY_ACCEPTED / CLOSED，T01～T06 CLOSED；Stage9 NOT_STARTED。开工fetch main=f981211、clean/0/0；最终测试候选17ebb6c，之后只有治理归档。全新Terra medium/priority文档31d3522/b8644ce，已停止；Sol完整审查、独立复验，无生产/测试代码变化。

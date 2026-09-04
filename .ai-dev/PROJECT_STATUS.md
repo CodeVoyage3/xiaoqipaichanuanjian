@@ -1,8 +1,8 @@
 # 项目状态
 
 - 项目：门店效期排查软件 V1
-- 当前阶段：Stage 8｜性能与稳定性（已完成）
-- 状态：Stage8 TECHNICALLY_ACCEPTED / CLOSED；S8-T01～T06 CLOSED，Stage9 NOT_STARTED；V1各卡继续关闭。
+- 当前阶段：Stage 9｜安装、发布与在线升级交付（2026-09-04用户授权启动）
+- 状态：Stage9 IN_PROGRESS；S9-T01 IN_PROGRESS / NOT_ACCEPTED，唯一已创建Stage9 Task。Stage8 TECHNICALLY_ACCEPTED / CLOSED、S8-T01～T06及V1各卡继续关闭。
 - 当前工作分支：`main`（S8-T06开工fetch=f981211，clean/0/0；最终验收候选17ebb6c，随后仅治理收口及普通push）
 - 最终代码/测试沿用S8-T05 e0e5a0d，本卡零生产/测试改动。S8-T06 Sol新鲜Release984/984、隔离15/15、读100k/300k、导入100k50.19s、回滚2/2、恢复6/6、代表18/18及全量42/42 Kill，build0/0、EF无漂移、migration9、Git禁止项通过。最终main SHA以发布回执为准。
 - Stage 3 最新实现 HEAD：`dd1a83b87082d80990a4ff2655788ecde91a3eca`
@@ -10,6 +10,8 @@
 - 需求基线：`docs/门店效期排查软件_V1_Codex开发总纲.md`
 
 ## 当前交付事实
+
+- Stage9开工重新fetch：main=origin/main=7c1fa2d4b0178314816e79663765f952c66d3095，clean、0/0；实际检查无旧Stage9/S9卡。已修订总纲第2/3/37/38节，2026-09-04新决策覆盖旧“V1不做在线自动升级”，首次EXE、后续用户确认后自动升级、核心业务完全离线。仅S9-T01允许发布/版本/安全隔离底座，完整安装器/Updater未实现。GitHub匿名API仓库200/public、Release列表200且0条、latest404：无private token blocker，尚无实际更新资产下载验证。此条覆盖下方历史的Stage9未启动停止点，不改写Stage8历史证据。
 
 - Stage8最终收口（2026-09-04）：新鲜20读路径无blocker/数量级回退，225.43MB备份5.83s/恢复20.55s；完整回滚、恢复后权威读成立。见STAGE-8-CLOSEOUT.md、S8-T06 Acceptance及JSON索引。合法外来WAL来源不可验证、无法保护严重坏当前时不直接救援、物理介质安全未证明，均持续保留。正式库未访问，无新生产一致性bug；不启动Stage9/升级/安装器/重置/Undo或新Task。下方全部为历史回执，不覆盖本次关闭状态。
 
