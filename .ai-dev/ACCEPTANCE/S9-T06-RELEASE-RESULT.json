@@ -2,7 +2,7 @@
   "date": "2026-09-05",
   "status": "IN_PROGRESS",
   "acceptance": "NOT_ACCEPTED",
-  "provenance": "Sol independent pre-release 1.0.0 gates plus actual v1.0.0 publication and anonymous four-asset download; source version now 1.0.1; clean Win11 pending",
+  "provenance": "Sol independent two-release artifacts/signatures/anonymous downloads; real production-client GitHub download and isolated 1.0.0-to-1.0.1 updater/WPF transaction; installed GUI pending user receipt",
   "baselineCommit": "fd541b88f071badd6a692373e82deaf6146c10ee",
   "baselineGit": {
     "fetched": true,
@@ -32,10 +32,11 @@
     "repoStatus": 200,
     "visibility": "public",
     "releaseListStatus": 200,
-    "releaseCount": 1,
+    "releaseCount": 2,
     "latestStatus": 200,
-    "releaseWritePermission": "Actual authorized creation/upload/publication of v1.0.0 succeeded; credentials only in release process memory",
-    "productionAssetDownloaded": true
+    "releaseWritePermission": "Actual authorized publication of both stable releases succeeded; credentials only in controlled release process memory",
+    "productionAssetDownloaded": true,
+    "latestTag": "v1.0.1"
   },
   "productVersion": "1.0.1",
   "productionSigning": {
@@ -48,17 +49,70 @@
   },
   "releases": {
     "v1.0.0": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.0",
-    "v1.0.1": null,
-    "assets": []
+    "v1.0.1": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.1",
+    "assets": [
+      {
+        "sourceCommit": "7044a984ddca757d8ae9350fbc523800bd769796",
+        "version": "1.0.0",
+        "assets": [
+          {
+            "name": "StoreExpiryInspector-1.0.0-win-x64.zip",
+            "bytes": 107875812,
+            "sha256": "EFD448D8319A4E3B27A372ED768DF41FDD0200B371C73DFACC35AB28F974DCBD"
+          },
+          {
+            "name": "StoreExpiryInspector-Setup-1.0.0.exe",
+            "bytes": 74238426,
+            "sha256": "12A30AAC034FA4B5D0A82DAF14B17E00437B13C0BC549AE45EECCA54E0675297"
+          },
+          {
+            "name": "update-manifest.json",
+            "bytes": 852,
+            "sha256": "C168C2973DD8DD1FB8C87B9135735720A048B40993DDAF57632FAC1ABA8E8A35"
+          },
+          {
+            "name": "update-manifest.sig",
+            "bytes": 384,
+            "sha256": "1EA74F0A0C79423955D41D254ED3F3AB7A5C07C1F3D331D452E9D7CEA268402D"
+          }
+        ]
+      },
+      {
+        "sourceCommit": "99eb7510b3b1288e680551f92367e0ccc6c25755",
+        "version": "1.0.1",
+        "assets": [
+          {
+            "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+            "bytes": 107875191,
+            "sha256": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169"
+          },
+          {
+            "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+            "bytes": 74243889,
+            "sha256": "7854110FACFA2575590DFA0BE2E39B603E2DEA08BC10306C28444C1176B7B8CA"
+          },
+          {
+            "name": "update-manifest.json",
+            "bytes": 852,
+            "sha256": "3CFAC07EAADB20022974D02C7E0324A3A3E78EC4ABF5DCF7E314562ACA023729"
+          },
+          {
+            "name": "update-manifest.sig",
+            "bytes": 384,
+            "sha256": "61DEF8345C760706E2571AC7D879C9B643902928F0275F883A78AC5806DC20B3"
+          }
+        ]
+      }
+    ]
   },
-  "onlineUpgrade": "NOT_EXECUTED",
-  "databaseFingerprintBefore": null,
-  "databaseFingerprintAfter": null,
-  "updaterSuccess": "27/27 fresh isolated hard-kill recovery; actual WPF health ACK passed",
-  "updaterRollback": "9/9 fresh isolated ACK-failure rollback hard-kill recovery; 1/1 invalid candidate EXE rollback",
+  "onlineUpgrade": "PASS real GitHub production-client download + isolated test-host parent/test-path Updater + actual candidate and restarted WPF; formal installed GUI remains USER_GUI_PENDING",
+  "databaseFingerprintBefore": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+  "databaseFingerprintAfter": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+  "updaterSuccess": "Real 1.0.0-to-1.0.1 isolated GitHub transaction Completed with WPF ACK; fresh controlled hard-kill recovery 27/27",
+  "updaterRollback": "PASS real 1.0.0-to-1.0.1 isolated controlled activation failure restored exact 1.0.0 tree + real old WPF ACK + unchanged full DB fingerprint; ACK hard-kill rollback9/9; invalid candidate EXE1/1",
   "smartScreen": "NOT_TESTED; historical unsigned Authenticode decision retained",
   "freshChecks": {
-    "releaseTests": "1050/1050; failure/error/timeout/aborted/skipped=0; source code 5f7b85d unchanged in tool-only 7044a98; TRX fresh 11m7s",
+    "releaseTests": "1.0.0: 1050/1050 (11m7s); 1.0.1: 1050/1050 (10m34s); each fresh unfiltered Release, failure/error/timeout/aborted/skipped=0",
     "build": "Release 0 warnings / 0 errors",
     "efModelDrift": "No changes since last migration; design-time :memory: factory; no-connect list 9",
     "migrationSourceCount": 9,
@@ -1417,9 +1471,232 @@
     "secretScannedItems": 1227,
     "knownSecretHits": 0,
     "zipEqualsPublishAllFiles": 611,
-    "updaterCanonicalTreeSha256": "B250EA2F6CA2ECC8FE12DC0E491F44C58F367A6A81B84433F0E217A22AC44969",
+    "updaterCanonicalTreeSha256": "E7E0692B0A998D5901A0998240B6D06A817BE9500F8DEF64D7596F3814A9C0E7",
     "wpfCandidateVersion": "1.0.1",
     "wpfCandidateExit": 0,
     "richDatabaseFullFieldsUnchanged": true
+  },
+  "realGitHubTransaction": {
+    "migrationCount": 9,
+    "databaseRawShaAfter": "160f0c0f565e58f86400f18e05728d8fbb6f91a81f9f4f643def3485518f4613",
+    "treeAuditCorrection": "Earlier Sol independent hash label was incorrect. Direct implementation-equivalent calculation now equals journal CandidateTree and all 611 published file entries. No asset bytes changed.",
+    "oldParent": "Sol test host, not installed WPF GUI",
+    "databaseFullFieldBlobAfter": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+    "productionClientDownloadAndSignature": true,
+    "packageManuallyCopiedIntoCache": false,
+    "phaseName": "Completed",
+    "actualCandidateWpfAck": true,
+    "databaseRawShaBefore": "cabccaa1233ed54fa858b636c4f0fd9f3e772607f1c02bc20042f6c001dc0262",
+    "foreignKeyViolations": 0,
+    "databaseFullFieldBlobBefore": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+    "realAnonymousGitHub": true,
+    "normalWpfTrayExit": true,
+    "integrity": [
+      "ok"
+    ],
+    "backups": [
+      {
+        "name": "pre-import-20260905T045703213Z-b9fe6d55603a44fb8446abd064ab1cef.db",
+        "matchesCreationHash": true,
+        "sha256": "E22B7DADC1E806D95BF6D2848472B466AC3AB4E9FC7E0CE9503BEF22D8713E3B"
+      },
+      {
+        "name": "backup-20260905T045704228Z-c6583b94778c4c419169e38f55438a94.db",
+        "matchesCreationHash": true,
+        "sha256": "76DEC8E25F66848295A1E4A80DA6B331D87F4E528830D58FC8BDC5F34ABB8DAD"
+      }
+    ],
+    "cleanup": "Session-end notification alone did not exit process; owned tray ExitApplication then succeeded; no forced termination",
+    "rawBytesEqual": false,
+    "expectedTreeMatches": true,
+    "formalInstalledGuiE2E": "USER_GUI_PENDING",
+    "phase": 10,
+    "normalWpfRestart": true,
+    "sourceVersion": "1.0.0",
+    "activeFiles": 611,
+    "passed": true,
+    "logicalFieldsAndBlobsEqual": true,
+    "updater": "Frozen source with isolated test path capability",
+    "targetVersion": "1.0.1",
+    "activeTreeSha256": "E7E0692B0A998D5901A0998240B6D06A817BE9500F8DEF64D7596F3814A9C0E7"
+  },
+  "anonymous101": {
+    "anonymous": true,
+    "passed": true,
+    "requests": [
+      {
+        "draft": null,
+        "status": 200,
+        "path": "",
+        "tag": null,
+        "prerelease": null
+      },
+      {
+        "draft": [
+          false,
+          false
+        ],
+        "status": 200,
+        "path": "/releases",
+        "tag": [
+          "v1.0.1",
+          "v1.0.0"
+        ],
+        "prerelease": [
+          false,
+          false
+        ]
+      },
+      {
+        "draft": false,
+        "status": 200,
+        "path": "/releases/latest",
+        "tag": "v1.0.1",
+        "prerelease": false
+      },
+      {
+        "draft": false,
+        "status": 200,
+        "path": "/releases/tags/v1.0.0",
+        "tag": "v1.0.0",
+        "prerelease": false
+      },
+      {
+        "draft": false,
+        "status": 200,
+        "path": "/releases/tags/v1.0.1",
+        "tag": "v1.0.1",
+        "prerelease": false
+      },
+      {
+        "draft": null,
+        "status": 200,
+        "path": "/git/ref/tags/v1.0.1",
+        "tag": null,
+        "prerelease": null
+      }
+    ],
+    "authorizationHeader": false,
+    "assets": [
+      {
+        "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/StoreExpiryInspector-1.0.1-win-x64.zip",
+        "status": 200,
+        "bytes": 107875191,
+        "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+        "sha256": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169"
+      },
+      {
+        "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/StoreExpiryInspector-Setup-1.0.1.exe",
+        "status": 200,
+        "bytes": 74243889,
+        "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+        "sha256": "7854110FACFA2575590DFA0BE2E39B603E2DEA08BC10306C28444C1176B7B8CA"
+      },
+      {
+        "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/update-manifest.json",
+        "status": 200,
+        "bytes": 852,
+        "name": "update-manifest.json",
+        "sha256": "3CFAC07EAADB20022974D02C7E0324A3A3E78EC4ABF5DCF7E314562ACA023729"
+      },
+      {
+        "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/update-manifest.sig",
+        "status": 200,
+        "bytes": 384,
+        "name": "update-manifest.sig",
+        "sha256": "61DEF8345C760706E2571AC7D879C9B643902928F0275F883A78AC5806DC20B3"
+      }
+    ]
+  },
+  "publicReleasePolicy": "Both stable releases and all four assets per version are public and immutable; do not overwrite/delete/re-tag; defects require user decision",
+  "pendingUserEvidence": "Independent Windows11 OS/build/no-modern-NET/normal-user Setup100/shortcuts/autostart/GUI update/data/uninstall/SmartScreen receipt and closed synthetic evidence copies; Win10 NOT_VERIFIED",
+  "realVersionRollback": {
+    "fault": "Test-only CandidateActivated IOException before candidate launch",
+    "foreignKeyViolations": 0,
+    "files": 611,
+    "restoredTree": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+    "targetVersion": "1.0.1",
+    "sourceVersion": "1.0.0",
+    "databaseFullFieldBlobFingerprint": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+    "migrations": 9,
+    "normalOldWpfVisible": true,
+    "formalInstalledGuiEvidence": false,
+    "publicAssetsModified": false,
+    "realGitHubDownload": true,
+    "passed": true,
+    "normalTrayExit": true,
+    "oldActualWpfHealthAck": {
+      "operationId": "b41fa7d5-2a0c-4458-96ba-ddc14ff533d7",
+      "version": "1.0.0",
+      "pid": 27108,
+      "startedUtc": "2026-09-05T05:22:12.1171567Z",
+      "migrationCount": 9,
+      "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+      "integrity": "ok",
+      "foreignKeys": "ok",
+      "coreRead": true,
+      "uiLoaded": true
+    },
+    "integrity": [
+      "ok"
+    ],
+    "phase": 15,
+    "phaseName": "RolledBack"
+  },
+  "executableVersions": [
+    {
+      "productVersion": "1.0.0                                             ",
+      "version": "1.0.0",
+      "file": "assets\\StoreExpiryInspector-Setup-1.0.0.exe",
+      "fileVersion": "1.0.0               ",
+      "authenticode": "NotSigned"
+    },
+    {
+      "productVersion": "1.0.0+7044a984ddca757d8ae9350fbc523800bd769796",
+      "version": "1.0.0",
+      "file": "publish\\StoreExpiryInspector.exe",
+      "fileVersion": "1.0.0.0",
+      "authenticode": "NotSigned"
+    },
+    {
+      "productVersion": "1.0.0+7044a984ddca757d8ae9350fbc523800bd769796",
+      "version": "1.0.0",
+      "file": "publish\\Updater\\StoreExpiryInspector.Updater.exe",
+      "fileVersion": "1.0.0.0",
+      "authenticode": "NotSigned"
+    },
+    {
+      "productVersion": "1.0.1                                             ",
+      "version": "1.0.1",
+      "file": "assets\\StoreExpiryInspector-Setup-1.0.1.exe",
+      "fileVersion": "1.0.1               ",
+      "authenticode": "NotSigned"
+    },
+    {
+      "productVersion": "1.0.1+99eb7510b3b1288e680551f92367e0ccc6c25755",
+      "version": "1.0.1",
+      "file": "publish\\StoreExpiryInspector.exe",
+      "fileVersion": "1.0.1.0",
+      "authenticode": "NotSigned"
+    },
+    {
+      "productVersion": "1.0.0+99eb7510b3b1288e680551f92367e0ccc6c25755",
+      "version": "1.0.1",
+      "file": "publish\\Updater\\StoreExpiryInspector.Updater.exe",
+      "fileVersion": "1.0.0.0",
+      "authenticode": "NotSigned"
+    }
+  ],
+  "userPacket": {
+    "filename": "S9T06-Win11-人工验收包.zip",
+    "contents": [
+      "CLEAN-WIN11-README.md",
+      "Collect-CleanWin11.cmd",
+      "Collect-CleanWin11.ps1",
+      "S9T06-合成测试.xlsx"
+    ],
+    "sha256": "D7C6574794D40E1150498F7C715389FB3EA75705F4890E1B65CF939DAD6D152F",
+    "result": "USER_GUI_PENDING",
+    "workbookSha256": "B19DD8E0687F506719758DB4CD5D5630E619CDBE2A2F5B85FA492CFC97B689AD"
   }
 }

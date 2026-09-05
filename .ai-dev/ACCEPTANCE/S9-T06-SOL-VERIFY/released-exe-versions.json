@@ -1,0 +1,44 @@
+[
+  {
+    "productVersion": "1.0.0                                             ",
+    "version": "1.0.0",
+    "file": "assets\\StoreExpiryInspector-Setup-1.0.0.exe",
+    "fileVersion": "1.0.0               ",
+    "authenticode": "NotSigned"
+  },
+  {
+    "productVersion": "1.0.0+7044a984ddca757d8ae9350fbc523800bd769796",
+    "version": "1.0.0",
+    "file": "publish\\StoreExpiryInspector.exe",
+    "fileVersion": "1.0.0.0",
+    "authenticode": "NotSigned"
+  },
+  {
+    "productVersion": "1.0.0+7044a984ddca757d8ae9350fbc523800bd769796",
+    "version": "1.0.0",
+    "file": "publish\\Updater\\StoreExpiryInspector.Updater.exe",
+    "fileVersion": "1.0.0.0",
+    "authenticode": "NotSigned"
+  },
+  {
+    "productVersion": "1.0.1                                             ",
+    "version": "1.0.1",
+    "file": "assets\\StoreExpiryInspector-Setup-1.0.1.exe",
+    "fileVersion": "1.0.1               ",
+    "authenticode": "NotSigned"
+  },
+  {
+    "productVersion": "1.0.1+99eb7510b3b1288e680551f92367e0ccc6c25755",
+    "version": "1.0.1",
+    "file": "publish\\StoreExpiryInspector.exe",
+    "fileVersion": "1.0.1.0",
+    "authenticode": "NotSigned"
+  },
+  {
+    "productVersion": "1.0.0+99eb7510b3b1288e680551f92367e0ccc6c25755",
+    "version": "1.0.1",
+    "file": "publish\\Updater\\StoreExpiryInspector.Updater.exe",
+    "fileVersion": "1.0.0.0",
+    "authenticode": "NotSigned"
+  }
+]

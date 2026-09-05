@@ -1,0 +1,88 @@
+{
+  "anonymous": true,
+  "passed": true,
+  "requests": [
+    {
+      "draft": null,
+      "status": 200,
+      "path": "",
+      "tag": null,
+      "prerelease": null
+    },
+    {
+      "draft": [
+        false,
+        false
+      ],
+      "status": 200,
+      "path": "/releases",
+      "tag": [
+        "v1.0.1",
+        "v1.0.0"
+      ],
+      "prerelease": [
+        false,
+        false
+      ]
+    },
+    {
+      "draft": false,
+      "status": 200,
+      "path": "/releases/latest",
+      "tag": "v1.0.1",
+      "prerelease": false
+    },
+    {
+      "draft": false,
+      "status": 200,
+      "path": "/releases/tags/v1.0.0",
+      "tag": "v1.0.0",
+      "prerelease": false
+    },
+    {
+      "draft": false,
+      "status": 200,
+      "path": "/releases/tags/v1.0.1",
+      "tag": "v1.0.1",
+      "prerelease": false
+    },
+    {
+      "draft": null,
+      "status": 200,
+      "path": "/git/ref/tags/v1.0.1",
+      "tag": null,
+      "prerelease": null
+    }
+  ],
+  "authorizationHeader": false,
+  "assets": [
+    {
+      "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/StoreExpiryInspector-1.0.1-win-x64.zip",
+      "status": 200,
+      "bytes": 107875191,
+      "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+      "sha256": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169"
+    },
+    {
+      "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/StoreExpiryInspector-Setup-1.0.1.exe",
+      "status": 200,
+      "bytes": 74243889,
+      "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+      "sha256": "7854110FACFA2575590DFA0BE2E39B603E2DEA08BC10306C28444C1176B7B8CA"
+    },
+    {
+      "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/update-manifest.json",
+      "status": 200,
+      "bytes": 852,
+      "name": "update-manifest.json",
+      "sha256": "3CFAC07EAADB20022974D02C7E0324A3A3E78EC4ABF5DCF7E314562ACA023729"
+    },
+    {
+      "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/update-manifest.sig",
+      "status": 200,
+      "bytes": 384,
+      "name": "update-manifest.sig",
+      "sha256": "61DEF8345C760706E2571AC7D879C9B643902928F0275F883A78AC5806DC20B3"
+    }
+  ]
+}

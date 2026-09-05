@@ -1,0 +1,44 @@
+{
+  "migrationCount": 9,
+  "databaseRawShaAfter": "160f0c0f565e58f86400f18e05728d8fbb6f91a81f9f4f643def3485518f4613",
+  "treeAuditCorrection": "Earlier Sol independent hash label was incorrect. Direct implementation-equivalent calculation now equals journal CandidateTree and all 611 published file entries. No asset bytes changed.",
+  "oldParent": "Sol test host, not installed WPF GUI",
+  "databaseFullFieldBlobAfter": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+  "productionClientDownloadAndSignature": true,
+  "packageManuallyCopiedIntoCache": false,
+  "phaseName": "Completed",
+  "actualCandidateWpfAck": true,
+  "databaseRawShaBefore": "cabccaa1233ed54fa858b636c4f0fd9f3e772607f1c02bc20042f6c001dc0262",
+  "foreignKeyViolations": 0,
+  "databaseFullFieldBlobBefore": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+  "realAnonymousGitHub": true,
+  "normalWpfTrayExit": true,
+  "integrity": [
+    "ok"
+  ],
+  "backups": [
+    {
+      "name": "pre-import-20260905T045703213Z-b9fe6d55603a44fb8446abd064ab1cef.db",
+      "matchesCreationHash": true,
+      "sha256": "E22B7DADC1E806D95BF6D2848472B466AC3AB4E9FC7E0CE9503BEF22D8713E3B"
+    },
+    {
+      "name": "backup-20260905T045704228Z-c6583b94778c4c419169e38f55438a94.db",
+      "matchesCreationHash": true,
+      "sha256": "76DEC8E25F66848295A1E4A80DA6B331D87F4E528830D58FC8BDC5F34ABB8DAD"
+    }
+  ],
+  "cleanup": "Session-end notification alone did not exit process; owned tray ExitApplication then succeeded; no forced termination",
+  "rawBytesEqual": false,
+  "expectedTreeMatches": true,
+  "formalInstalledGuiE2E": "USER_GUI_PENDING",
+  "phase": 10,
+  "normalWpfRestart": true,
+  "sourceVersion": "1.0.0",
+  "activeFiles": 611,
+  "passed": true,
+  "logicalFieldsAndBlobsEqual": true,
+  "updater": "Frozen source with isolated test path capability",
+  "targetVersion": "1.0.1",
+  "activeTreeSha256": "E7E0692B0A998D5901A0998240B6D06A817BE9500F8DEF64D7596F3814A9C0E7"
+}

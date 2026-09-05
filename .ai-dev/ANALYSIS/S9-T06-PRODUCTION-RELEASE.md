@@ -1,5 +1,18 @@
 # S9-T06 生产发布审查
 
+## 当前停止点：两版已正式发布，等待独立 Win11 GUI 回执（2026-09-05）
+
+- S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_PENDING`；Stage9 `IN_PROGRESS / S9-T06_CURRENT`。此前无 clean OS 暂停已由用户独立 Win11 方案解除。Win10 `NOT_VERIFIED`，Win11 `USER_GUI_PENDING`；不关闭本卡/Stage9，不创建 S9-T07。以下早期暂停与预发布段落仅为历史，不代表当前状态。
+- v1.0.0：https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.0 ，tag/source `7044a984ddca757d8ae9350fbc523800bd769796`。v1.0.1：https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.1 ，tag/source `99eb7510b3b1288e680551f92367e0ccc6c25755`。均 stable、非 draft/非 prerelease、4 项资产。代码版本提交 `81bc6703415c1186bc133432445f41371537628b`；当前产品1.0.1。不得改写 tag/替换同版本公开字节。
+- Sol 独立匿名 repo/list/latest/两版 release/tag 接口 HTTP200，latest=v1.0.1；两版四资产实际匿名下载 size/SHA 匹配。production 公钥对两版原始 manifest 验签、完整 ZIP 重验、错误签名和 test-key 拒绝通过。所有 SHA/bytes/source 在 `S9-T06-RELEASE-RESULT.json` 与 `S9-T06-SOL-VERIFY/*release-evidence.json`。
+- 真实 GitHub → 1.0.0 production checker/downloader → production 验签/完整包验证 → 独立 Updater → 真实1.0.1 candidate WPF ACK → Completed → 实际1.0.1 WPF重启及托盘退出通过。数据/程序均 TEMP/GUID；旧父进程是 Sol 验收宿主，Updater 启用隔离测试路径。此证据不替代用户正式 Setup 首装及点击“立即更新”的 GUI 链。
+- 升级前后完整字段/BLOB fingerprint 均 `9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce`，integrity=ok/FK0/migration9；原 Excel BLOB、设置、所有业务表、两份备份与创建 SHA 保持，Dashboard/Pending/Today/History/Reminder 权威读取通过。正常启动使 DB 文件原始 SHA 改变，完整逻辑字段/BLOB未变，未把文件字节相等冒充数据证据。
+- 两版各自 fresh 无 filter Release 1050/1050，failure/error/timeout/aborted/skipped=0；两版 build0warning/0error，EF无漂移，9条migration，末条 `20260901155124_AddPolicyAndBaselineFoundation`。T04新鲜核心128/128、WPF12/12、退出1/1；真实版本受控切换失败回滚1/1（恢复1.0.0实际WPF和完整指纹）、Updater受控硬杀成功27/27、ACK回滚9/9、坏候选EXE回滚1/1；两版隔离TestMode安装器各5/5。它们不冒充干净OS正式GUI证据。
+- RSA3072 公钥 SPKI SHA256：`565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。私钥仓库外、非TEMP持久保存，DPAPI CurrentUser加密PKCS8+当前用户独占受保护ACL；绝对路径只在本机，不写治理/Release；没有独立恢复备份，依赖当前Windows用户DPAPI资料。客户端只有公钥。两版独立扫描各1227项，0已知secret命中。
+- Setup/App/Updater Authenticode均NotSigned，未伪造自签Publisher；manifest RSA签名与Windows代码签名明确分开，SmartScreen行为待用户现场回执。
+- 用户执行清单与采集器：`S9-T06-SOL-VERIFY/CLEAN-WIN11-README.md`、`Collect-CleanWin11.cmd/.ps1`。仅指定独立电脑、指定三行合成Excel；采集Before/After/Uninstalled关闭态数据副本，回传当前话题后由Sol独立核对。正式开发机数据/DB/backup未访问。
+- 后续仅接收本卡人工回执、独立复核并判断是否可关闭。跨Schema migration保护与Stage9最终closeout仍待后续明确授权。
+
 ## S9-T06恢复执行（2026-09-05，覆盖下方历史暂停）
 
 - 用户提供另一台独立Windows11 x64电脑并本人负责人工GUI验收；不要求Codex远控或Windows Sandbox。解除“完全无clean Windows环境”暂停。S9-T06 `IN_PROGRESS / NOT_ACCEPTED`；Stage9 `IN_PROGRESS / S9-T06_CURRENT`。clean Win11为USER_GUI_PENDING，Win10保持NOT_VERIFIED，不创建S9-T07。
@@ -31,3 +44,11 @@ MainWindow默认构造SignedUpdatePackageDownloader，无TrustedPublicKey，当�
 RSA3072；manifest raw bytes RSA-PSS/SHA256。公钥SPKI DER SHA256：`565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`，公钥文件 `ACCEPTANCE/S9-T06-PUBLIC-KEY.pem`。
 私钥仓库外非TEMP持久保存为Windows DPAPI CurrentUser加密PKCS8，目录关闭ACL继承且仅当前用户FullControl，私钥文件继承此独占ACL；实际读回解密及RSA-PSS签验通过。未输出私钥/密文字节，私钥绝对路径只保留本机，不写Git治理/Release body。尚无独立恢复备份，依赖当前Windows用户配置文件；若机器或DPAPI用户材料丢失，可能失去继续以此身份签名能力，需用户后续安排受控备份。
 密钥保管已建立不等于生产客户端或发行包通过；Terra仅接收公钥，正式签名由发布端执行。未购买Authenticode证书的既有边界不变。
+
+## 最终补充复核与报告更正（2026-09-05）
+
+- 真实1.0.0→1.0.1受控失败新增通过：从GitHub由production客户端重新下载/验签，在全新TEMP/GUID注入test-only CandidateActivated故障；Phase15 RolledBack，恢复原611文件，旧1.0.0实际WPF健康ACK、正常窗口和托盘退出通过，全部字段/BLOB指纹仍相同。公开资产未修改。见 `1.0.1-real-version-rollback.json`。
+- 撤回前文将25C145…/B250EA…标为Updater权威hash的独立验收计算标注。以与Updater源码完全相同的Windows路径/OrdinalIgnoreCase排序、relative-path|bytes|uppercase-SHA、UTF8无尾换行计算并逐文件重核：1.0.0 `BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8`；1.0.1 `E7E0692B0A998D5901A0998240B6D06A817BE9500F8DEF64D7596F3814A9C0E7`。后者与事务journal CandidateTree、实际active tree、fresh publish三方一致，611文件全部相同。先前错误值保留在tree-verification.json的previousIncorrectCanonicalLabel供审计。这是内部证据计算/标注更正，没有生产代码或已公开字节变化。
+- 升级后SQLite原始文件SHA为160f0c0f565e58f86400f18e05728d8fbb6f91a81f9f4f643def3485518f4613（升级前cabccaa1233ed54fa858b636c4f0fd9f3e772607f1c02bc20042f6c001dc0262）；全表/字段/BLOB/schema指纹保持，不虚报原始文件字节相等。
+- `released-exe-versions.json`记录真实FileVersion/ProductVersion：App1.0.0.0→1.0.1.0，含各自source commit；Updater自身组件Version仍1.0.0.0、构建来源随source commit更新。两个Setup文件版本分别1.0.0/1.0.1，均未做Authenticode签名。
+- 证据收集工具只服务指定独立合成Win11。最终最小人工包4文件约10KB，不含Setup/DB/日志/秘密；Setup必须用户从真实Release下载。不得将本机隔离自动化标成独立PC GUI回执。

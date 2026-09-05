@@ -1,0 +1,33 @@
+{
+  "fault": "Test-only CandidateActivated IOException before candidate launch",
+  "foreignKeyViolations": 0,
+  "files": 611,
+  "restoredTree": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+  "targetVersion": "1.0.1",
+  "sourceVersion": "1.0.0",
+  "databaseFullFieldBlobFingerprint": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
+  "migrations": 9,
+  "normalOldWpfVisible": true,
+  "formalInstalledGuiEvidence": false,
+  "publicAssetsModified": false,
+  "realGitHubDownload": true,
+  "passed": true,
+  "normalTrayExit": true,
+  "oldActualWpfHealthAck": {
+    "operationId": "b41fa7d5-2a0c-4458-96ba-ddc14ff533d7",
+    "version": "1.0.0",
+    "pid": 27108,
+    "startedUtc": "2026-09-05T05:22:12.1171567Z",
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "integrity": "ok",
+    "foreignKeys": "ok",
+    "coreRead": true,
+    "uiLoaded": true
+  },
+  "integrity": [
+    "ok"
+  ],
+  "phase": 15,
+  "phaseName": "RolledBack"
+}

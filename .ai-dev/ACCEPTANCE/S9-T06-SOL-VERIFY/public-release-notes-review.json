@@ -1,0 +1,68 @@
+[
+  {
+    "draft": false,
+    "status": 200,
+    "body": "门店效期排查软件 V1 首个正式版本。\n\n提供 Windows x64 当前用户安装包及在线更新包。更新清单采用 RSA-PSS / SHA-256 签名校验。\n\nWindows 可执行文件尚无正式 Authenticode 代码签名，Windows 或 SmartScreen 可能提示未知发布者。",
+    "tag": "v1.0.0",
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "StoreExpiryInspector-1.0.0-win-x64.zip",
+        "size": 107875812,
+        "digest": "sha256:efd448d8319a4e3b27a372ed768df41fdd0200b371c73dfacc35ab28f974dcbd",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.0/StoreExpiryInspector-1.0.0-win-x64.zip"
+      },
+      {
+        "name": "StoreExpiryInspector-Setup-1.0.0.exe",
+        "size": 74238426,
+        "digest": "sha256:12a30aac034fa4b5d0a82daf14b17e00437b13c0bc549ae45eecca54e0675297",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.0/StoreExpiryInspector-Setup-1.0.0.exe"
+      },
+      {
+        "name": "update-manifest.json",
+        "size": 852,
+        "digest": "sha256:c168c2973dd8dd1fb8c87b9135735720a048b40993ddaf57632fac1aba8e8a35",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.0/update-manifest.json"
+      },
+      {
+        "name": "update-manifest.sig",
+        "size": 384,
+        "digest": "sha256:1ea74f0a0c79423955d41d254ed3f3ab7a5c07c1f3d331d452e9d7cea268402d",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.0/update-manifest.sig"
+      }
+    ]
+  },
+  {
+    "draft": false,
+    "status": 200,
+    "body": "门店效期排查软件 V1 同 Schema 补丁版本。\n\n用于验证从 v1.0.0 经真实 GitHub Release 完成在线下载、更新清单验签和独立 Updater 安装重启。业务规则和数据库 Schema 保持不变。\n\n更新清单采用 RSA-PSS / SHA-256 签名。Windows 可执行文件尚无正式 Authenticode 代码签名，Windows 或 SmartScreen 可能提示未知发布者。",
+    "tag": "v1.0.1",
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+        "size": 107875191,
+        "digest": "sha256:689f7a872ece50f2177a6349ef6dee9637a8ab655798899efd0e3c76bdddd169",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/StoreExpiryInspector-1.0.1-win-x64.zip"
+      },
+      {
+        "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+        "size": 74243889,
+        "digest": "sha256:7854110facfa2575590dfa0be2e39b603e2dea08bc10306c28444c1176b7b8ca",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/StoreExpiryInspector-Setup-1.0.1.exe"
+      },
+      {
+        "name": "update-manifest.json",
+        "size": 852,
+        "digest": "sha256:3cfac07eaadb20022974d02c7e0324a3a3e78ec4abf5dcf7e314562aca023729",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/update-manifest.json"
+      },
+      {
+        "name": "update-manifest.sig",
+        "size": 384,
+        "digest": "sha256:61def8345c760706e2571ac7d879c9b643902928f0275f883a78ac5806dc20b3",
+        "browser_download_url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/download/v1.0.1/update-manifest.sig"
+      }
+    ]
+  }
+]

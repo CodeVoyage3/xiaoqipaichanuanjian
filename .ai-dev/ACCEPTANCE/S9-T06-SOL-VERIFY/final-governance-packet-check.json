@@ -1,0 +1,10 @@
+{
+  "knownSecretHits": [],
+  "changedFilesScanned": 22,
+  "privateKeyRead": false,
+  "userPacketExactFourFiles": true,
+  "packetMatchesSources": true,
+  "workbookZipIntegrity": true,
+  "publicAssetsBothVersionsUnchanged": true,
+  "noS9T07": true
+}

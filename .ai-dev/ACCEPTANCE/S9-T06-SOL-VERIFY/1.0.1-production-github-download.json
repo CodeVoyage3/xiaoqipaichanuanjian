@@ -1,0 +1,40 @@
+{
+  "mode": "prepare-github",
+  "failures": 0,
+  "results": [
+    {
+      "name": "embedded-production-public-key",
+      "pass": true,
+      "details": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC"
+    },
+    {
+      "name": "real-anonymous-github-check",
+      "pass": true,
+      "details": "UpdateAvailable"
+    },
+    {
+      "name": "real-github-production-download-verify",
+      "pass": true,
+      "details": {
+        "outcome": "Verified",
+        "Version": "1.0.1",
+        "Sha256": "689f7a872ece50f2177a6349ef6dee9637a8ab655798899efd0e3c76bdddd169",
+        "PackagePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\5c89b901-cb0e-4255-9696-556b5a8191bb\\d43eddc5-f51c-4e0c-a891-fb0e8f4b0a4e\\33747e810a504b46823ad28664b8d213\\package.download"
+      }
+    },
+    {
+      "name": "real-download-consumer-revalidation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "real-package-prepared-and-isolated-updater-started",
+      "pass": true,
+      "details": {
+        "OperationId": "33c6d533-ccdb-4a37-abf4-34f90db48b3a",
+        "JournalPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\updates\\33c6d533-ccdb-4a37-abf4-34f90db48b3a\\journal.json",
+        "UpdaterPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\updates\\33c6d533-ccdb-4a37-abf4-34f90db48b3a\\updater\\StoreExpiryInspector.Updater.exe"
+      }
+    }
+  ]
+}

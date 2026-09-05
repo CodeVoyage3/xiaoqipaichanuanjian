@@ -2,7 +2,9 @@
   "version": "1.0.1",
   "files": 611,
   "zipEqualsPublishEveryFile": true,
-  "ordinalIgnoreCaseTreeSha256": "B250EA2F6CA2ECC8FE12DC0E491F44C58F367A6A81B84433F0E217A22AC44969",
+  "ordinalIgnoreCaseTreeSha256": "E7E0692B0A998D5901A0998240B6D06A817BE9500F8DEF64D7596F3814A9C0E7",
   "releaseScriptTreeSha256": "CD9932F5DA427E4B86066CEB1649D32E39E0D3922DD4A88D8FB9C7509FEAC2DA",
-  "sameTreeDefinition": false
+  "sameTreeDefinition": false,
+  "previousIncorrectCanonicalLabel": "B250EA2F6CA2ECC8FE12DC0E491F44C58F367A6A81B84433F0E217A22AC44969",
+  "correction": "Direct Windows Updater definition: relative backslash path, bytes, uppercase SHA; OrdinalIgnoreCase full paths; UTF8 newline join without trailing newline. Earlier label withdrawn."
 }

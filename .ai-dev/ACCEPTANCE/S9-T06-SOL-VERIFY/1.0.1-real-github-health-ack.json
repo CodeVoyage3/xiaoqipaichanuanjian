@@ -1,0 +1,1 @@
+{"operationId":"33c6d533-ccdb-4a37-abf4-34f90db48b3a","version":"1.0.1","pid":20812,"startedUtc":"2026-09-05T05:06:34.7973226Z","migrationCount":9,"lastMigration":"20260901155124_AddPolicyAndBaselineFoundation","integrity":"ok","foreignKeys":"ok","coreRead":true,"uiLoaded":true}
