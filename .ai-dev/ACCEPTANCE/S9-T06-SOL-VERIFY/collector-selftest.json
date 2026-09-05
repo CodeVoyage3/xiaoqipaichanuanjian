@@ -1,0 +1,8 @@
+{
+  "syntax": "PASS",
+  "developerHostGuard": "PASS before product paths",
+  "byteExactCopy": true,
+  "activeWriterBlocked": true,
+  "junctionBlocked": true,
+  "dataScope": "TEMP/GUID synthetic only"
+}

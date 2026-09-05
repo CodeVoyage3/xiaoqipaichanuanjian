@@ -2,7 +2,7 @@
   "date": "2026-09-05",
   "status": "IN_PROGRESS",
   "acceptance": "NOT_ACCEPTED",
-  "provenance": "Sol fresh independent pre-release validation of Terra implementation; production releases not yet created; clean Win11 user GUI pending",
+  "provenance": "Sol independent pre-release 1.0.0 gates plus actual v1.0.0 publication and anonymous four-asset download; source version now 1.0.1; clean Win11 pending",
   "baselineCommit": "fd541b88f071badd6a692373e82deaf6146c10ee",
   "baselineGit": {
     "fetched": true,
@@ -32,12 +32,12 @@
     "repoStatus": 200,
     "visibility": "public",
     "releaseListStatus": 200,
-    "releaseCount": 0,
-    "latestStatus": 404,
-    "releaseWritePermission": "Verified GitHub authenticated repo permissions admin/maintain/push true; no release mutation yet",
-    "productionAssetDownloaded": false
+    "releaseCount": 1,
+    "latestStatus": 200,
+    "releaseWritePermission": "Actual authorized creation/upload/publication of v1.0.0 succeeded; credentials only in release process memory",
+    "productionAssetDownloaded": true
   },
-  "productVersion": "1.0.0",
+  "productVersion": "1.0.1",
   "productionSigning": {
     "keyCreated": true,
     "trustAnchorConfigured": true,
@@ -47,7 +47,7 @@
     "backupStatus": "No independent recovery backup; depends on current Windows profile DPAPI material"
   },
   "releases": {
-    "v1.0.0": null,
+    "v1.0.0": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.0",
     "v1.0.1": null,
     "assets": []
   },
@@ -75,8 +75,8 @@
     "productionCodeChanged": true,
     "formalDataAccess": false,
     "privateKeyGenerated": true,
-    "releaseCreated": false,
-    "tagCreated": false,
+    "releaseCreated": true,
+    "tagCreated": true,
     "schemaChanged": false,
     "s9t07Created": false
   },
@@ -748,5 +748,15 @@
     "candidateReadOnlyAckExit": 0,
     "candidateDatabaseFullFieldsUnchanged": true,
     "candidateDatabaseBlobSentinel": true
+  },
+  "version101": {
+    "versionCommit": "81bc6703415c1186bc133432445f41371537628b",
+    "change": "Only product Version and dynamic signed-package test fixture",
+    "freshFullTests": "1050/1050; failure/error/aborted/timeout/skipped=0; 10m34s",
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "efDrift": false,
+    "migrations": 9,
+    "sourceArtifacts": "Not yet built"
   }
 }
