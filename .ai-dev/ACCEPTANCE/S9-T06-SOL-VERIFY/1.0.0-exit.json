@@ -1,0 +1,25 @@
+{
+  "failed": 0,
+  "records": [
+    {
+      "name": "actual_process_exit",
+      "pass": true,
+      "details": {
+        "ExitCode": 0,
+        "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\d93ad4cf-752e-4047-b257-b1dd5913ecd5",
+        "remaining": [],
+        "details": {
+          "cache": "C:\\Users\\39037\\AppData\\Local\\Temp\\d93ad4cf-752e-4047-b257-b1dd5913ecd5",
+          "cancellationDelayObserved": true,
+          "mainWindowPresentAtExit": false,
+          "workerCompletedAtExit": true,
+          "remainingAtExit": 0,
+          "databaseUsed": false,
+          "invoked": "App.ExitApplication and real App.OnExit"
+        },
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

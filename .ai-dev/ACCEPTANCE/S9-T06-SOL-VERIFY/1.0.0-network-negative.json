@@ -1,0 +1,38 @@
+{
+  "mode": "network-negative",
+  "failures": 0,
+  "results": [
+    {
+      "name": "embedded-production-public-key",
+      "pass": true,
+      "details": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC"
+    },
+    {
+      "name": "isolated-network-offline",
+      "pass": true,
+      "details": {
+        "outcome": "NetworkUnavailable",
+        "updaterStarted": false,
+        "noVerifiedPackage": true
+      }
+    },
+    {
+      "name": "isolated-network-timeout",
+      "pass": true,
+      "details": {
+        "outcome": "NetworkUnavailable",
+        "updaterStarted": false,
+        "noVerifiedPackage": true
+      }
+    },
+    {
+      "name": "isolated-network-cancel",
+      "pass": true,
+      "details": {
+        "outcome": "Cancelled",
+        "updaterStarted": false,
+        "noVerifiedPackage": true
+      }
+    }
+  ]
+}

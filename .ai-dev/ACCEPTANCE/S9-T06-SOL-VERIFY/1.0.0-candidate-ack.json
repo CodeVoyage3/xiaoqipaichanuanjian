@@ -1,0 +1,12 @@
+{
+  "operationId": "f9522a3c-ec27-4c25-9a11-2bcdf53d3c7e",
+  "version": "1.0.0",
+  "pid": 7600,
+  "startedUtc": "2026-09-05T04:24:47.1190252Z",
+  "migrationCount": 9,
+  "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+  "integrity": "ok",
+  "foreignKeys": "ok",
+  "coreRead": true,
+  "uiLoaded": true
+}
