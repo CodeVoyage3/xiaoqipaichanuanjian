@@ -272,9 +272,10 @@ public partial class App : System.Windows.Application
     {
         _updateCheckRuntime?.Dispose();
         _updateCheckRuntime = null;
+        _updateDiagnostics?.Add("app-exit", new { threadId = Environment.CurrentManagedThreadId });
+        (MainWindow as UI.MainWindow)?.StopUpdatePreparation();
         _updateDiagnostics?.Dispose();
         _updateDiagnostics = null;
-        (MainWindow as UI.MainWindow)?.StopUpdatePreparation();
         StopRuntime();
         if (_ownsInstanceMutex)
         {

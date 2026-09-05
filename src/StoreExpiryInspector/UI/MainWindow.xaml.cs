@@ -60,7 +60,10 @@ public partial class MainWindow : Window
     internal MainWindow(ShellViewModel shell)
         : this(shell, new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options)) { }
 
-    internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader, UpdateNetworkDiagnostics? updateDiagnostics = null)
+    internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader)
+        : this(shell, updateDownloader, null) { }
+
+    internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader, UpdateNetworkDiagnostics? updateDiagnostics)
     {
         InitializeComponent();
         _updateDownloader = updateDownloader;
@@ -112,11 +115,17 @@ public partial class MainWindow : Window
         Action cancel = () => { _updateDiagnostics?.Add("gui-cancel", new { operationId, source = "dialog", tokenId = linked.GetHashCode() }); linked.Cancel(); };
         _updateDiagnostics?.Add("gui-cts-created", new { operationId, tokenId = linked.GetHashCode(), globalTokenId = _updatePackageCancellation.GetHashCode() });
         model.CancelRequested += cancel;
+        string? lastDiagnosticStage = null; var lastDiagnosticPercent = -1;
         try
         {
             _updateWorker = Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress =>
             {
-                _updateDiagnostics?.Add("gui-progress", new { operationId, stage = progress.Stage, progress.BytesReceived, progress.TotalBytes, callbackThreadId = Environment.CurrentManagedThreadId, dispatcherShutdown = Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished });
+                var percent = progress.TotalBytes > 0 ? (int)(progress.BytesReceived * 100 / progress.TotalBytes) : -1;
+                if (progress.Stage != lastDiagnosticStage || percent != lastDiagnosticPercent)
+                {
+                    lastDiagnosticStage = progress.Stage; lastDiagnosticPercent = percent;
+                    _updateDiagnostics?.Add("gui-progress", new { operationId, stage = progress.Stage, percent, callbackThreadId = Environment.CurrentManagedThreadId, dispatcherShutdown = Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished });
+                }
                 if (IsClosed || Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
                 try { Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }); } catch (InvalidOperationException) { }
             }, linked.Token), linked.Token);

@@ -238,9 +238,9 @@ public sealed class SignedUpdatePackageDownloader
         progress?.Invoke(new("正在下载更新包", total, expected));
         return total == expected ? (UpdatePackageOutcome.Verified, hash.GetHashAndReset()) : (UpdatePackageOutcome.SizeMismatch, null);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage = "Package", source = "caller" }); return (UpdatePackageOutcome.Cancelled, null); }
-        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage = "Package", source = "timeout" }); return (UpdatePackageOutcome.NetworkUnavailable, null); }
-        catch (Exception error) { _diagnostics?.Add("body-error", new { stage = "Package", error = _diagnostics.SafeError(error) }); throw; }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage = "Package", host = uri.IdnHost, pathCategory = "release-download", redirectHop = 0, source = "caller" }); return (UpdatePackageOutcome.Cancelled, null); }
+        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage = "Package", host = uri.IdnHost, pathCategory = "release-download", redirectHop = 0, source = "timeout" }); return (UpdatePackageOutcome.NetworkUnavailable, null); }
+        catch (Exception error) { _diagnostics?.Add("body-error", new { stage = "Package", host = uri.IdnHost, pathCategory = "release-download", redirectHop = 0, error = _diagnostics.SafeError(error) }); throw; }
     }
 
     private async Task<byte[]> ReadSmallAsync(string stage, Uri uri, int limit, UpdatePackageOutcome missing, CancellationToken cancellationToken)
@@ -258,9 +258,9 @@ public sealed class SignedUpdatePackageDownloader
         for (int read; (read = await input.ReadAsync(buffer, timeout.Token)) > 0;) { if (output.Length + read > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest); output.Write(buffer, 0, read); }
         return output.ToArray();
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage, source = "caller" }); throw; }
-        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage, source = "timeout" }); throw new UpdatePackageException(UpdatePackageOutcome.NetworkUnavailable); }
-        catch (Exception error) { _diagnostics?.Add("body-error", new { stage, error = _diagnostics.SafeError(error) }); throw; }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage, host = uri.IdnHost, pathCategory = "release-download", redirectHop = 0, source = "caller" }); throw; }
+        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage, host = uri.IdnHost, pathCategory = "release-download", redirectHop = 0, source = "timeout" }); throw new UpdatePackageException(UpdatePackageOutcome.NetworkUnavailable); }
+        catch (Exception error) { _diagnostics?.Add("body-error", new { stage, host = uri.IdnHost, pathCategory = "release-download", redirectHop = 0, error = _diagnostics.SafeError(error) }); throw; }
     }
 
     private async Task<HttpResponseMessage> SendFollowingRedirects(string stage, Uri initial, CancellationToken cancellationToken)

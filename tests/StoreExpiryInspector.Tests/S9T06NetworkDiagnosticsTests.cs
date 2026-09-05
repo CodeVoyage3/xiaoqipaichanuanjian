@@ -45,4 +45,19 @@ public sealed class S9T06NetworkDiagnosticsTests
         try { Assert.Throws<ArgumentException>(() => UpdateNetworkDiagnostics.OpenIfRequested(["--data-root", root, flag], root)); }
         finally { Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void ExistingLogAndDuplicateDiagnosticFlagsAreRejected()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); Directory.CreateDirectory(root);
+        try
+        {
+            var file = Path.Combine(root, "s9-t06-network-diagnostic.jsonl"); File.WriteAllText(file, "prior");
+            var valid = new[] { "--data-root", root, "--s9-t06-network-diagnostic", file, "--s9-t06-prepare-only", "--s9-t06-simulated-source", "1.0.0" };
+            Assert.Throws<IOException>(() => UpdateNetworkDiagnostics.OpenIfRequested(valid, root));
+            Assert.Throws<ArgumentException>(() => UpdateNetworkDiagnostics.OpenIfRequested([.. valid, "--s9-t06-prepare-only"], root));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
 }
