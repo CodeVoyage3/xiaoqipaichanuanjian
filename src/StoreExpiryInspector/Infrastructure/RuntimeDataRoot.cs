@@ -8,6 +8,9 @@ public static class RuntimeDataRoot
     private const string SmokeExitArgument = "--s9-t01-smoke-exit";
     private const string ExistingIsolatedDataRootArgument = "--allow-existing-isolated-data-root";
     private const string UpgradeVerificationArgument = "--s9-t05-verify";
+    private const string NetworkDiagnosticArgument = "--s9-t06-network-diagnostic";
+    private const string PrepareOnlyArgument = "--s9-t06-prepare-only";
+    private const string SimulatedSourceArgument = "--s9-t06-simulated-source";
 
     private static RuntimeDataRootOptions? _options;
 
@@ -73,6 +76,14 @@ public static class RuntimeDataRoot
                 if (++index >= arguments.Length || verificationOperationId is not null || !Guid.TryParse(arguments[index], out _))
                     throw new ArgumentException("升级验证操作参数无效。", nameof(arguments));
                 verificationOperationId = arguments[index];
+                continue;
+            }
+
+            // Parsed by UpdateNetworkDiagnostics after this root has enforced TEMP/GUID isolation.
+            if (string.Equals(argument, PrepareOnlyArgument, StringComparison.Ordinal)) continue;
+            if (string.Equals(argument, NetworkDiagnosticArgument, StringComparison.Ordinal) || string.Equals(argument, SimulatedSourceArgument, StringComparison.Ordinal))
+            {
+                if (++index >= arguments.Length) throw new ArgumentException("网络诊断参数无效。", nameof(arguments));
                 continue;
             }
 

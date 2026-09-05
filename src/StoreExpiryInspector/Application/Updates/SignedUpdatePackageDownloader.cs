@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace StoreExpiryInspector.Application.Updates;
 
@@ -54,14 +55,19 @@ public sealed class SignedUpdatePackageDownloader
     private static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation"];
     private readonly HttpClient _client;
     private readonly UpdatePackageOptions _options;
+    private readonly HttpMessageHandler _handler;
+    private readonly UpdateNetworkDiagnostics? _diagnostics;
     private readonly ConcurrentDictionary<string, Lazy<Task<UpdatePackageResult>>> _flights = new();
 
-    public SignedUpdatePackageDownloader(HttpMessageHandler? handler = null, UpdatePackageOptions? options = null)
+    public SignedUpdatePackageDownloader(HttpMessageHandler? handler = null, UpdatePackageOptions? options = null, UpdateNetworkDiagnostics? diagnostics = null)
     {
-        _client = handler is null ? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) : new HttpClient(handler, false);
+        _handler = handler ?? new HttpClientHandler { AllowAutoRedirect = false };
+        _client = new HttpClient(_handler, false);
         _client.Timeout = Timeout.InfiniteTimeSpan;
         _client.DefaultRequestHeaders.UserAgent.ParseAdd("StoreExpiryInspector/1.0");
         _options = options ?? new();
+        _diagnostics = diagnostics;
+        _diagnostics?.Add("downloader-handler", new { handlerType = _handler.GetType().FullName, handlerId = RuntimeHelpers.GetHashCode(_handler), clientId = RuntimeHelpers.GetHashCode(_client), createdThreadId = Environment.CurrentManagedThreadId, automaticRedirects = false, timeout = "infinite", defaultProxy = true, tls = "system-default" });
     }
 
     public Task<UpdatePackageResult> PrepareAsync(CheckedRelease release, Version currentVersion, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
@@ -102,8 +108,8 @@ public sealed class SignedUpdatePackageDownloader
             var signatureUri = AssetUri(release, "update-manifest.sig");
             if (!release.AssetNames.Contains("update-manifest.json", StringComparer.Ordinal)) return Fail(UpdatePackageOutcome.ManifestMissing, "发行中缺少更新清单。");
             if (!release.AssetNames.Contains("update-manifest.sig", StringComparer.Ordinal)) return Fail(UpdatePackageOutcome.SignatureMissing, "发行中缺少清单签名。");
-            var rawManifest = await ReadSmallAsync(manifestUri, 64 * 1024, UpdatePackageOutcome.ManifestMissing, cancellationToken);
-            var signature = await ReadSmallAsync(signatureUri, 1024, UpdatePackageOutcome.SignatureMissing, cancellationToken);
+            var rawManifest = await ReadSmallAsync("Manifest", manifestUri, 64 * 1024, UpdatePackageOutcome.ManifestMissing, cancellationToken);
+            var signature = await ReadSmallAsync("Signature", signatureUri, 1024, UpdatePackageOutcome.SignatureMissing, cancellationToken);
             using var verifier = _options.CreateVerifier()!;
             if (!verifier.VerifyData(rawManifest, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名无效。");
             try { using var schema = JsonDocument.Parse(rawManifest); if (schema.RootElement.ValueKind != JsonValueKind.Object || !schema.RootElement.TryGetProperty("schemaVersion", out var schemaVersion) || schemaVersion.ValueKind != JsonValueKind.Number || !schemaVersion.TryGetInt32(out var value)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); if (value != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。"); } catch (JsonException) { return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); }
@@ -135,8 +141,8 @@ public sealed class SignedUpdatePackageDownloader
             cancellationToken.ThrowIfCancellationRequested(); verified = true;
             return new(UpdatePackageOutcome.Verified, "更新包已准备完成，可在维护窗口中安装。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release));
         }
-        catch (OperationCanceledException) { return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。"); }
-        catch (HttpRequestException) { return Fail(UpdatePackageOutcome.NetworkUnavailable, "无法连接更新服务器。"); }
+        catch (OperationCanceledException error) { _diagnostics?.Add("prepare-error", new { stage = "Prepare", error = _diagnostics.SafeError(error) }); return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。"); }
+        catch (HttpRequestException error) { _diagnostics?.Add("prepare-error", new { stage = "Prepare", error = _diagnostics.SafeError(error) }); return Fail(UpdatePackageOutcome.NetworkUnavailable, "无法连接更新服务器。"); }
         catch (IOException) { return Fail(UpdatePackageOutcome.IoFailure, "更新缓存读写失败。"); }
         catch (CryptographicException) { return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新签名数据无效。"); }
         catch (UpdatePackageException error) { return Fail(error.Outcome, "更新发布内容不可用。"); }
@@ -180,7 +186,9 @@ public sealed class SignedUpdatePackageDownloader
         try
         {
             var uri = new Uri($"https://api.github.com/repos/{Owner}/{Repo}/releases/tags/{expected.Tag}");
+            _diagnostics?.Add("request", new { stage = "RefreshRelease", host = uri.IdnHost, pathCategory = "release-metadata", redirectHop = 0 });
             using var response = await _client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            _diagnostics?.Add("response", new { stage = "RefreshRelease", host = uri.IdnHost, pathCategory = "release-metadata", redirectHop = 0, status = (int)response.StatusCode });
             if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return (null, Fail(UpdatePackageOutcome.RateLimited, "更新服务器请求受限。"));
             if (response.StatusCode == HttpStatusCode.NotFound) return (null, Fail(UpdatePackageOutcome.AssetMissing, "指定发行不存在。"));
             if (!response.IsSuccessStatusCode) return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "无法读取指定发行。"));
@@ -201,7 +209,7 @@ public sealed class SignedUpdatePackageDownloader
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (null, Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
         catch (OperationCanceledException) { return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "读取发行超时。")); }
-        catch (HttpRequestException) { return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "无法读取指定发行。")); }
+        catch (HttpRequestException error) { _diagnostics?.Add("request-error", new { stage = "RefreshRelease", error = _diagnostics.SafeError(error) }); return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "无法读取指定发行。")); }
         catch (JsonException) { return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行元数据无效。")); }
     }
 
@@ -210,7 +218,7 @@ public sealed class SignedUpdatePackageDownloader
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(_options.PackageTimeout ?? TimeSpan.FromMinutes(10));
         try
         {
-        using var response = await SendFollowingRedirects(uri, timeout.Token);
+        using var response = await SendFollowingRedirects("Package", uri, timeout.Token);
         if (response.StatusCode is HttpStatusCode.NotFound) return (UpdatePackageOutcome.AssetMissing, null);
         if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return (UpdatePackageOutcome.RateLimited, null);
         if (!response.IsSuccessStatusCode) return (UpdatePackageOutcome.NetworkUnavailable, null);
@@ -232,12 +240,12 @@ public sealed class SignedUpdatePackageDownloader
         catch (OperationCanceledException) { return (UpdatePackageOutcome.NetworkUnavailable, null); }
     }
 
-    private async Task<byte[]> ReadSmallAsync(Uri uri, int limit, UpdatePackageOutcome missing, CancellationToken cancellationToken)
+    private async Task<byte[]> ReadSmallAsync(string stage, Uri uri, int limit, UpdatePackageOutcome missing, CancellationToken cancellationToken)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(_options.MetadataTimeout ?? TimeSpan.FromSeconds(30));
         try
         {
-        using var response = await SendFollowingRedirects(uri, timeout.Token);
+        using var response = await SendFollowingRedirects(stage, uri, timeout.Token);
         if (response.StatusCode == HttpStatusCode.NotFound) throw new UpdatePackageException(missing);
         if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) throw new UpdatePackageException(UpdatePackageOutcome.RateLimited);
         if (!response.IsSuccessStatusCode) throw new HttpRequestException();
@@ -251,16 +259,23 @@ public sealed class SignedUpdatePackageDownloader
         catch (OperationCanceledException) { throw new UpdatePackageException(UpdatePackageOutcome.NetworkUnavailable); }
     }
 
-    private async Task<HttpResponseMessage> SendFollowingRedirects(Uri initial, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> SendFollowingRedirects(string stage, Uri initial, CancellationToken cancellationToken)
     {
         var uri = initial;
         for (var hop = 0; hop <= 3; hop++)
         {
             if (!(hop == 0 ? IsInitialUri(uri) : IsCdnUri(uri))) throw new HttpRequestException("unsafe update host");
-            var response = await _client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var category = hop == 0 ? "release-download" : "release-cdn-asset";
+            _diagnostics?.Add("request", new { stage, host = uri.IdnHost, pathCategory = category, redirectHop = hop });
+            HttpResponseMessage response;
+            try { response = await _client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken); }
+            catch (Exception error) { _diagnostics?.Add("request-error", new { stage, host = uri.IdnHost, pathCategory = category, redirectHop = hop, error = _diagnostics.SafeError(error) }); throw; }
+            _diagnostics?.Add("response", new { stage, host = uri.IdnHost, pathCategory = category, redirectHop = hop, status = (int)response.StatusCode });
             if (!IsRedirect(response.StatusCode)) return response;
             if (hop == 3 || response.Headers.Location is null) { response.Dispose(); throw new HttpRequestException("bad redirect"); }
-            uri = response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(uri, response.Headers.Location);
+            var target = response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(uri, response.Headers.Location);
+            _diagnostics?.Add("redirect", new { stage, host = uri.IdnHost, redirectHop = hop, targetHost = target.IdnHost, targetPathCategory = "cdn-asset", queryRecorded = false, userInfoPresent = !string.IsNullOrEmpty(target.UserInfo), fragmentPresent = !string.IsNullOrEmpty(target.Fragment) });
+            uri = target;
             response.Dispose();
         }
         throw new HttpRequestException("redirect limit");

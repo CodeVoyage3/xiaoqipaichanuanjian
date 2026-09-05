@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly HashSet<Version> _suppressedUpdateVersions = [];
     private readonly CancellationTokenSource _updatePackageCancellation = new();
     private readonly SignedUpdatePackageDownloader _updateDownloader;
+    private readonly UpdateNetworkDiagnostics? _updateDiagnostics;
     private Task<UpdatePackageResult>? _updateWorker;
     private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>>? _installPreparedUpdate;
     internal bool IsClosed { get; private set; }
@@ -41,13 +42,29 @@ public partial class MainWindow : Window
             confirmTodaySubmission: ConfirmTodaySubmission));
     }
 
+    internal MainWindow(UpdateNetworkDiagnostics diagnostics)
+    {
+        InitializeComponent();
+        _updateDiagnostics = diagnostics;
+        _updateDownloader = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: diagnostics);
+        InitializeShell(new ShellViewModel(
+            confirmClearDraft: ConfirmClearDraft,
+            confirmZeroInventory: ConfirmZeroInventory,
+            confirmHistoryEdit: ConfirmHistoryEdit,
+            confirmRestore: ConfirmRestore,
+            confirmTodayOverStock: ConfirmTodayOverStock,
+            confirmTodayExpiredInventory: ConfirmTodayExpiredInventory,
+            confirmTodaySubmission: ConfirmTodaySubmission));
+    }
+
     internal MainWindow(ShellViewModel shell)
         : this(shell, new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options)) { }
 
-    internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader)
+    internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader, UpdateNetworkDiagnostics? updateDiagnostics = null)
     {
         InitializeComponent();
         _updateDownloader = updateDownloader;
+        _updateDiagnostics = updateDiagnostics;
         InitializeShell(shell);
     }
 
@@ -57,7 +74,7 @@ public partial class MainWindow : Window
         ApplyNavigationLayout();
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
-        Closed += (_, _) => { IsClosed = true; StopUpdatePreparation(); };
+        Closed += (_, _) => { _updateDiagnostics?.Add("gui-window-closed", new { threadId = Environment.CurrentManagedThreadId }); IsClosed = true; StopUpdatePreparation("window-closed"); };
     }
 
     internal void ConfigureUpdateInstallation(Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>> installPreparedUpdate) =>
@@ -72,8 +89,9 @@ public partial class MainWindow : Window
         UpdateNotificationViewModel? model = null;
         model = new UpdateNotificationViewModel(
             result,
-            dismiss: () => { },
-            requestUpdate: () => _ = PrepareUpdateAsync(result, model!));
+            dismiss: () => _updateDiagnostics?.Add("gui-dismiss", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }),
+            requestUpdate: () => _ = PrepareUpdateAsync(result, model!),
+            diagnosticBanner: _updateDiagnostics?.Banner);
         (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
         return true;
     }
@@ -81,6 +99,8 @@ public partial class MainWindow : Window
     private async Task PrepareUpdateAsync(UpdateCheckResult result, UpdateNotificationViewModel model)
     {
         if (IsClosed || model.IsBusy) return;
+        var operationId = Guid.NewGuid().ToString("N");
+        _updateDiagnostics?.Add("gui-prepare-start", new { operationId, threadId = Environment.CurrentManagedThreadId, dispatcherThreadId = Dispatcher.Thread.ManagedThreadId, sourceVersion = result.CurrentVersion.ToString(3), targetVersion = result.LatestVersion?.ToString(3), workerAlreadyActive = _updateWorker is { IsCompleted: false } });
         if (result.Release is null)
         {
             model.Complete(new UpdatePackageResult(UpdatePackageOutcome.AssetMissing, "本次发行身份信息不完整，已安全拒绝下载。"));
@@ -88,15 +108,19 @@ public partial class MainWindow : Window
         }
         model.Begin();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_updatePackageCancellation.Token);
-        model.CancelRequested += linked.Cancel;
+        Action cancel = () => { _updateDiagnostics?.Add("gui-cancel", new { operationId, source = "dialog", tokenId = linked.GetHashCode() }); linked.Cancel(); };
+        _updateDiagnostics?.Add("gui-cts-created", new { operationId, tokenId = linked.GetHashCode(), globalTokenId = _updatePackageCancellation.GetHashCode() });
+        model.CancelRequested += cancel;
         try
         {
             _updateWorker = Task.Run(() => _updateDownloader.PrepareAsync(result.Release, result.CurrentVersion, progress =>
             {
+                _updateDiagnostics?.Add("gui-progress", new { operationId, stage = progress.Stage, progress.BytesReceived, progress.TotalBytes, callbackThreadId = Environment.CurrentManagedThreadId, dispatcherShutdown = Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished });
                 if (IsClosed || Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
                 try { Dispatcher.BeginInvoke(() => { if (!IsClosed) model.Report(progress); }); } catch (InvalidOperationException) { }
             }, linked.Token), linked.Token);
             var prepared = await _updateWorker;
+            _updateDiagnostics?.Add("gui-prepare-result", new { operationId, outcome = prepared.Outcome.ToString(), verified = prepared.Package is not null });
             if (prepared.Outcome != UpdatePackageOutcome.Verified || prepared.Package is null || _installPreparedUpdate is null)
             {
                 if (!IsClosed) model.Complete(prepared);
@@ -106,13 +130,14 @@ public partial class MainWindow : Window
             var installation = await _installPreparedUpdate(prepared.Package, _updateDownloader);
             if (!IsClosed) model.Complete(installation);
         }
-        catch (OperationCanceledException) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
-        catch (Exception) { if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
-        finally { model.CancelRequested -= linked.Cancel; }
+        catch (OperationCanceledException) { _updateDiagnostics?.Add("gui-prepare-cancelled", new { operationId }); if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
+        catch (Exception error) { _updateDiagnostics?.Add("gui-prepare-error", new { operationId, error = _updateDiagnostics.SafeError(error) }); if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
+        finally { model.CancelRequested -= cancel; _updateDiagnostics?.Add("gui-cts-disposed", new { operationId, tokenId = linked.GetHashCode() }); }
     }
 
-    internal void StopUpdatePreparation()
+    internal void StopUpdatePreparation(string source = "app-exit")
     {
+        _updateDiagnostics?.Add("gui-cancel", new { source, tokenId = _updatePackageCancellation.GetHashCode() });
         _updatePackageCancellation.Cancel();
         try { _updateWorker?.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch { }
     }

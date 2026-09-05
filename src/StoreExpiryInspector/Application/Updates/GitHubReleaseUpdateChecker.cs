@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace StoreExpiryInspector.Application.Updates;
 
@@ -22,15 +23,18 @@ public sealed class GitHubReleaseUpdateChecker
 {
     private static readonly Uri LatestReleaseUri = new("https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases/latest");
     private readonly HttpClient _client;
+    private readonly HttpMessageHandler _handler;
+    private readonly UpdateNetworkDiagnostics? _diagnostics;
 
-    public GitHubReleaseUpdateChecker(HttpMessageHandler? handler = null, TimeSpan? timeout = null)
+    public GitHubReleaseUpdateChecker(HttpMessageHandler? handler = null, TimeSpan? timeout = null, UpdateNetworkDiagnostics? diagnostics = null)
     {
-        _client = handler is null
-            ? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
-            : new HttpClient(handler, disposeHandler: false);
+        _handler = handler ?? new HttpClientHandler { AllowAutoRedirect = false };
+        _client = new HttpClient(_handler, disposeHandler: false);
         _client.Timeout = Timeout.InfiniteTimeSpan;
         _timeout = timeout ?? TimeSpan.FromSeconds(5);
         _client.DefaultRequestHeaders.UserAgent.ParseAdd("StoreExpiryInspector/1.0");
+        _diagnostics = diagnostics;
+        _diagnostics?.Add("checker-handler", new { handlerType = _handler.GetType().FullName, handlerId = RuntimeHelpers.GetHashCode(_handler), clientId = RuntimeHelpers.GetHashCode(_client), createdThreadId = Environment.CurrentManagedThreadId, automaticRedirects = false, timeout = _timeout.TotalSeconds, defaultProxy = true, tls = "system-default" });
     }
 
     private readonly TimeSpan _timeout;
@@ -42,7 +46,9 @@ public sealed class GitHubReleaseUpdateChecker
         timeout.CancelAfter(_timeout);
         try
         {
+            _diagnostics?.Add("request", new { stage = "CheckLatest", host = LatestReleaseUri.IdnHost, pathCategory = "release-metadata", redirectHop = 0 });
             using var response = await _client.GetAsync(LatestReleaseUri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            _diagnostics?.Add("response", new { stage = "CheckLatest", host = LatestReleaseUri.IdnHost, pathCategory = "release-metadata", redirectHop = 0, status = (int)response.StatusCode });
             if (response.StatusCode == HttpStatusCode.NotFound) return UpdateCheckResult.From(UpdateCheckOutcome.NoPublishedRelease, currentVersion);
             if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return UpdateCheckResult.From(UpdateCheckOutcome.RateLimited, currentVersion);
             if (!response.IsSuccessStatusCode) return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion);
@@ -85,7 +91,7 @@ public sealed class GitHubReleaseUpdateChecker
             return UpdateCheckResult.From(UpdateCheckOutcome.Cancelled, currentVersion);
         }
         catch (OperationCanceledException) { return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
-        catch (HttpRequestException) { return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
+        catch (HttpRequestException error) { _diagnostics?.Add("request-error", new { stage = "CheckLatest", error = _diagnostics.SafeError(error) }); return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
         catch (IOException) { return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
         catch (JsonException) { return UpdateCheckResult.From(UpdateCheckOutcome.InvalidRemoteMetadata, currentVersion); }
         catch (InvalidOperationException) { return UpdateCheckResult.From(UpdateCheckOutcome.InvalidRemoteMetadata, currentVersion); }

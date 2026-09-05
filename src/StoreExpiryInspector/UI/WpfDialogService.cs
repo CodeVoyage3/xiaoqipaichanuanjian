@@ -24,6 +24,7 @@ internal static class WpfDialogService
         var panel = new StackPanel { Margin = new Thickness(24) };
         panel.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
+        if (!string.IsNullOrWhiteSpace(model.DiagnosticBanner)) panel.Children.Add(new TextBlock { Text = model.DiagnosticBanner, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap, Foreground = FindBrush(owner, "SecondaryTextBrush") });
         if (!string.IsNullOrWhiteSpace(model.ReleaseNotes)) panel.Children.Add(new ScrollViewer { MaxHeight = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = new TextBlock { Text = model.ReleaseNotes, TextWrapping = TextWrapping.Wrap } });
         var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap };
         var bytes = new TextBlock { Text = model.ProgressText, Margin = new Thickness(0, 4, 0, 0), Foreground = FindBrush(owner, "SecondaryTextBrush") };

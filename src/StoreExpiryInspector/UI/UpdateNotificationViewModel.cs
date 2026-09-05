@@ -11,11 +11,12 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     private long _receivedBytes;
     private long _totalBytes;
     private bool _isBusy;
-    public UpdateNotificationViewModel(UpdateCheckResult result, Action dismiss, Action requestUpdate)
+    public UpdateNotificationViewModel(UpdateCheckResult result, Action dismiss, Action requestUpdate, string? diagnosticBanner = null)
     {
         CurrentVersionText = $"当前版本：v{result.CurrentVersion.ToString(3)}";
         LatestVersionText = $"最新版本：v{result.LatestVersion?.ToString(3)}";
         ReleaseNotes = result.ReleaseNotes;
+        DiagnosticBanner = diagnosticBanner;
         DismissCommand = new RelayCommand(_ => dismiss());
         _update = new RelayCommand(_ => requestUpdate(), _ => !IsBusy);
         _cancel = new RelayCommand(_ => CancelRequested?.Invoke(), _ => IsBusy);
@@ -26,6 +27,7 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     public string CurrentVersionText { get; }
     public string LatestVersionText { get; }
     public string? ReleaseNotes { get; }
+    public string? DiagnosticBanner { get; }
     public ICommand DismissCommand { get; }
     public ICommand UpdateRequestedCommand { get; }
     public ICommand CancelCommand { get; }

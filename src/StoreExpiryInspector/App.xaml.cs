@@ -26,6 +26,7 @@ public partial class App : System.Windows.Application
     private bool _explicitExit;
     private UpdateCheckRuntime? _updateCheckRuntime;
     private int _updateCheckStarted;
+    private UpdateNetworkDiagnostics? _updateDiagnostics;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
@@ -38,6 +39,8 @@ public partial class App : System.Windows.Application
         try
         {
             RuntimeDataRoot.Configure(e.Args);
+            _updateDiagnostics = UpdateNetworkDiagnostics.TryCreate(e.Args, RuntimeDataRoot.IsIsolated);
+            _updateDiagnostics?.Add("diagnostic-enabled", new { actualCandidateVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3), simulatedSourceVersion = _updateDiagnostics.SimulatedSourceVersion.ToString(3), dataRoot = "TEMP/GUID", installDisabled = true });
         }
         catch (Exception exception)
         {
@@ -135,7 +138,7 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
-        MainWindow = new UI.MainWindow();
+        MainWindow = _updateDiagnostics is null ? new UI.MainWindow() : new UI.MainWindow(_updateDiagnostics);
         MainWindow.Show();
         if (RuntimeDataRoot.IsSmokeRun)
         {
@@ -289,7 +292,7 @@ public partial class App : System.Windows.Application
                 BeginDatabaseMaintenanceAsync,
                 EndDatabaseMaintenance,
                 ExitApplication);
-            mainWindow.ConfigureUpdateInstallation(InstallPreparedUpdateAsync);
+            if (_updateDiagnostics is null) mainWindow.ConfigureUpdateInstallation(InstallPreparedUpdateAsync);
             mainWindow.Closing += MainWindow_Closing;
             mainWindow.ReminderTimeChanged += ReminderTimeChanged;
         }
@@ -377,7 +380,9 @@ public partial class App : System.Windows.Application
             _logger?.TryWrite("warning", "update_version_unavailable", "无法确认更新状态，已跳过本次检查。");
             return;
         }
-        var checker = new GitHubReleaseUpdateChecker();
+        if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
+        var checker = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
+        _updateDiagnostics?.Add("gui-check-start", new { simulatedSourceVersion = currentVersion.ToString(3), threadId = Environment.CurrentManagedThreadId });
         _updateCheckRuntime = new UpdateCheckRuntime(
             cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),
             result => Dispatcher.BeginInvoke(() =>
