@@ -142,7 +142,14 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
-        MainWindow = _updateDiagnostics is null ? new UI.MainWindow() : new UI.MainWindow(_updateDiagnostics);
+        if (_updateDiagnostics is null)
+        {
+            MainWindow = new UI.MainWindow();
+        }
+        else
+        {
+            MainWindow = new UI.MainWindow(_updateDiagnostics);
+        }
         MainWindow.Show();
         if (RuntimeDataRoot.IsSmokeRun)
         {
