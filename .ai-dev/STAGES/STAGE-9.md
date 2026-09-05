@@ -1,5 +1,23 @@
 # Stage 9｜安装、发布与在线升级交付
 
+## S9-T06前置环境暂停（2026-09-05，当前权威停止点）
+
+- S9-T06 `PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED`；Stage9 `IN_PROGRESS / S9-T06_CURRENT / PAUSED_PRODUCT_REVIEW`。本卡已创建但未实施/未验收；Stage8及T01～T05保持CLOSED，不创建S9-T07。
+- 精确阻塞：当前没有可执行的独立clean Windows环境。开发机为Windows11专业版23H2，10.0.22631.6199，x64；WindowsSandbox.exe不存在，未发现Get-VM/vmms或常见VM工具入口，用户明确回复“未安装过”。HypervisorPresent=true不证明可用clean OS；DISM功能状态查询需提升，未据此断言硬件不支持。未安装/启用VM、未重启系统、未关闭安全功能。
+- 按用户第36节硬停止，在任何production key/版本变更/公开Release前暂停。正式身份安装器会预检固定数据根，不能在开发用户正式数据环境试装；未探测/访问正式安装或数据/DB/backup。
+- 正式新Terra medium为`/root/s9_t06_fresh_terra_medium`，工具提供priority服务；只读审查后停止，零代码修改/零提交/零push。首次误用全历史fork的实例立即中断，不计正式实施者。治理角色独立核对了公钥未配置、安装器固定身份及硬编码1.0.0、migration源码9条。
+- 新鲜匿名GitHub：repo200/public、releases200/0条、latest404；无Authorization、未下载生产资产。GitHub发布写权限和持久私钥保管尚未验证，不能将git fetch/push当Release权限证据。
+- 产品仍1.0.0；无生产公钥fingerprint/私钥、无v1.0.0/v1.0.1 Release及asset SHA、无真实升级/DB指纹/回滚/clean Win10或Win11验收。Release1040/1040、build0/0、EF无漂移仍仅T05历史，本轮未重跑；文档diff检查通过。
+- 已建立Task、Acceptance、Production Release Analysis和RELEASE-RESULT.json暂停证据。仅治理普通commit/push main，fetch确认clean/HEAD=origin/main/0/0后停止；最终SHA见Git回执。恢复前需用户提供或明确授权建立可用clean OS，再核实密钥与发布权限，不降低原门禁。
+
+## S9-T06正式启动（2026-09-05，覆盖下方历史停止点）
+
+- 用户正式授权首次production manifest签名、v1.0.0/v1.0.1正式GitHub Release及同Schema真实在线升级验收。Stage9 `IN_PROGRESS / S9-T06_CURRENT`；S9-T06 `IN_PROGRESS / NOT_ACCEPTED`。Stage8及T01～T05保持CLOSED，不创建T07。
+- 新鲜fetch确认main=origin/main=fd541b88f071badd6a692373e82deaf6146c10ee、clean/0/0，原无T06，现已建立Task/Acceptance/Production Release Analysis。指定T05事务Analysis文件实际缺失，保留事实，不伪称已读。
+- 治理角色只治理/完整diff/独立复验，新的Terra medium/priority实施并提交后停、不push。先核实持久私钥保管、发布权限、可用clean Windows与正式身份合成隔离；硬阻塞则PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED，不创建公开资产。
+- 产品当前仍1.0.0；未生成production key，未发布tag/Release/assets，未做真实升级，未访问正式数据。本卡新鲜Release/build/EF门禁尚未执行，1040/1040属于T05历史。
+- 严禁Schema/migration10/Domain业务变化、正式门店数据、Reset/Undo、上报、强制静默升级、改AppId/安装根/数据根/lowest。详见S9-T06 Task与Acceptance；完成或暂停后记录真实证据，不自动关闭Stage9。
+
 ## S9-T05正式关闭（2026-09-05，覆盖下方历史停止点）
 
 - S9-T05 `TECHNICALLY_ACCEPTED / CLOSED`；Stage9 `IN_PROGRESS / WAITING_NEXT_AUTHORIZATION`。独立 self-contained Updater、持久 journal、完整树 staging/switch/rollback、候选只读健康 ACK、失败重入与人工恢复边界已完成。产品仍 1.0.0；Stage8、S9-T01～T04 保持 CLOSED，未创建 S9-T06。
