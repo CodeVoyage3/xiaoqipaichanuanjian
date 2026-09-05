@@ -1,0 +1,326 @@
+[
+  {
+    "mode": "original-app",
+    "iteration": 1,
+    "launch": {
+      "parentPid": 33572,
+      "updaterPid": 33076,
+      "parentCwd": "TEMP\\3abb143b-7e29-4d10-a160-ed18902d3e10\\app",
+      "workingDirectory": "",
+      "useShellExecute": false,
+      "mode": "original-app"
+    },
+    "updaterStart": {
+      "utc": "2026-09-05T10:47:17.5770072+00:00",
+      "kind": "updater-start",
+      "detail": {
+        "pid": 33076,
+        "cwd": "TEMP\\a65a2f4c-f8f3-4703-9786-e7bb32208054\\updates\\6a427580-9d91-4aeb-993c-00dddb087ce3\\updater"
+      }
+    },
+    "moves": [
+      {
+        "utc": "2026-09-05T10:47:19.6987086+00:00",
+        "kind": "app-to-old-start",
+        "detail": {
+          "phase": "CandidateStaged",
+          "relativePath": "app",
+          "target": "app.old",
+          "parentExited": true
+        }
+      },
+      {
+        "utc": "2026-09-05T10:47:19.7053161+00:00",
+        "kind": "app-to-old-success",
+        "detail": {
+          "phase": "CandidateStaged"
+        }
+      }
+    ],
+    "phase": 10,
+    "lastError": null,
+    "activeHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "oldHash": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+    "candidateHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "actualWpfAck": {
+      "operationId": "6a427580-9d91-4aeb-993c-00dddb087ce3",
+      "version": "1.0.2",
+      "pid": 13600,
+      "startedUtc": "2026-09-05T10:47:21.4247751Z",
+      "migrationCount": 9,
+      "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+      "integrity": "ok",
+      "foreignKeys": "ok",
+      "coreRead": true,
+      "uiLoaded": true
+    },
+    "normalWpfSmokeReady": true,
+    "migrationCount": 9,
+    "databaseBeforeSha256": "74812A4CC8296D00F53152034D88810777A3E3FD85154CE6FD8FD83B70AE5DC3",
+    "databaseAfterSha256": "DD4A16BA9CEBBF4BB0008A40EED51B9C837E50E70C3076BA2E77E3F049F8643E",
+    "databaseHealth": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ]
+    },
+    "operationRoot": "TEMP\\a65a2f4c-f8f3-4703-9786-e7bb32208054\\updates\\6a427580-9d91-4aeb-993c-00dddb087ce3",
+    "passed": true
+  },
+  {
+    "mode": "explicit-outside",
+    "iteration": 1,
+    "launch": {
+      "parentPid": 34956,
+      "updaterPid": 36012,
+      "parentCwd": "TEMP\\11cc72b9-9e0e-45fc-b793-ef751dc2b08d\\app",
+      "workingDirectory": "TEMP\\aa70309b-ecdf-4abd-9fbd-20285de94362\\updates\\2ed082d7-6074-40e2-8ab3-0975ff15a8c0\\updater",
+      "useShellExecute": false,
+      "mode": "explicit-outside"
+    },
+    "updaterStart": {
+      "utc": "2026-09-05T10:47:31.7064822+00:00",
+      "kind": "updater-start",
+      "detail": {
+        "pid": 36012,
+        "cwd": "TEMP\\aa70309b-ecdf-4abd-9fbd-20285de94362\\updates\\2ed082d7-6074-40e2-8ab3-0975ff15a8c0\\updater"
+      }
+    },
+    "moves": [
+      {
+        "utc": "2026-09-05T10:47:33.8151799+00:00",
+        "kind": "app-to-old-start",
+        "detail": {
+          "phase": "CandidateStaged",
+          "relativePath": "app",
+          "target": "app.old",
+          "parentExited": true
+        }
+      },
+      {
+        "utc": "2026-09-05T10:47:33.8194696+00:00",
+        "kind": "app-to-old-success",
+        "detail": {
+          "phase": "CandidateStaged"
+        }
+      }
+    ],
+    "phase": 10,
+    "lastError": null,
+    "activeHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "oldHash": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+    "candidateHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "actualWpfAck": {
+      "operationId": "2ed082d7-6074-40e2-8ab3-0975ff15a8c0",
+      "version": "1.0.2",
+      "pid": 15428,
+      "startedUtc": "2026-09-05T10:47:35.5471717Z",
+      "migrationCount": 9,
+      "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+      "integrity": "ok",
+      "foreignKeys": "ok",
+      "coreRead": true,
+      "uiLoaded": true
+    },
+    "normalWpfSmokeReady": true,
+    "migrationCount": 9,
+    "databaseBeforeSha256": "74812A4CC8296D00F53152034D88810777A3E3FD85154CE6FD8FD83B70AE5DC3",
+    "databaseAfterSha256": "71835FD70693C1D95E52C9B75E142BA084BA8ACFB21520E9AC79C82B32F52402",
+    "databaseHealth": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ]
+    },
+    "operationRoot": "TEMP\\aa70309b-ecdf-4abd-9fbd-20285de94362\\updates\\2ed082d7-6074-40e2-8ab3-0975ff15a8c0",
+    "passed": true
+  },
+  {
+    "mode": "original-outside",
+    "iteration": 1,
+    "launch": {
+      "parentPid": 28952,
+      "updaterPid": 12668,
+      "parentCwd": "TEMP\\eeceb151-9ab1-40a3-917c-0435fcbd608b",
+      "workingDirectory": "",
+      "useShellExecute": false,
+      "mode": "original-outside"
+    },
+    "updaterStart": {
+      "utc": "2026-09-05T10:47:46.6596797+00:00",
+      "kind": "updater-start",
+      "detail": {
+        "pid": 12668,
+        "cwd": "TEMP\\72e853dc-c45d-4091-b991-8a3408c4ee18\\updates\\5e48eed9-056f-4fdd-8805-784160e86e87\\updater"
+      }
+    },
+    "moves": [
+      {
+        "utc": "2026-09-05T10:47:48.6227511+00:00",
+        "kind": "app-to-old-start",
+        "detail": {
+          "phase": "CandidateStaged",
+          "relativePath": "app",
+          "target": "app.old",
+          "parentExited": true
+        }
+      },
+      {
+        "utc": "2026-09-05T10:47:48.6273073+00:00",
+        "kind": "app-to-old-success",
+        "detail": {
+          "phase": "CandidateStaged"
+        }
+      }
+    ],
+    "phase": 10,
+    "lastError": null,
+    "activeHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "oldHash": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+    "candidateHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "actualWpfAck": {
+      "operationId": "5e48eed9-056f-4fdd-8805-784160e86e87",
+      "version": "1.0.2",
+      "pid": 23156,
+      "startedUtc": "2026-09-05T10:47:50.3827959Z",
+      "migrationCount": 9,
+      "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+      "integrity": "ok",
+      "foreignKeys": "ok",
+      "coreRead": true,
+      "uiLoaded": true
+    },
+    "normalWpfSmokeReady": true,
+    "migrationCount": 9,
+    "databaseBeforeSha256": "74812A4CC8296D00F53152034D88810777A3E3FD85154CE6FD8FD83B70AE5DC3",
+    "databaseAfterSha256": "08B9DC21A64B61CEC73C2E05CB6E82EEA3D82819EE098C38E8A3E278F019647D",
+    "databaseHealth": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ]
+    },
+    "operationRoot": "TEMP\\72e853dc-c45d-4091-b991-8a3408c4ee18\\updates\\5e48eed9-056f-4fdd-8805-784160e86e87",
+    "passed": true
+  },
+  {
+    "mode": "forced-rollback",
+    "iteration": 1,
+    "launch": {
+      "parentPid": 37044,
+      "updaterPid": 35160,
+      "parentCwd": "TEMP\\55407952-1ae4-4627-818f-13ed707d195f\\app",
+      "workingDirectory": "",
+      "useShellExecute": false,
+      "mode": "forced-rollback"
+    },
+    "updaterStart": {
+      "utc": "2026-09-05T10:48:01.0313456+00:00",
+      "kind": "updater-start",
+      "detail": {
+        "pid": 35160,
+        "cwd": "TEMP\\9c10b2d9-ec3a-4cd9-8db6-ccb0aafdd787\\updates\\fc58aa04-1665-4002-8e65-fdee0047fafc\\updater"
+      }
+    },
+    "moves": [
+      {
+        "utc": "2026-09-05T10:48:03.1496408+00:00",
+        "kind": "app-to-old-start",
+        "detail": {
+          "phase": "CandidateStaged",
+          "relativePath": "app",
+          "target": "app.old",
+          "parentExited": true
+        }
+      },
+      {
+        "utc": "2026-09-05T10:48:03.1564979+00:00",
+        "kind": "app-to-old-success",
+        "detail": {
+          "phase": "CandidateStaged"
+        }
+      }
+    ],
+    "phase": 15,
+    "lastError": "S9-T05 controlled failure.",
+    "activeHash": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+    "oldHash": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+    "candidateHash": "1CAE91D3F357499D9361BE50D5906496CFBA1C6CB3BEFDD1A57094198DDCEC8D",
+    "actualWpfAck": {
+      "operationId": "fc58aa04-1665-4002-8e65-fdee0047fafc",
+      "version": "1.0.0",
+      "pid": 31264,
+      "startedUtc": "2026-09-05T10:48:06.6225308Z",
+      "migrationCount": 9,
+      "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+      "integrity": "ok",
+      "foreignKeys": "ok",
+      "coreRead": true,
+      "uiLoaded": true
+    },
+    "normalWpfSmokeReady": true,
+    "migrationCount": 9,
+    "databaseBeforeSha256": "74812A4CC8296D00F53152034D88810777A3E3FD85154CE6FD8FD83B70AE5DC3",
+    "databaseAfterSha256": "DF799A1F717FD07109B812C61F2D64B7BA5432DB74505A5C0A9075C03152CFF3",
+    "databaseHealth": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "foreignKeys": [],
+      "migrations": [
+        "20260826123739_InitialCreate",
+        "20260826130822_AddTasksAndDrafts",
+        "20260826135612_AddInspectionHistory",
+        "20260826142429_AddInventoryAdjustments",
+        "20260826152131_AddImportPersistence",
+        "20260826155455_AddBackupMetadata",
+        "20260826162033_AddSettingsAndAppState",
+        "20260826170403_AddLifecycleEvents",
+        "20260901155124_AddPolicyAndBaselineFoundation"
+      ]
+    },
+    "operationRoot": "TEMP\\9c10b2d9-ec3a-4cd9-8db6-ccb0aafdd787\\updates\\fc58aa04-1665-4002-8e65-fdee0047fafc",
+    "passed": true
+  }
+]

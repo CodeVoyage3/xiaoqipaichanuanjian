@@ -1,0 +1,26 @@
+hardkill-MainExitRequested-1: PASS
+hardkill-MainExitRequested-2: PASS
+hardkill-MainExitRequested-3: PASS
+hardkill-MainExited-1: PASS
+hardkill-MainExited-2: PASS
+hardkill-MainExited-3: PASS
+hardkill-CandidateStaged-1: PASS
+hardkill-CandidateStaged-2: PASS
+hardkill-CandidateStaged-3: PASS
+hardkill-OldAppPreserved-1: PASS
+hardkill-OldAppPreserved-2: PASS
+hardkill-OldAppPreserved-3: PASS
+hardkill-SwitchStarted-1: PASS
+hardkill-SwitchStarted-2: PASS
+hardkill-SwitchStarted-3: PASS
+hardkill-CandidateActivated-1: PASS
+hardkill-CandidateActivated-2: PASS
+hardkill-CandidateActivated-3: PASS
+Traceback (most recent call last):
+  File "LOCAL_ROOT_REDACTED/wendang\ChatGPT\�ŵ�Ч���Ų�����\.ai-dev\ACCEPTANCE\S9-T06-B-SOL-VERIFY\run_recovery_matrix.py", line 51, in <module>
+    p=launch(j,jp,env); until(lambda:json.loads(jp.read_text())['Phase']==phase,p)
+                        ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "LOCAL_ROOT_REDACTED/wendang\ChatGPT\�ŵ�Ч���Ų�����\.ai-dev\ACCEPTANCE\S9-T06-B-SOL-VERIFY\run_recovery_matrix.py", line 31, in until
+    if p.poll() is not None:raise RuntimeError(f'Updater exited before checkpoint: {p.returncode}')
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Updater exited before checkpoint: 1

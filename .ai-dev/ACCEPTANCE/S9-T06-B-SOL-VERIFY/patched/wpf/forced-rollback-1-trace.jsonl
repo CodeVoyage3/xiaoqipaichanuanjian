@@ -1,0 +1,17 @@
+{"utc": "2026-09-05T10:48:01.0313456+00:00", "kind": "updater-start", "detail": {"pid": 35160, "cwd": "TEMP\\9c10b2d9-ec3a-4cd9-8db6-ccb0aafdd787\\updates\\fc58aa04-1665-4002-8e65-fdee0047fafc\\updater"}}
+{"utc": "2026-09-05T10:48:01.3318895+00:00", "kind": "phase", "detail": {"phase": "Prepared", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:01.5718206+00:00", "kind": "phase", "detail": {"phase": "MainExitRequested", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:01.8137675+00:00", "kind": "phase", "detail": {"phase": "MainExited", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:02.6209932+00:00", "kind": "phase", "detail": {"phase": "CandidateStaged", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:03.1496408+00:00", "kind": "app-to-old-start", "detail": {"phase": "CandidateStaged", "relativePath": "app", "target": "app.old", "parentExited": true}}
+{"utc": "2026-09-05T10:48:03.1564979+00:00", "kind": "app-to-old-success", "detail": {"phase": "CandidateStaged"}}
+{"utc": "2026-09-05T10:48:03.3348853+00:00", "kind": "phase", "detail": {"phase": "OldAppPreserved", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:04.1455314+00:00", "kind": "phase", "detail": {"phase": "SwitchStarted", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:04.3352141+00:00", "kind": "phase", "detail": {"phase": "CandidateActivated", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:04.3359429+00:00", "kind": "exception", "detail": {"phase": "CandidateActivated", "type": "System.IO.IOException", "hresult": "0x80131620"}}
+{"utc": "2026-09-05T10:48:04.5287881+00:00", "kind": "phase", "detail": {"phase": "RollbackRequired", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:04.7111127+00:00", "kind": "phase", "detail": {"phase": "RollbackStarted", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:06.0615966+00:00", "kind": "phase", "detail": {"phase": "OldAppRestored", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:09.2141313+00:00", "kind": "phase", "detail": {"phase": "RollbackVerified", "parentPid": 37044, "updaterPid": 35160}}
+{"utc": "2026-09-05T10:48:09.2256509+00:00", "kind": "normal-start", "detail": {"pid": 37500, "version": "1.0.0"}}
+{"utc": "2026-09-05T10:48:09.4229155+00:00", "kind": "phase", "detail": {"phase": "RolledBack", "parentPid": 37044, "updaterPid": 35160}}

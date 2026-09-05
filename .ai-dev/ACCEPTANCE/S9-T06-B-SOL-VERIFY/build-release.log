@@ -1,0 +1,10 @@
+  StoreExpiryInspector.Updater -> src\StoreExpiryInspector.Updater\bin\Release\net10.0\win-x64\StoreExpiryInspector.Updater.dll
+  StoreExpiryInspector -> src\StoreExpiryInspector\bin\Release\net10.0-windows\StoreExpiryInspector.dll
+  StoreExpiryInspector.Updater -> src\StoreExpiryInspector.Updater\bin\Release\net10.0\win-x64\s9t05test\net10.0\win-x64\StoreExpiryInspector.Updater.dll
+  StoreExpiryInspector.Tests -> tests\StoreExpiryInspector.Tests\bin\Release\net10.0-windows\StoreExpiryInspector.Tests.dll
+
+已成功生成。
+    0 个警告
+    0 个错误
+
+已用时间 00:00:10.13

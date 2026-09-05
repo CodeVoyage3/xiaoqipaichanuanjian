@@ -1,0 +1,403 @@
+{
+  "baseline": "45072b965809ecc0f3e576eacb991055e5cb2fc8",
+  "status": "PASS",
+  "changedFileCount": 70,
+  "scannedCurrentFiles": 69,
+  "outgoingHistoryBlobs": 8,
+  "checks": [
+    "absolute-drive-path",
+    "local-workspace-content",
+    "known-account-or-host",
+    "url-query",
+    "private-key",
+    "github-token",
+    "credential-material",
+    "jwt"
+  ],
+  "findings": [],
+  "onlyAuthorizedScope": true,
+  "noBinaryOrDatabaseFiles": true,
+  "rawLogsAndLocalScriptsExcluded": true,
+  "history": [
+    {
+      "commit": "8c6ebc0cba615cd4844231fda8990a271587f389",
+      "file": "tools/Start-S9T06-100-Bridge.ps1"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "src/StoreExpiryInspector.Updater/Program.cs"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "src/StoreExpiryInspector/App.xaml.cs"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "src/StoreExpiryInspector/Application/Updates/PendingUpdateRecovery.cs"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "src/StoreExpiryInspector/Application/Updates/UpdaterLaunch.cs"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "tests/StoreExpiryInspector.Tests/S9T06PendingUpdateRecoveryTests.cs"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "tools/Start-S9T06-100-Bridge.cmd"
+    },
+    {
+      "commit": "50b5e9db70e0feba273d5fefe5131a2ab8ad9367",
+      "file": "tools/Start-S9T06-100-Bridge.ps1"
+    }
+  ],
+  "files": [
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/FINAL.md",
+      "bytes": 7431,
+      "sha256": "6dd4bfc5b8eea0c3e85452905917bfee9703a2b776abc43063a6f5a4f6591d2a"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/PUBLICATION-REDACTION.json",
+      "bytes": 4452,
+      "sha256": "3f9e27dd601dc69cd1f7dd2de12c44b451a81071dda2317ae0d26e6b52dddfeb"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/PUSH-FILES.md",
+      "bytes": 4776,
+      "sha256": "221032d7e9c598b25172b407ada37abc08f5770476dc12ab6c636fa8e49a9894"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/Parent-build.log",
+      "bytes": 299,
+      "sha256": "db833dc6dbe4960da92fc91edcb27f2aa10fbdc2943e0a70dc7999375af2245a"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/Updater-build.log",
+      "bytes": 336,
+      "sha256": "34fac560c4562bc93164a6ac9551fc2a28d114ac943c2251c34dadff9da07777"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/WIN11-ONCE.md",
+      "bytes": 1103,
+      "sha256": "aceaf805ad01638bcf20a2ff2413bca853341e9ab879bfc9c04001cb7c4931ac"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/ack-fixture-build.log",
+      "bytes": 173,
+      "sha256": "27d96e39b02c0ae60d626262ef9e4aecc7cf5b5c9c0b76099ae3542301c1595b"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/bridge-independent-result.json",
+      "bytes": 1042,
+      "sha256": "f20ea895f004163f8381b9df03155cabcf6bda964c4250d5788a61d136051bce"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/bridge-scan.json",
+      "bytes": 794,
+      "sha256": "7d53c7bd75ee050c25cbd038a4bcecf111694ca1072ba03b7f722ab3644b2a4f"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/bridge-smoke-output.txt",
+      "bytes": 502,
+      "sha256": "264b982b4c7e8c71de1604e24eebd7802ee96adf7e64f4e59841885e5dbf8a79"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/build-release.log",
+      "bytes": 598,
+      "sha256": "808b4fac4bf49aad3a8d0d24b7f5ad40f1ee5a3214262f12e63a6b043ef4a964"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/candidate-build.json",
+      "bytes": 194,
+      "sha256": "25173e5148a6496d734c09697cbf474691988c8689762f9f019a9e8ae770b720"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/candidate-publish.log",
+      "bytes": 414,
+      "sha256": "e9568ce9525302dc8d67df2e5a251e6978701f238a8dc2b10610c9fb5f0cef20"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/candidate-version.json",
+      "bytes": 105,
+      "sha256": "c02c0054deb494470cd044b1c21e193263bd1a5b9648609161fa00959ec19dbd"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/delivery.json",
+      "bytes": 578,
+      "sha256": "d754f4097aef14227b6cdae5655bc7e4a577d0f14718f0abd677b6e2dabcb12b"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/ef-migrations.log",
+      "bytes": 561,
+      "sha256": "a1adf96a68f48cab3f5c89d0d2bace3fdd73a49034cbd5a895eccb2957fad4d9"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/ef-model.log",
+      "bytes": 66,
+      "sha256": "c924da1693ad60eb6a78717ddd333946a8a61a056c2ce2868ae514384f01c866"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/explicit-outside-1-trace.jsonl",
+      "bytes": 2184,
+      "sha256": "7b7fb813f803f0dc82c7c7c23c7d34f0bac07b6b34f7c2fad42ac4729f45468e"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/explicit-outside-2-trace.jsonl",
+      "bytes": 2183,
+      "sha256": "a9228132e00e50d13600a6e4dc6d2cd15f2f8bc93f20f00ce193118eb335c981"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/explicit-outside-3-trace.jsonl",
+      "bytes": 2185,
+      "sha256": "befd8969f61758e47ad724b92b907c559b639141316a98951ad837d2c6503c1d"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/final-result.json",
+      "bytes": 874,
+      "sha256": "a0e5856e8576cc967444ca081413846fb6d115f3e0ad5b7eec2eda3f536acd31"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/frozen-build.json",
+      "bytes": 418,
+      "sha256": "26d10be812cedf205c18611d6506e8114063adb03589e0e0d4bff0bd8f3a3877"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/frozen-observation.diff",
+      "bytes": 4443,
+      "sha256": "64cee0ded5de37918ff6a6e3dbf2179137761164db1b4401f686789b7cd5094c"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/frozen-transaction-result.json",
+      "bytes": 25332,
+      "sha256": "ed3312dcc605a29d137cdde2a0508a6554c83b0beac26e38995dcaf426ef9c83"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/full-release-cancelled-overlap.log",
+      "bytes": 574,
+      "sha256": "3d0289983ce26b8335ecb4b9ad57b991083e764e995ddac8b7eede5e25c7baad"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/full-release.log",
+      "bytes": 813,
+      "sha256": "db44636a77418f29b15fdeeaccf7871da4bd6362fe96dc23d7bc93325d7489ea"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/full-release/S9-T06-B-Sol-Full.trx",
+      "bytes": 1530340,
+      "sha256": "f9328eafff7db9e40cb95a9b5ec395f420102b179bf4415c41acc215d37e558d"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/original-app-1-trace.jsonl",
+      "bytes": 2095,
+      "sha256": "87eb34da0928242d155ed17b34a117c8b0c1990ac90c759a08132920d78b1747"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/original-app-2-trace.jsonl",
+      "bytes": 2089,
+      "sha256": "bc4f52445675c480d0150dcb8e48f7e92152b8a8ee687e457f79a2d5af50f0bb"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/original-app-3-trace.jsonl",
+      "bytes": 2093,
+      "sha256": "6635b8420799950bdcd786a049ccf4fb0ec3bfd8a40340eb438d9a2a14fb640b"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/original-outside-1-trace.jsonl",
+      "bytes": 2129,
+      "sha256": "9f0a86dd7c48a2d55c4f8630c1c66b3e1d6b4813477e38489b800461f7b0c689"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/original-outside-2-trace.jsonl",
+      "bytes": 2119,
+      "sha256": "cd6e6beedf73224cb1dd92d8ad77df1a87bdfcde943f56bdd82e75585204ecc2"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/original-outside-3-trace.jsonl",
+      "bytes": 2104,
+      "sha256": "827faa5ce55ccc5babfbb725af12bbd3b7dfcee202197fe0c194dbda2ddc465d"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-recovery-observer-lock-failed.log",
+      "bytes": 1394,
+      "sha256": "eaf4ae635cb8d4adccbbd3106f09e6e1f2419d746057500ae5a569d5f4face05"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-recovery-observer-lock-partial.json",
+      "bytes": 10295,
+      "sha256": "cd992859773dfdf59a4bcbd5fc9198b5a81215fb9c617d32e5d6897dd1c6702a"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-recovery-result.json",
+      "bytes": 22897,
+      "sha256": "7ccbc0989ed0727bf3791f278f205b50110a9eafd6dcc7c616736ceded83d19b"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-recovery-shared-reader-failed.log",
+      "bytes": 982,
+      "sha256": "195882e712d9fda3e1560186ad83314b89853af95671552b8862704f1c648b1a"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-recovery.log",
+      "bytes": 5046,
+      "sha256": "18de693848adda01f91274fa86c111aa86d06f8031a4dca3d3f1d1cc17c3a493"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-wpf.log",
+      "bytes": 168,
+      "sha256": "6dfc53f68a7a26950444e677ce20337cc160c9977552ff52033b4d4692560860"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/Parent-build.log",
+      "bytes": 299,
+      "sha256": "8f95c8a2d52f13e8d7b91109553ed3610d67fbf6b5adfa4b0f18c52f58814ef1"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/Updater-build.log",
+      "bytes": 336,
+      "sha256": "1b97dbd2499fa357a6d14e83edda912f216a904d3a2d73a7fbf99d36203b3dda"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/frozen-build.json",
+      "bytes": 442,
+      "sha256": "48624e42ae793c2845f9e8592cf403a7a49863687fe8dad945e13ad72abb8581"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/frozen-observation.diff",
+      "bytes": 4970,
+      "sha256": "57c854d999b242ee91f63f7662937fc55e06dfc12a98cc3c689c18c350e183e3"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/explicit-outside-1-trace.jsonl",
+      "bytes": 2185,
+      "sha256": "944644c48440f761f6cdd597ab852619740983daf0479883d7005029815ee9c5"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/forced-rollback-1-trace.jsonl",
+      "bytes": 2501,
+      "sha256": "d4d3c539e625cd88ee8c00a22e15bf552e548685c30be768df8053be26fbb35c"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/frozen-transaction-result.json",
+      "bytes": 11148,
+      "sha256": "5b1458e7e50bd4aa461a909e0942edd7a92cb083868da3d722e8a3fc11c3b289"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/original-app-1-trace.jsonl",
+      "bytes": 2184,
+      "sha256": "5cce00b99309ba80edf7d50605f3ed173f1e5413446c2570eb7cbe6a4012a39b"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/original-outside-1-trace.jsonl",
+      "bytes": 2185,
+      "sha256": "620bda3046e7a89aee7dc578d1c6e47c774fa43f43bcf66a003724528fc4b372"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/seed-smoke-output.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/public-releases.json",
+      "bytes": 217,
+      "sha256": "18462b9757c18d843265af003694bbb60addc09241756c0952d735b09f4b1b19"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/seed-smoke-output.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/signed-bridge-build.json",
+      "bytes": 164,
+      "sha256": "fde1b8836bcf9d9011b30af18025115de3d510d4fd8a450e30c4ba05617f3442"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/signed-bridge-build.log",
+      "bytes": 315,
+      "sha256": "e2a4916910f7f9bd276a064a607bd5fb01fb1cc0cf8fd336721ca6027e9c9ce4"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/signed-bridge-result.json",
+      "bytes": 1785,
+      "sha256": "60d012cc122b170ca7dbf7f416b3beffc11b6404395fd1abab4b1dca87f4b43a"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/signed-bridge-run.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/unpublished102-scan.json",
+      "bytes": 109885,
+      "sha256": "eb0f14fed1ab48e5a2c84072e1a2c71cadb7f906208e48896958511a5ded01b4"
+    },
+    {
+      "file": ".ai-dev/ACCEPTANCE/S9-T06.md",
+      "bytes": 24381,
+      "sha256": "0fc614b2263ae5cb8b4f736e7f8efc48e61c496733088926d9372d048cc698d6"
+    },
+    {
+      "file": ".ai-dev/ANALYSIS/S9-T06-B-ROOT-CAUSE.md",
+      "bytes": 5810,
+      "sha256": "b0c8aaa9a1c8a022ace65d7c82a06b9d55a661449f78ad03c270ba8f34d50437"
+    },
+    {
+      "file": ".ai-dev/HANDOFF/LATEST.md",
+      "bytes": 45926,
+      "sha256": "8769113133a8ab6dc2c8e69ddcc14b143f9e5b85dde7d753acf15c3930f16481"
+    },
+    {
+      "file": ".ai-dev/PROJECT_STATUS.md",
+      "bytes": 55601,
+      "sha256": "c3be5e6f13d43b89d5d5cecebc3a43436c7821b3a8cdbb0de36cf9dff47d53b9"
+    },
+    {
+      "file": ".ai-dev/STAGES/STAGE-9.md",
+      "bytes": 26437,
+      "sha256": "8df8256d0299c0627d09a4b4663aef4a91b2793f85407e0502830c2f480b6fee"
+    },
+    {
+      "file": ".ai-dev/TASKS/S9-T06.md",
+      "bytes": 17524,
+      "sha256": "e6feb48e94d16dbdd44b0da2fa9cd06b1a74348aa47e67437ae06366213c3f82"
+    },
+    {
+      "file": "src/StoreExpiryInspector.Updater/Program.cs",
+      "bytes": 24125,
+      "sha256": "4b27fdbb1e3e657c3338425664965769a890eabe3992317f47898b9729c7be2a"
+    },
+    {
+      "file": "src/StoreExpiryInspector/App.xaml.cs",
+      "bytes": 22443,
+      "sha256": "053ca3720dd8868a68f479bdc0c7289bd36fcb6b4918800a22d551b8ec1514ba"
+    },
+    {
+      "file": "src/StoreExpiryInspector/Application/Updates/PendingUpdateRecovery.cs",
+      "bytes": 4084,
+      "sha256": "f204d53ebaee5801258582cfa3e3eed1fdf75318298dd323dbbc5eab76164c37"
+    },
+    {
+      "file": "src/StoreExpiryInspector/Application/Updates/UpdaterLaunch.cs",
+      "bytes": 601,
+      "sha256": "395b2a84bda85834b4b1e79ba90f18665ca065a01209f81c2fb4068ea820b64c"
+    },
+    {
+      "file": "tests/StoreExpiryInspector.Tests/S9T06PendingUpdateRecoveryTests.cs",
+      "bytes": 2838,
+      "sha256": "3cbe6f8f7c0fcb65dc8ea7f40b7582a429013499e9ab0826f60c64e3503ab0a6"
+    },
+    {
+      "file": "tools/Start-S9T06-100-Bridge.cmd",
+      "bytes": 231,
+      "sha256": "05c1099eaed36b6bd1ee9a8206377e8df5307e417a6894f8f64b168a8fafd1da"
+    },
+    {
+      "file": "tools/Start-S9T06-100-Bridge.ps1",
+      "bytes": 5064,
+      "sha256": "b9ec928f00d19100a0b4088519d895a750d527e925f6a451c3d634863ef92af1"
+    }
+  ],
+  "limitation": "Pattern scan plus file-scope review; no claim to detect arbitrary encodings. Existing upstream history is not rewritten."
+}

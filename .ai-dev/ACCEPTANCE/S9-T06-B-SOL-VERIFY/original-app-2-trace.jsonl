@@ -1,0 +1,14 @@
+{"utc": "2026-09-05T10:14:17.8505123+00:00", "kind": "updater-start", "detail": {"pid": 36408, "cwd": "TEMP\\91215469-9c10-4537-b7bf-bbc4d64bc118\\app"}}
+{"utc": "2026-09-05T10:14:18.1277353+00:00", "kind": "phase", "detail": {"phase": "Prepared", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:18.3236913+00:00", "kind": "phase", "detail": {"phase": "MainExitRequested", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:18.5132358+00:00", "kind": "phase", "detail": {"phase": "MainExited", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:19.294887+00:00", "kind": "phase", "detail": {"phase": "CandidateStaged", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:19.835274+00:00", "kind": "app-to-old-start", "detail": {"phase": "CandidateStaged", "relativePath": "app", "target": "app.old", "parentExited": true}}
+{"utc": "2026-09-05T10:14:19.8379675+00:00", "kind": "app-to-old-error", "detail": {"phase": "CandidateStaged", "type": "System.IO.IOException", "hresult": "0x80070020", "sharingViolation": true}}
+{"utc": "2026-09-05T10:14:19.8390599+00:00", "kind": "exception", "detail": {"phase": "CandidateStaged", "type": "System.IO.IOException", "hresult": "0x80070020"}}
+{"utc": "2026-09-05T10:14:20.0247812+00:00", "kind": "phase", "detail": {"phase": "RollbackRequired", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:20.1996051+00:00", "kind": "phase", "detail": {"phase": "RollbackStarted", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:20.92413+00:00", "kind": "phase", "detail": {"phase": "OldAppRestored", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:23.622978+00:00", "kind": "phase", "detail": {"phase": "RollbackVerified", "parentPid": 29124, "updaterPid": 36408}}
+{"utc": "2026-09-05T10:14:23.640555+00:00", "kind": "normal-start", "detail": {"pid": 20392, "version": "1.0.0"}}
+{"utc": "2026-09-05T10:14:23.903917+00:00", "kind": "phase", "detail": {"phase": "RolledBack", "parentPid": 29124, "updaterPid": 36408}}

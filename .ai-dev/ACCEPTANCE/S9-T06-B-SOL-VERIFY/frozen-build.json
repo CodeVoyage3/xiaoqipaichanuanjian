@@ -1,0 +1,7 @@
+{
+  "root": "TEMP\\a0d1f77b-1a7b-45c3-846e-3a5f17416f5c",
+  "updater": "TEMP\\a0d1f77b-1a7b-45c3-846e-3a5f17416f5c\\updater\\publish\\StoreExpiryInspector.Updater.exe",
+  "parent": "TEMP\\a0d1f77b-1a7b-45c3-846e-3a5f17416f5c\\parent\\publish\\Parent.exe",
+  "sourceCommit": "7044a984ddca757d8ae9350fbc523800bd769796",
+  "frozenSourceSha256": "a51d8aa09e7c1da1d2f20d076ee0efea82df7744cc7b5d374147472a37339475"
+}

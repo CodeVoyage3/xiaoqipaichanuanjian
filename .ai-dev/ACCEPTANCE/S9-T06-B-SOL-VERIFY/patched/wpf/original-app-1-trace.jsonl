@@ -1,0 +1,15 @@
+{"utc": "2026-09-05T10:47:17.5770072+00:00", "kind": "updater-start", "detail": {"pid": 33076, "cwd": "TEMP\\a65a2f4c-f8f3-4703-9786-e7bb32208054\\updates\\6a427580-9d91-4aeb-993c-00dddb087ce3\\updater"}}
+{"utc": "2026-09-05T10:47:17.8575548+00:00", "kind": "phase", "detail": {"phase": "Prepared", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:18.069649+00:00", "kind": "phase", "detail": {"phase": "MainExitRequested", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:18.2491309+00:00", "kind": "phase", "detail": {"phase": "MainExited", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:19.1180745+00:00", "kind": "phase", "detail": {"phase": "CandidateStaged", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:19.6987086+00:00", "kind": "app-to-old-start", "detail": {"phase": "CandidateStaged", "relativePath": "app", "target": "app.old", "parentExited": true}}
+{"utc": "2026-09-05T10:47:19.7053161+00:00", "kind": "app-to-old-success", "detail": {"phase": "CandidateStaged"}}
+{"utc": "2026-09-05T10:47:19.8928417+00:00", "kind": "phase", "detail": {"phase": "OldAppPreserved", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:20.6615589+00:00", "kind": "phase", "detail": {"phase": "SwitchStarted", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:20.8540096+00:00", "kind": "phase", "detail": {"phase": "CandidateActivated", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:21.6913496+00:00", "kind": "phase", "detail": {"phase": "CandidateStarted", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:21.8749506+00:00", "kind": "phase", "detail": {"phase": "WaitingForHealthAck", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:23.885658+00:00", "kind": "phase", "detail": {"phase": "Committed", "parentPid": 33572, "updaterPid": 33076}}
+{"utc": "2026-09-05T10:47:23.9151955+00:00", "kind": "normal-start", "detail": {"pid": 32332, "version": "1.0.2"}}
+{"utc": "2026-09-05T10:47:24.0994103+00:00", "kind": "phase", "detail": {"phase": "Completed", "parentPid": 33572, "updaterPid": 33076}}

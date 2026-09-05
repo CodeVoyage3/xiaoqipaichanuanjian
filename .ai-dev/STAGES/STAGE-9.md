@@ -1,6 +1,19 @@
 # Stage 9｜安装、发布与在线升级交付
 
-## 当前停止点：GUI 1.0.2 诊断候选已验证，等待原失败实机日志
+## 当前：B 技术验收通过；候选已备，只等待一次 Win11 实机验收
+
+S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9 `IN_PROGRESS / S9-T06_CURRENT`。未创建 S9-T07，未发布 v1.0.2/tag/Setup。
+
+- B=`ROOT_CAUSE_TECHNICALLY_CONFIRMED`：冻结100原始 app CWD 三次均在 CandidateStaged 的 app→old 抛 IOException/0x80070020 并健康回滚；显式外部 WorkingDirectory 和父原本外部 CWD 各三次成功。停止追加根因猜测。
+- 全新 GPT-5.6 Terra medium/priority 完成生产修复，提交 `50b5e9d`、`8c6ebc0`；Sol 完整 diff 与独立技术验收通过。正常安装和 pending recovery 共用正确 WorkingDirectory；独立 Updater 入口切换到自身目录。生产不增加等待/重试，安全事务保护不变。
+- 旧100本来已把自己的 Updater 复制到 app 外，但继承 CWD 仍为 app；仅目标包/manifest/现有参数无法修复首次跨越。受限桥接核验原100完整树，从外部 CWD 启动原 App，保留原 GUI/RSA/完整包hash/原Preparer/原Updater。首次实机目标为当前公开101；不假称未公开102可在线发现。
+- fresh 无 filter Release **1056/1056**、零失败/跳过；独立 build **0警告/0错误**；EF 无漂移，migration **9**。修复后恢复矩阵 **40/40**；fresh 完整102 WPF三种上下文成功+真实100回滚 **4/4**；原100签名包/Preparer→101实际WPF成功；PS5桥接边界 **6/6**。仅 TEMP/GUID 合成数据库。
+- 未公开102完整候选与一次桥接ZIP已备，扫描分别612/3项，已知secret命中0；源 `8c6ebc0cba615cd4844231fda8990a271587f389`。详见 `S9-T06-B-SOL-VERIFY/FINAL.md`、`delivery.json`、`WIN11-ONCE.md`。
+- 用户只需托盘退出100，解压桥接ZIP、双击 `Start-S9T06-100-Bridge.cmd`，在启动的原版里点击一次“立即更新”；确认101正常打开、原数据正常。出错即停并回传，不重复点击、不跑旧诊断。人工验收未回执前不关闭。
+- A=`FROZEN_HISTORICAL_INTERMITTENT`，未宣称修复。仅修复后新版本真实Win11再现或自动化稳定复现时重开；其余不阻塞本卡关闭。Win10仍 NOT_VERIFIED。以下旧A前置门禁及旧诊断用户步骤仅为历史，不再执行。
+
+
+## 历史停止点（已被本轮收口规则取代）：GUI 1.0.2 诊断候选
 
 S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9仍 `IN_PROGRESS / S9-T06_CURRENT`。根因未确认，未宣布修复；Win10 NOT_VERIFIED，不创建S9-T07。
 

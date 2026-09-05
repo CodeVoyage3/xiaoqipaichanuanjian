@@ -1,0 +1,5 @@
+  StoreExpiryInspector.Updater -> src\StoreExpiryInspector.Updater\bin\Release\net10.0\win-x64\s9t05test\net10.0\win-x64\StoreExpiryInspector.Updater.dll
+  StoreExpiryInspector -> src\StoreExpiryInspector\bin\Release\net10.0-windows\StoreExpiryInspector.dll
+  StoreExpiryInspector.Tests -> tests\StoreExpiryInspector.Tests\bin\Release\net10.0-windows\StoreExpiryInspector.Tests.dll
+tests\StoreExpiryInspector.Tests\bin\Release\net10.0-windows\StoreExpiryInspector.Tests.dll (.NETCoreApp,Version=v10.0)的测试运行
+总共 1 个测试文件与指定模式相匹配。

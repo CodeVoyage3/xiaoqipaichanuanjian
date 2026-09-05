@@ -1,0 +1,62 @@
+--- v1.0.0/Program.cs
++++ TEMP-observation/Program.cs
+@@ -4,6 +4,8 @@
+ using System.Diagnostics;
+ 
+ if (args.Length != 2 || args[0] != "--journal") return 2;
++Observation.PathName = Path.Combine(Path.GetDirectoryName(args[1])!, "transaction-trace.jsonl");
++Observation.Write("updater-start", new { pid = Environment.ProcessId, cwd = Environment.CurrentDirectory });
+ return await UpdateTransaction.ResumeAsync(args[1]);
+ 
+ internal enum UpdatePhase { Prepared, MainExitRequested, MainExited, CandidateStaged, OldAppPreserved, SwitchStarted, CandidateActivated, CandidateStarted, WaitingForHealthAck, Committed, Completed, RollbackRequired, RollbackStarted, OldAppRestored, RollbackVerified, RolledBack, FailedNeedsManualRecovery }
+@@ -45,6 +47,7 @@
+             journal = Read(journalPath);
+             Validate(journalPath, journal);
+             validated = true;
++            Observation.Write("phase", new { phase = journal.Phase.ToString(), parentPid = journal.ParentPid, updaterPid = Environment.ProcessId });
+             switch (journal.Phase)
+             {
+                 case UpdatePhase.Prepared: return await Advance(journalPath, journal with { Phase = UpdatePhase.MainExitRequested });
+@@ -62,7 +65,9 @@
+                     TestFault(UpdatePhase.CandidateStaged);
+                     if (Matches(journal.OldPath, journal.OldTree)) return await Advance(journalPath, journal with { Phase = UpdatePhase.OldAppPreserved });
+                     Require(TreeFingerprint.Create(journal.AppPath), journal.OldTree);
+-                    Directory.Move(journal.AppPath, journal.OldPath);
++                    Observation.Write("app-to-old-start", new { phase = journal.Phase.ToString(), relativePath = "app", target = "app.old", parentExited = ParentExited(journal) });
++                    try { Directory.Move(journal.AppPath, journal.OldPath); Observation.Write("app-to-old-success", new { phase = journal.Phase.ToString() }); }
++                    catch (Exception moveError) { Observation.Write("app-to-old-error", new { phase = journal.Phase.ToString(), type = moveError.GetType().FullName, hresult = $"0x{moveError.HResult:X8}", sharingViolation = moveError.HResult == unchecked((int)0x80070020) }); throw; }
+                     return await Advance(journalPath, journal with { Phase = UpdatePhase.OldAppPreserved });
+                 case UpdatePhase.OldAppPreserved:
+                     Require(TreeFingerprint.Create(journal.OldPath), journal.OldTree);
+@@ -109,6 +114,7 @@
+         }
+         catch (Exception exception)
+         {
++            Observation.Write("exception", new { phase = journal?.Phase.ToString(), type = exception.GetType().FullName, hresult = $"0x{exception.HResult:X8}" });
+             Console.Error.WriteLine(exception);
+             if (validated && journal is not null && journal.Phase is UpdatePhase.MainExited or UpdatePhase.CandidateStaged or UpdatePhase.OldAppPreserved or UpdatePhase.SwitchStarted or UpdatePhase.CandidateActivated or UpdatePhase.CandidateStarted or UpdatePhase.WaitingForHealthAck)
+             {
+@@ -331,11 +337,12 @@
+     {
+         var info = new ProcessStartInfo(Path.Combine(journal.AppPath, "StoreExpiryInspector.exe")) { UseShellExecute = false };
+ #if S9T05_TEST
+-        info.Arguments = $"--data-root \"{journal.DataRoot}\" --allow-existing-isolated-data-root";
++        info.Arguments = $"--data-root \"{journal.DataRoot}\" --allow-existing-isolated-data-root --s9-t01-smoke-exit";
+         info.Environment["S9_T05_NORMAL_LAUNCH"] = "1";
+         info.Environment["S9_T05_OPERATION_ID"] = journal.OperationId;
+ #endif
+-        if (Process.Start(info) is null) throw new InvalidDataException("Unable to restart application.");
++        var normal = Process.Start(info) ?? throw new InvalidDataException("Unable to restart application.");
++        Observation.Write("normal-start", new { pid = normal.Id, version = journal.Phase == UpdatePhase.RollbackVerified ? journal.SourceVersion : journal.TargetVersion });
+     }
+     private static string VerificationArguments(UpdateJournal journal)
+     {
+@@ -346,3 +353,8 @@
+ #endif
+     }
+ }
++
++internal static class Observation {
++    internal static string PathName = "";
++    internal static void Write(string kind, object detail) => File.AppendAllText(PathName, JsonSerializer.Serialize(new { utc = DateTimeOffset.UtcNow, kind, detail }) + "\n");
++}

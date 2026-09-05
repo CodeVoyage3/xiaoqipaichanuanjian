@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "launch": {
+    "prepared": {
+      "OperationId": "c01b4759-5ac3-49af-9df8-bf53e939e342",
+      "JournalPath": "TEMP\\fe9810df-7210-44c2-a191-43c0428d8b8b\\updates\\c01b4759-5ac3-49af-9df8-bf53e939e342\\journal.json",
+      "UpdaterPath": "TEMP\\fe9810df-7210-44c2-a191-43c0428d8b8b\\updates\\c01b4759-5ac3-49af-9df8-bf53e939e342\\updater\\StoreExpiryInspector.Updater.exe"
+    },
+    "parentPid": 21068,
+    "updaterPid": 15980,
+    "parentCwd": "TEMP\\e4060202-cd5b-4c9f-9058-1a8368d80e95",
+    "workingDirectory": "",
+    "useShellExecute": false,
+    "signatureValid": true,
+    "negativeSignatureRejected": true,
+    "original100Preparer": true,
+    "sourceVersion": "1.0.0",
+    "targetVersion": "1.0.1",
+    "sha": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169",
+    "realNetwork": false
+  },
+  "phase": 10,
+  "candidateTree": "E7E0692B0A998D5901A0998240B6D06A817BE9500F8DEF64D7596F3814A9C0E7",
+  "oldTree": "BE93548A81FCBF61DB2737C8BBEC9F9CE84DF2D226CB0456282469DF9835E0D8",
+  "actualWpfAck": {
+    "operationId": "c01b4759-5ac3-49af-9df8-bf53e939e342",
+    "version": "1.0.1",
+    "pid": 37280,
+    "startedUtc": "2026-09-05T10:26:33.9789113Z",
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "integrity": "ok",
+    "foreignKeys": "ok",
+    "coreRead": true,
+    "uiLoaded": true
+  },
+  "normalWpfSmokeReady": true,
+  "copiedUpdaterOutsideApp": true,
+  "operationRoot": "TEMP\\fe9810df-7210-44c2-a191-43c0428d8b8b\\updates\\c01b4759-5ac3-49af-9df8-bf53e939e342",
+  "note": "Actual frozen100 DLL Preparer and production RSA signed101 assets; frozen observation updater uses existing TEMP test root mapping. No network or formal GUI claim."
+}

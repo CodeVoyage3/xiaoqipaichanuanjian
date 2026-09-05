@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "8c6ebc0cba615cd4844231fda8990a271587f389",
+  "artifacts": [
+    {
+      "kind": "bridge",
+      "path": "LOCAL_ARTIFACTS\\S9-T06-100-Bridge.zip",
+      "bytes": 3285,
+      "sha256": "faa4943ba285ced5a9f9e0e95a695ff3cc008aa455565e39f0ff5283fb45b275"
+    },
+    {
+      "kind": "unpublished102",
+      "path": "LOCAL_ARTIFACTS\\S9-T06-1.0.2-UNPUBLISHED-CANDIDATE.zip",
+      "bytes": 107874507,
+      "sha256": "4db2ad9e609cb14b16b868342f778feb07f9e55a02b42ed5afd7d580854c1358"
+    }
+  ],
+  "publicTarget": "1.0.1",
+  "published": false
+}

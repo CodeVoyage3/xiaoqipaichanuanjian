@@ -1,0 +1,15 @@
+{"utc": "2026-09-05T10:15:59.807192+00:00", "kind": "updater-start", "detail": {"pid": 35788, "cwd": "TEMP\\eddfc0e2-2125-4a97-97f2-4e91a7a83953"}}
+{"utc": "2026-09-05T10:16:00.098709+00:00", "kind": "phase", "detail": {"phase": "Prepared", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:00.3227361+00:00", "kind": "phase", "detail": {"phase": "MainExitRequested", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:00.5324561+00:00", "kind": "phase", "detail": {"phase": "MainExited", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:01.349576+00:00", "kind": "phase", "detail": {"phase": "CandidateStaged", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:01.8816521+00:00", "kind": "app-to-old-start", "detail": {"phase": "CandidateStaged", "relativePath": "app", "target": "app.old", "parentExited": true}}
+{"utc": "2026-09-05T10:16:01.8864528+00:00", "kind": "app-to-old-success", "detail": {"phase": "CandidateStaged"}}
+{"utc": "2026-09-05T10:16:02.0658423+00:00", "kind": "phase", "detail": {"phase": "OldAppPreserved", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:02.8387328+00:00", "kind": "phase", "detail": {"phase": "SwitchStarted", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:03.0202612+00:00", "kind": "phase", "detail": {"phase": "CandidateActivated", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:03.8591491+00:00", "kind": "phase", "detail": {"phase": "CandidateStarted", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:04.0494623+00:00", "kind": "phase", "detail": {"phase": "WaitingForHealthAck", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:05.8189554+00:00", "kind": "phase", "detail": {"phase": "Committed", "parentPid": 420, "updaterPid": 35788}}
+{"utc": "2026-09-05T10:16:05.850087+00:00", "kind": "normal-start", "detail": {"pid": 36548, "version": "1.0.1"}}
+{"utc": "2026-09-05T10:16:06.0223613+00:00", "kind": "phase", "detail": {"phase": "Completed", "parentPid": 420, "updaterPid": 35788}}

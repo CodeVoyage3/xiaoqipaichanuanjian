@@ -1,0 +1,5 @@
+original-app 1: PASS phase=10
+explicit-outside 1: PASS phase=10
+original-outside 1: PASS phase=10
+forced-rollback 1: PASS phase=15
+4/4 transaction controls passed

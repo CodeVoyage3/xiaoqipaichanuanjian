@@ -1,0 +1,25 @@
+{
+  "candidateBytes": 3285,
+  "candidateSha256": "faa4943ba285ced5a9f9e0e95a695ff3cc008aa455565e39f0ff5283fb45b275",
+  "checkedEntries": 3,
+  "knownSecretHits": [],
+  "reviewedGuardMarkers": [],
+  "limitation": "Known patterns and containers; not a proof against every encoding",
+  "entries": [
+    {
+      "name": "Start-S9T06-100-Bridge.cmd",
+      "bytes": 231,
+      "sha256": "05c1099eaed36b6bd1ee9a8206377e8df5307e417a6894f8f64b168a8fafd1da"
+    },
+    {
+      "name": "Start-S9T06-100-Bridge.ps1",
+      "bytes": 5064,
+      "sha256": "b9ec928f00d19100a0b4088519d895a750d527e925f6a451c3d634863ef92af1"
+    },
+    {
+      "name": "先读我.txt",
+      "bytes": 1106,
+      "sha256": "4153fab996b049797d7cf634159953f6b0567b735b8cb876f403d855786a8714"
+    }
+  ]
+}

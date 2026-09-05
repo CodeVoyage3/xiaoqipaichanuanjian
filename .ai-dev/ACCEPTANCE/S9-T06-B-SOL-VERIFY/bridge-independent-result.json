@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "case": "PS5-real100-isolated-smoke",
+      "passed": true,
+      "detail": {
+        "processId": 35480,
+        "exitCode": 0,
+        "sourceVersion": "1.0.0",
+        "sourceCommit": "7044a984ddca757d8ae9350fbc523800bd769796",
+        "workingDirectory": "TEMP\\22929d2e-86c9-40ff-94c7-db4e64016763",
+        "dataRoot": "TEMP\\6312653b-ede0-4765-b5cb-b7f5018d9408",
+        "target": "GitHub latest release, currently public v1.0.1; no v1.0.2 is published"
+      }
+    },
+    {
+      "case": "non-GUID",
+      "passed": true,
+      "exitCode": 1
+    },
+    {
+      "case": "parameter-set-conflict",
+      "passed": true,
+      "exitCode": 1
+    },
+    {
+      "case": "changed-app-DLL",
+      "passed": true,
+      "exitCode": 1
+    },
+    {
+      "case": "tree-junction",
+      "passed": true,
+      "exitCode": 1
+    },
+    {
+      "case": "existing-process",
+      "passed": true,
+      "exitCode": 1
+    }
+  ],
+  "formalDatabaseAccess": false
+}
