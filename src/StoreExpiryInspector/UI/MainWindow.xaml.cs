@@ -91,7 +91,8 @@ public partial class MainWindow : Window
             result,
             dismiss: () => _updateDiagnostics?.Add("gui-dismiss", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }),
             requestUpdate: () => _ = PrepareUpdateAsync(result, model!),
-            diagnosticBanner: _updateDiagnostics?.Banner);
+            diagnosticBanner: _updateDiagnostics?.Banner,
+            dialogClosed: () => _updateDiagnostics?.Add("gui-dialog-closed", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }));
         (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
         return true;
     }
@@ -135,7 +136,9 @@ public partial class MainWindow : Window
         finally { model.CancelRequested -= cancel; _updateDiagnostics?.Add("gui-cts-disposed", new { operationId, tokenId = linked.GetHashCode() }); }
     }
 
-    internal void StopUpdatePreparation(string source = "app-exit")
+    internal void StopUpdatePreparation() => StopUpdatePreparation("app-exit");
+
+    internal void StopUpdatePreparation(string source)
     {
         _updateDiagnostics?.Add("gui-cancel", new { source, tokenId = _updatePackageCancellation.GetHashCode() });
         _updatePackageCancellation.Cancel();

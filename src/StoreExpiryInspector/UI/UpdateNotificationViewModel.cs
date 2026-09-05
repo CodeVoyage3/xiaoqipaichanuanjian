@@ -5,18 +5,20 @@ namespace StoreExpiryInspector.UI;
 
 public sealed class UpdateNotificationViewModel : ViewModelBase
 {
+    private readonly Action? _dialogClosed;
     private readonly RelayCommand _update;
     private readonly RelayCommand _cancel;
     private string _statusText = "准备更新包";
     private long _receivedBytes;
     private long _totalBytes;
     private bool _isBusy;
-    public UpdateNotificationViewModel(UpdateCheckResult result, Action dismiss, Action requestUpdate, string? diagnosticBanner = null)
+    public UpdateNotificationViewModel(UpdateCheckResult result, Action dismiss, Action requestUpdate, string? diagnosticBanner = null, Action? dialogClosed = null)
     {
         CurrentVersionText = $"当前版本：v{result.CurrentVersion.ToString(3)}";
         LatestVersionText = $"最新版本：v{result.LatestVersion?.ToString(3)}";
         ReleaseNotes = result.ReleaseNotes;
         DiagnosticBanner = diagnosticBanner;
+        _dialogClosed = dialogClosed;
         DismissCommand = new RelayCommand(_ => dismiss());
         _update = new RelayCommand(_ => requestUpdate(), _ => !IsBusy);
         _cancel = new RelayCommand(_ => CancelRequested?.Invoke(), _ => IsBusy);
@@ -32,6 +34,7 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     public ICommand UpdateRequestedCommand { get; }
     public ICommand CancelCommand { get; }
     public event Action? CancelRequested;
+    public void DialogClosed() => _dialogClosed?.Invoke();
     public string StatusText { get => _statusText; private set { _statusText = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); } }
     public long ReceivedBytes { get => _receivedBytes; private set { _receivedBytes = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); } }
     public long TotalBytes { get => _totalBytes; private set { _totalBytes = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressText)); } }

@@ -62,7 +62,7 @@ public sealed class SignedUpdatePackageDownloader
     public SignedUpdatePackageDownloader(HttpMessageHandler? handler = null, UpdatePackageOptions? options = null, UpdateNetworkDiagnostics? diagnostics = null)
     {
         _handler = handler ?? new HttpClientHandler { AllowAutoRedirect = false };
-        _client = new HttpClient(_handler, false);
+        _client = new HttpClient(_handler, handler is null);
         _client.Timeout = Timeout.InfiniteTimeSpan;
         _client.DefaultRequestHeaders.UserAgent.ParseAdd("StoreExpiryInspector/1.0");
         _options = options ?? new();
@@ -264,7 +264,7 @@ public sealed class SignedUpdatePackageDownloader
         var uri = initial;
         for (var hop = 0; hop <= 3; hop++)
         {
-            if (!(hop == 0 ? IsInitialUri(uri) : IsCdnUri(uri))) throw new HttpRequestException("unsafe update host");
+            if (!(hop == 0 ? IsInitialUri(uri) : IsCdnUri(uri))) { _diagnostics?.Add("redirect-rejected", new { stage, redirectHop = hop, reason = "unsafe-host" }); throw new HttpRequestException("unsafe update host"); }
             var category = hop == 0 ? "release-download" : "release-cdn-asset";
             _diagnostics?.Add("request", new { stage, host = uri.IdnHost, pathCategory = category, redirectHop = hop });
             HttpResponseMessage response;
@@ -272,7 +272,7 @@ public sealed class SignedUpdatePackageDownloader
             catch (Exception error) { _diagnostics?.Add("request-error", new { stage, host = uri.IdnHost, pathCategory = category, redirectHop = hop, error = _diagnostics.SafeError(error) }); throw; }
             _diagnostics?.Add("response", new { stage, host = uri.IdnHost, pathCategory = category, redirectHop = hop, status = (int)response.StatusCode });
             if (!IsRedirect(response.StatusCode)) return response;
-            if (hop == 3 || response.Headers.Location is null) { response.Dispose(); throw new HttpRequestException("bad redirect"); }
+            if (hop == 3 || response.Headers.Location is null) { _diagnostics?.Add("redirect-rejected", new { stage, redirectHop = hop, reason = hop == 3 ? "hop-limit" : "missing-location" }); response.Dispose(); throw new HttpRequestException("bad redirect"); }
             var target = response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(uri, response.Headers.Location);
             _diagnostics?.Add("redirect", new { stage, host = uri.IdnHost, redirectHop = hop, targetHost = target.IdnHost, targetPathCategory = "cdn-asset", queryRecorded = false, userInfoPresent = !string.IsNullOrEmpty(target.UserInfo), fragmentPresent = !string.IsNullOrEmpty(target.Fragment) });
             uri = target;

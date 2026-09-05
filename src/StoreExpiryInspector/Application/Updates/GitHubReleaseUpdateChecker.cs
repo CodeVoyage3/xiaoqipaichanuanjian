@@ -29,7 +29,7 @@ public sealed class GitHubReleaseUpdateChecker
     public GitHubReleaseUpdateChecker(HttpMessageHandler? handler = null, TimeSpan? timeout = null, UpdateNetworkDiagnostics? diagnostics = null)
     {
         _handler = handler ?? new HttpClientHandler { AllowAutoRedirect = false };
-        _client = new HttpClient(_handler, disposeHandler: false);
+        _client = new HttpClient(_handler, disposeHandler: handler is null);
         _client.Timeout = Timeout.InfiniteTimeSpan;
         _timeout = timeout ?? TimeSpan.FromSeconds(5);
         _client.DefaultRequestHeaders.UserAgent.ParseAdd("StoreExpiryInspector/1.0");

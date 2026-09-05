@@ -41,7 +41,7 @@ internal static class WpfDialogService
             if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; bytes.Text = model.ProgressText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
         };
         model.PropertyChanged += changed;
-        dialog.Closed += (_, _) => model.PropertyChanged -= changed;
+        dialog.Closed += (_, _) => { model.PropertyChanged -= changed; model.DialogClosed(); };
         buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.Show();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)

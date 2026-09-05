@@ -39,7 +39,11 @@ public partial class App : System.Windows.Application
         try
         {
             RuntimeDataRoot.Configure(e.Args);
-            _updateDiagnostics = UpdateNetworkDiagnostics.TryCreate(e.Args, RuntimeDataRoot.IsIsolated);
+            if (UpdateNetworkDiagnostics.IsRequested(e.Args))
+            {
+                if (!RuntimeDataRoot.IsIsolated) throw new ArgumentException("网络诊断必须使用隔离数据目录。");
+                _updateDiagnostics = UpdateNetworkDiagnostics.OpenIfRequested(e.Args, RuntimeDataRoot.RootDirectory);
+            }
             _updateDiagnostics?.Add("diagnostic-enabled", new { actualCandidateVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3), simulatedSourceVersion = _updateDiagnostics.SimulatedSourceVersion.ToString(3), dataRoot = "TEMP/GUID", installDisabled = true });
         }
         catch (Exception exception)
@@ -268,6 +272,8 @@ public partial class App : System.Windows.Application
     {
         _updateCheckRuntime?.Dispose();
         _updateCheckRuntime = null;
+        _updateDiagnostics?.Dispose();
+        _updateDiagnostics = null;
         (MainWindow as UI.MainWindow)?.StopUpdatePreparation();
         StopRuntime();
         if (_ownsInstanceMutex)
@@ -389,7 +395,7 @@ public partial class App : System.Windows.Application
             {
                 if (!_explicitExit && !mainWindow.IsClosed && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
                     mainWindow.ShowUpdateAvailable(result);
-            }));
+            }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }));
         _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
     }
 
@@ -434,6 +440,7 @@ public partial class App : System.Windows.Application
         }
 
         e.Cancel = true;
+        _updateDiagnostics?.Add("gui-window-hide", new { threadId = Environment.CurrentManagedThreadId });
         MainWindow.Hide();
     }
 
