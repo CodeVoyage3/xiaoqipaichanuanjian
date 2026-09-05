@@ -77,7 +77,9 @@ public sealed class SignedUpdatePackageDownloader
         if (!OperatingSystem.IsWindows() || RuntimeInformation.OSArchitecture != Architecture.X64 || RuntimeInformation.ProcessArchitecture != Architecture.X64) return Task.FromResult(Fail(UpdatePackageOutcome.UnsupportedPlatform, "当前运行环境不支持 win-x64 更新包。"));
         if (!IsVersion(release.Version) || release.Tag != "v" + release.Version.ToString(3) || release.ReleaseId <= 0 || !CurrentMigrations.All(MigrationPattern.IsMatch)) return Task.FromResult(Fail(UpdatePackageOutcome.InvalidManifest, "更新发布身份无效。"));
         var key = release.Version.ToString(3);
-        var lazy = _flights.GetOrAdd(key, _ => new Lazy<Task<UpdatePackageResult>>(() => PrepareCoreAsync(release, currentVersion, progress, cancellationToken)));
+        var candidate = new Lazy<Task<UpdatePackageResult>>(() => PrepareCoreAsync(release, currentVersion, progress, cancellationToken));
+        var lazy = _flights.GetOrAdd(key, candidate);
+        _diagnostics?.Add("singleflight", new { targetVersion = key, joinedExisting = !ReferenceEquals(lazy, candidate) });
         return AwaitAndForget(key, lazy);
     }
 
@@ -207,9 +209,9 @@ public sealed class SignedUpdatePackageDownloader
             if (names.Distinct(StringComparer.Ordinal).Count() != names.Count) return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行资产名称重复。"));
             return (expected with { AssetNames = names }, null);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (null, Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
-        catch (OperationCanceledException) { return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "读取发行超时。")); }
-        catch (HttpRequestException error) { _diagnostics?.Add("request-error", new { stage = "RefreshRelease", error = _diagnostics.SafeError(error) }); return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "无法读取指定发行。")); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage = "RefreshRelease", host = "api.github.com", pathCategory = "release-metadata", redirectHop = 0, source = "caller" }); return (null, Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
+        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage = "RefreshRelease", host = "api.github.com", pathCategory = "release-metadata", redirectHop = 0, source = "timeout" }); return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "读取发行超时。")); }
+        catch (HttpRequestException error) { _diagnostics?.Add("request-error", new { stage = "RefreshRelease", host = "api.github.com", pathCategory = "release-metadata", redirectHop = 0, error = _diagnostics.SafeError(error) }); return (null, Fail(UpdatePackageOutcome.NetworkUnavailable, "无法读取指定发行。")); }
         catch (JsonException) { return (null, Fail(UpdatePackageOutcome.AssetMissing, "发行元数据无效。")); }
     }
 
@@ -236,8 +238,9 @@ public sealed class SignedUpdatePackageDownloader
         progress?.Invoke(new("正在下载更新包", total, expected));
         return total == expected ? (UpdatePackageOutcome.Verified, hash.GetHashAndReset()) : (UpdatePackageOutcome.SizeMismatch, null);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (UpdatePackageOutcome.Cancelled, null); }
-        catch (OperationCanceledException) { return (UpdatePackageOutcome.NetworkUnavailable, null); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage = "Package", source = "caller" }); return (UpdatePackageOutcome.Cancelled, null); }
+        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage = "Package", source = "timeout" }); return (UpdatePackageOutcome.NetworkUnavailable, null); }
+        catch (Exception error) { _diagnostics?.Add("body-error", new { stage = "Package", error = _diagnostics.SafeError(error) }); throw; }
     }
 
     private async Task<byte[]> ReadSmallAsync(string stage, Uri uri, int limit, UpdatePackageOutcome missing, CancellationToken cancellationToken)
@@ -255,8 +258,9 @@ public sealed class SignedUpdatePackageDownloader
         for (int read; (read = await input.ReadAsync(buffer, timeout.Token)) > 0;) { if (output.Length + read > limit) throw new UpdatePackageException(UpdatePackageOutcome.InvalidManifest); output.Write(buffer, 0, read); }
         return output.ToArray();
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-        catch (OperationCanceledException) { throw new UpdatePackageException(UpdatePackageOutcome.NetworkUnavailable); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { _diagnostics?.Add("request-cancelled", new { stage, source = "caller" }); throw; }
+        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage, source = "timeout" }); throw new UpdatePackageException(UpdatePackageOutcome.NetworkUnavailable); }
+        catch (Exception error) { _diagnostics?.Add("body-error", new { stage, error = _diagnostics.SafeError(error) }); throw; }
     }
 
     private async Task<HttpResponseMessage> SendFollowingRedirects(string stage, Uri initial, CancellationToken cancellationToken)

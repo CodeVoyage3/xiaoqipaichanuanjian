@@ -88,10 +88,11 @@ public sealed class GitHubReleaseUpdateChecker
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            _diagnostics?.Add("request-cancelled", new { stage = "CheckLatest", host = LatestReleaseUri.IdnHost, pathCategory = "release-metadata", redirectHop = 0, source = "caller" });
             return UpdateCheckResult.From(UpdateCheckOutcome.Cancelled, currentVersion);
         }
-        catch (OperationCanceledException) { return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
-        catch (HttpRequestException error) { _diagnostics?.Add("request-error", new { stage = "CheckLatest", error = _diagnostics.SafeError(error) }); return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
+        catch (OperationCanceledException) { _diagnostics?.Add("request-cancelled", new { stage = "CheckLatest", host = LatestReleaseUri.IdnHost, pathCategory = "release-metadata", redirectHop = 0, source = "timeout" }); return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
+        catch (HttpRequestException error) { _diagnostics?.Add("request-error", new { stage = "CheckLatest", host = LatestReleaseUri.IdnHost, pathCategory = "release-metadata", redirectHop = 0, error = _diagnostics.SafeError(error) }); return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
         catch (IOException) { return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
         catch (JsonException) { return UpdateCheckResult.From(UpdateCheckOutcome.InvalidRemoteMetadata, currentVersion); }
         catch (InvalidOperationException) { return UpdateCheckResult.From(UpdateCheckOutcome.InvalidRemoteMetadata, currentVersion); }
