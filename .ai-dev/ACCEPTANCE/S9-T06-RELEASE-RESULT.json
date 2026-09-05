@@ -10,7 +10,7 @@
     "ahead": 0,
     "behind": 0
   },
-  "blocker": "Prior no-clean-Windows pause lifted by user-provided independent Windows 11 x64 PC; user GUI acceptance pending.",
+  "blocker": "User reports installed v1.0.0 online preparation fails after approximately 10-20 seconds on ordinary Win11 and Sandbox; exact network stage and root cause not yet established.",
   "developmentHost": {
     "os": "Windows 11 Pro",
     "displayVersion": "23H2",
@@ -24,7 +24,7 @@
     "status": "NOT_VERIFIED"
   },
   "cleanWindows11": {
-    "status": "USER_GUI_PENDING"
+    "status": "USER_GUI_BLOCKED"
   },
   "github": {
     "anonymous": true,
@@ -105,7 +105,7 @@
       }
     ]
   },
-  "onlineUpgrade": "PASS real GitHub production-client download + isolated test-host parent/test-path Updater + actual candidate and restarted WPF; formal installed GUI remains USER_GUI_PENDING",
+  "onlineUpgrade": "USER_GUI_BLOCKED on ordinary Win11 and Sandbox: installed 1.0.0 preparation shows connection error; earlier isolated automation remains historical, not installed GUI success",
   "databaseFingerprintBefore": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
   "databaseFingerprintAfter": "9f2e9ac0942675cff2e5f1b4fe5390a239f0f3c2919d7d3be9aa8d6aa3c581ce",
   "updaterSuccess": "Real 1.0.0-to-1.0.1 isolated GitHub transaction Completed with WPF ACK; fresh controlled hard-kill recovery 27/27",
@@ -1609,7 +1609,7 @@
     ]
   },
   "publicReleasePolicy": "Both stable releases and all four assets per version are public and immutable; do not overwrite/delete/re-tag; defects require user decision",
-  "pendingUserEvidence": "Independent Windows11 OS/build/no-modern-NET/normal-user Setup100/shortcuts/autostart/GUI update/data/uninstall/SmartScreen receipt and closed synthetic evidence copies; Win10 NOT_VERIFIED",
+  "pendingUserEvidence": "Return affected ordinary Win11 safe network diagnostic JSONL; no After required because upgrade failed",
   "realVersionRollback": {
     "fault": "Test-only CandidateActivated IOException before candidate launch",
     "foreignKeyViolations": 0,
@@ -1698,5 +1698,55 @@
     "sha256": "D7C6574794D40E1150498F7C715389FB3EA75705F4890E1B65CF939DAD6D152F",
     "result": "USER_GUI_PENDING",
     "workbookSha256": "B19DD8E0687F506719758DB4CD5D5630E619CDBE2A2F5B85FA492CFC97B689AD"
+  },
+  "userGuiStatus": "USER_GUI_BLOCKED",
+  "networkDefectDiagnosis": {
+    "developmentHostUsesInheritedProxyEnvironment": true,
+    "probeBuildWarnings": 0,
+    "files": [
+      {
+        "sha256": "387D030BA6FB3F781697DF0219745C214425439086B718E58D48DA18060C294D",
+        "name": "NetworkProbe.exe"
+      },
+      {
+        "sha256": "097EE0029292F11ED65DB3901FFB225D15804B97E5367DFEF36DF1F1E0A6922F",
+        "name": "NetworkProbe.dll"
+      },
+      {
+        "sha256": "1AFF09C80488AA7EA0CFC5D4F14FC462732D620F4DF3EA69C6124A8B171DDF19",
+        "name": "NetworkProbe.deps.json"
+      },
+      {
+        "sha256": "E5403125C688E832B1E625563584CE284CD6F0BA7CADC0B8668C8773E732FA4D",
+        "name": "NetworkProbe.runtimeconfig.json"
+      },
+      {
+        "sha256": "96EAC187B3B2429162B019AF3385ECF909C6B8E34E94DDF2BC002B98D1A065FD",
+        "name": "Run-Network-Diagnostic.cmd"
+      },
+      {
+        "sha256": "5041A0C2C36A959AB4CF2897F667D012D6DA00772198CFB89112190F85628121",
+        "name": "Run-Network-Diagnostic.ps1"
+      },
+      {
+        "sha256": "3B22107452686BDEDFD191DD5EDE5EB9406B8B95281D7CE7A1BD53AAC443AF32",
+        "name": "README.md"
+      }
+    ],
+    "packageBytes": 102165,
+    "version102Created": false,
+    "selfContainedRuntime": "10.0.10",
+    "unsafeRedirectAndNestedExceptionRedactionSelfTest": "PASS",
+    "status": "USER_GUI_BLOCKED",
+    "frozenAssemblySha256": "09E1E4B7DF08D48602D76684AC9F6D39BA0B6F02066973AD5B7A8E25090CF444",
+    "frozenRedirectsMatchCurrentObservedCdn": true,
+    "packageSha256": "BE62CFCC8E32B7A83CAC44E44BF043A087739737E37B92CADECB0B3F62D2DF1E",
+    "developmentHostResult": "Verified",
+    "probeBuildErrors": 0,
+    "fullProductTestsRerun": false,
+    "productionCodeChanged": false,
+    "releaseAssetsChanged": false,
+    "rootCause": "NOT_ESTABLISHED_ON_AFFECTED_HOST",
+    "nextEvidence": "Affected ordinary Win11 probe JSONL under same network/proxy context; do not collect After"
   }
 }

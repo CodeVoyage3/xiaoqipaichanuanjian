@@ -1,5 +1,13 @@
 # 最新交接
 
+## 当前：正式在线升级人工阻塞，诊断中
+
+- 用户报告标准Win11实机与Windows Sandbox均可运行正式1.0.0、发现GitHub1.0.1，但“立即更新”显示“正在准备更新包”约十几秒后报“无法连接更新服务器”。S9-T06现为 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9仍 `IN_PROGRESS / S9-T06_CURRENT`。此前本机自动化成功仅保留其隔离证据范围，不能覆盖此次人工失败。不要继续After，不关闭本卡，不创建S9-T07。
+- 实机人工回执：正式Setup可安装、无需以管理员身份运行、桌面快捷方式及中文应用名正常、1.0.0正常启动。向导通用英文文本是未本地化，不是乱码，本轮非阻塞。Sandbox中文方框仅记录环境差异判断，不将实机升级失败归因于Sandbox。
+- 用户保留Init/Before及运行、发现更新、连接失败、实机Setup截图；当前仅收到文字回执，未伪称已独立读取附件。完整正式GUI升级未成功，clean Win11为USER_GUI_BLOCKED，Win10仍NOT_VERIFIED。
+- 本次fetch main=origin/main=b4a793fc79f4222ee75a2b73964fbfcb0744a725，clean/0/0。先只读审查生产下载链，增加仓库外/验收侧安全诊断，分辨RefreshRelease/Manifest/Signature/Redirect/Package及DNS/TLS/连接/timeout，不先猜根因。
+- v1.0.0/v1.0.1及所有公开字节/tag保持不变；不删除失败证据，不先创建1.0.2、不先改生产代码。若证据确认需修复，另建全新Terra medium/priority实施；Sol仅治理/独立复验。修复版本仍同Schema9、不改业务/AppId/安装根/data root。正式新版本实机GUI成功后才恢复本卡验收。
+
 ## 当前停止点：两版已正式发布，等待独立 Win11 GUI 回执（2026-09-05）
 
 - S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_PENDING`；Stage9 `IN_PROGRESS / S9-T06_CURRENT`。此前无 clean OS 暂停已由用户独立 Win11 方案解除。Win10 `NOT_VERIFIED`，Win11 `USER_GUI_PENDING`；不关闭本卡/Stage9，不创建 S9-T07。以下早期暂停与预发布段落仅为历史，不代表当前状态。
@@ -194,3 +202,5 @@
 - Task：`.ai-dev/TASKS/S8-T03.md`；详细命令、JSON路径/SHA、Before/After、失败矩阵与统计局限：`.ai-dev/ACCEPTANCE/S8-T03.md`；阶段：`.ai-dev/STAGES/STAGE-8.md`。
 - 原始产物只在本机TEMP下`StoreExpiryInspectorS8T03/<GUID>`与`StoreExpiryInspectorS8T03Sol/<GUID>`，不包含正式数据，不上传大SQLite/XLSX。S8-T02归档事实仍见其Acceptance，不冒充本卡新鲜压测。
 - 完成本卡普通push后停止；不得创建S8-T04或重置数据Task，不做强杀/断电/人工损坏、不启动Stage9或在线升级。下一卡需用户明确批准。
+
+诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
