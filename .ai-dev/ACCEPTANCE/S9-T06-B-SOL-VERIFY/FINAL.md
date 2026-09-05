@@ -1,5 +1,13 @@
 # S9-T06 B 最终独立技术验收
 
+## 最终收尾：CLOSED
+
+2026-09-05用户真实Win11人工验收通过：正式100经bridge成功自动升级公开101，自动重开显示101，再次关闭重开仍101，原数据正常。B=ROOT_CAUSE_TECHNICALLY_CONFIRMED + REAL_WIN11_END_TO_END_VERIFIED。A为历史偶发准备阶段连接失败，本次未复现，根因未独立确认，不宣称修复，不再阻塞本卡。
+
+重新核验下列技术证据及其对应源码未变，所有门禁仍有效，S9-T06=CLOSED。Stage9仍IN_PROGRESS / S9-T06_CLOSED / WAITING_NEXT_AUTHORIZATION；未发布102、不建T07，无需用户再次GUI测试。人工回执与技术证据hash见 `../S9-T06-WIN11-CLOSEOUT.json`。下方待人工表述保留为历史，不代表当前状态。
+
+## 历史技术验收记录
+
 日期2026-09-05。Sol：TECHNICAL PASS；S9-T06仍 IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED。用户实机验收未回执。无S9-T07、无102 tag/Release/Setup。
 
 Git归档授权：上一轮自动审批因缺少明确远端授权而拒绝提交/push，命令未执行。用户本轮已明确批准将本卡修复与脱敏治理证据普通push至指定仓库main。推送基线重新fetch确认仍为45072b965809ecc0f3e576eacb991055e5cb2fc8；不改历史或公开资产。生产源仍为8c6ebc0cba615cd4844231fda8990a271587f389，后续提交仅作治理与脱敏归档。

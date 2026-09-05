@@ -1,0 +1,89 @@
+{
+  "date": "2026-09-05",
+  "receiptSource": "User-reported real Win11 GUI acceptance in current conversation; not an automated rerun",
+  "baselineMain": "fe68adb24259a71072fe3b95f64f16977d4e01a6",
+  "technicalSource": "8c6ebc0cba615cd4844231fda8990a271587f389",
+  "technicalCodeUnchanged": true,
+  "gateReconfirmation": "Existing fresh unfiltered Release and independent gates re-read and validated; no new execution claimed",
+  "s9t06": "CLOSED",
+  "stage9": "IN_PROGRESS / S9-T06_CLOSED / WAITING_NEXT_AUTHORIZATION",
+  "B": [
+    "ROOT_CAUSE_TECHNICALLY_CONFIRMED",
+    "REAL_WIN11_END_TO_END_VERIFIED"
+  ],
+  "A": {
+    "status": "FROZEN_HISTORICAL_INTERMITTENT",
+    "reproducedInFinalWin11Upgrade": false,
+    "rootCauseIndependentlyConfirmed": false,
+    "claimedFixed": false,
+    "blocksS9T06": false
+  },
+  "userReceipt": {
+    "sourceVersion": "1.0.0",
+    "targetVersion": "1.0.1",
+    "entry": "S9-T06 bridge",
+    "automaticUpgradeSucceeded": true,
+    "automaticallyReopened": true,
+    "displayedVersion": "1.0.1",
+    "closedAndReopenedStillVersion": "1.0.1",
+    "originalDataNormal": true
+  },
+  "technicalGates": {
+    "fullReleasePassed": 1056,
+    "fullReleaseFailed": 0,
+    "fullReleaseSkipped": 0,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "efModelDrift": false,
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "frozenControlsPassed": 9,
+    "recoveryPassed": 40,
+    "actualWpfTransactionsPassed": 4,
+    "bridgeBoundariesPassed": 6
+  },
+  "evidence": [
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/full-release/S9-T06-B-Sol-Full.trx",
+      "sha256": "f9328eafff7db9e40cb95a9b5ec395f420102b179bf4415c41acc215d37e558d"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/build-release.log",
+      "sha256": "808b4fac4bf49aad3a8d0d24b7f5ad40f1ee5a3214262f12e63a6b043ef4a964"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/ef-model.log",
+      "sha256": "c924da1693ad60eb6a78717ddd333946a8a61a056c2ce2868ae514384f01c866"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/ef-migrations.log",
+      "sha256": "a1adf96a68f48cab3f5c89d0d2bace3fdd73a49034cbd5a895eccb2957fad4d9"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/frozen-transaction-result.json",
+      "sha256": "ed3312dcc605a29d137cdde2a0508a6554c83b0beac26e38995dcaf426ef9c83"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched-recovery-result.json",
+      "sha256": "7ccbc0989ed0727bf3791f278f205b50110a9eafd6dcc7c616736ceded83d19b"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/patched/wpf/frozen-transaction-result.json",
+      "sha256": "5b1458e7e50bd4aa461a909e0942edd7a92cb083868da3d722e8a3fc11c3b289"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/signed-bridge-result.json",
+      "sha256": "60d012cc122b170ca7dbf7f416b3beffc11b6404395fd1abab4b1dca87f4b43a"
+    },
+    {
+      "path": ".ai-dev/ACCEPTANCE/S9-T06-B-SOL-VERIFY/bridge-independent-result.json",
+      "sha256": "f20ea895f004163f8381b9df03155cabcf6bda964c4250d5788a61d136051bce"
+    }
+  ],
+  "formalDatabaseAccessByAgent": false,
+  "independentInspectionOfUserDatabase": false,
+  "win10": "NOT_VERIFIED",
+  "additionalUserGuiTestRequired": false,
+  "publish102Authorized": false,
+  "createS9T07Authorized": false
+}

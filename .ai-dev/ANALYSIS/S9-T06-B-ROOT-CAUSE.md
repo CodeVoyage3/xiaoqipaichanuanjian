@@ -42,4 +42,4 @@ B = `ROOT_CAUSE_TECHNICALLY_CONFIRMED`。正式 v1.0.0 启动 Updater 时未设�
 
 A = `FROZEN_HISTORICAL_INTERMITTENT`，不是已修复。用户最新授权覆盖此前“A未定位阻塞关闭”的要求。只在修复后新版本真实Win11升级再次出现该错误，或自动化出现稳定可复现的准备阶段失败时重开；其余不扩大诊断、不阻塞本卡关闭，不要求用户重复正式更新或旧网络诊断。
 
-本卡仍 IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED。Terra修复、Sol独立技术验收、fresh无filter Release1056/1056、build0/0、EF无漂移/migration9、40项恢复矩阵、4项实际WPF事务及未公开候选均已完成。当前只等待一次桥接100→公开101的用户Win11验收；实机未反馈前不关闭。最终权威结果与验证边界见 `../ACCEPTANCE/S9-T06-B-SOL-VERIFY/FINAL.md`。
+本卡现为 CLOSED。用户最终真实Win11回执确认：正式100经bridge自动升级到公开101，自动重开、版本显示和再次退出重开均为101，原数据正常。B追加 REAL_WIN11_END_TO_END_VERIFIED；A本次未复现、根因未独立确认、未宣称修复，不再阻塞关闭。既有技术门禁与代码未变已重新核对，详见 `../ACCEPTANCE/S9-T06-WIN11-CLOSEOUT.json`。Stage9保持IN_PROGRESS并等待后续授权；不发布102、不建T07，用户无需再测试。

@@ -1,6 +1,6 @@
 {
   "technicalAcceptance": "PASS",
-  "B": "ROOT_CAUSE_TECHNICALLY_CONFIRMED",
+  "B": "ROOT_CAUSE_TECHNICALLY_CONFIRMED + REAL_WIN11_END_TO_END_VERIFIED",
   "A": "FROZEN_HISTORICAL_INTERMITTENT",
   "sourceCommit": "8c6ebc0cba615cd4844231fda8990a271587f389",
   "frozenControls": 9,
@@ -28,6 +28,10 @@
   },
   "formalDatabaseAccess": false,
   "published102": false,
-  "userWin11": "PENDING",
-  "s9t06": "IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED"
+  "userWin11": "REAL_WIN11_END_TO_END_VERIFIED",
+  "s9t06": "CLOSED",
+  "finalReceipt": "../S9-T06-WIN11-CLOSEOUT.json",
+  "aReproducedInFinalWin11Upgrade": false,
+  "aRootCauseIndependentlyConfirmed": false,
+  "aClaimedFixed": false
 }
