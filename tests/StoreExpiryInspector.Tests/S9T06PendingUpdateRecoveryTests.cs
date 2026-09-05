@@ -6,6 +6,19 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class S9T06PendingUpdateRecoveryTests
 {
+    [Fact]
+    public void UpdaterLaunchUsesTheCopiedUpdaterDirectory()
+    {
+        var updater = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "updater", "StoreExpiryInspector.Updater.exe");
+        var journal = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "journal.json");
+
+        var start = UpdaterLaunch.Create(updater, journal);
+
+        Assert.False(start.UseShellExecute);
+        Assert.Equal(Path.GetDirectoryName(updater), start.WorkingDirectory);
+        Assert.Equal(["--journal", journal], start.ArgumentList);
+    }
+
     [Theory]
     [InlineData(9)]
     [InlineData(10)]

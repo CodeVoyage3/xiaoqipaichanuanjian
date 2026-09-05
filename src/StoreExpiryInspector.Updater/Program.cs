@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
 
+try { Directory.SetCurrentDirectory(AppContext.BaseDirectory); }
+catch (Exception) { return 1; }
 if (args.Length != 2 || args[0] != "--journal") return 2;
 return await UpdateTransaction.ResumeAsync(args[1]);
 

@@ -499,7 +499,7 @@ public partial class App : System.Windows.Application
                 using var parent = Process.GetCurrentProcess();
                 return new UpdateInstallationPreparer(downloader).Prepare(package, parent, CancellationToken.None);
             });
-            _ = Process.Start(new ProcessStartInfo(prepared.UpdaterPath, $"--journal \"{prepared.JournalPath}\"") { UseShellExecute = false }) ?? throw new InvalidOperationException("独立 Updater 未启动。");
+            _ = Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) ?? throw new InvalidOperationException("独立 Updater 未启动。");
             _explicitExit = true;
             StopRuntime();
             MainWindow?.Close();

@@ -21,7 +21,7 @@ public static class PendingUpdateRecovery
         var updater = Path.Combine(updaterDirectory, "StoreExpiryInspector.Updater.exe");
         EnsureOrdinaryDirectory(updaterDirectory);
         if (!File.Exists(updater) || (File.GetAttributes(updater) & FileAttributes.ReparsePoint) != 0) throw new InvalidOperationException("未完成更新缺少安全的独立 Updater，已停止启动以保护程序和数据。");
-        _ = Process.Start(new ProcessStartInfo(updater) { UseShellExecute = false, ArgumentList = { "--journal", item.JournalPath } }) ?? throw new InvalidOperationException("未完成更新无法恢复，已停止启动以保护程序和数据。");
+        _ = Process.Start(UpdaterLaunch.Create(updater, item.JournalPath)) ?? throw new InvalidOperationException("未完成更新无法恢复，已停止启动以保护程序和数据。");
         return true;
     }
 
