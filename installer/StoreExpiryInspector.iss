@@ -6,7 +6,6 @@
 #endif
 #define AppIdKey "8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14"
 #define AppId "{{" + AppIdKey + "}"
-#define AppVersion "1.0.0"
 #define AppName "门店效期排查软件"
 #define InstallRoot "{localappdata}\Programs\StoreExpiryInspector"
 #define DataRoot "{localappdata}\StoreExpiryInspector"
@@ -31,6 +30,12 @@
   #define AppMutexName "Local\StoreExpiryInspector.SingleInstance." + TestMutexName
 #else
   #define AppMutexName "Local\StoreExpiryInspector.SingleInstance"
+#endif
+
+#ifndef TestMode
+  #ifndef AppVersion
+    #error AppVersion must match the fresh payload executable version.
+  #endif
 #endif
 
 [Setup]

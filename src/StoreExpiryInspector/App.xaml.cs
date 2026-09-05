@@ -52,6 +52,21 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        try
+        {
+            if (!RuntimeDataRoot.IsIsolated && RuntimeDataRoot.UpgradeVerificationOperationId is null && PendingUpdateRecovery.TryResume(RuntimeDataRoot.RootDirectory))
+            {
+                Shutdown();
+                return;
+            }
+        }
+        catch (Exception exception)
+        {
+            WpfDialogService.Show(null, "门店效期排查软件", exception.Message, "知道了", WpfDialogKind.Error, showCancel: false);
+            Shutdown();
+            return;
+        }
+
         _instanceMutex = new Mutex(true, RuntimeDataRoot.MutexName, out _ownsInstanceMutex);
         if (!_ownsInstanceMutex)
         {

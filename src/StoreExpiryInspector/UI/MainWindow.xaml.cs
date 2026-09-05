@@ -30,7 +30,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        _updateDownloader = new SignedUpdatePackageDownloader();
+        _updateDownloader = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options);
         InitializeShell(new ShellViewModel(
             confirmClearDraft: ConfirmClearDraft,
             confirmZeroInventory: ConfirmZeroInventory,
@@ -42,7 +42,7 @@ public partial class MainWindow : Window
     }
 
     internal MainWindow(ShellViewModel shell)
-        : this(shell, new SignedUpdatePackageDownloader()) { }
+        : this(shell, new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options)) { }
 
     internal MainWindow(ShellViewModel shell, SignedUpdatePackageDownloader updateDownloader)
     {

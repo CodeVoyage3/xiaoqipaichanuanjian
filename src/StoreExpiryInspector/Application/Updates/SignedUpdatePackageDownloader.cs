@@ -131,7 +131,7 @@ public sealed class SignedUpdatePackageDownloader
             cancellationToken.ThrowIfCancellationRequested();
             var audit = await Task.Run(() => AuditArchive(packagePath, directory, manifest, cancellationToken), cancellationToken);
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
-            progress?.Invoke(new("更新包已准备完成，安装更新功能将在后续版本启用。", manifest.PackageBytes, manifest.PackageBytes));
+            progress?.Invoke(new("更新包已准备完成，正在进入维护状态。", manifest.PackageBytes, manifest.PackageBytes));
             cancellationToken.ThrowIfCancellationRequested(); verified = true;
             return new(UpdatePackageOutcome.Verified, "更新包已准备完成，可在维护窗口中安装。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release));
         }
@@ -351,7 +351,7 @@ public sealed class SignedUpdatePackageDownloader
 
     private static bool HasLinkExtra(ZipArchiveEntry entry) => (((uint)entry.ExternalAttributes >> 16) & 0xF000) is 0xA000 or 0x6000;
     private static bool IsReserved(string part) => new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" }.Contains(part.Split('.')[0], StringComparer.OrdinalIgnoreCase);
-    private static bool Allowed(string name) => !name.Split('/').Any(part => part.Equals("data", StringComparison.OrdinalIgnoreCase) || part.Equals("logs", StringComparison.OrdinalIgnoreCase) || part.StartsWith("backup", StringComparison.OrdinalIgnoreCase)) && (name is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase));
+    private static bool Allowed(string name) => !name.Split('/').Any(part => part.Equals("data", StringComparison.OrdinalIgnoreCase) || part.Equals("logs", StringComparison.OrdinalIgnoreCase) || part.StartsWith("backup", StringComparison.OrdinalIgnoreCase)) && (name is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" or "Updater/StoreExpiryInspector.Updater.exe" or "Updater/createdump.exe" || name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase));
     private static bool ContainsSecret(string path)
     {
         using var stream = File.OpenRead(path); var buffer = new byte[8192]; var tail = string.Empty;

@@ -79,7 +79,7 @@ internal static class UpdateTransaction
                     return await Advance(journalPath, journal with { Phase = UpdatePhase.CandidateStarted, CandidatePid = candidate.Id, CandidateStartedUtc = candidate.StartTime.ToUniversalTime() });
                 case UpdatePhase.CandidateStarted: return await Advance(journalPath, journal with { Phase = UpdatePhase.WaitingForHealthAck });
                 case UpdatePhase.WaitingForHealthAck:
-                    if (WaitForAck(journal, TimeSpan.FromSeconds(30))) return await Advance(journalPath, journal with { Phase = UpdatePhase.Committed });
+                    if (WaitForAck(journal, TimeSpan.FromSeconds(30)) && WaitForCandidateExit(journal, TimeSpan.FromSeconds(5))) return await Advance(journalPath, journal with { Phase = UpdatePhase.Committed });
                     return await Advance(journalPath, journal with { Phase = UpdatePhase.RollbackRequired });
                 case UpdatePhase.Committed:
                     TryDeleteOperationPackage(journal);
@@ -97,7 +97,7 @@ internal static class UpdateTransaction
                     Require(TreeFingerprint.Create(journal.AppPath), journal.OldTree);
                     var oldInfo = new ProcessStartInfo(Path.Combine(journal.AppPath, "StoreExpiryInspector.exe"), VerificationArguments(journal)) { UseShellExecute = false }; oldInfo.Environment["S9_T05_ACK_VERSION"] = journal.SourceVersion;
                     var old = Process.Start(oldInfo) ?? throw new InvalidDataException();
-                    return WaitForAck(journal with { TargetVersion = journal.SourceVersion, CandidatePid = old.Id, CandidateStartedUtc = old.StartTime.ToUniversalTime() }, TimeSpan.FromSeconds(30))
+                    return WaitForAck(journal with { TargetVersion = journal.SourceVersion, CandidatePid = old.Id, CandidateStartedUtc = old.StartTime.ToUniversalTime() }, TimeSpan.FromSeconds(30)) && WaitForCandidateExit(journal with { CandidatePid = old.Id, CandidateStartedUtc = old.StartTime.ToUniversalTime() }, TimeSpan.FromSeconds(5))
                         ? await Advance(journalPath, journal with { Phase = UpdatePhase.RollbackVerified })
                         : throw new InvalidDataException("Old application did not produce a valid health acknowledgement.");
                 case UpdatePhase.RollbackVerified:
@@ -313,6 +313,18 @@ internal static class UpdateTransaction
             }
         }
         catch (ArgumentException) { }
+    }
+
+    private static bool WaitForCandidateExit(UpdateJournal journal, TimeSpan timeout)
+    {
+        if (journal.CandidatePid == 0 || journal.CandidateStartedUtc is null) return false;
+        try
+        {
+            using var process = Process.GetProcessById(journal.CandidatePid);
+            if (Math.Abs((process.StartTime.ToUniversalTime() - journal.CandidateStartedUtc.Value.UtcDateTime).TotalSeconds) > 1) return false;
+            return process.WaitForExit((int)timeout.TotalMilliseconds);
+        }
+        catch (ArgumentException) { return true; }
     }
 
     private static void StartNormalApplication(UpdateJournal journal)
