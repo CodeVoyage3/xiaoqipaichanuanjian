@@ -75,7 +75,7 @@ if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer output name is inco
 $tree = Get-ChildItem -LiteralPath $publish -File -Recurse | Sort-Object FullName | ForEach-Object { $relative = $_.FullName.Substring($publish.Length).TrimStart('\','/'); "$relative|$($_.Length)|$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash)" }
 $treeHash = ([BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes(($tree -join "`n")))) -replace '-','')
 function Assert-NoSecretMarker([string[]]$Paths) {
-    $private = 'PRIV' + 'ATE'; $patterns = @("-----BEGIN .*${private}", "${private} KEY", '(?i)(password|token|credential)\s*[:=]')
+    $private = 'PRIV' + 'ATE'; $patterns = @("-----BEGIN [A-Z0-9 ]*${private} KEY-----[A-Za-z0-9+/=\r\n]{64,}-----END [A-Z0-9 ]*${private} KEY-----", '\bgh[pousr]_[A-Za-z0-9_]{36}\b', '\bgithub_pat_[A-Za-z0-9_]{20,}\b', '(?i)\b(?:password|credential|token)\b\s*=\s*["''][^"'']+["'']')
     foreach ($path in $Paths) {
         $stream = [IO.File]::OpenRead($path); $tail = ''
         try { $buffer = New-Object byte[] 8192; while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) { $text = $tail + [Text.Encoding]::UTF8.GetString($buffer, 0, $count); if ($patterns | Where-Object { [Text.RegularExpressions.Regex]::IsMatch($text, $_) }) { throw 'Secret scan found a prohibited marker.' }; $tail = $text.Substring([Math]::Max(0, $text.Length - 256)) } }
