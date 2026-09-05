@@ -1,0 +1,53 @@
+{
+  "date": "2026-09-05",
+  "purpose": "Independent S9-T07 feasibility preflight reproducing the accepted S8-T05 structurally valid foreign WAL limitation; this is not S9-T07 acceptance.",
+  "baseline": "c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803",
+  "scope": {
+    "productionCodeChangedBySol": false,
+    "testCodeChangedBySol": false,
+    "formalDatabaseAccessed": false,
+    "formalInstallationAccessed": false,
+    "privateKeyProbed": false,
+    "data": "TEMP/GUID synthetic databases only"
+  },
+  "command": "S8_T05_RUN_ID=sol-s9t07-wal-feasibility-20260905 dotnet test tests/StoreExpiryInspector.Tests/StoreExpiryInspector.Tests.csproj -c Release --no-build --no-restore -p:NuGetAudit=false --filter FullyQualifiedName~S8T05CorruptionSafetyTests.WalSidecarVariantsRecordRealReopenBehavior&DisplayName~mismatched --logger trx;LogFileName=s9t07-wal-feasibility.trx --results-directory <TEMP/GUID-results>",
+  "exitCode": 0,
+  "executedArtifacts": {
+    "testAssembly": {
+      "sha256": "7AFF713717613C2B321BD07D240D6B75CBA3DD67A95F94A2E461500AC6F07FE7",
+      "productVersion": "1.0.0+8c6ebc0cba615cd4844231fda8990a271587f389"
+    },
+    "productAssembly": {
+      "sha256": "CDA58070996AC40CAE4519801E8C509B2BDB3AE7C15820F5C749AC17996AC7EB",
+      "productVersion": "1.0.2+8c6ebc0cba615cd4844231fda8990a271587f389"
+    },
+    "sourceCorrespondence": "This single test used existing Release artifacts (--no-build); it did not perform a fresh build. Their embedded revision is 8c6ebc0cba615cd4844231fda8990a271587f389. The coordinator independently found no tracked src/tests/Directory.Build.props/Directory.Build.targets diff between that revision and c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803, and rechecked the TRX/raw JSON hashes. This is fresh execution of the historical limitation, not the S9-T07 fresh full-suite/build gate."
+  },
+  "trx": {
+    "pathAlias": "<TEMP/GUID-results>/s9t07-wal-feasibility.trx",
+    "sha256": "81354658565605C11EE38BD59B6ADFE1C4BD61C532EE1612E15986E496A5FDD6",
+    "total": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "notExecuted": 0
+  },
+  "rawEvidence": {
+    "pathAlias": "<TEMP/GUID-s8t05>/S8-T05-wal-mismatched.json",
+    "sha256": "5EB0A12446A11D4445C6FC5C542C7647D3AA8F76C229096382694B346BED09DE",
+    "scenario": "wal-mismatched",
+    "walBytes": 12392,
+    "structurallyHealthy": true,
+    "initializerAccepted": true,
+    "businessFingerprintMatched": false,
+    "provenanceProtected": false,
+    "outcome": "known_limitation_not_protected",
+    "contractVerified": true
+  },
+  "interpretation": "The passing test means the known limitation was reproduced as specified. A structurally healthy foreign WAL changed business data while integrity, foreign-key and migration checks remained healthy and DatabaseInitializer accepted it. It does not prove WAL provenance protection.",
+  "s9t07Status": "PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED",
+  "productDecisionRequired": "Confirm that S9-T07 establishes trust at a clean, ordinary-session maintenance freeze and rejects unexplained or late sidecars from that point forward. If the requirement includes detecting a foreign WAL already replayed before that trust point, the current frozen-schema scope cannot prove it and requires a separate provenance contract."
+}

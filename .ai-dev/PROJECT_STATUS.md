@@ -1,5 +1,44 @@
 # 项目状态
 
+## 2026-09-05 用户裁决：解除暂停，继续实施
+
+`S9-T07 = IN_PROGRESS / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT`。用户已明确确认以下信任边界并要求继续实施，覆盖下方历史 PAUSED_PRODUCT_REVIEW；原独立验收与禁止扩范围门禁继续有效。恢复时重新 fetch，origin/main 仍为 c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803。
+
+本卡从本次升级事务开始前已建立并验证的可信状态开始负责：maintenance、所有本软件权威业务写停止、Reminder/background 等受控写入者停止、SQLite 连接正常关闭；快照前不得存在非空或来源不可证明的 WAL。WAL/SHM 不满足冻结规则即 fail-closed，禁止直接 checkpoint 未知 WAL 后继续；应尽可能取得数据库独占访问证明。快照继续验证完整 migration、integrity、FK、fingerprint 与 operation 身份。建立可信边界期间残留或新出现且来源不可证明的 WAL 必须拒绝，不能静默吸收。
+
+不追溯在可信边界之前已经由 SQLite 合法回放并固化到主库的历史污染。不能解释为当前业务数据一定正确，不能声称检测所有历史外部篡改。未来可信基线/数据来源证明/审计链单独处理，不阻塞 Stage9，不在本卡创建后继任务。
+
+准确能力表述：
+
+> S9-T07 guarantees upgrade/rollback safety from a verified pre-upgrade trust boundary; it does not provide forensic detection of historical contamination already committed into the main database.
+
+Terra 继续本卡生产实施和实施测试，提交后停止、不 push；Sol 独立完整 diff 与复验。未通过全部门禁前不关闭；不访问正式 DB，不创建真实 migration10，不发布 v1.0.2，不创建 Stage10。
+
+
+## 2026-09-05 当前停止点：等待快照信任起点裁决
+
+`S9-T07 = PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT / PAUSED_PRODUCT_REVIEW`。
+
+全新 Terra 与独立 Sol 完成实施前源码审查，生产/测试零修改。Sol 用现有 Release 产物独立执行既有外来 WAL 单项，1/1 通过仅表示限制复现：12,392-byte 非空合法外来 WAL 被接受，integrity/FK/migration 健康，但业务指纹改变、provenanceProtected=false。这不是 S9-T07 防护通过，也不是本卡 fresh 全量或 build。
+
+待裁决的具体边界：以本次可信正常会话维护停写、干净关闭后状态为升级保护起点；无法解释的残留/晚到 sidecar 阻断升级，失败必须恢复该起点完整快照；不承诺识别此前已经回放入主库的历史外来 WAL 污染。若要求覆盖该历史污染，需先定义首次读取前的持续来源认证契约，不能靠事后快照 metadata 证明。
+
+依据 TASKS/S9-T07.md 第十二节停止门禁，对“可验证的一致性快照”的来源范围存在实质待决解释，当前不默默降低门禁。可审阅方案：ANALYSIS/S9-T07-SNAPSHOT-TRUST-BOUNDARY.md；独立证据：ACCEPTANCE/S9-T07-WAL-PREFLIGHT.json。
+
+未访问正式安装/DB，未创建真实 migration10，未提交或 push 本轮治理，未发布 v1.0.2，未关闭 Stage9，未创建 Stage10。main=origin/main=c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803；工作区只保留本轮治理文档。下方开工及旧记录是历史。
+
+
+## 2026-09-05 当前：S9-T07 已获实施授权
+
+用户本轮明确授权仅 S9-T07 实施、独立验收及全部通过后 Stage9 最终收口、普通 push main。fresh fetch 后本地 main 已从 54850b8 干净快进至 c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803。
+
+`S9-T07 = IN_PROGRESS / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT`。全新 Terra medium/priority 实施并提交后停止、不 push；独立 Sol 审查和复验，不写生产代码。当前尚未完成本卡门禁，不提前关闭。
+
+S9-T01～T06 及 Stage8 保持 CLOSED。S9-T06 Win11 成功是既有用户回执，A 保持 FROZEN_HISTORICAL_INTERMITTENT，Win10 NOT_VERIFIED。本轮匿名只读确认公开 latest=v1.0.1，两版 tag 与四资产元数据保持既有身份；未改公开资产。
+
+只允许 TEMP/GUID 合成验证，不访问正式安装/DB；生产 migration 仍须 9，无真实 migration10/ModelSnapshot/业务 Schema 变化。不发布 v1.0.2，不创建 Stage10。细节见 TASKS/S9-T07.md 与 ACCEPTANCE/S9-T07.md。下方等待下一授权等表述为历史记录。
+
+
 ## 当前：S9-T06 CLOSED；真实 Win11 bridge 端到端验收通过
 
 2026-09-05，用户在本话题明确回执：正式 v1.0.0 经 S9-T06 bridge 自动升级至公开 v1.0.1；自动重新打开并显示1.0.1；再次关闭、重新打开仍为1.0.1；原有数据正常。本次未出现“无法连接更新服务器”。这是用户真实Win11人工回执，非Sol重跑GUI或独立读取正式DB的结论。

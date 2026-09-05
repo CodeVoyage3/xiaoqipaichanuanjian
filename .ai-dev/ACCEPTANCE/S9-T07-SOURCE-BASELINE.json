@@ -1,0 +1,89 @@
+{
+  "date": "2026-09-05",
+  "source": "c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803",
+  "sourceKind": "fresh fetch plus tracked repository files; no database access",
+  "productionMigrationCount": 9,
+  "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+  "migrations": [
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826123739_InitialCreate.cs",
+      "sha256": "67514DA93F29BE483A99CD7EBF1D329AB574B1869F80AC19A282731366B4D611"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826123739_InitialCreate.Designer.cs",
+      "sha256": "1D5F6217DBB2C5F2A51CC91E4007C6DE7DCBBD4F1C4829AA1C98A7C6510CF4C1"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826130822_AddTasksAndDrafts.cs",
+      "sha256": "3F559A13F0D4D8F6607153A90A5003012C117BE6E247F645AE1D647AE271EABB"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826130822_AddTasksAndDrafts.Designer.cs",
+      "sha256": "18B8EA10C5E982F3B17F0559A785FA86C9791333B70B440BABC4BB28DF6315A5"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826135612_AddInspectionHistory.cs",
+      "sha256": "130C4C375569F21BDDBCC6F46A46951982BE22A6211AE67F0B7F8519671F814B"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826135612_AddInspectionHistory.Designer.cs",
+      "sha256": "1BF3F5EC9754328F1C3A9AAFF092A2502C5A434474B856A824E5BC7949D2F651"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826142429_AddInventoryAdjustments.cs",
+      "sha256": "EE937DBCE218AAD990C2C9BD4F5F9C1442F921ECC7BA4589F33C5E9B9D1A67FA"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826142429_AddInventoryAdjustments.Designer.cs",
+      "sha256": "9331EE47C11271F51A022A4BD5D5921071CAA61259CF28A8649CB65E06A68116"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826152131_AddImportPersistence.cs",
+      "sha256": "095BB79ABC1D804461E3930ED9496A56290760888A40A61D5D0758BE074407CB"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826152131_AddImportPersistence.Designer.cs",
+      "sha256": "ED404BA5612AD84AF2974AF5DBD8579D54B40B5EC60B08DEB9909E74C9185D28"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826155455_AddBackupMetadata.cs",
+      "sha256": "6A09C762F1B03F5F45EB8FB6197D52D5373B0D4DE76DBE1DA582CEFA96663CEA"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826155455_AddBackupMetadata.Designer.cs",
+      "sha256": "E1CBD9B66194DE611C9F0920E124600E1B8CD597BE0A9B4D53B6783F373CF6F1"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826162033_AddSettingsAndAppState.cs",
+      "sha256": "AA557439618939B0E662A23819000869F8C60234B6005F54D5C019D9C5BE9C8A"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826162033_AddSettingsAndAppState.Designer.cs",
+      "sha256": "D18350DB62753AD889F8E160EBDEF9832120D3BB1CC11819822C06590855D6C9"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826170403_AddLifecycleEvents.cs",
+      "sha256": "032D8516716C2BDFBC1B693C946A93FC20EAC326001751A25F50C3BA85E48647"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260826170403_AddLifecycleEvents.Designer.cs",
+      "sha256": "0C32DF0DD8933C9EFC0B2FB16CB4C8F8DC5159A61BE69600856C06A96B7E7CC0"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260901155124_AddPolicyAndBaselineFoundation.cs",
+      "sha256": "E3C3E24BD8B0699FE1FC68C6FEB4BACCA7B0D4BE7322699541997752E5AB896D"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/20260901155124_AddPolicyAndBaselineFoundation.Designer.cs",
+      "sha256": "ED22263E21F0F9432F46FEF7A5938F595F5E49428D8904AA0148083148B99647"
+    },
+    {
+      "path": "src/StoreExpiryInspector/Migrations/StoreDbContextModelSnapshot.cs",
+      "sha256": "433533BD673E6B5130B7E66D270FCADE9D1432F93537C86C4BB918DAE83BDF19"
+    }
+  ],
+  "domainGitTree": "7b5ef0cf0c2b52da0741771bc942b3c2d0024f5f",
+  "productionTrustAnchorSha256": "F58B7F315FC2292664999173332BA7391D88EE278E025F3D02BBFC980D9A0533",
+  "formalDatabaseAccessed": false,
+  "formalInstallationAccessed": false
+}
