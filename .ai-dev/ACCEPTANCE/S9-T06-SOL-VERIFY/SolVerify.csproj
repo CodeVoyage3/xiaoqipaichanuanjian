@@ -8,5 +8,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="StoreExpiryInspector"><HintPath>$(PublishDirectory)\StoreExpiryInspector.dll</HintPath></Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore"><HintPath>$(PublishDirectory)\Microsoft.EntityFrameworkCore.dll</HintPath></Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.Relational"><HintPath>$(PublishDirectory)\Microsoft.EntityFrameworkCore.Relational.dll</HintPath></Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.Sqlite"><HintPath>$(PublishDirectory)\Microsoft.EntityFrameworkCore.Sqlite.dll</HintPath></Reference>
+    <Reference Include="Microsoft.Data.Sqlite"><HintPath>$(PublishDirectory)\Microsoft.Data.Sqlite.dll</HintPath></Reference>
+    <Reference Include="SQLitePCLRaw.core"><HintPath>$(PublishDirectory)\SQLitePCLRaw.core.dll</HintPath></Reference>
+    <Reference Include="SQLitePCLRaw.batteries_v2"><HintPath>$(PublishDirectory)\SQLitePCLRaw.batteries_v2.dll</HintPath></Reference>
+    <Reference Include="SQLitePCLRaw.provider.e_sqlite3"><HintPath>$(PublishDirectory)\SQLitePCLRaw.provider.e_sqlite3.dll</HintPath></Reference>
+    <None Include="$(PublishDirectory)\e_sqlite3.dll" Link="e_sqlite3.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,39 @@
+{
+  "mode": "local",
+  "failures": 0,
+  "results": [
+    {
+      "name": "embedded-production-public-key",
+      "pass": true,
+      "details": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC"
+    },
+    {
+      "name": "raw-production-manifest-signature",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "package-size-sha",
+      "pass": true,
+      "details": {
+        "bytes": 107875191,
+        "sha": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169"
+      }
+    },
+    {
+      "name": "production-client-full-archive-revalidation",
+      "pass": true,
+      "details": "Verified"
+    },
+    {
+      "name": "wrong-production-signature-rejected",
+      "pass": true,
+      "details": "InvalidManifestSignature"
+    },
+    {
+      "name": "test-key-rejected-by-production-client",
+      "pass": true,
+      "details": "InvalidManifestSignature"
+    }
+  ]
+}

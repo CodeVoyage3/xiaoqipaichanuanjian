@@ -1,0 +1,88 @@
+{
+  "mode": "seed-workbook",
+  "failures": 0,
+  "results": [
+    {
+      "name": "embedded-production-public-key",
+      "pass": true,
+      "details": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC"
+    },
+    {
+      "name": "actual-workbook-import",
+      "pass": true,
+      "details": {
+        "Succeeded": true,
+        "Success": true,
+        "Code": "succeeded",
+        "SafeSummary": "\u786E\u8BA4\u5BFC\u5165\u5DF2\u6210\u529F\u63D0\u4EA4\u3002",
+        "SafeUserMessage": "\u786E\u8BA4\u5BFC\u5165\u5DF2\u6210\u529F\u63D0\u4EA4\u3002",
+        "ImportId": 1,
+        "ImportRecordId": 1,
+        "SnapshotPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\backups\\pre-import\\pre-import-20260905T045703213Z-b9fe6d55603a44fb8446abd064ab1cef.db",
+        "SnapshotMetadata": {
+          "BackupType": "pre_import",
+          "SourceDatabasePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\data\\app.db",
+          "SnapshotPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\backups\\pre-import\\pre-import-20260905T045703213Z-b9fe6d55603a44fb8446abd064ab1cef.db",
+          "FilePath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\backups\\pre-import\\pre-import-20260905T045703213Z-b9fe6d55603a44fb8446abd064ab1cef.db",
+          "Sha256": "e22b7dadc1e806d95bf6d2848472b466ac3ab4e9fc7e0ce9503bef22d8713e3b",
+          "CreatedAtUtc": "2026-09-05T04:57:03.2312917Z",
+          "VerificationStatus": "verified",
+          "FileSize": 339968,
+          "MigrationIds": [
+            "20260826123739_InitialCreate",
+            "20260826130822_AddTasksAndDrafts",
+            "20260826135612_AddInspectionHistory",
+            "20260826142429_AddInventoryAdjustments",
+            "20260826152131_AddImportPersistence",
+            "20260826155455_AddBackupMetadata",
+            "20260826162033_AddSettingsAndAppState",
+            "20260826170403_AddLifecycleEvents",
+            "20260901155124_AddPolicyAndBaselineFoundation"
+          ]
+        }
+      }
+    },
+    {
+      "name": "actual-synthetic-inspection-submitted",
+      "pass": true,
+      "details": {
+        "Outcome": 0,
+        "InspectionId": 1,
+        "EffectiveStockQty": 5,
+        "TotalCheckedQty": 2,
+        "Status": "submitted",
+        "Submitted": true,
+        "AlreadySubmitted": false,
+        "RequiresOverStockConfirmation": false
+      }
+    },
+    {
+      "name": "synthetic-backup-created",
+      "pass": true,
+      "details": {
+        "Succeeded": true,
+        "Code": "verified",
+        "SafeSummary": "\u672C\u5730\u6570\u636E\u5E93\u5907\u4EFD\u5DF2\u521B\u5EFA\u5E76\u9A8C\u8BC1\u3002",
+        "BackupRecordId": 2,
+        "BackupId": "backup-20260905T045704228Z-c6583b94778c4c419169e38f55438a94",
+        "BackupPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\backups\\backup-20260905T045704228Z-c6583b94778c4c419169e38f55438a94.db",
+        "MetadataPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\c5f55aed-7391-4caa-b6ee-4543c354d2ef\\backups\\backup-20260905T045704228Z-c6583b94778c4c419169e38f55438a94.db.metadata.json",
+        "CreatedAtUtc": "2026-09-05T04:57:04.2453226Z",
+        "FileSize": 339968,
+        "Sha256": "76dec8e25f66848295a1e4a80da6b331d87f4e528830d58fc8bdc5f34abb8dad",
+        "MigrationIds": [
+          "20260826123739_InitialCreate",
+          "20260826130822_AddTasksAndDrafts",
+          "20260826135612_AddInspectionHistory",
+          "20260826142429_AddInventoryAdjustments",
+          "20260826152131_AddImportPersistence",
+          "20260826155455_AddBackupMetadata",
+          "20260826162033_AddSettingsAndAppState",
+          "20260826170403_AddLifecycleEvents",
+          "20260901155124_AddPolicyAndBaselineFoundation"
+        ],
+        "ValidationResult": "verified"
+      }
+    }
+  ]
+}

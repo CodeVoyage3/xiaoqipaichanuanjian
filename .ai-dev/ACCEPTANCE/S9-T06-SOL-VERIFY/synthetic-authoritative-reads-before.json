@@ -1,0 +1,56 @@
+{
+  "mode": "read-core",
+  "failures": 0,
+  "results": [
+    {
+      "name": "embedded-production-public-key",
+      "pass": true,
+      "details": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC"
+    },
+    {
+      "name": "authoritative-Dashboard-Pending-Today-History-Reminder",
+      "pass": true,
+      "details": {
+        "dashboard": {
+          "OpenTaskCount": 1,
+          "ExpiredCount": 0,
+          "WithdrawCount": 1,
+          "Discount20Count": 0,
+          "Discount50Count": 0,
+          "UrgentTasks": [
+            {
+              "TaskId": 2,
+              "ProductId": 2,
+              "ProductName": "S9T06\u5408\u6210\u679C\u6C41",
+              "ProductCode": "S9T06-002",
+              "ProductBarcode": "0099000000002",
+              "HighestStage": "withdraw",
+              "PendingBatchCount": 1,
+              "EffectiveStockQty": 7,
+              "NearestExpiryDate": "2026-09-13",
+              "HasValidDraft": false,
+              "CategoryName": "\u98DF\u54C1"
+            }
+          ],
+          "LastSuccessfulImportAtUtc": "2026-09-05T04:57:03.171546",
+          "ProductCount": 3,
+          "BatchCount": 3
+        },
+        "pending": 1,
+        "today": {
+          "OutputPath": "C:\\Users\\39037\\AppData\\Local\\Temp\\5c89b901-cb0e-4255-9696-556b5a8191bb\\today-9d81c162-429f-4906-b885-8159f19736d1.xlsx",
+          "TaskCount": 1,
+          "RowCount": 1
+        },
+        "history": 1,
+        "reminders": 1,
+        "workbookBlobs": 1
+      }
+    },
+    {
+      "name": "core-reads-database-bytes-unchanged",
+      "pass": true,
+      "details": null
+    }
+  ]
+}
