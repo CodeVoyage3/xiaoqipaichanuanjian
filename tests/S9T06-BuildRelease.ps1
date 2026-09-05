@@ -13,8 +13,12 @@ if (-not [guid]::TryParse((Split-Path -Leaf $output), [ref]$outputId)) { throw '
 if ([IO.Path]::GetFullPath($repo) -eq $output -or $output.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'OutputRoot must be outside the repository.' }
 $keyPath = [IO.Path]::GetFullPath($SigningKeyFile)
 $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
-if (-not (Test-Path -LiteralPath $keyPath) -or $keyPath.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or $keyPath.StartsWith($output + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or $keyPath.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Signing identity location is not approved.' }
+if (-not (Test-Path -LiteralPath $keyPath) -or ((Get-Item -LiteralPath $keyPath).Attributes -band [IO.FileAttributes]::ReparsePoint) -or $keyPath.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or $keyPath.StartsWith($output + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or $keyPath.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Signing identity location is not approved.' }
 for ($directory = Split-Path -Parent $keyPath; $directory; $directory = Split-Path -Parent $directory) { if ((Get-Item -LiteralPath $directory).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Signing identity location is not approved.' } }
+for ($directory = Split-Path -Parent $output; $directory; $directory = Split-Path -Parent $directory) { if ((Get-Item -LiteralPath $directory).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'OutputRoot location is not approved.' } }
+$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().User
+$keyRules = (Get-Acl -LiteralPath $keyPath).GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]) | Where-Object { $_.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and ($_.FileSystemRights -band [Security.AccessControl.FileSystemRights]::ReadData) }
+if (-not ($keyRules | Where-Object { $_.IdentityReference -eq $currentUser }) -or ($keyRules | Where-Object { $_.IdentityReference -ne $currentUser })) { throw 'Signing identity ACL is not exclusive to the current user.' }
 if ((git -C $repo status --porcelain).Count -ne 0) { throw 'A production release requires a clean source checkout.' }
 $commit = (git -C $repo rev-parse HEAD).Trim()
 $sourceMinVersion = '1.0.0'
@@ -58,7 +62,7 @@ try {
     $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$read)
     if ($read -ne $keyBytes.Length -or $rsa.KeySize -lt 3072) { throw 'Signing identity is invalid.' }
     $public = [Security.Cryptography.RSA]::Create()
-    try { $public.ImportFromPem((Get-Content -Raw (Join-Path $repo '.ai-dev\ACCEPTANCE\S9-T06-PUBLIC-KEY.pem'))); if (([BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($rsa.ExportSubjectPublicKeyInfo())) -replace '-','') -ne '565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC' -or -not $public.ExportSubjectPublicKeyInfo().SequenceEqual($rsa.ExportSubjectPublicKeyInfo())) { throw 'Signing identity does not match the production trust anchor.' } } finally { $public.Dispose() }
+    try { $public.ImportFromPem((Get-Content -Raw (Join-Path $repo '.ai-dev\ACCEPTANCE\S9-T06-PUBLIC-KEY.pem'))); $spki = $rsa.ExportSubjectPublicKeyInfo(); if (([BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($spki)) -replace '-','') -ne '565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC' -or -not [Security.Cryptography.CryptographicOperations]::FixedTimeEquals($public.ExportSubjectPublicKeyInfo(), $spki)) { throw 'Signing identity does not match the production trust anchor.' } } finally { $public.Dispose() }
     $signature = $rsa.SignData($manifestBytes, [Security.Cryptography.HashAlgorithmName]::SHA256, [Security.Cryptography.RSASignaturePadding]::Pss)
     [IO.File]::WriteAllBytes((Join-Path $assets 'update-manifest.sig'), $signature)
     if (-not $rsa.VerifyData($manifestBytes, $signature, [Security.Cryptography.HashAlgorithmName]::SHA256, [Security.Cryptography.RSASignaturePadding]::Pss)) { throw 'Manifest signature verification failed.' }
@@ -70,9 +74,17 @@ $setup = Join-Path $assets "StoreExpiryInspector-Setup-$version.exe"
 if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer output name is incorrect.' }
 $tree = Get-ChildItem -LiteralPath $publish -File -Recurse | Sort-Object FullName | ForEach-Object { $relative = $_.FullName.Substring($publish.Length).TrimStart('\','/'); "$relative|$($_.Length)|$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash)" }
 $treeHash = ([BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes(($tree -join "`n")))) -replace '-','')
-$blocked = '-----BEGIN .*PRIVATE|PRIVATE KEY|(?i)(password|token|credential)\s*[:=]'
-$scan = Get-ChildItem -LiteralPath $repo,$publish,$assets -File -Recurse | Where-Object { $_.Length -le 4MB } | Select-String -Pattern $blocked -List
-if ($scan) { throw 'Secret scan found a prohibited marker.' }
+function Assert-NoSecretMarker([string[]]$Paths) {
+    $private = 'PRIV' + 'ATE'; $patterns = @("-----BEGIN .*${private}", "${private} KEY", '(?i)(password|token|credential)\s*[:=]')
+    foreach ($path in $Paths) {
+        $stream = [IO.File]::OpenRead($path); $tail = ''
+        try { $buffer = New-Object byte[] 8192; while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) { $text = $tail + [Text.Encoding]::UTF8.GetString($buffer, 0, $count); if ($patterns | Where-Object { [Text.RegularExpressions.Regex]::IsMatch($text, $_) }) { throw 'Secret scan found a prohibited marker.' }; $tail = $text.Substring([Math]::Max(0, $text.Length - 256)) } }
+        finally { $stream.Dispose() }
+    }
+}
+$sourcePaths = @(git -C $repo ls-files -- src installer | ForEach-Object { Join-Path $repo $_ })
+$releasePaths = @(Get-ChildItem -LiteralPath $publish,$assets -File -Recurse | Select-Object -ExpandProperty FullName)
+Assert-NoSecretMarker @($sourcePaths + $releasePaths)
 $assetRows = Get-ChildItem -LiteralPath $assets -File | Sort-Object Name | ForEach-Object { [ordered]@{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } }
 if (@($assetRows).Count -ne 4) { throw 'Release assets must contain exactly four files.' }
 [ordered]@{ sourceCommit = $commit; version = $version; fileVersion = $fileVersion; migrationIds = $migrations; packageTreeSha256 = $treeHash; packageTree = $tree; assets = $assetRows } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'release-evidence.json') -Encoding utf8

@@ -11,7 +11,7 @@
 #define DataRoot "{localappdata}\StoreExpiryInspector"
 #define RunValueName "StoreExpiryInspector"
 #define ShortcutName "门店效期排查软件"
-#define OutputName "StoreExpiryInspector-Setup-1.0.0"
+#define OutputName "StoreExpiryInspector-Setup-" + AppVersion
 
 ; Test builds replace every identity that could otherwise touch a real user install.
 #ifdef TestMode
