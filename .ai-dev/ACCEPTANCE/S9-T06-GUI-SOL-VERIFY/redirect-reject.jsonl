@@ -1,0 +1,6 @@
+{"kind":"downloader-handler","utc":"2026-09-05T09:18:30.0153916Z","detail":{"handlerType":"Handler","handlerId":64109423,"clientId":35236192,"createdThreadId":7,"automaticRedirects":false,"timeout":"infinite","defaultProxy":true,"tls":"system-default"}}
+{"kind":"request","utc":"2026-09-05T09:18:30.0158886Z","detail":{"stage":"Signature","host":"github.com","pathCategory":"release-download","redirectHop":0}}
+{"kind":"response","utc":"2026-09-05T09:18:30.0162709Z","detail":{"stage":"Signature","host":"github.com","pathCategory":"release-download","redirectHop":0,"status":302}}
+{"kind":"redirect","utc":"2026-09-05T09:18:30.0164406Z","detail":{"stage":"Signature","host":"github.com","redirectHop":0,"targetHost":"evil.invalid","targetPathCategory":"cdn-asset","queryRecorded":false,"userInfoPresent":false,"fragmentPresent":false}}
+{"kind":"redirect-rejected","utc":"2026-09-05T09:18:30.0166026Z","detail":{"stage":"Signature","redirectHop":1,"reason":"unsafe-host"}}
+{"kind":"body-error","utc":"2026-09-05T09:18:30.0194082Z","detail":{"stage":"Signature","initialHost":"github.com","initialPathCategory":"release-download","error":{"type":"System.Net.Http.HttpRequestException","httpRequestError":"Unknown","status":null,"classification":"Other","socketError":null,"nativeErrorCode":null,"safeNativeMessage":null,"rawMessageRecorded":false,"inner":null}}}

@@ -1,0 +1,66 @@
+{
+  "proxyEnvironmentPresent": {
+    "HTTP_PROXY": false,
+    "HTTPS_PROXY": false,
+    "ALL_PROXY": false,
+    "NO_PROXY": false
+  },
+  "bodyLengths": [
+    {
+      "stage": "CheckLatest",
+      "bytesRead": 8474
+    },
+    {
+      "stage": "RefreshRelease",
+      "bytesRead": 8474
+    },
+    {
+      "stage": "Manifest",
+      "bytesRead": 852
+    },
+    {
+      "stage": "Signature",
+      "bytesRead": 384
+    },
+    {
+      "stage": "Package",
+      "bytesRead": 107875191
+    }
+  ],
+  "updaterStarted": false,
+  "prepareOutcome": "Verified",
+  "excludedAsEstablishedRootCause": [
+    "Release unavailable",
+    "DNS",
+    "TLS",
+    "CDN unreachable",
+    "frozen redirect policy",
+    "manifest/signature",
+    "production signing",
+    "package assets",
+    "developer inherited proxy variables"
+  ],
+  "status": "USER_GUI_BLOCKED",
+  "sourceAssemblySha256": "09E1E4B7DF08D48602D76684AC9F6D39BA0B6F02066973AD5B7A8E25090CF444",
+  "receiptSource": "User supplied original failing standard Win11 host under same network",
+  "guiCause": "NOT_ESTABLISHED",
+  "next": "Instrument real GUI candidate, not repeat independent network test",
+  "os": "Microsoft Windows 10.0.26200",
+  "rawFileSha256": "345AC20CB228D01455CEDEAEEB56A820B9EFE199F7BB15C6F572C1F25936538D",
+  "rawLogIndependentlyRead": true,
+  "runtime": ".NET 10.0.10",
+  "defaultProxyBypassed": [
+    {
+      "host": "api.github.com",
+      "defaultProxyBypassed": false
+    },
+    {
+      "host": "github.com",
+      "defaultProxyBypassed": false
+    },
+    {
+      "host": "release-assets.githubusercontent.com",
+      "defaultProxyBypassed": false
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "actualAppGui": true,
+  "sourceSimulation": "1.0.0",
+  "actualCandidate": "1.0.2",
+  "target": "1.0.1",
+  "actualButton": true,
+  "result": {
+    "kind": "gui-prepare-result",
+    "utc": "2026-09-05T09:19:50.8105489Z",
+    "detail": {
+      "operationId": "41aaffa2963342ee8e0cd58449978c9a",
+      "outcome": "Cancelled",
+      "verified": false
+    }
+  },
+  "exitInvoked": true,
+  "exited": true,
+  "dataRootSynthetic": true,
+  "installationConfigured": false,
+  "updaterStarted": false
+}

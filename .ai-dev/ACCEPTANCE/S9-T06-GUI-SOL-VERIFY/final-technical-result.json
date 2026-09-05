@@ -1,0 +1,35 @@
+{
+  "sourceCommit": "e5ecc65762671f3a29cbbee589aead57714c7e63",
+  "filter": null,
+  "counters": {
+    "total": 1055,
+    "executed": 1055,
+    "passed": 1055,
+    "failed": 0,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "inconclusive": 0,
+    "passedButRunAborted": 0,
+    "notRunnable": 0,
+    "notExecuted": 0,
+    "disconnected": 0,
+    "warning": 0,
+    "completed": 0,
+    "inProgress": 0,
+    "pending": 0
+  },
+  "trxSha256": "67373d54a865c1a7fd55961427903aebe2a04e24d5530ef2af37052147ed09a9",
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0
+  },
+  "publish": "fresh WinX64 self-contained 10.0.10",
+  "fileVersion": "1.0.2.0",
+  "productVersion": "1.0.2+e5ecc65762671f3a29cbbee589aead57714c7e63",
+  "ef": "NO_MODEL_DRIFT",
+  "migrationCount": 9,
+  "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+  "formalDatabaseAccess": false
+}

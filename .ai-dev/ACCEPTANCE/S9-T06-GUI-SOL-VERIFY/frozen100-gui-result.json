@@ -1,0 +1,27 @@
+[
+  {
+    "name": "frozen100-real-gui-separate-handlers",
+    "passed": true,
+    "outcome": "Verified",
+    "text": "\u53D1\u73B0\u65B0\u7248\u672C\n\u5F53\u524D\u7248\u672C\uFF1Av1.0.0\n\u6700\u65B0\u7248\u672C\uFF1Av1.0.1\n\u95E8\u5E97\u6548\u671F\u6392\u67E5\u8F6F\u4EF6 V1 \u540C Schema \u8865\u4E01\u7248\u672C\u3002\n\n\u7528\u4E8E\u9A8C\u8BC1\u4ECE v1.0.0 \u7ECF\u771F\u5B9E GitHub Release \u5B8C\u6210\u5728\u7EBF\u4E0B\u8F7D\u3001\u66F4\u65B0\u6E05\u5355\u9A8C\u7B7E\u548C\u72EC\u7ACB Updater \u5B89\u88C5\u91CD\u542F\u3002\u4E1A\u52A1\u89C4\u5219\u548C\u6570\u636E\u5E93 Schema \u4FDD\u6301\u4E0D\u53D8\u3002\n\n\u66F4\u65B0\u6E05\u5355\u91C7\u7528 RSA-PSS / SHA-256 \u7B7E\u540D\u3002Windows \u53EF\u6267\u884C\u6587\u4EF6\u5C1A\u65E0\u6B63\u5F0F Authenticode \u4EE3\u7801\u7B7E\u540D\uFF0CWindows \u6216 SmartScreen \u53EF\u80FD\u63D0\u793A\u672A\u77E5\u53D1\u5E03\u8005\u3002\n\u66F4\u65B0\u5305\u5DF2\u51C6\u5907\u5B8C\u6210\uFF0C\u53EF\u5728\u7EF4\u62A4\u7A97\u53E3\u4E2D\u5B89\u88C5\u3002\n107,875,191 / 107,875,191 \u5B57\u8282\uFF08100%\uFF09\n\u7A0D\u540E\u63D0\u9192\n\u7ACB\u5373\u66F4\u65B0\n\u53D6\u6D88\u51C6\u5907",
+    "actualButton": true,
+    "originalMainWindowPrepareAsync": true,
+    "originalDefaultDownloaderConstructor": true,
+    "separateCheckerAndDownloaderHandlers": true,
+    "noTransportWrapper": true,
+    "noTimeoutOverride": true,
+    "noCacheRootOverride": true,
+    "beforeDismissCancelled": false,
+    "afterDismissCancelled": false,
+    "afterHideCancelled": false,
+    "host": "Sol isolated WPF test host with synthetic shell loaders; not installed App lifecycle",
+    "dataRootSynthetic": true,
+    "databaseCreated": false,
+    "updaterConfigured": false,
+    "updaterStarted": false
+  },
+  {
+    "name": "main-closed-cancels",
+    "passed": true
+  }
+]

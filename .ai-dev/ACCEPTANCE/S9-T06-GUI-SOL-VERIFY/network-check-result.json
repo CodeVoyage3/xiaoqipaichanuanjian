@@ -1,0 +1,26 @@
+[
+  {
+    "scenario": "dns-cdn",
+    "passed": true,
+    "redacted": true
+  },
+  {
+    "scenario": "timeout",
+    "passed": true,
+    "redacted": true
+  },
+  {
+    "scenario": "caller",
+    "passed": true,
+    "redacted": true
+  },
+  {
+    "scenario": "redirect-reject",
+    "passed": true,
+    "redacted": true
+  },
+  {
+    "scenario": "reparse-root-rejected",
+    "passed": true
+  }
+]

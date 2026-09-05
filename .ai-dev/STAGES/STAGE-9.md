@@ -1,5 +1,24 @@
 # Stage 9｜安装、发布与在线升级交付
 
+## 当前停止点：GUI 1.0.2 诊断候选已验证，等待原失败实机日志
+
+S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9仍 `IN_PROGRESS / S9-T06_CURRENT`。根因未确认，未宣布修复；Win10 NOT_VERIFIED，不创建S9-T07。
+
+- 全新Terra实施并停止，Sol完整diff/独立复验；候选源 `e5ecc65762671f3a29cbbee589aead57714c7e63`，实际产品/FileVersion=1.0.2/1.0.2.0，未创建1.0.2 tag/Release/Setup。公开产品仍1.0.1，既有两版tag/资产不改写。
+- 真实完整App启动→更新提示→实际“立即更新”→GitHub metadata/manifest/sig/ZIP→production验证Verified；ZIP107875191字节/SHA689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169。仅TEMP/GUID合成数据，模拟source100→101，安装delegate硬关闭；用户包移除Updater目录。这是开发机诊断准备成功，不是原实机正式升级成功。
+- GUI取消返回Cancelled并正常退出；关闭提示、Hide、Closed、CTS/check CTS和App退出事件可读。独立阶段/超时/取消/重定向/脱敏/reparse边界5/5；默认诊断关闭smoke exit0。合成DB integrity=ok/FK0/migration9，不是升级After证据。
+- 最终fresh无filter Release1055/1055，failure/error/timeout/aborted/skipped0；build0/0，EF无漂移，migration9末条固定。第一轮1054/1055的启动源码静态契约失败保留；Terra显式分支修正后全量重跑通过。
+- 诊断ZIP 71011157字节，SHA256 `529936669cf06ee274497e60dad359940dda8dad873517c7890c822b4d689f07`；423项扫描0已知secret；私钥头字面量仅为既有包验证器拦截规则，已独立辨明。无私钥读取、正式数据访问或Windows安全设置改变；EXE仍无Authenticode。
+- 用户下一步：原失败标准Win11解压诊断ZIP，运行Start-GuiDiagnostic.cmd，确认实际102/source100/只准备横幅，点击一次立即更新，托盘退出后回传JSONL与结果。无需重复独立网络探针，不做After。具体清单与全部证据在S9-T06-GUI-SOL-VERIFY。
+
+以下内容保留为历史阶段记录。
+
+## 当前：失败实机核心 Verified，转真实 GUI 生命周期诊断
+
+- S9-T06仍为 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`。已独立读取用户原Win11 JSONL：正式100程序集/runtime实际完成Check/Refresh、manifest/signature及107875191字节ZIP，Prepare Verified，无Updater。不得继续将GitHub/DNS/TLS/CDN/冻结redirect/签名/资产/开发机代理环境变量差异当作既定根因。
+- GUI与探针调用比较及Sol原100 GUI隔离动态复验见 `S9-T06-GUI-DIFFERENTIAL.md`；静态未证实CTS或handler根因。下一步仅全新Terra实施默认关闭的真实GUI安全诊断候选，模拟source100→公开101，只准备不安装；候选不是正式修复发行。无需用户重复独立网络探针或提交After。
+- 两版公开资产/tag继续不可变；Win10 NOT_VERIFIED，Win11 USER_GUI_BLOCKED；不关闭Stage9/T06，不创建T07。以下既往网络排查、停止点及发布记录保留为历史。
+
 ## 当前：正式在线升级人工阻塞，诊断中
 
 - 用户报告标准Win11实机与Windows Sandbox均可运行正式1.0.0、发现GitHub1.0.1，但“立即更新”显示“正在准备更新包”约十几秒后报“无法连接更新服务器”。S9-T06现为 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9仍 `IN_PROGRESS / S9-T06_CURRENT`。此前本机自动化成功仅保留其隔离证据范围，不能覆盖此次人工失败。不要继续After，不关闭本卡，不创建S9-T07。

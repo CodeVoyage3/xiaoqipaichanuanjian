@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "9acfe3c6bbd72a6915d534ce243b80012232d008",
+  "filter": null,
+  "counters": {
+    "total": 1055,
+    "executed": 1055,
+    "passed": 1054,
+    "failed": 1,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "inconclusive": 0,
+    "passedButRunAborted": 0,
+    "notRunnable": 0,
+    "notExecuted": 0,
+    "disconnected": 0,
+    "warning": 0,
+    "completed": 0,
+    "inProgress": 0,
+    "pending": 0
+  },
+  "failure": "S3T07 AppEntry static contract: original MainWindow assignment absent after ternary diagnostic branch",
+  "resolution": "Terra explicit if/else requested; full rerun required",
+  "evidencePreserved": true
+}

@@ -1,0 +1,9 @@
+{
+  "syntheticOnly": true,
+  "integrity": "ok",
+  "foreignKeyErrors": 0,
+  "migrationCount": 9,
+  "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+  "databaseSha256": "f5b2436e7a5811c4418f9692a0d43aa4267e3136fb5e0983186d84d41b5db6f4",
+  "isUpgradeAfterEvidence": false
+}

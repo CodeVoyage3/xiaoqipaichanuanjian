@@ -2,7 +2,7 @@
   "date": "2026-09-05",
   "status": "IN_PROGRESS",
   "acceptance": "NOT_ACCEPTED",
-  "provenance": "Sol independent two-release artifacts/signatures/anonymous downloads; real production-client GitHub download and isolated 1.0.0-to-1.0.1 updater/WPF transaction; installed GUI pending user receipt",
+  "provenance": "Historical two-release isolated transaction evidence retained; user installed GUI blocked; affected-host original core Verified; Sol full App GUI diagnostic candidate Verified with installation disabled.",
   "baselineCommit": "fd541b88f071badd6a692373e82deaf6146c10ee",
   "baselineGit": {
     "fetched": true,
@@ -10,7 +10,7 @@
     "ahead": 0,
     "behind": 0
   },
-  "blocker": "User reports installed v1.0.0 online preparation fails after approximately 10-20 seconds on ordinary Win11 and Sandbox; exact network stage and root cause not yet established.",
+  "blocker": "Affected Win11 independent core Verified; installed WPF GUI still fails. CTS/handler/lifecycle root cause not established. Next: instrument full real GUI candidate; do not repeat independent network probe.",
   "developmentHost": {
     "os": "Windows 11 Pro",
     "displayVersion": "23H2",
@@ -38,7 +38,7 @@
     "productionAssetDownloaded": true,
     "latestTag": "v1.0.1"
   },
-  "productVersion": "1.0.1",
+  "productVersion": "1.0.2",
   "productionSigning": {
     "keyCreated": true,
     "trustAnchorConfigured": true,
@@ -1609,7 +1609,7 @@
     ]
   },
   "publicReleasePolicy": "Both stable releases and all four assets per version are public and immutable; do not overwrite/delete/re-tag; defects require user decision",
-  "pendingUserEvidence": "Return affected ordinary Win11 safe network diagnostic JSONL; no After required because upgrade failed",
+  "pendingUserEvidence": "Original failing standard Win11: full GUI diagnostic candidate JSONL and outcome; no repeated standalone probe, no After.",
   "realVersionRollback": {
     "fault": "Test-only CandidateActivated IOException before candidate launch",
     "foreignKeyViolations": 0,
@@ -1748,5 +1748,147 @@
     "releaseAssetsChanged": false,
     "rootCause": "NOT_ESTABLISHED_ON_AFFECTED_HOST",
     "nextEvidence": "Affected ordinary Win11 probe JSONL under same network/proxy context; do not collect After"
-  }
+  },
+  "affectedHostCoreVerified": {
+    "proxyEnvironmentPresent": {
+      "HTTP_PROXY": false,
+      "HTTPS_PROXY": false,
+      "ALL_PROXY": false,
+      "NO_PROXY": false
+    },
+    "bodyLengths": [
+      {
+        "stage": "CheckLatest",
+        "bytesRead": 8474
+      },
+      {
+        "stage": "RefreshRelease",
+        "bytesRead": 8474
+      },
+      {
+        "stage": "Manifest",
+        "bytesRead": 852
+      },
+      {
+        "stage": "Signature",
+        "bytesRead": 384
+      },
+      {
+        "stage": "Package",
+        "bytesRead": 107875191
+      }
+    ],
+    "updaterStarted": false,
+    "prepareOutcome": "Verified",
+    "excludedAsEstablishedRootCause": [
+      "Release unavailable",
+      "DNS",
+      "TLS",
+      "CDN unreachable",
+      "frozen redirect policy",
+      "manifest/signature",
+      "production signing",
+      "package assets",
+      "developer inherited proxy variables"
+    ],
+    "status": "USER_GUI_BLOCKED",
+    "sourceAssemblySha256": "09E1E4B7DF08D48602D76684AC9F6D39BA0B6F02066973AD5B7A8E25090CF444",
+    "receiptSource": "User supplied original failing standard Win11 host under same network",
+    "guiCause": "NOT_ESTABLISHED",
+    "next": "Instrument real GUI candidate, not repeat independent network test",
+    "os": "Microsoft Windows 10.0.26200",
+    "rawFileSha256": "345AC20CB228D01455CEDEAEEB56A820B9EFE199F7BB15C6F572C1F25936538D",
+    "rawLogIndependentlyRead": true,
+    "runtime": ".NET 10.0.10",
+    "defaultProxyBypassed": [
+      {
+        "host": "api.github.com",
+        "defaultProxyBypassed": false
+      },
+      {
+        "host": "github.com",
+        "defaultProxyBypassed": false
+      },
+      {
+        "host": "release-assets.githubusercontent.com",
+        "defaultProxyBypassed": false
+      }
+    ]
+  },
+  "frozen100GuiIndependentCheck": [
+    {
+      "name": "frozen100-real-gui-separate-handlers",
+      "passed": true,
+      "outcome": "Verified",
+      "text": "发现新版本\n当前版本：v1.0.0\n最新版本：v1.0.1\n门店效期排查软件 V1 同 Schema 补丁版本。\n\n用于验证从 v1.0.0 经真实 GitHub Release 完成在线下载、更新清单验签和独立 Updater 安装重启。业务规则和数据库 Schema 保持不变。\n\n更新清单采用 RSA-PSS / SHA-256 签名。Windows 可执行文件尚无正式 Authenticode 代码签名，Windows 或 SmartScreen 可能提示未知发布者。\n更新包已准备完成，可在维护窗口中安装。\n107,875,191 / 107,875,191 字节（100%）\n稍后提醒\n立即更新\n取消准备",
+      "actualButton": true,
+      "originalMainWindowPrepareAsync": true,
+      "originalDefaultDownloaderConstructor": true,
+      "separateCheckerAndDownloaderHandlers": true,
+      "noTransportWrapper": true,
+      "noTimeoutOverride": true,
+      "noCacheRootOverride": true,
+      "beforeDismissCancelled": false,
+      "afterDismissCancelled": false,
+      "afterHideCancelled": false,
+      "host": "Sol isolated WPF test host with synthetic shell loaders; not installed App lifecycle",
+      "dataRootSynthetic": true,
+      "databaseCreated": false,
+      "updaterConfigured": false,
+      "updaterStarted": false
+    },
+    {
+      "name": "main-closed-cancels",
+      "passed": true
+    }
+  ],
+  "guiDiagnosticCandidate": {
+    "sourceCommit": "e5ecc65762671f3a29cbbee589aead57714c7e63",
+    "filter": null,
+    "counters": {
+      "total": 1055,
+      "executed": 1055,
+      "passed": 1055,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    "trxSha256": "67373d54a865c1a7fd55961427903aebe2a04e24d5530ef2af37052147ed09a9",
+    "build": {
+      "configuration": "Release",
+      "warnings": 0,
+      "errors": 0
+    },
+    "publish": "fresh WinX64 self-contained 10.0.10",
+    "fileVersion": "1.0.2.0",
+    "productVersion": "1.0.2+e5ecc65762671f3a29cbbee589aead57714c7e63",
+    "ef": "NO_MODEL_DRIFT",
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "formalDatabaseAccess": false,
+    "zipBytes": 71011157,
+    "zipSha256": "529936669cf06ee274497e60dad359940dda8dad873517c7890c822b4d689f07",
+    "published": false,
+    "setupBuilt": false,
+    "actualGuiPrepare": "Verified",
+    "guiCancel": "Cancelled",
+    "diagnosticChecksPassed": 5,
+    "knownSecretHits": 0,
+    "rootCause": "NOT_ESTABLISHED",
+    "affectedHostGuiTrace": "AWAITING_USER",
+    "downloaded101ZipBytes": 107875191,
+    "downloaded101ZipSha256": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169",
+    "doesNotReplaceInstalledUpgradeAcceptance": true
+  },
+  "publishedProductVersion": "1.0.1"
 }

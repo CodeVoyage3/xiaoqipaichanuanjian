@@ -1,0 +1,81 @@
+{
+  "Anonymous": true,
+  "AuthorizationHeader": false,
+  "Releases": [
+    {
+      "Endpoint": "latest",
+      "Status": 200,
+      "Tag": "v1.0.1",
+      "Draft": false,
+      "Prerelease": false,
+      "Assets": [
+        {
+          "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+          "size": 107875191
+        },
+        {
+          "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+          "size": 74243889
+        },
+        {
+          "name": "update-manifest.json",
+          "size": 852
+        },
+        {
+          "name": "update-manifest.sig",
+          "size": 384
+        }
+      ]
+    },
+    {
+      "Endpoint": "tags/v1.0.0",
+      "Status": 200,
+      "Tag": "v1.0.0",
+      "Draft": false,
+      "Prerelease": false,
+      "Assets": [
+        {
+          "name": "StoreExpiryInspector-1.0.0-win-x64.zip",
+          "size": 107875812
+        },
+        {
+          "name": "StoreExpiryInspector-Setup-1.0.0.exe",
+          "size": 74238426
+        },
+        {
+          "name": "update-manifest.json",
+          "size": 852
+        },
+        {
+          "name": "update-manifest.sig",
+          "size": 384
+        }
+      ]
+    },
+    {
+      "Endpoint": "tags/v1.0.1",
+      "Status": 200,
+      "Tag": "v1.0.1",
+      "Draft": false,
+      "Prerelease": false,
+      "Assets": [
+        {
+          "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+          "size": 107875191
+        },
+        {
+          "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+          "size": 74243889
+        },
+        {
+          "name": "update-manifest.json",
+          "size": 852
+        },
+        {
+          "name": "update-manifest.sig",
+          "size": 384
+        }
+      ]
+    }
+  ]
+}
