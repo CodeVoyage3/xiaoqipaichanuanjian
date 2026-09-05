@@ -32,7 +32,9 @@ function Get-OrdinaryTreeHash([string]$Root) {
     $rows = foreach ($file in $paths) {
         if (-not $file.StartsWith($Root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Application tree path escaped its root.' }
         $relative = $file.Substring($Root.Length + 1)
-        "$relative|$((Get-Item -LiteralPath $file).Length)|$((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash)"
+        $stream = [IO.File]::OpenRead($file); $fileHash = [Security.Cryptography.SHA256]::Create()
+        try { "$relative|$($stream.Length)|$(([BitConverter]::ToString($fileHash.ComputeHash($stream))).Replace('-', ''))" }
+        finally { $fileHash.Dispose(); $stream.Dispose() }
     }
     $bytes = [Text.UTF8Encoding]::new($false).GetBytes(($rows -join "`n"))
     $sha256 = [Security.Cryptography.SHA256]::Create()
@@ -55,9 +57,9 @@ $expectedApp = Join-Path $appRoot 'StoreExpiryInspector.exe'
 $app = if ($isolated) { $expectedApp } elseif ($AppPath) { [IO.Path]::GetFullPath($AppPath) } else { $expectedApp }
 if ($app -ine $expectedApp -or -not [IO.File]::Exists($app)) { throw 'AppPath is not the fixed v1.0.0 application entry.' }
 if ((Get-OrdinaryTreeHash $appRoot) -cne $expectedTreeHash) { throw 'Application tree is not the public v1.0.0 release tree.' }
-$version = (Get-Item -LiteralPath $app).VersionInfo
+$version = [Diagnostics.FileVersionInfo]::GetVersionInfo($app)
 if ($version.FileVersion -cne '1.0.0.0' -or $version.ProductVersion.Trim() -cne $expectedProductVersion) { throw 'AppPath version identity is not public v1.0.0 source 7044a984.' }
-if (Get-Process -Name StoreExpiryInspector -ErrorAction SilentlyContinue) { throw 'StoreExpiryInspector is already running; close it before the bridge starts.' }
+if ([Diagnostics.Process]::GetProcessesByName('StoreExpiryInspector').Length) { throw 'StoreExpiryInspector is already running; close it before the bridge starts.' }
 $workingDirectory = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $workingDirectory | Out-Null
 $start = [Diagnostics.ProcessStartInfo]::new($app); $start.UseShellExecute = $false; $start.WorkingDirectory = $workingDirectory
