@@ -1,5 +1,43 @@
 # 最新交接
 
+## 2026-09-06 最终交接：S9-T07 与 Stage 9 已关闭
+
+`S9-T07 = TECHNICALLY_ACCEPTED / CLOSED`；`Stage9 = CLOSED`。独立 Sol 最终完整 diff 与自动化验收为 `PASS`，没有 correctness/security/data-loss/process-lifecycle 阻断；无需新增人工 GUI 门禁。最终证据索引为 `../ACCEPTANCE/S9-T07-RESULT.json`，阶段总结为 `../STAGES/STAGE-9-CLOSEOUT.md`。下方所有 `IN_PROGRESS / NOT_ACCEPTED`、旧代理、施工与待验收内容均为历史记录。
+
+可信边界不变：
+
+> S9-T07 guarantees upgrade/rollback safety from a verified pre-upgrade trust boundary; it does not provide forensic detection of historical contamination already committed into the main database.
+
+不得据此声称当前业务数据一定正确或能够识别所有历史篡改。生产 migration 仍为 9；未发布 v1.0.2，未创建 Stage10；14节点×3真实硬杀矩阵留在 backlog。发布前 Git 事实为 HEAD `d0112238bef66bef2c987f15ce1cba2b51ccb079`、`origin/main=c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803`、本地 ahead 1 且工作区包含待提交的 S9-T07 实施与治理修改。最终 commit/push/clean/ahead-behind 回执必须在实际发生后另行更新，本节不预写。
+
+## 2026-09-06 收口模式（当前裁决）
+
+用户已明确将14节点×3真实硬杀耐久矩阵移入 `.ai-dev/BACKLOG.md`，不阻塞S9-T07/Stage9 CLOSED。保留全部确定性状态机/fault-injection覆盖；真实硬杀只做MigrationStarted后、MigrationApplied后ACK前、ACK后CandidateCommitted前、SnapshotRestore中、old app恢复后old ACK前，共5个边界各先1次。首失败或不稳才追加针对性重复，稳定通过不机械重复3次。
+
+开发只跑S9-T07专项及必要S8/S9-T05/S9-T06回归；冻结后Sol最终只执行一次fresh无filter Release全量、build、EF/migration、secret scan、git门禁。仍为IN_PROGRESS / NOT_ACCEPTED，信任边界裁决、正式数据禁令和角色分离保持。旧文中的14×3及反复fresh全量要求由本节覆盖。
+
+## S9-T07 当前实施进度（尚未验收）
+最新唯一写者为 `/root/s9_t07_entry_terra`，正在完成实际App maintenance→签名Preparer→外部Updater成功链。已知新test seed预建data后未许可复用，首TRX实际30.838秒在seed第19行失败，非45秒install；另需签名包正确身份、所有TEST路径TEMP验证、Reminder实际启动后maintenance停写、等待Updater终态和全部actor清理。原 `s9_t07_race_terra` 已停止。平台 `/root/s9_t07_platform_sol` 已只读确认双PID normal竞态最新版本bounded静态闭合；最新race1/1 SHA `10DFCE1362478CDF5071C54F193B0E62F6F75D8644F4C897DD55E54D1869B6A6`，fake旧树fixture10/11 2/2 SHA `31CA3D3E89AE77AB822CB8269763B4987E18F0C9C926F4C6B13B605133CDD985`。实际old-prod9 rollback已1/1，仍不等于App maintenance链。完整失败/14节点hardkill×3、独立最终full gates、Terra commit-stop/Sol接受/普通push均未完成。NOT_ACCEPTED不变。
+2026-09-06 最新：唯一写者`/root/s9_t07_real_terra`完成真实old-prod9 1.0.2/schema9→fixture1.0.3/schema10迁移后失败→恢复→真实old ACK/normal Loaded；含settings/BLOB/FK lifecycle history的新TRX `TEMP/386db299-6f0c-4e53-87d4-529bfbe10d71/real-old-final.trx` 根核1/1 SHA `4456BCE2AEED4BD16D2A2BA7057A8F45A13ACB25826FFBA639B607ED9BD54F35`。这不含App maintenance/签名Preparer实链，不含完整hard-kill。当前接续块：candidate-identity exact finally补齐并回归；实际外部Updater legacy10字段ACK control；双PID cleanup同步竞争反例。Sol独立只读，未fresh build/test。完整失败/14节点硬杀×3与最终全量门禁仍欠，NOT_ACCEPTED不变。
+当前写者切换：`s9_t07_normal_terra` 已完成normal/legacy增量与marker1/1后停止；其后只修改fixture项目版本为1.0.3，未运行真实old回滚。新的唯一Terra写者 `s9_t07_real_terra` 接续一个实际old-prod9 rollback用例，Sol仍独立只读。最新10/10收据SHA `2E0FF19496E23155EC91873AF80C001B13041FCA171548998CD74A911809A5B7`，其后Updater观察marker1/1 SHA `CC21DF1657DFFEA70C96ECDCCB28608172151C99A682AB2C8F54A766D7655993`，不能交叉冒充覆盖。Sol最新指出cleanup需同时处理held spawned loser与已绑定intent权威PID不同的情形，已交新Terra最小修。真实old WPF、完整硬杀、最终独立门禁未完成，保持NOT_ACCEPTED。
+接续最新：candidate committed 坏DB零normal启动负例已有实际TRX 1/1，协调者复核SHA `B35ABF7D4169B3568F6B9F70AAE535027C8F9563E8E7D786FB31D405BC04BB1A`；Sol静态确认当前确能到fresh migration门禁，但须增加确切错误断言。Sol另确认legacy10字段 health-ack 被新 HasSchemaEvidence误归为schema，影响Updater与Pending，需兼容修复和有效legacy对照。唯一Terra写者 `s9_t07_normal_terra` 正修normal grace身份记忆与异常后exact进程停止，并补真实重入反例，随后修legacy ACK。19个migration/ModelSnapshot文件再次核验0变化，生产migration9。状态仍 IN_PROGRESS / NOT_ACCEPTED；以下较早进度为历史增量。
+
+最新接续：strict语义修复与新增有效基线反例已有70/70实施收据（`TEMP/s9t07-strict-final-3aefcaf3-a075-4aef-843f-144b29a0908f/S9T07StrictFinal.trx`，根复核SHA `AA6EE5058C6D158D269A8946846664941C55A4291B7538F020D5311834178475`）；normal身份/phase/root/exe、单次有界启动、fresh DB、old启动前logical FP等继续修复。仍欠三个新增真实反例：candidate已commit的坏DB必须零normal Start且不rollback、existingPending在途identity不能二启、old已Identified/Loaded合法数据变化后dead重入不能误强比原snapshot。当前唯一生产写者为 `/root/s9_t07_normal_terra`，只完成第一个新反例；此前 `/root/s9_t07_resume_terra` 已停止。`/root/s9_t07_resume_sol` 独立静态看normal重入/失败残留，不build。旧版真实WPF/完整失败与硬杀矩阵、最终独立full gates仍未完成。
+
+用户“继续”后重新核验：HEAD=`d0112238bef66bef2c987f15ce1cba2b51ccb079`，fresh origin/main=`c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803`，保留实施工作区；限定normal测试进程数0。先前工具host中断，旧代理均不在运行，接续唯一生产写者为 `/root/s9_t07_resume_terra`，独立只读 reviewer 为 `/root/s9_t07_resume_sol`。Terra完成尚欠strict五类真实入口反例及cleanup异常测试，Sol审阅normal编排；不并行build。
+
+资源事件后的单case：normal已改单次Start后bounded等identity/Loaded；fixture normal为data-root mutex，测试以Start记录PID/start兜底finally。target10新GUID单case1/1，TRX `TEMP/s9t07-normal-one-03996e51-f76d-44a7-b644-1eb47d5896a0/S9T07NormalOneCase.trx` SHA256 `932C1CD83160276DD3B62224699C634CB332238EF19CCF0E2C6B12658D679BD2`，根实际核对通过及normal进程0残留。此前enum读取异常曾另留1个fixture PID41964，根核验exactTEMP路径/start后清理；该失败保留。单case通过不等于old/硬杀/整卡通过。
+
+资源恢复事件：normal 初稿的 Pending 分支 Start 后立即递归、identity未落盘可重复启动；根已静态确认，随后测试发现 OOM/创建进程1455。根以仅含本轮新normal参数的CIM查询发现6个TEMP case共13个重复fixture，逐一核验完整exe路径+PID/start后停止，复核限定进程数0，default shell恢复。证据 `TEMP/s9t07-resource-recovery-be6df249-80f3-43bd-b288-80c05cd075e7/owned-before.json`。没有按进程名宽杀或访问正式DB；重复子进程已确认，但不声明OOM唯一根因。当前Terra先修单次Start后的bounded identity/Loaded等待，以及每case完整进程采集与finally清理；只准先跑一个新GUID normal case证明启动1/清理1，再恢复批量测试。此前normal2/2不得计作幂等或无泄漏证明。
+
+最新接续：strict 初轮实施已有91/91合并回归（原始与失败TRX保存在 `TEMP/s9t07-protocol-receipt-21ef12cb-ad8a-4545-af84-9181881d705c/`），Sol 静态复核仍检出3个P0：Pending terminal语义旁路、OldCandidateHealthVerified缺少identity/ACK复核、snapshot metadata/实体检查晚于tree switch；另有restore quarantine重复键/enum契约问题。当前 Terra 已暂停 normal新推进，先修这5项。normal仅未验收初稿（shared intent/App loaded/Updater/fixture），candidate专项2/2不算本项完成，old/hardkill未做。下段较早的“strict仅helper”已由本段覆盖，不能据91项绿宣布接受。
+
+用户下方信任边界裁决已生效，不再等待该产品裁决。治理提交 `d011223` 已在本地；生产/测试仍在工作区实施，未提交接受或 push。恢复意图、部分 staging 重入、持久替换、默认 EF Pooling=false、migration9 源结构/完整显式索引集合已有增量实现。上一 Terra 最新 focused 41/41 是实施收据，不是独立全量结论。
+
+当前唯一生产写者为接续 `/root/s9_t07_protocol_terra`，此前 takeover/restore Terra 已停止。接管增量经独立 `/root/s9_t07_sol_current` 静态复审：在已裁决受控边界内未发现新的数据安全 P0，但还没有独立 fresh 实跑。最新接管实施收据46/46，协调者重新读取全执行通过，TRX `TEMP/s9-t07-takeover-9c277cad-7728-4317-b8fb-7bd41a6b570d/takeover.trx` SHA256 `B897CFE9589E9A29A2172FCE11F9D3BCA014763155F30CD97E0A0F2FA061F1B6`。严格 JSON/phase 当前只有 helper、Pending outer、authorization 初步接入与 phase-pair/old参数分流，尚未完整接入或测试，接续 Terra 正补齐；Sol 不并行 build。
+
+剩余门禁包括：可信接管、commit/rollback 终态重验与正常启动顺序、严格嵌套 JSON/phase、实际生产 App/旧版 ACK、完整失败及真实硬杀矩阵、Terra 提交停止后 Sol fresh 完整验收。保持 `S9-T07 = IN_PROGRESS / NOT_ACCEPTED`、`Stage9 = IN_PROGRESS`。19个 migration/ModelSnapshot 文件已重新对照开工哈希全部一致，生产 migration 仍9，Domain/Migrations 无 diff。无正式数据访问、无 v1.0.2 发布、无 Stage10。
+
 ## 2026-09-05 用户裁决：解除暂停，继续实施
 
 `S9-T07 = IN_PROGRESS / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT`。用户已明确确认以下信任边界并要求继续实施，覆盖下方历史 PAUSED_PRODUCT_REVIEW；原独立验收与禁止扩范围门禁继续有效。恢复时重新 fetch，origin/main 仍为 c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803。
@@ -15,7 +53,7 @@
 Terra 继续本卡生产实施和实施测试，提交后停止、不 push；Sol 独立完整 diff 与复验。未通过全部门禁前不关闭；不访问正式 DB，不创建真实 migration10，不发布 v1.0.2，不创建 Stage10。
 
 
-## 2026-09-05 当前停止点：等待快照信任起点裁决
+## 2026-09-05 历史暂停（已由上方用户裁决解除）
 
 `S9-T07 = PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT / PAUSED_PRODUCT_REVIEW`。
 

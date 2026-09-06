@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <PropertyGroup Condition="'$(S9T07HardKillTestMode)' == 'true'">
+    <DefineConstants>$(DefineConstants);S9T07_HARD_KILL_TEST</DefineConstants>
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\s9t07hardkilltest\</IntermediateOutputPath>
+    <OutputPath>bin\$(Configuration)\$(TargetFramework)\s9t07hardkilltest\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="StoreExpiryInspector.Tests" />
+    <Compile Include="..\StoreExpiryInspector\Application\Updates\SchemaUpgradeSnapshot.cs" Link="SchemaUpgradeSnapshot.cs" />
+    <Compile Include="..\StoreExpiryInspector\Application\Updates\UpgradeHealthAck.cs" Link="UpgradeHealthAck.cs" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+  </ItemGroup>
+</Project>

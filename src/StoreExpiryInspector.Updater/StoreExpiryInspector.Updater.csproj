@@ -8,5 +8,10 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\s9t05test\</IntermediateOutputPath>
     <OutputPath>bin\$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\s9t05test\</OutputPath>
   </PropertyGroup>
-  <ItemGroup><InternalsVisibleTo Include="StoreExpiryInspector.Tests" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StoreExpiryInspector.UpdateSafety\StoreExpiryInspector.UpdateSafety.csproj" GlobalPropertiesToRemove="S9T05TestMode">
+      <AdditionalProperties Condition="'$(S9T05TestMode)' == 'true'">S9T07HardKillTestMode=true</AdditionalProperties>
+    </ProjectReference>
+    <InternalsVisibleTo Include="StoreExpiryInspector.Tests" />
+  </ItemGroup>
 </Project>

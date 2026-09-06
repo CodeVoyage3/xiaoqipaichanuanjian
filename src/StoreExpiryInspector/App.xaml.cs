@@ -1,6 +1,7 @@
 using System.IO;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -39,6 +40,9 @@ public partial class App : System.Windows.Application
         try
         {
             RuntimeDataRoot.Configure(e.Args);
+#if S9T07_TEST
+            if (RuntimeDataRoot.IsS9T07TestInstall) TestInstallMarker("configured");
+#endif
             if (UpdateNetworkDiagnostics.IsRequested(e.Args))
             {
                 if (!RuntimeDataRoot.IsIsolated) throw new ArgumentException("网络诊断必须使用隔离数据目录。");
@@ -48,6 +52,10 @@ public partial class App : System.Windows.Application
         }
         catch (Exception exception)
         {
+#if S9T07_TEST
+            var marker = Environment.GetEnvironmentVariable("S9_T07_TEST_INSTALL_MARKER");
+            if (!string.IsNullOrWhiteSpace(marker) && Path.IsPathFullyQualified(marker) && Path.GetFullPath(marker).StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase)) File.WriteAllText(marker, "configure-error-" + exception.GetType().Name + "-" + exception.Message);
+#endif
             WpfDialogService.Show(
                 owner: null,
                 "门店效期排查软件",
@@ -61,7 +69,7 @@ public partial class App : System.Windows.Application
 
         try
         {
-            if (!RuntimeDataRoot.IsIsolated && RuntimeDataRoot.UpgradeVerificationOperationId is null && PendingUpdateRecovery.TryResume(RuntimeDataRoot.RootDirectory))
+            if (!RuntimeDataRoot.IsIsolated && RuntimeDataRoot.UpgradeVerificationOperationId is null && RuntimeDataRoot.NormalLaunchOperationId is null && PendingUpdateRecovery.TryResume(RuntimeDataRoot.RootDirectory))
             {
                 Shutdown();
                 return;
@@ -96,12 +104,35 @@ public partial class App : System.Windows.Application
         }
 
         _logger = new LocalFileLogger(RuntimeDataRoot.LogDirectory);
+        if (RuntimeDataRoot.NormalLaunchOperationId is { } normalOperation)
+        {
+            try { _ = NormalLaunchHandshake.Identify(RuntimeDataRoot.RootDirectory, normalOperation, RuntimeDataRoot.NormalLaunchToken!, AppContext.BaseDirectory, schema => SchemaUpgradeSnapshots.ValidateMetadata(RuntimeDataRoot.RootDirectory, schema.Snapshot!)); }
+            catch (Exception exception) { _logger.TryWrite("error", "normal_launch_identity_failed", "普通启动授权无效。", exception.ToString()); Shutdown(1); return; }
+        }
         if (RuntimeDataRoot.UpgradeVerificationOperationId is { } operationId)
         {
+            var schemaToken = RuntimeDataRoot.SchemaUpgradeVerificationLaunchToken;
+            var sourceVerification = false;
+            if (schemaToken is not null)
+            {
+                // The candidate cannot open SQLite until the external updater has persisted its PID/start identity.
+                var authorization = UpgradeHealthAck.WaitForSchemaAuthorization(RuntimeDataRoot.RootDirectory, operationId, schemaToken, StaticMigrations(), TimeSpan.FromSeconds(30));
+                if (authorization is null) { Shutdown(1); return; }
+                try
+                {
+                    var migrations = StaticMigrations();
+                    sourceVerification = migrations.SequenceEqual(authorization.SourceMigrations, StringComparer.Ordinal) && authorization.Migrations.SequenceEqual(authorization.SourceMigrations, StringComparer.Ordinal);
+                    if (sourceVerification)
+                        SchemaUpgradeSnapshots.VerifyFrozenSource(RuntimeDataRoot.RootDirectory, authorization.SourceSha256, authorization.SourceMigrations);
+                    else
+                        SchemaUpgradeSnapshots.TakeOverFrozenSource(RuntimeDataRoot.RootDirectory, authorization.SourceSha256, authorization.SourceMigrations, connection => { DatabaseInitializer.InitializeOpened(connection); UpgradeHealthAck.WriteSchemaMigrationApplied(RuntimeDataRoot.RootDirectory, operationId, schemaToken!, migrations); });
+                }
+                catch (Exception exception) { _logger.TryWrite("error", "schema_upgrade_takeover_failed", "跨 Schema 升级源数据库接管失败，候选程序未启动。", exception.ToString()); Shutdown(1); return; }
+            }
             base.OnStartup(e);
-            MainWindow = new UI.MainWindow(CreateVerificationShell()) { IsEnabled = false };
+            MainWindow = new UI.MainWindow(CreateVerificationShell(schemaToken is not null && !sourceVerification)) { IsEnabled = false };
             MainWindow.Show();
-            StartUpgradeVerification(operationId);
+            StartUpgradeVerification(operationId, schemaToken, schemaToken is not null && !sourceVerification);
             return;
         }
         try
@@ -150,7 +181,17 @@ public partial class App : System.Windows.Application
         {
             MainWindow = new UI.MainWindow(_updateDiagnostics);
         }
+        if (RuntimeDataRoot.NormalLaunchOperationId is { } loadedOperation)
+            MainWindow.Loaded += (_, _) => { try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, loadedOperation, RuntimeDataRoot.NormalLaunchToken!); } catch { Shutdown(1); } };
         MainWindow.Show();
+#if S9T07_TEST
+        if (RuntimeDataRoot.IsS9T07TestInstall)
+        {
+            InitializeTrayAndReminderScheduler();
+            Dispatcher.BeginInvoke(RunS9T07TestInstall);
+            return;
+        }
+#endif
         if (RuntimeDataRoot.IsSmokeRun)
         {
             Dispatcher.BeginInvoke(
@@ -203,7 +244,7 @@ public partial class App : System.Windows.Application
         timer.Start();
     }
 
-    private void StartUpgradeVerification(string operationId)
+    private void StartUpgradeVerification(string operationId, string? schemaLaunchToken = null, bool includeWal = false)
     {
         // This path is deliberately before Initialize/Migrate/recalculation and scheduler setup.
         var elapsed = Stopwatch.StartNew();
@@ -214,7 +255,7 @@ public partial class App : System.Windows.Application
                     !shell.Dashboard.IsLoading && !shell.PendingTasks.IsLoading)
                 {
                     timer.Stop();
-                    VerifyUpgradeAndExit(operationId);
+                    VerifyUpgradeAndExit(operationId, schemaLaunchToken, includeWal);
                     return;
                 }
                 if (elapsed.Elapsed < TimeSpan.FromSeconds(30)) return;
@@ -226,14 +267,20 @@ public partial class App : System.Windows.Application
         timer.Start();
     }
 
-    private static ShellViewModel CreateVerificationShell()
+    private static ShellViewModel CreateVerificationShell(bool includeWal)
     {
-        var connection = VerificationConnectionString();
+        var connection = VerificationConnectionString(includeWal: includeWal);
         return new ShellViewModel(defaultContextFactory: () => new StoreDbContext(
             new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(connection).Options));
     }
 
-    private void VerifyUpgradeAndExit(string operationId)
+    private static IReadOnlyList<string> StaticMigrations()
+    {
+        using var context = new StoreDbContextFactory().CreateDbContext([]);
+        return context.Database.GetMigrations().OrderBy(id => id, StringComparer.Ordinal).ToArray();
+    }
+
+    private void VerifyUpgradeAndExit(string operationId, string? schemaLaunchToken = null, bool includeWal = false)
     {
         try
         {
@@ -245,7 +292,7 @@ public partial class App : System.Windows.Application
             }
 
             var databasePath = RuntimeDataRoot.DatabasePath;
-            using var connection = new SqliteConnection(VerificationConnectionString(databasePath));
+            using var connection = new SqliteConnection(VerificationConnectionString(databasePath, includeWal));
             connection.Open();
             using var integrity = connection.CreateCommand();
             integrity.CommandText = "PRAGMA integrity_check;";
@@ -258,18 +305,19 @@ public partial class App : System.Windows.Application
             migrationsCommand.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId;";
             using var migrationsReader = migrationsCommand.ExecuteReader();
             var migrations = new List<string>(); while (migrationsReader.Read()) migrations.Add(migrationsReader.GetString(0));
-            if (migrations.Count != 9 || migrations[^1] != "20260901155124_AddPolicyAndBaselineFoundation") { Shutdown(1); return; }
-            UpgradeHealthAck.Write(RuntimeDataRoot.RootDirectory, operationId, Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "unknown", migrations.Count, migrations[^1]);
+            if (schemaLaunchToken is null && (migrations.Count != 9 || migrations[^1] != "20260901155124_AddPolicyAndBaselineFoundation")) { Shutdown(1); return; }
+            if (schemaLaunchToken is null) UpgradeHealthAck.Write(RuntimeDataRoot.RootDirectory, operationId, Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "unknown", migrations.Count, migrations[^1]);
+            else UpgradeHealthAck.WriteSchema(RuntimeDataRoot.RootDirectory, operationId, schemaLaunchToken, Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "unknown", migrations);
             MainWindow?.Close();
             Shutdown();
         }
         catch { MainWindow?.Close(); Shutdown(1); }
     }
 
-    private static string VerificationConnectionString(string? databasePath = null) => new SqliteConnectionStringBuilder
+    private static string VerificationConnectionString(string? databasePath = null, bool includeWal = false) => new SqliteConnectionStringBuilder
     {
-        // immutable=1 prevents SQLite's WAL reader from creating -wal/-shm beside the verified database.
-        DataSource = new Uri(databasePath ?? RuntimeDataRoot.DatabasePath).AbsoluteUri + "?immutable=1",
+        // A schema candidate must read its own controlled WAL; ordinary verification remains immutable.
+        DataSource = includeWal ? databasePath ?? RuntimeDataRoot.DatabasePath : new Uri(databasePath ?? RuntimeDataRoot.DatabasePath).AbsoluteUri + "?immutable=1",
         Mode = SqliteOpenMode.ReadOnly,
         ForeignKeys = true,
         Pooling = false
@@ -497,21 +545,74 @@ public partial class App : System.Windows.Application
             var prepared = await Task.Run(() =>
             {
                 using var parent = Process.GetCurrentProcess();
-                return new UpdateInstallationPreparer(downloader).Prepare(package, parent, CancellationToken.None);
+                var preparer = new UpdateInstallationPreparer(downloader);
+#if S9T07_TEST
+                if (RuntimeDataRoot.IsS9T07TestInstall)
+                    return preparer.PrepareForTest(package, parent, RequiredTestPath("S9_T07_TEST_INSTALL_ROOT"), RuntimeDataRoot.RootDirectory, RequiredTestPath("S9_T07_TEST_UPDATER_ROOT"), CancellationToken.None);
+#endif
+                return preparer.Prepare(package, parent, CancellationToken.None);
             });
-            _ = Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) ?? throw new InvalidOperationException("独立 Updater 未启动。");
+            var updater = Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) ?? throw new InvalidOperationException("独立 Updater 未启动。");
+#if S9T07_TEST
+            if (RuntimeDataRoot.IsS9T07TestInstall)
+                File.WriteAllText(RequiredTestPath("S9_T07_TEST_UPDATER_IDENTITY"), System.Text.Json.JsonSerializer.Serialize(new { operationId = prepared.OperationId, pid = updater.Id, startedUtc = updater.StartTime.ToUniversalTime(), executable = updater.MainModule?.FileName }));
+#endif
             _explicitExit = true;
             StopRuntime();
             MainWindow?.Close();
             Shutdown();
             return new(UpdatePackageOutcome.Verified, "独立 Updater 已接管程序切换。");
         }
-        catch
+        catch (Exception exception)
         {
+#if S9T07_TEST
+            if (RuntimeDataRoot.IsS9T07TestInstall) TestInstallMarker("prepare-error-" + exception.GetType().Name + "-" + exception.Message);
+#else
+            _ = exception;
+#endif
             EndDatabaseMaintenance(true);
             return new(UpdatePackageOutcome.IoFailure, "更新安装准备失败，原程序继续运行。");
         }
     }
+
+#if S9T07_TEST
+    private async void RunS9T07TestInstall()
+    {
+        var stage = "started";
+        try
+        {
+            TestInstallMarker(stage);
+            var packagePath = RequiredTestPath("S9_T07_TEST_PACKAGE"); TestInstallMarker(stage = "package-path"); var manifest = File.ReadAllBytes(RequiredTestPath("S9_T07_TEST_MANIFEST")); var signature = File.ReadAllBytes(RequiredTestPath("S9_T07_TEST_SIGNATURE"));
+            var key = Convert.FromBase64String(Environment.GetEnvironmentVariable("S9_T07_TEST_PUBLIC_KEY") ?? throw new InvalidDataException());
+            using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(key, out _); TestInstallMarker(stage = "key-imported"); var version = new Version(1, 0, 3); var target = StaticMigrations().Concat(["20260905120000_S9T07Fixture10"]).ToArray();
+            var verified = new VerifiedUpdatePackage(Path.GetDirectoryName(packagePath)!, packagePath, version, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(packagePath))).ToLowerInvariant(), target, manifest, signature, new CheckedRelease(version, 1, "v1.0.3", []), 2, new Version(1, 0, 2), new Version(1, 0, 2), target[0], target[^2]);
+            TestInstallMarker("verified-input"); var result = await InstallPreparedUpdateAsync(verified, new SignedUpdatePackageDownloader(options: new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: Path.GetDirectoryName(packagePath)!)));
+            if (result.Outcome != UpdatePackageOutcome.Verified) { Shutdown(1); return; }
+            TestInstallMarker("install-returned-" + result.Outcome);
+        }
+        catch (Exception exception) { TestInstallMarker("error-" + stage + "-" + exception.GetType().Name + "-" + exception.Message); Shutdown(1); }
+    }
+
+    private static void TestInstallMarker(string value)
+    {
+        var marker = Environment.GetEnvironmentVariable("S9_T07_TEST_INSTALL_MARKER");
+        if (!string.IsNullOrWhiteSpace(marker)) File.WriteAllText(marker, value);
+    }
+
+    private static string RequiredTestPath(string name)
+    {
+        var path = Environment.GetEnvironmentVariable(name);
+        if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)) throw new InvalidDataException();
+        path = Path.GetFullPath(path);
+        var temp = Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var current = File.Exists(path) ? new FileInfo(path).Directory : new DirectoryInfo(path);
+        while (current is not null && !string.Equals(current.Parent?.FullName, temp, StringComparison.OrdinalIgnoreCase)) current = current.Parent;
+        if (current is null || !Guid.TryParse(current.Name, out _) || (current.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException();
+        for (var entry = current; entry is not null && !string.Equals(entry.FullName, temp, StringComparison.OrdinalIgnoreCase); entry = entry.Parent)
+            if ((entry.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException();
+        return path;
+    }
+#endif
 
     private void ReminderTimeChanged(int reminderMinuteOfDay) =>
         _reminderScheduler?.Reschedule(reminderMinuteOfDay);

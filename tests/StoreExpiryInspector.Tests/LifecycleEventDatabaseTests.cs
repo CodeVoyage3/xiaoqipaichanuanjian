@@ -502,8 +502,7 @@ public sealed class LifecycleEventDatabaseTests
     {
         if (!SqliteTestDatabase.ReadTableColumns(context, "products").Contains("expiry_management_status"))
         {
-            context.Database.ExecuteSql($"INSERT INTO products (product_code, excel_stock_qty, effective_stock_qty, lifecycle_generation) VALUES ({productCode}, 0, 0, 0)");
-            var legacyProduct = new Product { Id = context.Database.SqlQuery<long>($"SELECT last_insert_rowid() AS Value").Single(), ProductCode = productCode };
+            var legacyProduct = InsertLegacyProduct(context, productCode);
             context.Attach(legacyProduct);
             return legacyProduct;
         }
@@ -532,6 +531,19 @@ public sealed class LifecycleEventDatabaseTests
         context.Batches.Add(batch);
         context.SaveChanges();
         return batch;
+    }
+
+    private static Product InsertLegacyProduct(StoreDbContext context, string productCode)
+    {
+        context.Database.OpenConnection();
+        try
+        {
+            using var command = context.Database.GetDbConnection().CreateCommand();
+            command.CommandText = "INSERT INTO products (product_code, excel_stock_qty, effective_stock_qty, lifecycle_generation) VALUES ($code, 0, 0, 0) RETURNING id;";
+            var parameter = command.CreateParameter(); parameter.ParameterName = "$code"; parameter.Value = productCode; command.Parameters.Add(parameter);
+            return new Product { Id = Convert.ToInt64(command.ExecuteScalar()), ProductCode = productCode };
+        }
+        finally { context.Database.CloseConnection(); }
     }
 
     private static ProductTask AddTask(StoreDbContext context, long productId)

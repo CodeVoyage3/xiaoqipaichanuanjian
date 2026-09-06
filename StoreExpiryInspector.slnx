@@ -1,5 +1,9 @@
 <Solution>
   <Project Path="src\StoreExpiryInspector\StoreExpiryInspector.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/StoreExpiryInspector.UpdateSafety/StoreExpiryInspector.UpdateSafety.csproj" />
+  </Folder>
   <Project Path="src\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj" />
   <Project Path="tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj" />
+  <Project Path="tests\StoreExpiryInspector.S9T07Fixture\StoreExpiryInspector.S9T07Fixture.csproj" />
 </Solution>

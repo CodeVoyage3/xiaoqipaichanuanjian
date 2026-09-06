@@ -28,7 +28,7 @@ public enum UpdatePackageOutcome
 }
 
 public sealed record UpdatePackageProgress(string Stage, long BytesReceived, long TotalBytes);
-public sealed record VerifiedUpdatePackage(string CacheDirectory, string PackagePath, Version Version, string Sha256, IReadOnlyList<string> TargetMigrations, byte[]? SignedManifest = null, byte[]? ManifestSignature = null, CheckedRelease? Release = null);
+public sealed record VerifiedUpdatePackage(string CacheDirectory, string PackagePath, Version Version, string Sha256, IReadOnlyList<string> TargetMigrations, byte[]? SignedManifest = null, byte[]? ManifestSignature = null, CheckedRelease? Release = null, int MinimumProtocolVersion = 1, Version? SourceMinVersion = null, Version? SourceMaxVersion = null, string? SourceMinMigration = null, string? SourceMaxMigration = null);
 public sealed record UpdatePackageResult(UpdatePackageOutcome Outcome, string Message, VerifiedUpdatePackage? Package = null);
 public sealed record CheckedRelease(Version Version, long ReleaseId, string Tag, IReadOnlyList<string> AssetNames);
 
@@ -116,7 +116,7 @@ public sealed class SignedUpdatePackageDownloader
             if (!verifier.VerifyData(rawManifest, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名无效。");
             try { using var schema = JsonDocument.Parse(rawManifest); if (schema.RootElement.ValueKind != JsonValueKind.Object || !schema.RootElement.TryGetProperty("schemaVersion", out var schemaVersion) || schemaVersion.ValueKind != JsonValueKind.Number || !schemaVersion.TryGetInt32(out var value)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); if (value != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。"); } catch (JsonException) { return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); }
             if (!TryParseManifest(rawManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。");
-            if (manifest.MinimumProtocolVersion != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
+            if (manifest.MinimumProtocolVersion is < 1 or > 2) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
             if (manifest.Version != release.Version || manifest.ReleaseTag != release.Tag || manifest.Repository != Owner + "/" + Repo) return Fail(UpdatePackageOutcome.VersionMismatch, "更新清单与发行版本不一致。");
             if (manifest.Rid != "win-x64") return Fail(UpdatePackageOutcome.UnsupportedPlatform, "更新包平台不受支持。");
             if (manifest.Channel != "stable") return Fail(UpdatePackageOutcome.InvalidManifest, "更新通道无效。");
@@ -141,7 +141,7 @@ public sealed class SignedUpdatePackageDownloader
             if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
             progress?.Invoke(new("更新包已准备完成，正在进入维护状态。", manifest.PackageBytes, manifest.PackageBytes));
             cancellationToken.ThrowIfCancellationRequested(); verified = true;
-            return new(UpdatePackageOutcome.Verified, "更新包已准备完成，可在维护窗口中安装。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release));
+            return new(UpdatePackageOutcome.Verified, "更新包已准备完成，可在维护窗口中安装。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release, manifest.MinimumProtocolVersion, manifest.MinVersion, manifest.MaxVersion, manifest.MinMigration, manifest.MaxMigration));
         }
         catch (OperationCanceledException error) { _diagnostics?.Add("prepare-error", new { stage = "Prepare", error = _diagnostics.SafeError(error) }); return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。"); }
         catch (HttpRequestException error) { _diagnostics?.Add("prepare-error", new { stage = "Prepare", error = _diagnostics.SafeError(error) }); return Fail(UpdatePackageOutcome.NetworkUnavailable, "无法连接更新服务器。"); }
@@ -162,7 +162,7 @@ public sealed class SignedUpdatePackageDownloader
             using var verifier = _options.CreateVerifier();
             if (verifier is null || package.SignedManifest is null || package.ManifestSignature is null || package.Release is null) return Fail(UpdatePackageOutcome.SigningNotConfigured, "更新包缺少可重验的发行身份。");
             if (!verifier.VerifyData(package.SignedManifest, package.ManifestSignature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss) || !TryParseManifest(package.SignedManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名或格式无效。");
-            if (manifest.Version != package.Version || manifest.ReleaseTag != package.Release.Tag || manifest.Repository != Owner + "/" + Repo || manifest.Rid != "win-x64" || manifest.TargetMigrations.Count != package.TargetMigrations.Count || !manifest.TargetMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal)) return Fail(UpdatePackageOutcome.VersionMismatch, "更新包身份在安装前发生变化。");
+            if (manifest.Version != package.Version || manifest.ReleaseTag != package.Release.Tag || manifest.Repository != Owner + "/" + Repo || manifest.Rid != "win-x64" || manifest.MinimumProtocolVersion != package.MinimumProtocolVersion || manifest.TargetMigrations.Count != package.TargetMigrations.Count || !manifest.TargetMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal) || manifest.MinVersion != package.SourceMinVersion || manifest.MaxVersion != package.SourceMaxVersion || manifest.MinMigration != package.SourceMinMigration || manifest.MaxMigration != package.SourceMaxMigration) return Fail(UpdatePackageOutcome.VersionMismatch, "更新包身份在安装前发生变化。");
             if (!File.Exists(package.PackagePath) || !string.Equals(manifest.PackageHash, package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             using var packageStream = File.OpenRead(package.PackagePath);
             if (!string.Equals(Convert.ToHexString(SHA256.HashData(packageStream)), package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");

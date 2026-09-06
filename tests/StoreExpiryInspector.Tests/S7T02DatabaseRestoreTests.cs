@@ -107,14 +107,15 @@ public sealed class S7T02DatabaseRestoreTests
         var backups = NewDirectory();
         try
         {
-            var originalHash = Hash(database.Path);
-
             var hashTarget = CreateBackup(database, backups);
+            var integrityTarget = CreateBackup(database, backups);
+            var migrationTarget = CreateBackup(database, backups);
+            var malformedMetadataTarget = CreateBackup(database, backups);
+            var originalHash = Hash(database.Path);
             File.AppendAllText(hashTarget.BackupPath!, "tampered");
             Assert.Equal(DatabaseRestoreCodes.HashMismatch,
                 Restore(hashTarget, database, backups).Code);
 
-            var integrityTarget = CreateBackup(database, backups);
             using (var stream = new FileStream(integrityTarget.BackupPath!, FileMode.Open, FileAccess.Write, FileShare.None))
             {
                 stream.SetLength(Math.Max(4096, stream.Length / 2));
@@ -123,14 +124,12 @@ public sealed class S7T02DatabaseRestoreTests
             Assert.Equal(DatabaseRestoreCodes.IntegrityFailed,
                 Restore(integrityTarget, database, backups).Code);
 
-            var migrationTarget = CreateBackup(database, backups);
             Execute(migrationTarget.BackupPath!,
                 "PRAGMA journal_mode=DELETE; DELETE FROM __EFMigrationsHistory WHERE MigrationId=(SELECT MAX(MigrationId) FROM __EFMigrationsHistory);");
             RefreshMetadata(migrationTarget.BackupPath!);
             Assert.Equal(DatabaseRestoreCodes.MigrationIncompatible,
                 Restore(migrationTarget, database, backups).Code);
 
-            var malformedMetadataTarget = CreateBackup(database, backups);
             File.WriteAllText(malformedMetadataTarget.MetadataPath!, "{\"BackupId\":\"broken\"}");
             Assert.Equal(DatabaseRestoreCodes.BackupInvalid,
                 Restore(malformedMetadataTarget, database, backups).Code);

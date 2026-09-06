@@ -23,6 +23,12 @@
     <ProjectReference Include="..\..\src\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj">
       <AdditionalProperties>S9T05TestMode=true</AdditionalProperties>
     </ProjectReference>
+    <ProjectReference Include="..\StoreExpiryInspector.S9T07Fixture\StoreExpiryInspector.S9T07Fixture.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
+  <Target Name="CopyProductionAppToTestOutput" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\StoreExpiryInspector.exe;$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\StoreExpiryInspector.dll"
+          DestinationFiles="$(TargetDir)StoreExpiryInspector.exe;$(TargetDir)StoreExpiryInspector.dll" />
+  </Target>
 
 </Project>

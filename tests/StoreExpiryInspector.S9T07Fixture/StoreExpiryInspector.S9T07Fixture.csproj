@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><AssemblyName>StoreExpiryInspector.S9T07Fixture</AssemblyName><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Version>1.0.3</Version><AssemblyVersion>$(Version).0</AssemblyVersion><FileVersion>$(Version).0</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StoreExpiryInspector.UpdateSafety\StoreExpiryInspector.UpdateSafety.csproj" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+  </ItemGroup>
+  <Target Name="CopyFixtureApphostAlias" AfterTargets="Build">
+    <ItemGroup><FixtureRuntime Include="$(TargetDir)*.*" /></ItemGroup>
+    <Copy SourceFiles="@(FixtureRuntime)" DestinationFolder="$(TargetDir)fixture-run\" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).exe" DestinationFiles="$(TargetDir)fixture-run\StoreExpiryInspector.exe" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)fixture-run\StoreExpiryInspector.dll" />
+  </Target>
+</Project>

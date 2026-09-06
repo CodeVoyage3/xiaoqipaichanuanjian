@@ -64,7 +64,11 @@ public sealed class S9T06PendingUpdateRecoveryTests
     private static void Journal(string root, int phase)
     {
         var directory = Path.Combine(root, "updates", Guid.NewGuid().ToString()); Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, "journal.json"), JsonSerializer.Serialize(new { Phase = phase }));
+        File.WriteAllText(Path.Combine(directory, "journal.json"), JsonSerializer.Serialize(new
+        {
+            OperationId = Path.GetFileName(directory), ProductId = "StoreExpiryInspector", InstallRoot = "C:\\temp\\install", DataRoot = root, AppPath = "C:\\temp\\install\\app", StagingPath = "C:\\temp\\install\\stage", OldPath = "C:\\temp\\install\\old", PackageSha256 = new string('A', 64), SourceVersion = "1.0.0", TargetVersion = "1.0.2", ParentPid = 0, ParentStartedUtc = "2026-09-05T00:00:00Z", Phase = phase,
+            OldTree = new { Files = Array.Empty<string>(), Hash = new string('A', 64) }, CandidateTree = new { Files = Array.Empty<string>(), Hash = new string('A', 64) }, CreatedUtc = "2026-09-05T00:00:00Z", UpdatedUtc = "2026-09-05T00:00:00Z", CandidatePid = 0, CandidateStartedUtc = (string?)null, LastError = (string?)null
+        }));
     }
 
     private static void WithRoot(Action<string> action)

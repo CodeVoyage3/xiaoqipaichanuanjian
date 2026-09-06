@@ -8,9 +8,14 @@ public static class RuntimeDataRoot
     private const string SmokeExitArgument = "--s9-t01-smoke-exit";
     private const string ExistingIsolatedDataRootArgument = "--allow-existing-isolated-data-root";
     private const string UpgradeVerificationArgument = "--s9-t05-verify";
+    private const string SchemaUpgradeVerificationArgument = "--s9-t07-verify";
     private const string NetworkDiagnosticArgument = "--s9-t06-network-diagnostic";
     private const string PrepareOnlyArgument = "--s9-t06-prepare-only";
     private const string SimulatedSourceArgument = "--s9-t06-simulated-source";
+    private const string NormalLaunchArgument = "--s9-t07-normal-launch";
+#if S9T07_TEST
+    private const string TestInstallArgument = "--s9-t07-test-install";
+#endif
 
     private static RuntimeDataRootOptions? _options;
 
@@ -18,6 +23,12 @@ public static class RuntimeDataRoot
 
     public static bool IsSmokeRun => Options.IsSmokeRun;
     public static string? UpgradeVerificationOperationId => Options.UpgradeVerificationOperationId;
+    public static string? SchemaUpgradeVerificationLaunchToken => Options.SchemaUpgradeVerificationLaunchToken;
+    public static string? NormalLaunchOperationId => Options.NormalLaunchOperationId;
+    public static string? NormalLaunchToken => Options.NormalLaunchToken;
+#if S9T07_TEST
+    public static bool IsS9T07TestInstall => Options.IsS9T07TestInstall;
+#endif
 
     public static string RootDirectory => Options.RootDirectory;
 
@@ -55,7 +66,10 @@ public static class RuntimeDataRoot
         string? dataRoot = null;
         var smokeExit = false;
         string? verificationOperationId = null;
+        string? schemaLaunchToken = null;
+        string? normalOperationId = null; string? normalToken = null;
         var allowExisting = false;
+        var testInstall = false;
         for (var index = 0; index < arguments.Length; index++)
         {
             var argument = arguments[index];
@@ -70,6 +84,9 @@ public static class RuntimeDataRoot
                 allowExisting = true;
                 continue;
             }
+#if S9T07_TEST
+            if (string.Equals(argument, TestInstallArgument, StringComparison.Ordinal)) { testInstall = true; continue; }
+#endif
 
             if (string.Equals(argument, UpgradeVerificationArgument, StringComparison.Ordinal))
             {
@@ -77,6 +94,18 @@ public static class RuntimeDataRoot
                     throw new ArgumentException("升级验证操作参数无效。", nameof(arguments));
                 verificationOperationId = arguments[index];
                 continue;
+            }
+            if (string.Equals(argument, SchemaUpgradeVerificationArgument, StringComparison.Ordinal))
+            {
+                if (++index >= arguments.Length || verificationOperationId is not null || !Guid.TryParse(arguments[index], out _)
+                    || ++index >= arguments.Length || !Guid.TryParse(arguments[index], out _)) throw new ArgumentException("跨 Schema 升级验证参数无效。", nameof(arguments));
+                verificationOperationId = arguments[index - 1]; schemaLaunchToken = arguments[index];
+                continue;
+            }
+            if (string.Equals(argument, NormalLaunchArgument, StringComparison.Ordinal))
+            {
+                if (++index >= arguments.Length || normalOperationId is not null || !Guid.TryParse(arguments[index], out _) || ++index >= arguments.Length || !Guid.TryParse(arguments[index], out _)) throw new ArgumentException("普通启动授权参数无效。", nameof(arguments));
+                normalOperationId = arguments[index - 1]; normalToken = arguments[index]; continue;
             }
 
             // Parsed by UpdateNetworkDiagnostics after this root has enforced TEMP/GUID isolation.
@@ -103,13 +132,16 @@ public static class RuntimeDataRoot
 
         if (dataRoot is null)
         {
+#if S9T07_TEST
+            if (testInstall) throw new ArgumentException("测试更新必须指定隔离数据目录。", nameof(arguments));
+#endif
             if (smokeExit)
             {
                 throw new ArgumentException("发布 smoke 必须指定隔离数据目录。", nameof(arguments));
             }
 
-            if (verificationOperationId is not null)
-                return new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StoreExpiryInspector"), false, false, false, verificationOperationId);
+            if (verificationOperationId is not null || normalOperationId is not null)
+                return new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StoreExpiryInspector"), false, false, false, verificationOperationId, schemaLaunchToken, normalOperationId, normalToken);
 
             if (allowExisting) throw new ArgumentException("复用隔离数据目录必须指定数据目录。", nameof(arguments));
             return new(
@@ -132,7 +164,8 @@ public static class RuntimeDataRoot
             throw new ArgumentException("隔离数据目录必须是 TEMP 下的 GUID 普通目录。", nameof(arguments));
         }
 
-        return new(root, true, smokeExit, allowExisting, verificationOperationId);
+        if (testInstall && !allowExisting) throw new ArgumentException("测试更新必须复用隔离数据目录。", nameof(arguments));
+        return new(root, true, smokeExit, allowExisting, verificationOperationId, schemaLaunchToken, normalOperationId, normalToken, testInstall);
     }
 
     private static RuntimeDataRootOptions Options => _options ?? new(
@@ -221,4 +254,4 @@ public static class RuntimeDataRoot
     }
 }
 
-internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false, string? UpgradeVerificationOperationId = null);
+internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false, string? UpgradeVerificationOperationId = null, string? SchemaUpgradeVerificationLaunchToken = null, string? NormalLaunchOperationId = null, string? NormalLaunchToken = null, bool IsS9T07TestInstall = false);

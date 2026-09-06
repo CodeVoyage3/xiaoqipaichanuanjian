@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
@@ -217,14 +218,14 @@ public sealed class BulkInspectionSubmissionUseCaseTests
             case "attention": setup.Batches.Single().AttentionVersion = 2; break;
             case "stage": setup.Batches.Single().CurrentStage = ExpiryStageCalculator.Withdraw; break;
             case "stopped": setup.Batches.Single().TrackingStatus = "stopped"; break;
-            case "arrival": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE batches SET current_arrival_qty = -1"); break;
-            case "max_arrival": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE batches SET max_arrival_qty = -1"); break;
+            case "arrival": SetUnchecked(setup, "UPDATE batches SET current_arrival_qty = -1"); break;
+            case "max_arrival": SetUnchecked(setup, "UPDATE batches SET max_arrival_qty = -1"); break;
             case "excluded": var excluded = setup.Products.Single(); excluded.ExpiryManagementStatus = ExpiryManagementStatus.Excluded; excluded.PolicyCode = null; excluded.PolicyVersion = null; break;
             case "unresolved": var unresolved = setup.Products.Single(); unresolved.ExpiryManagementStatus = ExpiryManagementStatus.Unresolved; unresolved.PolicyCode = null; unresolved.PolicyVersion = null; break;
             case "stock_zero_terminated": setup.Products.Single().IsStockZeroTerminated = true; break;
-            case "negative_stock": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE products SET effective_stock_qty = -1"); break;
+            case "negative_stock": SetUnchecked(setup, "UPDATE products SET effective_stock_qty = -1"); break;
             case "no_baseline": setup.ScopeBaselines.RemoveRange(setup.ScopeBaselines); break;
-            case "invalid_policy": setup.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints = ON"); setup.Database.ExecuteSqlRaw("UPDATE products SET policy_code = 'invalid'"); break;
+            case "invalid_policy": SetUnchecked(setup, "UPDATE products SET policy_code = 'invalid'"); break;
         }
         setup.SaveChanges();
         setup.ChangeTracker.Clear();
@@ -336,6 +337,18 @@ public sealed class BulkInspectionSubmissionUseCaseTests
 
     private static BulkInspectionSubmissionResult Submit(StoreDbContext context, IReadOnlyCollection<long> taskIds, IReadOnlyCollection<OverStockConfirmation>? confirmations = null) =>
         new BulkInspectionSubmissionUseCase().Submit(context, new(taskIds, " Inspector ", BusinessDate, BusinessDate, Utc, confirmations));
+
+    private static void SetUnchecked(StoreDbContext context, string update)
+    {
+        context.Database.OpenConnection();
+        try
+        {
+            using var transaction = context.Database.BeginTransaction();
+            using var command = context.Database.GetDbConnection().CreateCommand(); command.Transaction = transaction.GetDbTransaction(); command.CommandText = "PRAGMA ignore_check_constraints = ON; " + update; command.ExecuteNonQuery();
+            transaction.Commit();
+        }
+        finally { context.Database.CloseConnection(); }
+    }
 
     private static long AddItem(StoreDbContext context, long taskId, int quantity)
     {

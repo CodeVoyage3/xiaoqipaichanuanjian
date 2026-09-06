@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Reflection;
 using System.Net;
 using System.Net.Http;
 using System.Diagnostics;
@@ -7,6 +8,8 @@ using System.Text;
 using Xunit;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.UI;
+using StoreExpiryInspector.Infrastructure;
+using Microsoft.Data.Sqlite;
 
 namespace StoreExpiryInspector.Tests;
 
@@ -73,12 +76,7 @@ public sealed class S9T04SignedUpdatePackageTests
         Directory.CreateDirectory(root); Directory.CreateDirectory(install); Directory.CreateDirectory(data); Directory.CreateDirectory(updater);
         try
         {
-            var databaseTemplate = Environment.GetEnvironmentVariable("S9_T05_PREPARER_DATABASE_TEMPLATE");
-            if (!string.IsNullOrWhiteSpace(databaseTemplate))
-            {
-                Directory.CreateDirectory(Path.Combine(data, "data"));
-                File.Copy(databaseTemplate, Path.Combine(data, "data", "app.db"));
-            }
+            CreateClosedMigration9Database(data);
             Directory.CreateDirectory(Path.Combine(install, "app")); File.WriteAllText(Path.Combine(install, "app", "old.dll"), "old");
             File.WriteAllText(Path.Combine(updater, "StoreExpiryInspector.Updater.exe"), "independent");
             var (downloader, package) = await CreateVerifiedPackageAsync(root);
@@ -87,24 +85,90 @@ public sealed class S9T04SignedUpdatePackageTests
             var journal = System.Text.Json.JsonSerializer.Deserialize<InstallationJournal>(File.ReadAllText(prepared.JournalPath), new System.Text.Json.JsonSerializerOptions { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } })!;
             Assert.Equal(InstallationUpdatePhase.Prepared, journal.Phase); Assert.Equal(journal.CandidateTree.Hash, InstallationTreeFingerprint.Create(journal.StagingPath).Hash);
         }
-        finally { foreach (var directory in new[] { root, install, data, updater }) if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+        finally { SqliteConnection.ClearAllPools(); foreach (var directory in new[] { root, install, data, updater }) if (Directory.Exists(directory)) Directory.Delete(directory, true); }
     }
 
-    private static async Task<(SignedUpdatePackageDownloader Downloader, VerifiedUpdatePackage Package)> CreateVerifiedPackageAsync(string root)
+    [Fact]
+    public async Task InstallRevalidationRejectsTamperedSignedSourceFields()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); Directory.CreateDirectory(root);
+        try
+        {
+            var (downloader, package) = await CreateVerifiedPackageAsync(root);
+            var replacements = new VerifiedUpdatePackage[]
+            {
+                package with { SourceMinVersion = new Version(0, 9, 8) },
+                package with { SourceMaxVersion = new Version(9, 9, 9) },
+                package with { SourceMinMigration = "20260826130822_AddTasksAndDrafts" },
+                package with { SourceMaxMigration = "20260826170403_AddLifecycleEvents" }
+            };
+            foreach (var tampered in replacements)
+                Assert.Equal(UpdatePackageOutcome.VersionMismatch, downloader.RevalidateForInstall(tampered, CancellationToken.None).Outcome);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task InstallationPreparationRejectsActualSourceOutsideSignedRange()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var updater = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(root); Directory.CreateDirectory(install); Directory.CreateDirectory(data); Directory.CreateDirectory(updater);
+        try
+        {
+            CreateClosedMigration9Database(data); Directory.CreateDirectory(Path.Combine(install, "app")); File.WriteAllText(Path.Combine(install, "app", "old.dll"), "old"); File.WriteAllText(Path.Combine(updater, "StoreExpiryInspector.Updater.exe"), "independent");
+            var (downloader, package) = await CreateVerifiedPackageAsync(root, "0.9.9");
+            Assert.Throws<InvalidDataException>(() => new UpdateInstallationPreparer(downloader).PrepareForTest(package, Process.GetCurrentProcess(), install, data, updater, CancellationToken.None));
+            Assert.Empty(Directory.EnumerateDirectories(install, "app.staging-*"));
+        }
+        finally { SqliteConnection.ClearAllPools(); foreach (var directory in new[] { root, install, data, updater }) if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    private static void CreateClosedMigration9Database(string dataRoot)
+    {
+        var destination = Path.Combine(dataRoot, "data", "app.db"); Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        var template = Environment.GetEnvironmentVariable("S9_T05_PREPARER_DATABASE_TEMPLATE");
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            DatabaseInitializer.Initialize(destination); // The fixture deliberately creates a WAL database.
+            SqliteConnection.ClearAllPools(); // Its own pooled connection must close and checkpoint before a main-file copy is trusted.
+        }
+        else File.Copy(template, destination);
+        Assert.False(File.Exists(destination + "-wal")); Assert.False(File.Exists(destination + "-shm")); Assert.False(File.Exists(destination + "-journal"));
+        using var connection = new SqliteConnection($"Data Source={destination};Mode=ReadOnly;Pooling=False"); connection.Open();
+        using var command = connection.CreateCommand(); command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId COLLATE BINARY;";
+        using var reader = command.ExecuteReader(); var count = 0; while (reader.Read()) count++;
+        Assert.Equal(9, count);
+    }
+
+    private static async Task<(SignedUpdatePackageDownloader Downloader, VerifiedUpdatePackage Package)> CreateVerifiedPackageAsync(string root, string? sourceMaxVersion = null)
     {
         var package = Path.Combine(root, "package.zip");
         using (var zip = ZipFile.Open(package, ZipArchiveMode.Create))
         {
-            zip.CreateEntryFromFile(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe"), "StoreExpiryInspector.exe");
-            zip.CreateEntryFromFile(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll"), "StoreExpiryInspector.dll");
+            var app = Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe");
+            var production = Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "bin", "Release", "net10.0-windows");
+            Assert.Equal("1.0.2", Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3));
+            Assert.Equal("1.0.2", AssemblyName.GetAssemblyName(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")).Version!.ToString(3));
+            Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.exe")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(app))));
+            Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.dll")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")))));
+            zip.CreateEntryFromFile(app, "StoreExpiryInspector.exe");
+            zip.CreateEntryFromFile(Path.ChangeExtension(app, ".dll"), "StoreExpiryInspector.dll");
         }
         var version = Version.Parse(FileVersionInfo.GetVersionInfo(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe")).FileVersion!).ToString(3);
         var packageBytes = await File.ReadAllBytesAsync(package); var hash = Convert.ToHexString(SHA256.HashData(packageBytes)).ToLowerInvariant();
-        var manifest = Encoding.UTF8.GetBytes($"{{\"schemaVersion\":1,\"version\":\"{version}\",\"releaseTag\":\"v{version}\",\"repository\":\"CodeVoyage3/xiaoqipaichanuanjian\",\"channel\":\"stable\",\"rid\":\"win-x64\",\"minimumProtocolVersion\":1,\"package\":{{\"fileName\":\"StoreExpiryInspector-{version}-win-x64.zip\",\"bytes\":{packageBytes.Length},\"sha256\":\"{hash}\"}},\"targetMigrations\":[\"20260826123739_InitialCreate\",\"20260826130822_AddTasksAndDrafts\",\"20260826135612_AddInspectionHistory\",\"20260826142429_AddInventoryAdjustments\",\"20260826152131_AddImportPersistence\",\"20260826155455_AddBackupMetadata\",\"20260826162033_AddSettingsAndAppState\",\"20260826170403_AddLifecycleEvents\",\"20260901155124_AddPolicyAndBaselineFoundation\"],\"source\":{{\"minVersion\":\"0.9.9\",\"maxVersion\":\"{version}\",\"minMigration\":\"20260826123739_InitialCreate\",\"maxMigration\":\"20260901155124_AddPolicyAndBaselineFoundation\"}}}}");
+        var maxVersion = sourceMaxVersion ?? UpdateInstallationPreparer.NormalizeSourceVersion(Process.GetCurrentProcess().MainModule?.FileVersionInfo.ProductVersion?.Split('+')[0]);
+        var manifest = Encoding.UTF8.GetBytes($"{{\"schemaVersion\":1,\"version\":\"{version}\",\"releaseTag\":\"v{version}\",\"repository\":\"CodeVoyage3/xiaoqipaichanuanjian\",\"channel\":\"stable\",\"rid\":\"win-x64\",\"minimumProtocolVersion\":1,\"package\":{{\"fileName\":\"StoreExpiryInspector-{version}-win-x64.zip\",\"bytes\":{packageBytes.Length},\"sha256\":\"{hash}\"}},\"targetMigrations\":[\"20260826123739_InitialCreate\",\"20260826130822_AddTasksAndDrafts\",\"20260826135612_AddInspectionHistory\",\"20260826142429_AddInventoryAdjustments\",\"20260826152131_AddImportPersistence\",\"20260826155455_AddBackupMetadata\",\"20260826162033_AddSettingsAndAppState\",\"20260826170403_AddLifecycleEvents\",\"20260901155124_AddPolicyAndBaselineFoundation\"],\"source\":{{\"minVersion\":\"0.9.9\",\"maxVersion\":\"{maxVersion}\",\"minMigration\":\"20260826123739_InitialCreate\",\"maxMigration\":\"20260901155124_AddPolicyAndBaselineFoundation\"}}}}");
         using var rsa = RSA.Create(2048); var signature = rsa.SignData(manifest, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
         var downloader = new SignedUpdatePackageDownloader(new Routes(manifest, signature, packageBytes, version), new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: root));
         var result = await downloader.PrepareAsync(new(Version.Parse(version), 7, "v" + version, ["update-manifest.json", "update-manifest.sig", $"StoreExpiryInspector-{version}-win-x64.zip"]), new Version(0, 9, 9), null, CancellationToken.None);
         Assert.Equal(UpdatePackageOutcome.Verified, result.Outcome); return (downloader, result.Package!);
+    }
+
+    private static string FindRoot()
+    {
+        for (var path = new DirectoryInfo(AppContext.BaseDirectory); path is not null; path = path.Parent)
+            if (File.Exists(Path.Combine(path.FullName, "StoreExpiryInspector.slnx"))) return path.FullName;
+        throw new DirectoryNotFoundException("repository root not found");
     }
 
     [Theory]
@@ -113,6 +177,7 @@ public sealed class S9T04SignedUpdatePackageTests
     [InlineData("1.0.0.1")]
     public void InstallationPreparationRejectsAmbiguousSourceVersion(string? value) =>
         Assert.Throws<InvalidDataException>(() => UpdateInstallationPreparer.NormalizeSourceVersion(value));
+
 
     private sealed class Routes(byte[]? manifest = null, byte[]? signature = null, byte[]? package = null, string? releaseVersion = null) : HttpMessageHandler
     {

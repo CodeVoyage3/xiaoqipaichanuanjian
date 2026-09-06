@@ -1,0 +1,255 @@
+{
+  "card": "S9-T07",
+  "check": "anonymous-public-release-freeze",
+  "observedAtUtc": "2026-09-05T12:36:53.6514038+00:00",
+  "status": "PASS",
+  "scope": {
+    "anonymous": true,
+    "authorizationHeader": false,
+    "formalInstallAccess": false,
+    "formalDatabaseAccess": false,
+    "privateKeyAccess": false,
+    "buildOrTestRun": false,
+    "smallAssetsDownloadedThisRun": [
+      "v1.0.0/update-manifest.json",
+      "v1.0.0/update-manifest.sig",
+      "v1.0.1/update-manifest.json",
+      "v1.0.1/update-manifest.sig"
+    ],
+    "largeZipOrInstallerDownloadedThisRun": false,
+    "largeAssetHashes": "metadata digest compared with S9-T06 archive; full ZIP/installer bytes not re-downloaded this run"
+  },
+  "network": {
+    "apiHttp": {
+      "main": 200,
+      "tag100": 200,
+      "tag101": 200,
+      "release100": 200,
+      "release101": 200,
+      "latest": 200
+    },
+    "prelude": "restricted sandbox curl schannel SEC_E_NO_CREDENTIALS and HttpClient SSL failure; approved anonymous network execution succeeded; not classified as GitHub failure"
+  },
+  "repository": {
+    "remoteMainCommit": "c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803",
+    "expectedFrozenMain": "c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803",
+    "matches": true
+  },
+  "latest": {
+    "http": 200,
+    "tag": "v1.0.1",
+    "releaseId": 383140083,
+    "draft": false,
+    "prerelease": false,
+    "assetCount": 4,
+    "matchesFrozenLatest101": true
+  },
+  "trustAnchor": {
+    "sourcePath": "src/StoreExpiryInspector/Application/Updates/ProductionUpdateTrustAnchor.cs",
+    "sourceSha256": "F58B7F315FC2292664999173332BA7391D88EE278E025F3D02BBFC980D9A0533",
+    "computedSpkiSha256": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC",
+    "pinnedSpkiSha256": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC",
+    "matches": true,
+    "algorithm": "RSA-PSS/SHA-256"
+  },
+  "releases": [
+    {
+      "tag": "v1.0.0",
+      "metadataHttp": 200,
+      "releaseId": 383133305,
+      "archivedReleaseId": 383133305,
+      "releaseIdMatchesArchive": true,
+      "draft": false,
+      "prerelease": false,
+      "assetCount": 4,
+      "tagRefHttp": 200,
+      "tagObjectType": "commit",
+      "tagCommit": "7044a984ddca757d8ae9350fbc523800bd769796",
+      "archivedSourceCommit": "7044a984ddca757d8ae9350fbc523800bd769796",
+      "tagCommitMatchesArchive": true,
+      "releaseShapeValid": true,
+      "assets": [
+        {
+          "name": "StoreExpiryInspector-1.0.0-win-x64.zip",
+          "id": 545355236,
+          "state": "uploaded",
+          "bytes": 107875812,
+          "digest": "sha256:efd448d8319a4e3b27a372ed768df41fdd0200b371c73dfacc35ab28f974dcbd",
+          "createdAt": "2026-09-05T04:29:08Z",
+          "updatedAt": "2026-09-05T04:29:25Z",
+          "archivedId": 545355236,
+          "archivedBytes": 107875812,
+          "archivedSha256": "EFD448D8319A4E3B27A372ED768DF41FDD0200B371C73DFACC35AB28F974DCBD",
+          "metadataMatchesArchive": true
+        },
+        {
+          "name": "StoreExpiryInspector-Setup-1.0.0.exe",
+          "id": 545355554,
+          "state": "uploaded",
+          "bytes": 74238426,
+          "digest": "sha256:12a30aac034fa4b5d0a82daf14b17e00437b13c0bc549ae45eecca54e0675297",
+          "createdAt": "2026-09-05T04:29:27Z",
+          "updatedAt": "2026-09-05T04:29:39Z",
+          "archivedId": 545355554,
+          "archivedBytes": 74238426,
+          "archivedSha256": "12A30AAC034FA4B5D0A82DAF14B17E00437B13C0BC549AE45EECCA54E0675297",
+          "metadataMatchesArchive": true
+        },
+        {
+          "name": "update-manifest.json",
+          "id": 545355772,
+          "state": "uploaded",
+          "bytes": 852,
+          "digest": "sha256:c168c2973dd8dd1fb8c87b9135735720a048b40993ddaf57632fac1aba8e8a35",
+          "createdAt": "2026-09-05T04:29:41Z",
+          "updatedAt": "2026-09-05T04:29:41Z",
+          "archivedId": 545355772,
+          "archivedBytes": 852,
+          "archivedSha256": "C168C2973DD8DD1FB8C87B9135735720A048B40993DDAF57632FAC1ABA8E8A35",
+          "metadataMatchesArchive": true
+        },
+        {
+          "name": "update-manifest.sig",
+          "id": 545355796,
+          "state": "uploaded",
+          "bytes": 384,
+          "digest": "sha256:1ea74f0a0c79423955d41d254ed3f3ab7a5c07c1f3d331d452e9d7cea268402d",
+          "createdAt": "2026-09-05T04:29:42Z",
+          "updatedAt": "2026-09-05T04:29:42Z",
+          "archivedId": 545355796,
+          "archivedBytes": 384,
+          "archivedSha256": "1EA74F0A0C79423955D41D254ED3F3AB7A5C07C1F3D331D452E9D7CEA268402D",
+          "metadataMatchesArchive": true
+        }
+      ],
+      "manifestSignatureRsaPssSha256": true,
+      "manifestBoundToRelease": true
+    },
+    {
+      "tag": "v1.0.1",
+      "metadataHttp": 200,
+      "releaseId": 383140083,
+      "archivedReleaseId": null,
+      "releaseIdMatchesArchive": true,
+      "draft": false,
+      "prerelease": false,
+      "assetCount": 4,
+      "tagRefHttp": 200,
+      "tagObjectType": "commit",
+      "tagCommit": "99eb7510b3b1288e680551f92367e0ccc6c25755",
+      "archivedSourceCommit": "99eb7510b3b1288e680551f92367e0ccc6c25755",
+      "tagCommitMatchesArchive": true,
+      "releaseShapeValid": true,
+      "assets": [
+        {
+          "name": "StoreExpiryInspector-1.0.1-win-x64.zip",
+          "id": 545389809,
+          "state": "uploaded",
+          "bytes": 107875191,
+          "digest": "sha256:689f7a872ece50f2177a6349ef6dee9637a8ab655798899efd0e3c76bdddd169",
+          "createdAt": "2026-09-05T05:03:53Z",
+          "updatedAt": "2026-09-05T05:04:14Z",
+          "archivedId": null,
+          "archivedBytes": 107875191,
+          "archivedSha256": "689F7A872ECE50F2177A6349EF6DEE9637A8AB655798899EFD0E3C76BDDDD169",
+          "metadataMatchesArchive": true
+        },
+        {
+          "name": "StoreExpiryInspector-Setup-1.0.1.exe",
+          "id": 545390099,
+          "state": "uploaded",
+          "bytes": 74243889,
+          "digest": "sha256:7854110facfa2575590dfa0be2e39b603e2dea08bc10306c28444c1176b7b8ca",
+          "createdAt": "2026-09-05T05:04:15Z",
+          "updatedAt": "2026-09-05T05:04:28Z",
+          "archivedId": null,
+          "archivedBytes": 74243889,
+          "archivedSha256": "7854110FACFA2575590DFA0BE2E39B603E2DEA08BC10306C28444C1176B7B8CA",
+          "metadataMatchesArchive": true
+        },
+        {
+          "name": "update-manifest.json",
+          "id": 545390287,
+          "state": "uploaded",
+          "bytes": 852,
+          "digest": "sha256:3cfac07eaadb20022974d02c7e0324a3a3e78ec4abf5dcf7e314562aca023729",
+          "createdAt": "2026-09-05T05:04:29Z",
+          "updatedAt": "2026-09-05T05:04:29Z",
+          "archivedId": null,
+          "archivedBytes": 852,
+          "archivedSha256": "3CFAC07EAADB20022974D02C7E0324A3A3E78EC4ABF5DCF7E314562ACA023729",
+          "metadataMatchesArchive": true
+        },
+        {
+          "name": "update-manifest.sig",
+          "id": 545390301,
+          "state": "uploaded",
+          "bytes": 384,
+          "digest": "sha256:61def8345c760706e2571ac7d879c9b643902928f0275f883a78ac5806dc20b3",
+          "createdAt": "2026-09-05T05:04:30Z",
+          "updatedAt": "2026-09-05T05:04:30Z",
+          "archivedId": null,
+          "archivedBytes": 384,
+          "archivedSha256": "61DEF8345C760706E2571AC7D879C9B643902928F0275F883A78AC5806DC20B3",
+          "metadataMatchesArchive": true
+        }
+      ],
+      "manifestSignatureRsaPssSha256": true,
+      "manifestBoundToRelease": true
+    }
+  ],
+  "downloads": [
+    {
+      "version": "1.0.0",
+      "name": "update-manifest.json",
+      "initialHttp": 200,
+      "finalHost": "release-assets.githubusercontent.com",
+      "bytes": 852,
+      "sha256": "C168C2973DD8DD1FB8C87B9135735720A048B40993DDAF57632FAC1ABA8E8A35",
+      "metadataDigest": "sha256:c168c2973dd8dd1fb8c87b9135735720a048b40993ddaf57632fac1aba8e8a35",
+      "metadataMatches": true,
+      "rawEvidence": "TEMP/StoreExpiryInspectorS9T07PublicRelease-0a37ceabb9ce4872b9b2c36426167032/1.0.0/update-manifest.json"
+    },
+    {
+      "version": "1.0.0",
+      "name": "update-manifest.sig",
+      "initialHttp": 200,
+      "finalHost": "release-assets.githubusercontent.com",
+      "bytes": 384,
+      "sha256": "1EA74F0A0C79423955D41D254ED3F3AB7A5C07C1F3D331D452E9D7CEA268402D",
+      "metadataDigest": "sha256:1ea74f0a0c79423955d41d254ed3f3ab7a5c07c1f3d331d452e9d7cea268402d",
+      "metadataMatches": true,
+      "rawEvidence": "TEMP/StoreExpiryInspectorS9T07PublicRelease-0a37ceabb9ce4872b9b2c36426167032/1.0.0/update-manifest.sig"
+    },
+    {
+      "version": "1.0.1",
+      "name": "update-manifest.json",
+      "initialHttp": 200,
+      "finalHost": "release-assets.githubusercontent.com",
+      "bytes": 852,
+      "sha256": "3CFAC07EAADB20022974D02C7E0324A3A3E78EC4ABF5DCF7E314562ACA023729",
+      "metadataDigest": "sha256:3cfac07eaadb20022974d02c7e0324a3a3e78ec4abf5dcf7e314562aca023729",
+      "metadataMatches": true,
+      "rawEvidence": "TEMP/StoreExpiryInspectorS9T07PublicRelease-0a37ceabb9ce4872b9b2c36426167032/1.0.1/update-manifest.json"
+    },
+    {
+      "version": "1.0.1",
+      "name": "update-manifest.sig",
+      "initialHttp": 200,
+      "finalHost": "release-assets.githubusercontent.com",
+      "bytes": 384,
+      "sha256": "61DEF8345C760706E2571AC7D879C9B643902928F0275F883A78AC5806DC20B3",
+      "metadataDigest": "sha256:61def8345c760706e2571ac7d879c9b643902928f0275f883a78ac5806dc20b3",
+      "metadataMatches": true,
+      "rawEvidence": "TEMP/StoreExpiryInspectorS9T07PublicRelease-0a37ceabb9ce4872b9b2c36426167032/1.0.1/update-manifest.sig"
+    }
+  ],
+  "archiveReferences": [
+    ".ai-dev/ACCEPTANCE/S9-T06-RELEASE-RESULT.json",
+    ".ai-dev/ACCEPTANCE/S9-T06-ASSET-SHA256.md",
+    ".ai-dev/ACCEPTANCE/S9-T06-SOL-VERIFY/1.0.0-github-anonymous.json",
+    ".ai-dev/ACCEPTANCE/S9-T06-SOL-VERIFY/1.0.1-github-anonymous.json"
+  ],
+  "archiveLimit": "S9-T06 archive preserves v1.0.0 release/asset IDs in raw API evidence; v1.0.1 archived summary preserves tag/size/digest but not release/asset IDs, so current v1.0.1 IDs are recorded but cannot be called independently ID-matched to that archive.",
+  "conclusion": "Public main/tags/releases/latest and all archived sizes/digests remain consistent; four small assets were freshly downloaded and both signatures verified."
+}

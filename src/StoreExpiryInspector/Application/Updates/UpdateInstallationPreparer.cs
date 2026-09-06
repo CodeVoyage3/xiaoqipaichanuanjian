@@ -9,6 +9,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Infrastructure;
 
 namespace StoreExpiryInspector.Application.Updates;
 
@@ -43,6 +46,7 @@ public sealed class UpdateInstallationPreparer
         var oldPath = Path.Combine(installRoot, "app.old-" + operationId);
         var updaterPath = Path.Combine(operationRoot, "updater");
         var journalPath = Path.Combine(operationRoot, "journal.json");
+        var preJournalPath = Path.Combine(operationRoot, "schema-preparation.json");
 
         ValidateRoots(installRoot, dataRoot, updaterSourceRoot, testOnly);
         if (!Directory.Exists(appPath) || Directory.Exists(stagingPath) || Directory.Exists(oldPath)) throw new InvalidOperationException("更新程序目录状态无效。");
@@ -64,8 +68,27 @@ public sealed class UpdateInstallationPreparer
             TestCheckpoint(testOnly, "StagingCompleted", stagingPath, operationRoot, dataRoot);
             var candidateTree = InstallationTreeFingerprint.Create(stagingPath);
             var now = DateTimeOffset.UtcNow;
-            var journal = new InstallationJournal(operationId, ProductId, Path.GetFullPath(installRoot), Path.GetFullPath(dataRoot), appPath, stagingPath, oldPath, package.Sha256, SourceVersion(parent), package.Version.ToString(3), parent.Id, parent.StartTime.ToUniversalTime(), InstallationUpdatePhase.Prepared, oldTree, candidateTree, now, now, 0, null, null);
+            var sourceVersion = SourceVersion(parent);
+            var declaredSourceMigrations = DeclaredSourceMigrations();
+            var actualSourceMigrations = ReadAppliedMigrations(dataRoot);
+            ValidateSourcePermission(package, sourceVersion, actualSourceMigrations);
+            SchemaUpdateJournal? schema = null;
+            if (!declaredSourceMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal))
+            {
+                if (package.MinimumProtocolVersion < 2 || !SchemaUpdateJournal.IsValidMigrationList(package.TargetMigrations))
+                    throw new InvalidDataException("候选更新未声明跨 Schema 协议。");
+                var sourceMigrations = actualSourceMigrations;
+                if (!sourceMigrations.SequenceEqual(declaredSourceMigrations, StringComparer.Ordinal) || !SchemaUpgradeSnapshots.IsStrictPrefix(sourceMigrations, package.TargetMigrations))
+                    throw new InvalidDataException("候选更新不允许当前 Schema 来源。");
+                WritePreparationAtomically(preJournalPath, operationId, sourceVersion, sourceMigrations, package.TargetMigrations, SchemaPhase.SourceVerified);
+                WritePreparationAtomically(preJournalPath, operationId, sourceVersion, sourceMigrations, package.TargetMigrations, SchemaPhase.SnapshotPreparing);
+                var snapshot = SchemaUpgradeSnapshots.Create(dataRoot, operationId, sourceVersion, sourceMigrations);
+                schema = new SchemaUpdateJournal(SchemaPhase.SnapshotVerified, snapshot, sourceMigrations, package.TargetMigrations, Guid.NewGuid().ToString());
+                SchemaUpdateJournal.Validate(schema, operationId, sourceVersion, package.Version.ToString(3));
+            }
+            var journal = new InstallationJournal(operationId, ProductId, Path.GetFullPath(installRoot), Path.GetFullPath(dataRoot), appPath, stagingPath, oldPath, package.Sha256, sourceVersion, package.Version.ToString(3), parent.Id, parent.StartTime.ToUniversalTime(), InstallationUpdatePhase.Prepared, oldTree, candidateTree, now, now, 0, null, null, schema);
             WriteJournalAtomically(journalPath, journal);
+            if (File.Exists(preJournalPath)) File.Delete(preJournalPath);
             _downloader.DiscardVerifiedCache(package);
             return new(operationId, journalPath, Path.Combine(updaterPath, "StoreExpiryInspector.Updater.exe"));
         }
@@ -75,6 +98,39 @@ public sealed class UpdateInstallationPreparer
             DeleteOwnedDirectory(updaterPath);
             throw;
         }
+    }
+
+    private static void ValidateSourcePermission(VerifiedUpdatePackage package, string sourceVersion, IReadOnlyList<string> migrations)
+    {
+        var version = Version.Parse(sourceVersion);
+        if (package.SourceMinVersion is null || package.SourceMaxVersion is null || package.SourceMinMigration is null || package.SourceMaxMigration is null ||
+            version < package.SourceMinVersion || version > package.SourceMaxVersion ||
+            string.CompareOrdinal(migrations[^1], package.SourceMinMigration) < 0 || string.CompareOrdinal(migrations[^1], package.SourceMaxMigration) > 0)
+            throw new InvalidDataException("当前版本或迁移不在已签名更新许可范围内。");
+    }
+
+    private static void WritePreparationAtomically(string path, string operationId, string sourceVersion, IReadOnlyList<string> source, IReadOnlyList<string> target, SchemaPhase phase)
+    {
+        DurableFile.Replace(path, JsonSerializer.Serialize(new { operationId, sourceVersion, sourceMigrations = source, targetMigrations = target, phase, treeSwitchAuthorized = false }));
+    }
+
+    private static IReadOnlyList<string> DeclaredSourceMigrations()
+    {
+        using var context = new StoreDbContextFactory().CreateDbContext([]);
+        var migrations = context.Database.GetMigrations().OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        if (!SchemaUpdateJournal.IsValidMigrationList(migrations)) throw new InvalidDataException("旧程序 Schema 声明无效。");
+        return migrations;
+    }
+
+    private static IReadOnlyList<string> ReadAppliedMigrations(string dataRoot)
+    {
+        var database = Path.Combine(dataRoot, "data", "app.db");
+        // immutable avoids replaying a preflight WAL before SchemaUpgradeSnapshots can reject it.
+        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = new Uri(database).AbsoluteUri + "?immutable=1", Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
+        connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId COLLATE BINARY;";
+        using var reader = command.ExecuteReader(); var migrations = new List<string>(); while (reader.Read()) migrations.Add(reader.GetString(0));
+        if (!SchemaUpdateJournal.IsValidMigrationList(migrations)) throw new InvalidDataException("当前 Schema 迁移历史无效。");
+        return migrations;
     }
 
     private static void ValidateRoots(string installRoot, string dataRoot, string updaterSourceRoot, bool testOnly)
@@ -188,9 +244,7 @@ public sealed class UpdateInstallationPreparer
 
     private static void WriteJournalAtomically(string path, InstallationJournal journal)
     {
-        var temporary = path + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(journal));
-        File.Move(temporary, path, true);
+        DurableFile.Replace(path, JsonSerializer.Serialize(journal));
     }
 
     private static void DeleteOwnedDirectory(string path)
@@ -225,4 +279,4 @@ internal sealed record InstallationTreeFingerprint(IReadOnlyList<string> Files, 
 
 internal enum InstallationUpdatePhase { Prepared, MainExitRequested, MainExited, CandidateStaged, OldAppPreserved, SwitchStarted, CandidateActivated, CandidateStarted, WaitingForHealthAck, Committed, Completed, RollbackRequired, RollbackStarted, OldAppRestored, RollbackVerified, RolledBack, FailedNeedsManualRecovery }
 
-internal sealed record InstallationJournal(string OperationId, string ProductId, string InstallRoot, string DataRoot, string AppPath, string StagingPath, string OldPath, string PackageSha256, string SourceVersion, string TargetVersion, int ParentPid, DateTimeOffset ParentStartedUtc, InstallationUpdatePhase Phase, InstallationTreeFingerprint OldTree, InstallationTreeFingerprint CandidateTree, DateTimeOffset CreatedUtc, DateTimeOffset UpdatedUtc, int CandidatePid, DateTimeOffset? CandidateStartedUtc, string? LastError);
+internal sealed record InstallationJournal(string OperationId, string ProductId, string InstallRoot, string DataRoot, string AppPath, string StagingPath, string OldPath, string PackageSha256, string SourceVersion, string TargetVersion, int ParentPid, DateTimeOffset ParentStartedUtc, InstallationUpdatePhase Phase, InstallationTreeFingerprint OldTree, InstallationTreeFingerprint CandidateTree, DateTimeOffset CreatedUtc, DateTimeOffset UpdatedUtc, int CandidatePid, DateTimeOffset? CandidateStartedUtc, string? LastError, SchemaUpdateJournal? Schema = null);

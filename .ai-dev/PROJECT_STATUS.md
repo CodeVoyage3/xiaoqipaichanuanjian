@@ -1,5 +1,21 @@
 # 项目状态
 
+## 2026-09-06 当前：Stage 9 已关闭
+
+`S9-T07 = TECHNICALLY_ACCEPTED / CLOSED`；`Stage9 = CLOSED`。独立 Sol 已完成当前完整 diff 与最终自动化门禁，结论 `PASS`；无需新增人工 GUI 验收。生产 migration 保持 9，末条为 `20260901155124_AddPolicyAndBaselineFoundation`，无真实 migration10/ModelSnapshot 漂移；未发布 v1.0.2，未创建 Stage10。最终证据见 `ACCEPTANCE/S9-T07-RESULT.json` 与 `STAGES/STAGE-9-CLOSEOUT.md`。
+
+本状态只承诺从已验证的升级前可信边界开始提供升级/回滚安全，不承诺识别已经合法回放并 checkpoint 到主库的历史外来 WAL 污染：
+
+> S9-T07 guarantees upgrade/rollback safety from a verified pre-upgrade trust boundary; it does not provide forensic detection of historical contamination already committed into the main database.
+
+下方所有 `IN_PROGRESS / NOT_ACCEPTED`、暂停、施工和等待授权状态均为历史记录。
+
+## 2026-09-06 收口模式（当前裁决）
+
+用户已明确将14节点×3真实硬杀耐久矩阵移入 `.ai-dev/BACKLOG.md`，不阻塞S9-T07/Stage9 CLOSED。保留全部确定性状态机/fault-injection覆盖；真实硬杀只做MigrationStarted后、MigrationApplied后ACK前、ACK后CandidateCommitted前、SnapshotRestore中、old app恢复后old ACK前，共5个边界各先1次。首失败或不稳才追加针对性重复，稳定通过不机械重复3次。
+
+开发只跑S9-T07专项及必要S8/S9-T05/S9-T06回归；冻结后Sol最终只执行一次fresh无filter Release全量、build、EF/migration、secret scan、git门禁。仍为IN_PROGRESS / NOT_ACCEPTED，信任边界裁决、正式数据禁令和角色分离保持。旧文中的14×3及反复fresh全量要求由本节覆盖。
+
 ## 2026-09-05 用户裁决：解除暂停，继续实施
 
 `S9-T07 = IN_PROGRESS / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT`。用户已明确确认以下信任边界并要求继续实施，覆盖下方历史 PAUSED_PRODUCT_REVIEW；原独立验收与禁止扩范围门禁继续有效。恢复时重新 fetch，origin/main 仍为 c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803。
@@ -15,7 +31,7 @@
 Terra 继续本卡生产实施和实施测试，提交后停止、不 push；Sol 独立完整 diff 与复验。未通过全部门禁前不关闭；不访问正式 DB，不创建真实 migration10，不发布 v1.0.2，不创建 Stage10。
 
 
-## 2026-09-05 当前停止点：等待快照信任起点裁决
+## 2026-09-05 历史暂停（已由上方用户裁决解除）
 
 `S9-T07 = PAUSED_PRODUCT_REVIEW / NOT_ACCEPTED`；`Stage9 = IN_PROGRESS / S9-T07_CURRENT / PAUSED_PRODUCT_REVIEW`。
 

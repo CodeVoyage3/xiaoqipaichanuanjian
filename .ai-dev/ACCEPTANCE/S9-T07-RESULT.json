@@ -1,0 +1,202 @@
+{
+  "card": "S9-T07",
+  "stage": "Stage9",
+  "closedAt": "2026-09-06",
+  "status": "TECHNICALLY_ACCEPTED",
+  "cardState": "CLOSED",
+  "stageState": "CLOSED",
+  "solVerdict": "PASS",
+  "trustBoundary": "S9-T07 guarantees upgrade/rollback safety from a verified pre-upgrade trust boundary; it does not provide forensic detection of historical contamination already committed into the main database.",
+  "trustBoundaryLimit": "This acceptance does not assert that current business data is correct and does not claim forensic detection of historical contamination committed before the verified pre-upgrade trust boundary.",
+  "fullRuns": {
+    "first": {
+      "role": "preserved failed full",
+      "total": 1148,
+      "passed": 1130,
+      "failed": 18,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "skipped": 0,
+      "trx": "%TEMP%/a4f6b9c1-0fd1-4e27-9d36-7fb96663be0a/full-release/S9-T07-Sol-Full.trx",
+      "trxSha256": "6463AA852DFE29904CD070C536E1B7E238AC4290C133C8C00A5C55366DFB9BB2",
+      "disposition": "Preserved. The 18 failures were traced to test harness/build collision and were not treated as production update-chain failures."
+    },
+    "replacement": {
+      "role": "only authorized replacement fresh unfiltered Release full",
+      "total": 1148,
+      "passed": 1148,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "skipped": 0,
+      "trx": "%TEMP%/d9697a54-6b67-4f40-8793-e8368847c8c6/S9T07-final-full.trx",
+      "trxSha256": "EF5786BCD13BA90915A883808A433567100F97C5183E8EEE341D5AB115BBE759",
+      "consoleSha256": "E6B0D298DF5127BDF1DABD43F7726EE734A1D76CEC927C1CE6461825EAF06C80",
+      "buildArtifactsSha256": "65B754A09842346184C7674C9CECA059FFF4884835C7796BE670D77969C6C98F",
+      "runMetaSha256": "83BE9A16ED9A7911B0AA83BA02EA2568D52DA5337010F5FB4C159324BDE7B3FF",
+      "rerunCountAfterPass": 0
+    },
+    "postFullDelta": {
+      "scope": "Narrowed the test-only hard-kill hook through conditional compilation and MSBuild property isolation.",
+      "closureEvidence": [
+        "fresh solution Release build",
+        "latest point4 hard-kill receipt",
+        "normal versus test UpdateSafety DLL hashes and hard-kill string scan",
+        "self-contained App and Updater publish scan"
+      ],
+      "secondUnfilteredFullRun": false
+    }
+  },
+  "focusedAutomation": [
+    {
+      "name": "A gate",
+      "passed": 2,
+      "total": 2,
+      "trx": "%TEMP%/s9t07-a-gate-9421345d-b25d-47a4-917f-8275019646af/s9t07-a-gate.trx",
+      "sha256": "CF50C2F828D6B76BFCCD0BFDE3C40D28153D746FE2B19A3CC92A4CD67F88D0F7"
+    },
+    {
+      "name": "B-D gate",
+      "passed": 8,
+      "total": 8,
+      "trx": "%TEMP%/s9t07-bd-gate-78a6ba63-54bb-42d2-a9b0-36c72a8e06d0/s9t07-bd-gate.trx",
+      "sha256": "62FEE64AD5AD119D3C21457D134FA58A7ED7620F9EA864A549720EFD220B4C85"
+    },
+    {
+      "name": "S9-T07 focused",
+      "passed": 90,
+      "total": 90,
+      "trx": "%TEMP%/s9t07-focused-gate-7b9c0b81-2202-4d05-8c81-3821d3baec6b/s9t07-focused-gate.trx",
+      "sha256": "EF2D83C408A93F9FDCEC7EC03081C5AE53B7F57CAAD014A0EA87A7E1C070A707"
+    },
+    {
+      "name": "S8 S9-T05 S9-T06 regression",
+      "passed": 142,
+      "total": 142,
+      "trx": "%TEMP%/s9t07-regression-gate-566eb596-bf58-4956-a7e3-f07433dabbf2/s9t07-regression-gate.trx",
+      "sha256": "6DE578B63B7D994D4622DDEFD314E406B02596533C49E687DD2A844AD28C5CF8"
+    }
+  ],
+  "hardKill": [
+    {
+      "point": 1,
+      "checkpoint": "SchemaMigrationStarted",
+      "result": "%TEMP%/s9t07-hardkill-1-final-pass-39b072b6-0314-4b4e-aec3-c6386bafbc53/result.json",
+      "resultSha256": "09766C8F66EFC216B6AB1C6E0258F6A56B73D388093329E1D7361B3B207F9E77",
+      "terminalState": 15,
+      "schemaState": 16
+    },
+    {
+      "point": 2,
+      "checkpoint": "SchemaMigrationAppliedBeforeAck",
+      "result": "%TEMP%/s9t07-hardkill-2-f51a1fc8-c096-49b5-95e9-49ab4a26283b/result.json",
+      "resultSha256": "A1116B0E7E7CEB24FA35D85A870410060502525AF7D933B2A224F9576BE39AA4",
+      "terminalState": 15,
+      "schemaState": 16
+    },
+    {
+      "point": 3,
+      "checkpoint": "AckPersistedBeforeCandidateCommitted",
+      "result": "%TEMP%/s9t07-hardkill-3-d13b9bf2-8733-4a9e-aba2-83541f96dbd4/result.json",
+      "resultSha256": "7C8BB006AF589A870930D8FC991BDCFFB241EC7B4E3DA06848DC48F21CAE3C88",
+      "terminalState": 10,
+      "schemaState": 8
+    },
+    {
+      "point": 4,
+      "checkpoint": "SchemaSnapshotRestoreDuringCopy",
+      "result": "%TEMP%/s9t07-hardkill-point4-fixed-bd9045ba-b612-4181-b9ae-8fd6e83b6f0c/result.json",
+      "resultSha256": "127182373E9AC9A5478D55887CAF3F56EA963A0640EBA51521EF17B05FA6FCF6",
+      "terminalState": 15,
+      "schemaState": 16,
+      "runnerExitCode": 0,
+      "testExitCode": 1,
+      "testExitExplanation": "Expected because the xUnit test process is the deliberately killed process; the outer runner completed and verified recovery."
+    },
+    {
+      "point": 5,
+      "checkpoint": "OldApplicationRestoredBeforeOldHealthAck",
+      "result": "%TEMP%/s9t07-hardkill-5-held-pass-29a48904-7907-466f-ae10-faa985d75990/result.json",
+      "resultSha256": "8E036EFC3E61A8E6E95D8921EFEF475F091914F788AB0BFFF5ED36874A6FB043",
+      "terminalState": 15,
+      "schemaState": 16
+    }
+  ],
+  "hardKillCommonChecks": {
+    "journalTerminalAndSchemaState": "PASS",
+    "healthAckAndNormalLoaded": "PASS",
+    "sqliteIntegrityCheck": "ok",
+    "foreignKeyViolations": 0,
+    "productionRollbackMigrationCount": 9,
+    "candidateCommitFixtureMigrationCount": 10,
+    "syntheticReminderValue": 602,
+    "syntheticBlobLength": 131073,
+    "syntheticLifecycleHistoryCount": 1,
+    "processResiduals": 0
+  },
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "log": "%TEMP%/s9t07-final-safety-build-443012322a094e4b9125ec35e2740611.log",
+    "logSha256": "6BEE2661E044788ABA7467B4B3E786005827EB1FC6BF656F4970EEC2C2AD6828"
+  },
+  "ef": {
+    "hasPendingModelChanges": false,
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "realMigration10": false,
+    "modelSnapshotChanged": false,
+    "connectionMode": "--no-connect"
+  },
+  "publish": {
+    "root": "%TEMP%/6de94284-f494-448a-bdd5-c6128e3c8729",
+    "appSelfContained": true,
+    "updaterSelfContained": true,
+    "appLogSha256": "E56DF5778A9CECE4135D75A8B630FCB146A1CB56CCD5677CC5D2A7BEB558962B",
+    "updaterLogSha256": "6B3BB066EC011A65CA52F685823277B1DE5F75C14538C7D991BBC0809148FC3C",
+    "normalUpdateSafetySha256": "655DA5D6E83F49CBA09AE7B8E02D7936BB6D1B81B1EC5288CA2932A45CF9B80D",
+    "testUpdateSafetySha256": "D6BE6C5D5EA1D14C1BC6FC864A9D160234FD536569300A70DBC60442A5E116C3",
+    "productionHardKillStringMatchesUtf8Utf16": 0,
+    "testHardKillStringsPresent": true,
+    "embeddedStandaloneUpdaterTreeSha256": "1DB1655028D45DF7FC8111C9C4D71CAC6792A93D5DBC32015AB9833208D3802E",
+    "embeddedStandaloneUpdaterMismatchCount": 0,
+    "fixtureOrTestArtifactMatches": 0
+  },
+  "secretScan": {
+    "result": "PASS",
+    "publishMatches": 0,
+    "sourceFindings": 0,
+    "classifiedNonSecrets": [
+      "NetworkChecks.cs contains a literal ?token= detector used to reject unsafe logs.",
+      ".ai-dev/ACCEPTANCE/S9-T06-PUBLIC-KEY.pem contains a public key, not a private key."
+    ]
+  },
+  "isolation": {
+    "runtimeRoots": "TEMP/GUID only",
+    "formalInstallAccess": false,
+    "formalDatabaseAccess": false,
+    "remainingStoreExpiryInspectorProcesses": 0,
+    "remainingUpdaterProcesses": 0,
+    "remainingTesthostProcesses": 0,
+    "remainingRepoDotnetProcesses": 0
+  },
+  "scope": {
+    "manualGuiRequired": false,
+    "publishedV102": false,
+    "createdStage10": false,
+    "modifiedPublicV100OrV101": false,
+    "durabilityMatrix14x3": "Deferred to .ai-dev/BACKLOG.md and non-blocking for V1/Stage9 closeout."
+  },
+  "gitBeforeFinalCommit": {
+    "head": "d0112238bef66bef2c987f15ce1cba2b51ccb079",
+    "originMain": "c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803",
+    "ahead": 1,
+    "behind": 0,
+    "workingTree": "Contains the reviewed S9-T07 implementation, tests and governance changes pending final commit.",
+    "finalCommitPushReceipt": "PENDING_ACTUAL_COMMIT_AND_PUSH"
+  },
+  "volatileEvidenceNotice": "TEMP/GUID paths identify the artifacts used during this acceptance run. This record does not promise that operating-system TEMP artifacts will be retained permanently."
+}

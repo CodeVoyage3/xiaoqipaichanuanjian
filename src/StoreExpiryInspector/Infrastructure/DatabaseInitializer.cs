@@ -31,6 +31,7 @@ public static class DatabaseInitializer
             .UseSqlite(new SqliteConnectionStringBuilder
             {
                 DataSource = path,
+                Pooling = false,
                 ForeignKeys = true
             }.ToString())
             .Options;
@@ -44,6 +45,16 @@ public static class DatabaseInitializer
             : Path.GetFullPath(databasePath);
         ValidateExistingDatabase(path);
         using var context = CreateContext(databasePath);
+        context.Database.Migrate();
+        context.Database.ExecuteSqlRaw("PRAGMA journal_mode = WAL;");
+    }
+
+    public static void InitializeOpened(SqliteConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        if (connection.State != System.Data.ConnectionState.Open) throw new InvalidOperationException("SQLite connection is not open.");
+        var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite(connection).Options;
+        using var context = new StoreDbContext(options);
         context.Database.Migrate();
         context.Database.ExecuteSqlRaw("PRAGMA journal_mode = WAL;");
     }
