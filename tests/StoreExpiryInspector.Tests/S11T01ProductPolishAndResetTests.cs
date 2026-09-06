@@ -136,16 +136,37 @@ public sealed class S11T01ProductPolishAndResetTests
     }
 
     [Fact]
-    public void EmptyDatabaseIsIdempotentAndDoesNotCreateBackupOrChangeSettings()
+    public void AppStateOnlyResetCreatesOneBackupThenBecomesNoData()
     {
         using var database = SqliteTestDatabase.Create();
         var backups = Path.Combine(database.Directory, "backups");
         using (var seed = database.Open())
         {
             seed.Settings.Single().ReminderMinuteOfDay = 725;
+            seed.AppStates.Single().LastReminderDate = new DateOnly(2026, 9, 5);
             seed.AppStates.Single().LastNormalRunDate = new DateOnly(2026, 9, 6);
             seed.SaveChanges();
         }
+
+        var first = new ResetBusinessDataUseCase().Execute(database.Path, backups);
+        var second = new ResetBusinessDataUseCase().Execute(database.Path, backups);
+
+        Assert.Equal(ResetBusinessDataCodes.Success, first.Code);
+        Assert.Equal(ResetBusinessDataCodes.NoData, second.Code);
+        Assert.Single(Directory.GetFiles(backups, "backup-*.db"));
+        using var verify = database.Open();
+        Assert.Equal(725, verify.Settings.AsNoTracking().Single().ReminderMinuteOfDay);
+        Assert.Null(verify.AppStates.AsNoTracking().Single().LastReminderDate);
+        Assert.Null(verify.AppStates.AsNoTracking().Single().LastNormalRunDate);
+        Assert.Single(verify.BackupRecords.AsNoTracking());
+        Assert.Equal(9, verify.Database.GetAppliedMigrations().Count());
+    }
+
+    [Fact]
+    public void TrulyEmptyDatabaseIsIdempotentAndDoesNotCreateBackup()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var backups = Path.Combine(database.Directory, "backups");
 
         var first = new ResetBusinessDataUseCase().Execute(database.Path, backups);
         var second = new ResetBusinessDataUseCase().Execute(database.Path, backups);
@@ -154,9 +175,8 @@ public sealed class S11T01ProductPolishAndResetTests
         Assert.Equal(ResetBusinessDataCodes.NoData, second.Code);
         Assert.False(Directory.Exists(backups));
         using var verify = database.Open();
-        Assert.Equal(725, verify.Settings.AsNoTracking().Single().ReminderMinuteOfDay);
-        Assert.Equal(new DateOnly(2026, 9, 6), verify.AppStates.AsNoTracking().Single().LastNormalRunDate);
         Assert.Empty(verify.BackupRecords.AsNoTracking());
+        Assert.Equal(9, verify.Database.GetAppliedMigrations().Count());
     }
 
     [Fact]

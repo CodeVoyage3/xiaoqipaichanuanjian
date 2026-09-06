@@ -89,6 +89,8 @@ public sealed class ResetBusinessDataUseCase
     }
 
     private static bool HasBusinessData(StoreDbContext context) =>
+        context.AppStates.Any(state =>
+            state.LastReminderDate != null || state.LastNormalRunDate != null) ||
         context.Products.Any() ||
         context.Batches.Any() ||
         context.Tasks.Any() ||
