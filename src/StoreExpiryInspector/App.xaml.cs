@@ -42,6 +42,7 @@ public partial class App : System.Windows.Application
             RuntimeDataRoot.Configure(e.Args);
 #if S9T07_TEST
             if (RuntimeDataRoot.IsS9T07TestInstall) TestInstallMarker("configured");
+            if (RuntimeDataRoot.IsS11PreReleaseInstall) PreReleaseTestMarker("configured");
 #endif
             if (UpdateNetworkDiagnostics.IsRequested(e.Args))
             {
@@ -54,6 +55,8 @@ public partial class App : System.Windows.Application
         {
 #if S9T07_TEST
             var marker = Environment.GetEnvironmentVariable("S9_T07_TEST_INSTALL_MARKER");
+            if (!string.IsNullOrWhiteSpace(marker) && Path.IsPathFullyQualified(marker) && Path.GetFullPath(marker).StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase)) File.WriteAllText(marker, "configure-error-" + exception.GetType().Name + "-" + exception.Message);
+            marker = Environment.GetEnvironmentVariable("S11_PRE_RELEASE_MARKER");
             if (!string.IsNullOrWhiteSpace(marker) && Path.IsPathFullyQualified(marker) && Path.GetFullPath(marker).StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase)) File.WriteAllText(marker, "configure-error-" + exception.GetType().Name + "-" + exception.Message);
 #endif
             WpfDialogService.Show(
@@ -185,10 +188,10 @@ public partial class App : System.Windows.Application
             MainWindow.Loaded += (_, _) => { try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, loadedOperation, RuntimeDataRoot.NormalLaunchToken!); } catch { Shutdown(1); } };
         MainWindow.Show();
 #if S9T07_TEST
-        if (RuntimeDataRoot.IsS9T07TestInstall)
+        if (RuntimeDataRoot.IsTestUpdateInstall)
         {
             InitializeTrayAndReminderScheduler();
-            Dispatcher.BeginInvoke(RunS9T07TestInstall);
+            Dispatcher.BeginInvoke(RuntimeDataRoot.IsS11PreReleaseInstall ? RunS11PreReleaseInstall : RunS9T07TestInstall);
             return;
         }
 #endif
@@ -547,15 +550,15 @@ public partial class App : System.Windows.Application
                 using var parent = Process.GetCurrentProcess();
                 var preparer = new UpdateInstallationPreparer(downloader);
 #if S9T07_TEST
-                if (RuntimeDataRoot.IsS9T07TestInstall)
-                    return preparer.PrepareForTest(package, parent, RequiredTestPath("S9_T07_TEST_INSTALL_ROOT"), RuntimeDataRoot.RootDirectory, RequiredTestPath("S9_T07_TEST_UPDATER_ROOT"), CancellationToken.None);
+                if (RuntimeDataRoot.IsTestUpdateInstall)
+                    return preparer.PrepareForTest(package, parent, RequiredTestPath(RuntimeDataRoot.IsS11PreReleaseInstall ? "S11_PRE_RELEASE_INSTALL_ROOT" : "S9_T07_TEST_INSTALL_ROOT"), RuntimeDataRoot.RootDirectory, RequiredTestPath(RuntimeDataRoot.IsS11PreReleaseInstall ? "S11_PRE_RELEASE_UPDATER_ROOT" : "S9_T07_TEST_UPDATER_ROOT"), CancellationToken.None);
 #endif
                 return preparer.Prepare(package, parent, CancellationToken.None);
             });
             var updater = Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) ?? throw new InvalidOperationException("独立 Updater 未启动。");
 #if S9T07_TEST
-            if (RuntimeDataRoot.IsS9T07TestInstall)
-                File.WriteAllText(RequiredTestPath("S9_T07_TEST_UPDATER_IDENTITY"), System.Text.Json.JsonSerializer.Serialize(new { operationId = prepared.OperationId, pid = updater.Id, startedUtc = updater.StartTime.ToUniversalTime(), executable = updater.MainModule?.FileName }));
+            if (RuntimeDataRoot.IsTestUpdateInstall)
+                File.WriteAllText(RequiredTestPath(RuntimeDataRoot.IsS11PreReleaseInstall ? "S11_PRE_RELEASE_UPDATER_IDENTITY" : "S9_T07_TEST_UPDATER_IDENTITY"), System.Text.Json.JsonSerializer.Serialize(new { operationId = prepared.OperationId, pid = updater.Id, startedUtc = updater.StartTime.ToUniversalTime(), executable = updater.MainModule?.FileName }));
 #endif
             _explicitExit = true;
             StopRuntime();
@@ -567,6 +570,7 @@ public partial class App : System.Windows.Application
         {
 #if S9T07_TEST
             if (RuntimeDataRoot.IsS9T07TestInstall) TestInstallMarker("prepare-error-" + exception.GetType().Name + "-" + exception.Message);
+            if (RuntimeDataRoot.IsS11PreReleaseInstall) PreReleaseTestMarker("prepare-error-" + exception.GetType().Name + "-" + exception.Message);
 #else
             _ = exception;
 #endif
@@ -576,6 +580,30 @@ public partial class App : System.Windows.Application
     }
 
 #if S9T07_TEST
+    private async void RunS11PreReleaseInstall()
+    {
+        var stage = "started";
+        try
+        {
+            PreReleaseTestMarker(stage);
+            if (!GitHubReleaseUpdateChecker.TryGetCurrentVersion(out var current) || current != new Version(1, 0, 2)) throw new InvalidDataException("pre-release source host must be 1.0.2");
+            using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(Convert.FromBase64String(Environment.GetEnvironmentVariable("S11_PRE_RELEASE_PUBLIC_KEY") ?? throw new InvalidDataException()), out _);
+            using var handler = new PreReleaseTransportHandler();
+            var check = await new GitHubReleaseUpdateChecker(handler, TimeSpan.FromSeconds(10)).CheckAsync(current, CancellationToken.None);
+            if (check.Outcome != UpdateCheckOutcome.UpdateAvailable || check.Release is null || check.LatestVersion != new Version(1, 0, 3)) throw new InvalidDataException("pre-release check identity mismatch");
+            PreReleaseTestMarker(stage = "checked");
+            var downloader = new SignedUpdatePackageDownloader(handler, new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: RequiredTestPath("S11_PRE_RELEASE_CACHE_ROOT")));
+            var prepared = await downloader.PrepareAsync(check.Release, current, null, CancellationToken.None);
+            if (prepared.Outcome != UpdatePackageOutcome.Verified || prepared.Package is null) throw new InvalidDataException("pre-release package was not verified: " + prepared.Outcome);
+            handler.RequireCompleteSequence();
+            PreReleaseTestMarker(stage = "downloaded-and-verified");
+            var result = await InstallPreparedUpdateAsync(prepared.Package, downloader);
+            if (result.Outcome != UpdatePackageOutcome.Verified) { PreReleaseTestMarker("install-failed-" + result.Outcome); Shutdown(1); return; }
+            PreReleaseTestMarker("updater-started");
+        }
+        catch (Exception exception) { PreReleaseTestMarker("error-" + stage + "-" + exception.GetType().Name + "-" + exception.Message); Shutdown(1); }
+    }
+
     private async void RunS9T07TestInstall()
     {
         var stage = "started";
@@ -598,6 +626,9 @@ public partial class App : System.Windows.Application
         var marker = Environment.GetEnvironmentVariable("S9_T07_TEST_INSTALL_MARKER");
         if (!string.IsNullOrWhiteSpace(marker)) File.WriteAllText(marker, value);
     }
+
+    private static void PreReleaseTestMarker(string value) =>
+        File.WriteAllText(RequiredTestPath("S11_PRE_RELEASE_MARKER"), value);
 
     private static string RequiredTestPath(string name)
     {

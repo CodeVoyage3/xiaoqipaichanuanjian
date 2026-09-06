@@ -15,6 +15,7 @@ public static class RuntimeDataRoot
     private const string NormalLaunchArgument = "--s9-t07-normal-launch";
 #if S9T07_TEST
     private const string TestInstallArgument = "--s9-t07-test-install";
+    private const string PreReleaseInstallArgument = "--s11-pre-release-install";
 #endif
 
     private static RuntimeDataRootOptions? _options;
@@ -28,6 +29,8 @@ public static class RuntimeDataRoot
     public static string? NormalLaunchToken => Options.NormalLaunchToken;
 #if S9T07_TEST
     public static bool IsS9T07TestInstall => Options.IsS9T07TestInstall;
+    public static bool IsS11PreReleaseInstall => Options.IsS11PreReleaseInstall;
+    public static bool IsTestUpdateInstall => IsS9T07TestInstall || IsS11PreReleaseInstall;
 #endif
 
     public static string RootDirectory => Options.RootDirectory;
@@ -70,6 +73,7 @@ public static class RuntimeDataRoot
         string? normalOperationId = null; string? normalToken = null;
         var allowExisting = false;
         var testInstall = false;
+        var preReleaseInstall = false;
         for (var index = 0; index < arguments.Length; index++)
         {
             var argument = arguments[index];
@@ -86,6 +90,7 @@ public static class RuntimeDataRoot
             }
 #if S9T07_TEST
             if (string.Equals(argument, TestInstallArgument, StringComparison.Ordinal)) { testInstall = true; continue; }
+            if (string.Equals(argument, PreReleaseInstallArgument, StringComparison.Ordinal)) { preReleaseInstall = true; continue; }
 #endif
 
             if (string.Equals(argument, UpgradeVerificationArgument, StringComparison.Ordinal))
@@ -133,7 +138,7 @@ public static class RuntimeDataRoot
         if (dataRoot is null)
         {
 #if S9T07_TEST
-            if (testInstall) throw new ArgumentException("测试更新必须指定隔离数据目录。", nameof(arguments));
+            if (testInstall || preReleaseInstall) throw new ArgumentException("测试更新必须指定隔离数据目录。", nameof(arguments));
 #endif
             if (smokeExit)
             {
@@ -164,8 +169,8 @@ public static class RuntimeDataRoot
             throw new ArgumentException("隔离数据目录必须是 TEMP 下的 GUID 普通目录。", nameof(arguments));
         }
 
-        if (testInstall && !allowExisting) throw new ArgumentException("测试更新必须复用隔离数据目录。", nameof(arguments));
-        return new(root, true, smokeExit, allowExisting, verificationOperationId, schemaLaunchToken, normalOperationId, normalToken, testInstall);
+        if ((testInstall || preReleaseInstall) && !allowExisting) throw new ArgumentException("测试更新必须复用隔离数据目录。", nameof(arguments));
+        return new(root, true, smokeExit, allowExisting, verificationOperationId, schemaLaunchToken, normalOperationId, normalToken, testInstall, preReleaseInstall);
     }
 
     private static RuntimeDataRootOptions Options => _options ?? new(
@@ -254,4 +259,4 @@ public static class RuntimeDataRoot
     }
 }
 
-internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false, string? UpgradeVerificationOperationId = null, string? SchemaUpgradeVerificationLaunchToken = null, string? NormalLaunchOperationId = null, string? NormalLaunchToken = null, bool IsS9T07TestInstall = false);
+internal sealed record RuntimeDataRootOptions(string RootDirectory, bool IsIsolated, bool IsSmokeRun, bool AllowExisting = false, string? UpgradeVerificationOperationId = null, string? SchemaUpgradeVerificationLaunchToken = null, string? NormalLaunchOperationId = null, string? NormalLaunchToken = null, bool IsS9T07TestInstall = false, bool IsS11PreReleaseInstall = false);
