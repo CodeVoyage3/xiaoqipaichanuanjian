@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Backups;
 
 namespace StoreExpiryInspector.UI;
@@ -9,6 +10,7 @@ public sealed class DatabaseBackupRestoreViewModel : ViewModelBase
     private readonly Func<IReadOnlyList<LocalDatabaseBackupListItem>> _loadBackups;
     private readonly Func<LocalDatabaseBackupResult> _createBackup;
     private readonly Func<string, DatabaseRestoreResult> _restore;
+    private readonly Func<ResetBusinessDataResult> _resetBusinessData;
     private readonly Action<Exception>? _logException;
     private Func<Task<bool>> _enterMaintenance;
     private Action<bool> _leaveMaintenance;
@@ -17,6 +19,7 @@ public sealed class DatabaseBackupRestoreViewModel : ViewModelBase
     private bool _isLoading;
     private bool _isBackingUp;
     private bool _isRestoring;
+    private bool _isResetting;
     private bool _hasLoaded;
     private bool _hasError;
     private bool _isRestartRequired;
@@ -29,6 +32,7 @@ public sealed class DatabaseBackupRestoreViewModel : ViewModelBase
         Func<IReadOnlyList<LocalDatabaseBackupListItem>>? loadBackups = null,
         Func<LocalDatabaseBackupResult>? createBackup = null,
         Func<string, DatabaseRestoreResult>? restore = null,
+        Func<ResetBusinessDataResult>? resetBusinessData = null,
         Func<LocalDatabaseBackupListItem, bool>? confirmRestore = null,
         Func<Task<bool>>? enterMaintenance = null,
         Action<bool>? leaveMaintenance = null,
@@ -38,6 +42,7 @@ public sealed class DatabaseBackupRestoreViewModel : ViewModelBase
         _loadBackups = loadBackups ?? (() => new LocalDatabaseBackupQuery().List());
         _createBackup = createBackup ?? (() => new LocalDatabaseBackupUseCase().Create());
         _restore = restore ?? (path => new DatabaseRestoreUseCase().Restore(path, true));
+        _resetBusinessData = resetBusinessData ?? (() => new ResetBusinessDataUseCase().Execute());
         _confirmRestore = confirmRestore ?? (_ => false);
         _enterMaintenance = enterMaintenance ?? EnterDefaultMaintenanceAsync;
         _leaveMaintenance = leaveMaintenance ?? LeaveDefaultMaintenance;
@@ -131,7 +136,20 @@ public sealed class DatabaseBackupRestoreViewModel : ViewModelBase
         }
     }
 
-    public bool IsBusy => IsLoading || IsBackingUp || IsRestoring;
+    public bool IsResetting
+    {
+        get => _isResetting;
+        private set
+        {
+            if (_isResetting == value) return;
+            _isResetting = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+            NotifyCommands();
+        }
+    }
+
+    public bool IsBusy => IsLoading || IsBackingUp || IsRestoring || IsResetting;
 
     public bool HasLoaded => _hasLoaded;
 
@@ -252,6 +270,43 @@ public sealed class DatabaseBackupRestoreViewModel : ViewModelBase
         if (succeeded)
         {
             await LoadAsync(force: true, clearMessage: false);
+        }
+    }
+
+    public async Task<ResetBusinessDataResult> ResetBusinessDataAsync()
+    {
+        if (!_runtimeReady || IsBusy || IsLocked)
+        {
+            return ResetBusinessDataResult.Failure(
+                ResetBusinessDataCodes.DatabaseBusy,
+                "数据库当前正忙，重置未开始。");
+        }
+
+        IsResetting = true;
+        var entered = false;
+        try
+        {
+            entered = await _enterMaintenance();
+            if (!entered)
+            {
+                return ResetBusinessDataResult.Failure(
+                    ResetBusinessDataCodes.DatabaseBusy,
+                    "无法暂停数据库运行状态，重置未开始。");
+            }
+
+            return await Task.Run(_resetBusinessData);
+        }
+        catch (Exception exception)
+        {
+            _logException?.Invoke(exception);
+            return ResetBusinessDataResult.Failure(
+                ResetBusinessDataCodes.ClearFailed,
+                "重置过程发生错误，业务数据未确认改变。");
+        }
+        finally
+        {
+            if (entered) LeaveMaintenance(resumeScheduler: true);
+            IsResetting = false;
         }
     }
 

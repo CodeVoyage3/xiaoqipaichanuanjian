@@ -60,6 +60,8 @@ OutputBaseFilename={#OutputName}
 Compression=lzma2/ultra64
 SolidCompression=yes
 UninstallDisplayName={#AppName}
+SetupIconFile=..\src\StoreExpiryInspector\Assets\StoreExpiryInspector.ico
+UninstallDisplayIcon={app}\app\StoreExpiryInspector.exe
 AppMutex={#AppMutexName}
 SetupMutex=StoreExpiryInspector.S9T02.Setup.{#AppIdKey}
 
@@ -68,8 +70,8 @@ Source: "{#PayloadDir}\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesub
 Source: "{#PayloadDir}\*"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autodesktop}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"
-Name: "{group}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"
+Name: "{autodesktop}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; IconFilename: "{app}\app\StoreExpiryInspector.exe"
+Name: "{group}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; IconFilename: "{app}\app\StoreExpiryInspector.exe"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#RunValueName}"; Flags: uninsdeletevalue

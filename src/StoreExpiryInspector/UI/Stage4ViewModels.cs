@@ -1373,6 +1373,18 @@ public sealed class ShellViewModel : ViewModelBase
 
     public void NavigateTo(ShellPage page) => _ = NavigateToAsync(page);
 
+    public async Task RefreshAfterBusinessDataResetAsync()
+    {
+        Import.ResetAfterBusinessDataReset();
+        CurrentPage = ShellPage.Dashboard;
+        await Task.WhenAll(
+            Dashboard.LoadAsync(),
+            PendingTasks.LoadAsync(),
+            History.LoadAsync(),
+            TodayInspection.ReloadAfterBusinessDataResetAsync(),
+            BackupRestore.LoadAsync(force: true));
+    }
+
     public async Task NavigateToAsync(ShellPage page)
     {
         if (History.IsEditBusy ||

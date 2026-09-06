@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:StoreExpiryInspector.UI"
         Title="门店效期排查软件"
+        Icon="/StoreExpiryInspector;component/Assets/StoreExpiryInspector.ico"
         Width="1280"
         Height="760"
         MinWidth="1024"
@@ -30,6 +31,14 @@
         <ui:Stage4InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
         <ui:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibility" />
         <ui:HumanReadableFileSizeConverter x:Key="HumanReadableFileSizeConverter" />
+
+        <Style x:Key="DashboardMetricTextStyle" TargetType="TextBlock">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="LineHeight" Value="24" />
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
 
         <Style x:Key="DraftFooterStatusTextStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
@@ -861,30 +870,25 @@
                                         </TextBlock>
                                     </StackPanel>
                                     <Border Grid.Column="1" Height="28" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" />
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="待排查 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBlock Text="{Binding Dashboard.OpenTaskCount}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Style="{StaticResource DashboardMetricTextStyle}">
+                                        <Run Text="待排查 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" /><Run Text="{Binding Dashboard.OpenTaskCount, Mode=OneWay}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" />
+                                    </TextBlock>
                                     <Border Grid.Column="2" Height="28" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" />
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="过期 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBlock Text="{Binding Dashboard.ExpiredCount}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource DashboardMetricTextStyle}">
+                                        <Run Text="过期 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" /><Run Text="{Binding Dashboard.ExpiredCount, Mode=OneWay}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" />
+                                    </TextBlock>
                                     <Border Grid.Column="3" Height="28" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" />
-                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="收仓 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBlock Text="{Binding Dashboard.WithdrawCount}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="3" Style="{StaticResource DashboardMetricTextStyle}">
+                                        <Run Text="收仓 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" /><Run Text="{Binding Dashboard.WithdrawCount, Mode=OneWay}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
+                                    </TextBlock>
                                     <Border Grid.Column="4" Height="28" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" />
-                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="2折 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBlock Text="{Binding Dashboard.Discount20Count}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="4" Style="{StaticResource DashboardMetricTextStyle}">
+                                        <Run Text="2折 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" /><Run Text="{Binding Dashboard.Discount20Count, Mode=OneWay}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" />
+                                    </TextBlock>
                                     <Border Grid.Column="5" Height="28" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" />
-                                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="5折 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <TextBlock Text="{Binding Dashboard.Discount50Count}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="5" Style="{StaticResource DashboardMetricTextStyle}">
+                                        <Run Text="5折 " FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" /><Run Text="{Binding Dashboard.Discount50Count, Mode=OneWay}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" />
+                                    </TextBlock>
                                     <Border Grid.Column="6" Height="28" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" />
                                     <TextBlock Grid.Column="6"
                                                Text="{Binding Dashboard.LastImportText}"

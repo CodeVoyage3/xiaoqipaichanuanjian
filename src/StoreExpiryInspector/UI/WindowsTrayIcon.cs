@@ -20,8 +20,6 @@ public sealed class WindowsTrayIcon : IDisposable
     private const uint DeleteIcon = 0x00000002;
     private const uint SetVersion = 0x00000004;
     private const uint NotifyIconVersion4 = 4;
-    private static readonly IntPtr ApplicationIconId = new(32512);
-
     private readonly Action _open;
     private readonly Action _exit;
     private readonly HwndSource _source;
@@ -40,6 +38,16 @@ public sealed class WindowsTrayIcon : IDisposable
             ?? throw new InvalidOperationException("Unable to attach the tray icon to the main window.");
         _source.AddHook(WindowHook);
         _menu = CreateMenu();
+        var executablePath = Environment.ProcessPath;
+        var smallIcons = new IntPtr[1];
+        if (string.IsNullOrWhiteSpace(executablePath) ||
+            ExtractIconEx(executablePath, 0, null, smallIcons, 1) == 0 ||
+            smallIcons[0] == IntPtr.Zero)
+        {
+            _source.RemoveHook(WindowHook);
+            throw new Win32Exception("Unable to load the application tray icon.");
+        }
+
         _data = new NotifyIconData
         {
             Size = (uint)Marshal.SizeOf<NotifyIconData>(),
@@ -47,7 +55,7 @@ public sealed class WindowsTrayIcon : IDisposable
             IconId = IconId,
             Flags = NotifyIconMessage | NotifyIconHandle | NotifyIconTip,
             CallbackMessage = CallbackMessage,
-            IconHandle = LoadIcon(IntPtr.Zero, ApplicationIconId),
+            IconHandle = smallIcons[0],
             Tip = "门店效期排查软件",
             Info = string.Empty,
             InfoTitle = string.Empty
@@ -55,6 +63,8 @@ public sealed class WindowsTrayIcon : IDisposable
 
         if (_data.IconHandle == IntPtr.Zero || !ShellNotifyIcon(AddIcon, ref _data))
         {
+            DestroyIcon(_data.IconHandle);
+            _data.IconHandle = IntPtr.Zero;
             _source.RemoveHook(WindowHook);
             throw new Win32Exception("Unable to create the Windows tray icon.");
         }
@@ -73,6 +83,7 @@ public sealed class WindowsTrayIcon : IDisposable
         _disposed = true;
         _menu.IsOpen = false;
         ShellNotifyIcon(DeleteIcon, ref _data);
+        if (_data.IconHandle != IntPtr.Zero) DestroyIcon(_data.IconHandle);
         _source.RemoveHook(WindowHook);
     }
 
@@ -120,8 +131,17 @@ public sealed class WindowsTrayIcon : IDisposable
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool Shell_NotifyIcon(uint message, ref NotifyIconData data);
 
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern uint ExtractIconEx(
+        string fileName,
+        int iconIndex,
+        IntPtr[]? largeIcons,
+        [Out] IntPtr[]? smallIcons,
+        uint icons);
+
     [DllImport("user32.dll")]
-    private static extern IntPtr LoadIcon(IntPtr instance, IntPtr iconName);
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DestroyIcon(IntPtr icon);
 
     private static bool ShellNotifyIcon(uint message, ref NotifyIconData data) =>
         Shell_NotifyIcon(message, ref data);

@@ -323,6 +323,14 @@ public sealed class ImportViewModel : ViewModelBase
 
     public void SelectFile(string sourceFilePath) => _ = SelectFileAsync(sourceFilePath);
 
+    public void ResetAfterBusinessDataReset()
+    {
+        Interlocked.Increment(ref _operationVersion);
+        InvalidatePreview(string.Empty);
+        _requiresReparse = false;
+        SetState(ImportPageState.Initial, "请选择要导入的 Excel 文件。", string.Empty);
+    }
+
     public async Task SelectFileAsync(string sourceFilePath)
     {
         var version = Interlocked.Increment(ref _operationVersion);

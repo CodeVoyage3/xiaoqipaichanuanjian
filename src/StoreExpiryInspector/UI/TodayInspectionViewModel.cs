@@ -223,6 +223,15 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         await LoadTasksAsync();
     }
 
+    public async Task ReloadAfterBusinessDataResetAsync()
+    {
+        _selectedTaskIds.Clear();
+        LatestExportResult = null;
+        OnPropertyChanged(nameof(LatestExportResult));
+        ResetSession();
+        await LoadAsync();
+    }
+
     private async Task<bool> LoadTasksAsync()
     {
         if (IsLoadingTasks) return false;

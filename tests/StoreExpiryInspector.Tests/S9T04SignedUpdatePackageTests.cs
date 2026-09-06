@@ -147,8 +147,8 @@ public sealed class S9T04SignedUpdatePackageTests
         {
             var app = Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe");
             var production = Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "bin", "Release", "net10.0-windows");
-            Assert.Equal("1.0.2", Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3));
-            Assert.Equal("1.0.2", AssemblyName.GetAssemblyName(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")).Version!.ToString(3));
+            Assert.Equal("1.0.3", Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3));
+            Assert.Equal("1.0.3", AssemblyName.GetAssemblyName(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")).Version!.ToString(3));
             Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.exe")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(app))));
             Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.dll")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")))));
             zip.CreateEntryFromFile(app, "StoreExpiryInspector.exe");

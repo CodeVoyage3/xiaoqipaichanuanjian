@@ -8,9 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>StoreExpiryInspector</RootNamespace>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <AssemblyVersion>$(Version).0</AssemblyVersion>
     <FileVersion>$(Version).0</FileVersion>
+    <ApplicationIcon>Assets\StoreExpiryInspector.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(S9T07TestMode)' == 'true'">
     <DefineConstants>$(DefineConstants);S9T07_TEST</DefineConstants>
@@ -35,6 +36,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="StoreExpiryInspector.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\StoreExpiryInspector.ico" />
   </ItemGroup>
 
   <Target Name="PublishIndependentUpdater" AfterTargets="Publish">

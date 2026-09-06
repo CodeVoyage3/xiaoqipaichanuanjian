@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Markup;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Backups;
 using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
@@ -451,7 +452,8 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is ShellViewModel shell && !shell.CanOpenSettings)
+        if (DataContext is not ShellViewModel shell) return;
+        if (!shell.CanOpenSettings)
         {
             WpfDialogService.Show(
                 this,
@@ -593,6 +595,84 @@ public partial class MainWindow : Window
             };
             AutomationProperties.SetName(settingsValidation, "提醒设置校验结果");
             panel.Children.Add(settingsValidation);
+            panel.Children.Add(new Border
+            {
+                BorderBrush = (Brush)FindResource("BorderBrush"),
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Margin = new Thickness(0, 20, 0, 16)
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = "重置业务数据",
+                FontSize = 16,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)FindResource("DangerBrush")
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = "清空商品、批次、待排查、今日排查、历史、提醒业务状态和导入状态。保留软件、版本、安装目录、通用设置及保护备份。",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = (Brush)FindResource("SecondaryTextBrush"),
+                FontSize = 13,
+                Margin = new Thickness(0, 6, 0, 10)
+            });
+            var reset = new Button
+            {
+                Content = "重置业务数据",
+                IsDefault = false,
+                Width = 128,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Style = (Style)FindResource("DangerButtonStyle")
+            };
+            AutomationProperties.SetName(reset, "重置业务数据");
+            reset.Click += async (_, _) =>
+            {
+                if (!WpfDialogService.Show(
+                        dialog,
+                        "重置业务数据",
+                        "此操作会永久清空当前全部业务数据，包括商品、批次、待排查、今日排查、历史、提醒业务状态和导入状态。通用设置、软件与已有备份不会删除；有业务数据时会先创建并验证保护备份。",
+                        "继续",
+                        WpfDialogKind.Danger,
+                        "如不确定，请选择取消并先在“数据备份与恢复”中确认备份。")) return;
+                if (!WpfDialogService.Show(
+                        dialog,
+                        "再次确认重置",
+                        "最后确认：重置提交后，当前业务数据只能从备份恢复。是否立即执行？",
+                        "确认重置",
+                        WpfDialogKind.Danger,
+                        "取消或关闭不会写入数据库。")) return;
+
+                dialog.IsEnabled = false;
+                var result = await shell.BackupRestore.ResetBusinessDataAsync();
+                dialog.IsEnabled = true;
+                if (!result.Succeeded)
+                {
+                    WpfDialogService.Show(
+                        dialog,
+                        "重置未完成",
+                        result.Message,
+                        "知道了",
+                        WpfDialogKind.Error,
+                        "业务数据未确认清除；请修复错误后重试，保护备份不会被删除。",
+                        showCancel: false);
+                    return;
+                }
+
+                if (result.Code == ResetBusinessDataCodes.Success)
+                {
+                    await shell.RefreshAfterBusinessDataResetAsync();
+                }
+                WpfDialogService.Show(
+                    dialog,
+                    "重置业务数据",
+                    result.Message,
+                    "知道了",
+                    WpfDialogKind.Information,
+                    result.BackupId is null ? null : $"保护备份身份：{result.BackupId}",
+                    showCancel: false);
+                dialog.Close();
+            };
+            panel.Children.Add(reset);
             var buttons = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
