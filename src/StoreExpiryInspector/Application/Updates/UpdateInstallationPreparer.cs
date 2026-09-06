@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32;
 using StoreExpiryInspector.Infrastructure;
 
 namespace StoreExpiryInspector.Application.Updates;
@@ -20,6 +21,7 @@ public sealed record PreparedUpdateInstallation(string OperationId, string Journ
 public sealed class UpdateInstallationPreparer
 {
     private const string ProductId = "StoreExpiryInspector";
+    private const string AppIdKey = "8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14";
 
     private readonly SignedUpdatePackageDownloader _downloader;
 
@@ -28,7 +30,10 @@ public sealed class UpdateInstallationPreparer
     public PreparedUpdateInstallation Prepare(VerifiedUpdatePackage package, Process parent, CancellationToken cancellationToken)
     {
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return PrepareCore(package, parent, Path.Combine(local, "Programs", ProductId), Path.Combine(local, ProductId), Path.Combine(AppContext.BaseDirectory, "Updater"), false, cancellationToken);
+        var appPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory));
+        var installRoot = Directory.GetParent(appPath)?.FullName
+            ?? throw new InvalidDataException("升级程序根目录身份无效。");
+        return PrepareCore(package, parent, installRoot, Path.Combine(local, ProductId), Path.Combine(appPath, "Updater"), false, cancellationToken);
     }
 
     // Internal so tests can prove the transaction without ever naming a production root.
@@ -144,9 +149,12 @@ public sealed class UpdateInstallationPreparer
         else
         {
             var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            if (!string.Equals(installRoot, Path.Combine(local, "Programs", ProductId), StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(dataRoot, Path.Combine(local, ProductId), StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(updaterSourceRoot, Path.Combine(AppContext.BaseDirectory, "Updater"), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("升级根目录身份无效。");
+            var appPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory));
+            var registeredRoot = Registry.CurrentUser.OpenSubKey($"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{AppIdKey}}}_is1")?.GetValue("Inno Setup: App Path") as string;
+            if (!string.Equals(dataRoot, Path.Combine(local, ProductId), StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(appPath, Path.Combine(installRoot, "app"), StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(registeredRoot is null ? null : Path.TrimEndingDirectorySeparator(Path.GetFullPath(registeredRoot)), installRoot, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(updaterSourceRoot, Path.Combine(appPath, "Updater"), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("升级根目录身份无效。");
         }
         EnsureOrdinaryTree(installRoot); EnsureOrdinaryTree(dataRoot); EnsureOrdinaryTree(updaterSourceRoot);
     }

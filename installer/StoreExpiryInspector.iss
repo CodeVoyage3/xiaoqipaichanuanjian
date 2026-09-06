@@ -46,8 +46,11 @@ VersionInfoVersion={#AppVersion}
 DefaultDirName={#InstallRoot}
 DefaultGroupName={#ShortcutName}
 DisableProgramGroupPage=yes
-DisableDirPage=yes
-UsePreviousAppDir=no
+DisableDirPage=no
+UsePreviousAppDir=yes
+ShowLanguageDialog=no
+LanguageDetectionMethod=none
+DefaultLanguageName=chinesesimp
 CloseApplications=no
 RestartApplications=no
 PrivilegesRequired=lowest
@@ -72,10 +75,14 @@ Name: "{group}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe";
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#RunValueName}"; Flags: uninsdeletevalue
 
+[Languages]
+Name: "chinesesimp"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+
 [Code]
 var
   WasInstalled: Boolean;
   InstallMutex: THandle;
+  ExistingInstallRoot: String;
 
 function GetFileAttributes(Path: String): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
@@ -128,9 +135,11 @@ var
 begin
   Key := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1';
   Result := RegQueryStringValue(HKCU, Key, 'DisplayVersion', Version) and VersionIsNewer(Version);
-  if not Result and GetVersionNumbersString(ExpandConstant('{#InstallRoot}\app\StoreExpiryInspector.exe'), Version) then
+  if not Result and (ExistingInstallRoot <> '') and GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', Version) then
     Result := VersionIsNewer(Version);
 end;
+
+function IsOrdinaryInstallTree(Path: String): Boolean; forward;
 
 function InitializeSetup(): Boolean;
 begin
@@ -141,6 +150,18 @@ begin
     exit;
   end;
   WasInstalled := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1');
+  if WasInstalled and not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'Inno Setup: App Path', ExistingInstallRoot) then
+  begin
+    SuppressibleMsgBox('已安装程序身份无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
+    Result := False;
+    exit;
+  end;
+  if WasInstalled and ((ExistingInstallRoot = '') or not IsOrdinaryInstallTree(ExistingInstallRoot) or not FileExists(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe')) then
+  begin
+    SuppressibleMsgBox('已安装程序树无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
+    Result := False;
+    exit;
+  end;
   if IsExistingVersionNewer() then
   begin
     SuppressibleMsgBox('已安装更高版本。为保护程序和数据，旧安装器已停止。', mbError, MB_OK, IDOK);
@@ -150,14 +171,39 @@ begin
   Result := True;
 end;
 
-function IsOrdinaryInstallTree(Path: String): Boolean; forward;
+function IsSafeInstallRoot(Path: String): Boolean;
+var
+  FullPath, Probe, DataPath: String;
+begin
+  Result := False;
+  FullPath := RemoveBackslashUnlessRoot(Path);
+  DataPath := RemoveBackslashUnlessRoot(ExpandConstant('{#DataRoot}'));
+  if (FullPath = '') or (Copy(FullPath, 1, 2) = '\\') or (ExtractFileDrive(FullPath) = '') or
+     (CompareText(FullPath, AddBackslash(ExtractFileDrive(FullPath))) = 0) or
+     (Pos(':', Copy(FullPath, 3, Length(FullPath))) > 0) then exit;
+  if (CompareText(FullPath, DataPath) = 0) or
+     (CompareText(Copy(FullPath, 1, Length(AddBackslash(DataPath))), AddBackslash(DataPath)) = 0) or
+     (CompareText(Copy(DataPath, 1, Length(AddBackslash(FullPath))), AddBackslash(FullPath)) = 0) then exit;
+  if not IsOrdinaryInstallTree(FullPath) then exit;
+  if not ForceDirectories(FullPath) or not IsOrdinaryInstallTree(FullPath) then exit;
+  Probe := AddBackslash(FullPath) + '.store-expiry-write-probe';
+  if FileExists(Probe) or not SaveStringToFile(Probe, '', False) then exit;
+  DeleteFile(Probe);
+  Result := True;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := WasInstalled and (PageID = wpSelectDir);
+end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
   PreflightExe: String;
 begin
-  if not IsOrdinaryInstallTree(ExpandConstant('{#InstallRoot}')) then
+  if WasInstalled then WizardDirValue := ExistingInstallRoot;
+  if not IsSafeInstallRoot(WizardDirValue) then
   begin
     Result := '安装目录不安全。为保护原数据，安装已停止。';
     exit;
@@ -172,7 +218,7 @@ begin
       exit;
     end;
   end;
-  if CompareText(WizardDirValue, ExpandConstant('{#InstallRoot}')) <> 0 then
+  if WasInstalled and (CompareText(RemoveBackslashUnlessRoot(WizardDirValue), RemoveBackslashUnlessRoot(ExistingInstallRoot)) <> 0) then
   begin
     Result := '安装目录已固定，不能修改。';
     exit;

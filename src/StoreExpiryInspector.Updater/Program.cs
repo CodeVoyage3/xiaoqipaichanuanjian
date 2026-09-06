@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Win32;
 using System.Diagnostics;
 using StoreExpiryInspector.Application.Updates;
 
@@ -584,8 +585,11 @@ internal static class UpdateTransaction
         RequireUnder(temp, journal.InstallRoot);
 #else
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        if (!string.Equals(journal.InstallRoot, Path.Combine(local, "Programs", "StoreExpiryInspector"), StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(journal.DataRoot, Path.Combine(local, "StoreExpiryInspector"), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
+        if (!OperatingSystem.IsWindows()) throw new InvalidDataException();
+        using var key = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14}_is1");
+        var registeredRoot = key?.GetValue("Inno Setup: App Path") as string;
+        if (!string.Equals(journal.DataRoot, Path.Combine(local, "StoreExpiryInspector"), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(registeredRoot is null ? null : Path.TrimEndingDirectorySeparator(Path.GetFullPath(registeredRoot)), journal.InstallRoot, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
 #endif
         var expectedJournal = Path.Combine(journal.DataRoot, "updates", journal.OperationId, "journal.json");
         if (!string.Equals(full, Path.GetFullPath(expectedJournal), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
