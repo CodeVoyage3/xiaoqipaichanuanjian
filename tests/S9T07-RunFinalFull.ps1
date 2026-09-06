@@ -20,7 +20,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'S9T07 test App build failed' }
     & dotnet build 'src\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj' -c Release --no-restore --no-incremental -p:S9T05TestMode=true -p:NuGetAudit=false
     if ($LASTEXITCODE -ne 0) { throw 'S9T05 test Updater build failed' }
-    & dotnet build 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj' -c Release --no-restore --no-incremental -p:S9T05TestMode=true -p:NuGetAudit=false
+    & dotnet build 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj' -c Release --no-restore --no-incremental -m:1 -p:S9T05TestMode=true -p:NuGetAudit=false
     if ($LASTEXITCODE -ne 0) { throw 'test assembly build failed' }
     $hardKillSafety = Join-Path $root 'src\StoreExpiryInspector.UpdateSafety\bin\Release\net10.0\s9t07hardkilltest\net10.0\StoreExpiryInspector.UpdateSafety.dll'
     $testSafety = Join-Path $root 'tests\StoreExpiryInspector.Tests\bin\Release\net10.0-windows\StoreExpiryInspector.UpdateSafety.dll'
