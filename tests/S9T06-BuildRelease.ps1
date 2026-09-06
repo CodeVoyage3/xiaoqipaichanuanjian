@@ -69,7 +69,7 @@ try {
     if (-not $rsa.VerifyData($manifestBytes, $signature, [Security.Cryptography.HashAlgorithmName]::SHA256, [Security.Cryptography.RSASignaturePadding]::Pss)) { throw 'Manifest signature verification failed.' }
 }
 finally { if ($rsa) { $rsa.Dispose() }; if ($keyBytes) { [Array]::Clear($keyBytes, 0, $keyBytes.Length) } }
-& $Compiler "/DPayloadDir=$publish" "/DOutputDir=$assets" "/DAppVersion=$version" (Join-Path $repo 'installer\StoreExpiryInspector.iss')
+& $Compiler "/DPayloadDir=$publish" "/DOutputDir=$assets" "/DAppVersion=$version" (Join-Path $repo 'installer\StoreExpiryInspector.iss') | Out-Host
 if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
 $setup = Join-Path $assets "StoreExpiryInspector-Setup-$version.exe"
 if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer output name is incorrect.' }
