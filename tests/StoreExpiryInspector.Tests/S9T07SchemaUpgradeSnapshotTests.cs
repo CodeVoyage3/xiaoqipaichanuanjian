@@ -369,7 +369,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         {
             authoritative = Process.Start(new ProcessStartInfo(Path.Combine(app, "StoreExpiryInspector.exe")) { UseShellExecute = false, ArgumentList = { "--data-root", data, "--allow-existing-isolated-data-root", "--s9-t07-normal-launch", operation, token }, Environment = { ["S9_T07_NORMAL_BEFORE_IDENTIFY_MARKER"] = beforeIdentify, ["S9_T07_NORMAL_BEFORE_IDENTIFY_RELEASE"] = release } })!; authoritativeStarted = authoritative.StartTime.ToUniversalTime(); await WaitForFile(beforeIdentify, TimeSpan.FromSeconds(5));
             updaterProcess = Process.Start(new ProcessStartInfo(updater) { UseShellExecute = false, ArgumentList = { "--journal", journalPath }, Environment = { ["S9_T07_NORMAL_PROCESS_RECORD"] = record, ["S9_T07_NORMAL_STARTED_MARKER"] = started, ["S9_T07_NORMAL_WAIT_MS"] = "3000" } })!; updaterStarted = updaterProcess.StartTime.ToUniversalTime();
-            await WaitForFile(started, TimeSpan.FromSeconds(5)); var loser = File.ReadAllText(started).Split('|'); Assert.Equal(2, loser.Length); Assert.NotEqual(authoritative.Id.ToString(), loser[0]); await WaitForExit(int.Parse(loser[0]), TimeSpan.FromSeconds(5)); Execute(database, "DELETE FROM __EFMigrationsHistory WHERE MigrationId='20260905120000_S9T07Fixture10';"); File.WriteAllText(release, "release");
+            var loser = (await WaitForFile(started, TimeSpan.FromSeconds(5), content => content.Split('|').Length == 2)).Split('|'); Assert.Equal(2, loser.Length); Assert.NotEqual(authoritative.Id.ToString(), loser[0]); await WaitForExit(int.Parse(loser[0]), TimeSpan.FromSeconds(5)); Execute(database, "DELETE FROM __EFMigrationsHistory WHERE MigrationId='20260905120000_S9T07Fixture10';"); File.WriteAllText(release, "release");
             await WaitForHandshake(data, operation, NormalLaunchState.Loaded, TimeSpan.FromSeconds(5)); using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15)); await updaterProcess.WaitForExitAsync(timeout.Token); Assert.Equal(1, updaterProcess.ExitCode); Assert.True(authoritative.HasExited);
             var final = JsonDocument.Parse(await File.ReadAllTextAsync(journalPath)).RootElement; Assert.Equal((int)UpdatePhase.FailedNeedsManualRecovery, final.GetProperty("Phase").GetInt32()); Assert.Contains("Normal application database state is invalid.", final.GetProperty("LastError").GetString()); Assert.Contains("Normal application database state is invalid.", final.GetProperty("Schema").GetProperty("LastError").GetString());
             Assert.True(HasExited(int.Parse(loser[0])));
@@ -685,7 +685,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
             Process? probe = null; var probeStarted = default(DateTime);
             try
             {
-                probe = Process.Start(new ProcessStartInfo(fixture) { UseShellExecute = false, ArgumentList = { "--s9-t07-lock-probe", Path.Combine(root, "data", "app.db"), marker } })!; probeStarted = probe.StartTime.ToUniversalTime(); WaitForFile(marker, TimeSpan.FromSeconds(5)).GetAwaiter().GetResult(); Assert.Equal("attempting", File.ReadAllText(marker)); Assert.False(probe.WaitForExit(1000)); Assert.Equal("attempting", File.ReadAllText(marker));
+                probe = Process.Start(new ProcessStartInfo(fixture) { UseShellExecute = false, ArgumentList = { "--s9-t07-lock-probe", Path.Combine(root, "data", "app.db"), marker } })!; probeStarted = probe.StartTime.ToUniversalTime(); Assert.Equal("attempting", WaitForFile(marker, TimeSpan.FromSeconds(5), content => content == "attempting").GetAwaiter().GetResult()); Assert.False(probe.WaitForExit(1000)); Assert.Equal("attempting", File.ReadAllText(marker));
             }
             finally { if (probe is not null) { StopExactProcess(probe, probeStarted, fixture); probe.Dispose(); } }
             using var command = connection.CreateCommand(); command.CommandText = "CREATE TABLE takeover_fixture (id INTEGER PRIMARY KEY);"; command.ExecuteNonQuery(); migrated = true;
@@ -799,10 +799,14 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories)) { var target = Path.Combine(destination, Path.GetRelativePath(source, file)); Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target); }
     }
 
-    private static async Task WaitForFile(string path, TimeSpan timeout)
+    private static async Task<string> WaitForFile(string path, TimeSpan timeout, Func<string, bool>? contentIsReady = null)
     {
-        for (var until = DateTime.UtcNow + timeout; !File.Exists(path) && DateTime.UtcNow < until; await Task.Delay(50)) { }
-        Assert.True(File.Exists(path));
+        contentIsReady ??= content => content.Length > 0;
+        for (var until = DateTime.UtcNow + timeout; DateTime.UtcNow < until; await Task.Delay(50))
+            try { var content = File.ReadAllText(path); if (contentIsReady(content)) return content; } catch (IOException) { }
+        var final = File.ReadAllText(path);
+        Assert.True(contentIsReady(final), $"File content was not ready before timeout: {path}");
+        return final;
     }
 
     private static void DeleteTestDirectory(string directory)
