@@ -8,7 +8,7 @@
 
 > S9-T07 guarantees upgrade/rollback safety from a verified pre-upgrade trust boundary; it does not provide forensic detection of historical contamination already committed into the main database.
 
-不得据此声称当前业务数据一定正确或能够识别所有历史篡改。生产 migration 仍为 9；未发布 v1.0.2，未创建 Stage10；14节点×3真实硬杀矩阵留在 backlog。发布前 Git 事实为 HEAD `d0112238bef66bef2c987f15ce1cba2b51ccb079`、`origin/main=c4f7618c0dbdc0996ddfc183b9cb8e2cbf9d3803`、本地 ahead 1 且工作区包含待提交的 S9-T07 实施与治理修改。最终 commit/push/clean/ahead-behind 回执必须在实际发生后另行更新，本节不预写。
+不得据此声称当前业务数据一定正确或能够识别所有历史篡改。生产 migration 仍为 9；未发布 v1.0.2，未创建 Stage10；14节点×3真实硬杀矩阵留在 backlog。S9-T07 实施与关闭提交 `0a5073563642c1cb74b9be5a9394036c5f81ee2c` 已普通 push 至 `origin/main`；其后核对 HEAD=origin/main=`0a5073563642c1cb74b9be5a9394036c5f81ee2c`、工作区 clean、ahead/behind `0/0`。本段之后仅允许提交本实际 Git 回执，不再改生产或测试。
 
 ## 2026-09-06 收口模式（当前裁决）
 

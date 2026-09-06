@@ -19,4 +19,4 @@
 
 Stage 9 关闭不代表当前业务数据一定正确，也不代表能够检测所有历史外部篡改。14节点×3真实硬杀耐久矩阵保留在 `../BACKLOG.md`，不阻塞 V1/Stage9 关闭。未发布 v1.0.2，未创建 Stage10，也未修改 v1.0.0/v1.0.1 公开 tag 或资产。
 
-详细证据、路径、SHA 与 Git 发布前状态见 `../ACCEPTANCE/S9-T07-RESULT.json`。其中 TEMP 路径仅是当次验收索引，不承诺永久保存；最终 commit/push/clean/ahead-behind 回执待实际操作后补记。
+详细证据、路径、SHA 与 Git 回执见 `../ACCEPTANCE/S9-T07-RESULT.json`。其中 TEMP 路径仅是当次验收索引，不承诺永久保存。S9-T07 实施与关闭提交 `0a5073563642c1cb74b9be5a9394036c5f81ee2c` 已普通 push；推送后 HEAD=origin/main、工作区 clean、ahead/behind `0/0`。其后仅增加本实际回执，不改生产或测试。
