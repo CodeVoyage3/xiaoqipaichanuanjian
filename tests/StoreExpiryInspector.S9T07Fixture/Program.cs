@@ -22,14 +22,33 @@ public partial class FixtureApp : System.Windows.Application
             if (Math.Abs((process.StartTime.ToUniversalTime() - started.UtcDateTime).TotalSeconds) > 1 || !string.Equals(Path.GetFullPath(process.MainModule?.FileName ?? string.Empty), Path.GetFullPath(executable), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Exact actor identity mismatch.");
             process.Kill(entireProcessTree: true); if (!process.WaitForExit(5000)) throw new TimeoutException("Exact actor did not exit."); return;
         }
+        if (arguments is ["--s9-t07-lock-probe-worker", var workerDatabase, var workerMarker])
+        {
+            WriteProbeMarker(workerMarker, "ready");
+            try { using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = workerDatabase, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString()); connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "SELECT count(*) FROM __EFMigrationsHistory;"; command.ExecuteScalar(); }
+            catch (SqliteException exception) when (exception.SqliteErrorCode is 5 or 6) { Environment.ExitCode = 3; }
+            return;
+        }
         if (arguments is ["--s9-t07-lock-probe", var database, var marker])
         {
             WriteProbeMarker(marker, "attempting");
-            try
+            var workerExecutable = Environment.ProcessPath ?? throw new InvalidOperationException("Fixture executable path is unavailable.");
+            using var probe = Process.Start(new ProcessStartInfo(workerExecutable) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, ArgumentList = { "--s9-t07-lock-probe-worker", database, marker } }) ?? throw new InvalidOperationException("Lock probe worker did not start.");
+            var workerStarted = probe.StartTime.ToUniversalTime();
+            if (!SpinWait.SpinUntil(() => { try { return File.ReadAllText(marker) == "ready"; } catch (IOException) { return false; } }, TimeSpan.FromSeconds(5)))
             {
-                using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = database, Mode = SqliteOpenMode.ReadOnly, Pooling = false, DefaultTimeout = 0 }.ToString()); connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "SELECT count(*) FROM __EFMigrationsHistory;"; command.ExecuteScalar(); WriteProbeMarker(marker, "opened");
+                if (!probe.HasExited) { if (Math.Abs((probe.StartTime.ToUniversalTime() - workerStarted).TotalSeconds) > 1 || !string.Equals(Path.GetFullPath(probe.MainModule?.FileName ?? string.Empty), Path.GetFullPath(workerExecutable), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Lock probe worker identity mismatch."); probe.Kill(entireProcessTree: true); if (!probe.WaitForExit(5000)) throw new TimeoutException("Lock probe worker did not exit."); }
+                var earlyExit = probe.HasExited ? probe.ExitCode.ToString() : "still running"; throw new InvalidOperationException($"Lock probe worker did not become ready ({earlyExit}). stdout: {probe.StandardOutput.ReadToEnd()} stderr: {probe.StandardError.ReadToEnd()}");
             }
-            catch (SqliteException) { WriteProbeMarker(marker, "blocked"); }
+            if (!probe.WaitForExit(1000))
+            {
+                if (Math.Abs((probe.StartTime.ToUniversalTime() - workerStarted).TotalSeconds) > 1 || !string.Equals(Path.GetFullPath(probe.MainModule?.FileName ?? string.Empty), Path.GetFullPath(workerExecutable), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Lock probe worker identity mismatch.");
+                probe.Kill(entireProcessTree: true); if (!probe.WaitForExit(5000)) throw new TimeoutException("Lock probe worker did not exit."); WriteProbeMarker(marker, "blocked"); return;
+            }
+            var stdout = probe.StandardOutput.ReadToEnd(); var stderr = probe.StandardError.ReadToEnd();
+            if (probe.ExitCode == 0) WriteProbeMarker(marker, "opened");
+            else if (probe.ExitCode == 3) WriteProbeMarker(marker, "blocked");
+            else { Console.Error.Write($"Lock probe worker exit {probe.ExitCode}. stdout: {stdout} stderr: {stderr}"); Environment.ExitCode = probe.ExitCode; }
             return;
         }
         new FixtureApp().Run();

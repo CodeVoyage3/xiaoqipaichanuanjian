@@ -685,7 +685,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
             Process? probe = null; var probeStarted = default(DateTime);
             try
             {
-                probe = Process.Start(new ProcessStartInfo(fixture) { UseShellExecute = false, ArgumentList = { "--s9-t07-lock-probe", Path.Combine(root, "data", "app.db"), marker } })!; probeStarted = probe.StartTime.ToUniversalTime(); Assert.Equal("attempting", WaitForFile(marker, TimeSpan.FromSeconds(5), content => content == "attempting").GetAwaiter().GetResult()); Assert.False(probe.WaitForExit(1000)); Assert.Equal("attempting", File.ReadAllText(marker));
+                probe = Process.Start(new ProcessStartInfo(fixture) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, ArgumentList = { "--s9-t07-lock-probe", Path.Combine(root, "data", "app.db"), marker } })!; probeStarted = probe.StartTime.ToUniversalTime(); Assert.True(probe.WaitForExit(5000), "Lock probe did not exit before timeout."); var stdout = probe.StandardOutput.ReadToEnd(); var stderr = probe.StandardError.ReadToEnd(); Assert.True(probe.ExitCode == 0, $"Lock probe exit {probe.ExitCode}. stdout: {stdout} stderr: {stderr}"); Assert.Equal("blocked", WaitForFile(marker, TimeSpan.FromSeconds(5), content => content is "blocked" or "opened").GetAwaiter().GetResult());
             }
             finally { if (probe is not null) { StopExactProcess(probe, probeStarted, fixture); probe.Dispose(); } }
             using var command = connection.CreateCommand(); command.CommandText = "CREATE TABLE takeover_fixture (id INTEGER PRIMARY KEY);"; command.ExecuteNonQuery(); migrated = true;
