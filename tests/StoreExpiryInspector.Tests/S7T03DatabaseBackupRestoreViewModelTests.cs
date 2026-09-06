@@ -730,7 +730,7 @@ public sealed class S7T03DatabaseBackupRestoreViewModelTests
     public async Task UnstableDraftSaveIsSettledBeforeEnteringBackupPage()
     {
         var item = new InspectionTaskListItem(10, 7, "商品", "SKU", "条码", "expired", 1, 2, new DateOnly(2026, 8, 31), false);
-        var saveStarted = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var savingStarted = new TaskCompletionSource<object?>();
         var release = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var shell = CreateShell(
             backupLoader: () => new[] { BackupItem("backup-save-wait") },
@@ -738,11 +738,17 @@ public sealed class S7T03DatabaseBackupRestoreViewModelTests
             detailLoader: DetailResult,
             saveDraft: _ =>
             {
-                saveStarted.SetResult(null);
                 release.Task.GetAwaiter().GetResult();
                 return new SaveDraftResult(true, 9, new InspectionDraftReadiness(1, 1, 0, 0, false, true, true, false));
             });
         ConfigureRuntime(shell);
+        shell.Detail.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(InspectionDetailViewModel.IsSaving) && shell.Detail.IsSaving)
+            {
+                savingStarted.TrySetResult(null);
+            }
+        };
         await shell.Dashboard.LoadAsync();
         shell.OpenDetail(item.TaskId);
         await WaitUntil(() => shell.Detail.IsOpen);
@@ -751,7 +757,8 @@ public sealed class S7T03DatabaseBackupRestoreViewModelTests
         var navigation = shell.NavigateToAsync(ShellPage.BackupRestore);
         try
         {
-            await saveStarted.Task.WaitAsync(TimeSpan.FromSeconds(15));
+            await savingStarted.Task.WaitAsync(TimeSpan.FromSeconds(15));
+            Assert.False(navigation.IsCompleted);
             Assert.Equal(ShellPage.InspectionDetail, shell.CurrentPage);
             Assert.False(shell.BackupRestore.HasLoaded);
 
