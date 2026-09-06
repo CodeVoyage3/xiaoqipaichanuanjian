@@ -1,12 +1,12 @@
 # 最新交接
 
-## 2026-09-06 当前：S10-T01 发布前全部门禁通过
+## 2026-09-06 最终：S10-T01 与 Stage 10 已关闭
 
-`S10-T01 = TECHNICALLY_ACCEPTED / GUI_PASSED / RELEASE_AUTHORIZED`；`Stage10 = IN_PROGRESS / S10-T01_RELEASE_CURRENT`。用户已对冻结候选明确回复“通过”：简体中文向导、首次目录选择、自定义本地目录安装、快捷方式启动、v1.0.2 显示和退出重开均通过。该回执是用户 GUI 证据，不冒充 Sol 自动化。
+`S10-T01 = CLOSED`；`Stage10 = CLOSED`。v1.0.2 已作为首个正式对外版本发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.2>。正式 tag/source 为 `v1.0.2` → `02ab6f291c7a52f9de05b19aa29ae9356dc9c676`，stable、非 draft、非 prerelease、latest，四资产实际匿名下载 size/SHA、production RSA-PSS/SHA256 验签及完整 ZIP 重验全部通过。
 
-冻结生产实现 HEAD `b819e409c490cf5242d9038788bb2e7891748613`；Sol fresh full 1150/1150，全部异常计数为0；build 0 warning/0 error；EF无漂移、migration9；self-contained App/Updater、包图、secret/测试hook扫描、官方ISCC6.7.3编译、Setup A-N 隔离矩阵全部通过。发布前详细证据见 `../ACCEPTANCE/S10-T01.md` 与 `../ACCEPTANCE/S10-T01-PRE-RELEASE-RESULT.json`。
+首轮发布前陈旧验收器 `VersionMismatch` 失败永久保留；当时未发布、未动旧版本。Terra 最小修复仅补齐 manifest 协议/source字段到验收对象，生产校验未改或放宽；Sol fresh 6/6 后先push同步，再从新source全新生成资产。最终四资产与清理证据见 `../ACCEPTANCE/S10-T01-RELEASE-RESULT.json`，完整结论见 `../ACCEPTANCE/S10-T01.md` 与 `../STAGES/STAGE-10-CLOSEOUT.md`。
 
-下一步严格执行：先提交并push本治理状态，确认main同步；从同步source生成并签名四项v1.0.2资产；创建stable非draft非prerelease Release；匿名核验latest/tag/source/资产/hash/签名/ZIP/Setup。任何失败立即停止并保留v1.0.0/v1.0.1。仅核验全绿后，依次删除旧Release，确认不存在，再删除对应tag；最后治理closeout并push。不创建Stage11，不访问正式安装或正式数据库。
+v1.0.2 发布后匿名门禁全绿，才依序删除 v1.0.0、v1.0.1 Release；确认不存在后再删除其远端和本地 tags。最终匿名核对 releaseCount=1、tagCount=1、latest/tag均为v1.0.2；旧历史 commits 和S9证据保留。用户GUI回执仍与Sol自动化分开。未访问正式安装/数据/数据库，未创建Stage11。
 
 ## 2026-09-06 最终交接：S9-T07 与 Stage 9 已关闭
 

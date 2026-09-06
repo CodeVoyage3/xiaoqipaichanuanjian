@@ -1,10 +1,10 @@
 # 项目状态
 
-## 2026-09-06 当前：S10-T01 发布前门禁通过
+## 2026-09-06 最终：S10-T01 / Stage 10 CLOSED
 
-`S10-T01 = TECHNICALLY_ACCEPTED / GUI_PASSED / RELEASE_AUTHORIZED`；`Stage10 = IN_PROGRESS / S10-T01_RELEASE_CURRENT`。冻结实现 `b819e409c490cf5242d9038788bb2e7891748613` 已通过 Sol 完整diff、fresh full 1150/1150、build0/0、EF migration9、self-contained publish、secret/test-hook扫描、官方ISCC编译及Setup A-N隔离矩阵。用户随后明确回复“通过”，完成简体中文向导、首次目录选择、自定义目录安装、快捷方式、v1.0.2和退出重开GUI门禁。
+v1.0.2 已作为首个正式对外版本发布并成为 GitHub latest；正式 tag/source 为 `v1.0.2` → `02ab6f291c7a52f9de05b19aa29ae9356dc9c676`。Release stable、非 draft、非 prerelease，四项公开资产两轮匿名下载 size/SHA 与冻结证据一致，production manifest RSA-PSS/SHA256 验签及完整 ZIP hash/bytes/version/migration 重验通过。用户此前已明确回复“通过”完成中文可选目录 Win11 GUI 门禁。
 
-已授权的正式发布与清理尚未执行。本治理状态先普通push；之后生成RSA-PSS/SHA256签名四资产并发布stable v1.0.2，匿名核验全部通过后才依序删除v1.0.0/v1.0.1 Release，再删除对应tag。任何失败均停止且保留旧版本。详细证据见 `ACCEPTANCE/S10-T01.md` 与 `ACCEPTANCE/S10-T01-PRE-RELEASE-RESULT.json`；Stage9保持CLOSED，不创建Stage11，不访问正式安装或正式数据库。
+首轮陈旧验收器失败被保留且没有触发发布；最小验收器修复通过后从新同步source重新生成全部资产。只有v1.0.2发布后门禁全部通过，才依序删除v1.0.0/v1.0.1 Release，确认不存在后删除其远端与本地tags。最终匿名releaseCount=1、tagCount=1、latest/tag均为v1.0.2；旧历史commits与S9证据保留。详见 `ACCEPTANCE/S10-T01-RELEASE-RESULT.json`、`ACCEPTANCE/S10-T01.md`、`STAGES/STAGE-10-CLOSEOUT.md`。Stage9保持CLOSED，未创建Stage11，未访问正式安装或正式数据库。
 
 ## 2026-09-06 当前：Stage 9 已关闭
 

@@ -1,0 +1,134 @@
+{
+  "card": "S10-T01",
+  "stage": "Stage10",
+  "recordedAt": "2026-09-06",
+  "state": "CLOSED",
+  "stageState": "CLOSED",
+  "releaseSourceCommit": "02ab6f291c7a52f9de05b19aa29ae9356dc9c676",
+  "governancePreparationCommit": "0dbfaf23e9d6c50943deae0efbee326a91bfd660",
+  "frozenImplementationCommit": "b819e409c490cf5242d9038788bb2e7891748613",
+  "baselineCommit": "4a897c91fcb77f52253c60e8c814ab214db5c94d",
+  "historicalFirstFailure": {
+    "preserved": true,
+    "outcome": "VersionMismatch",
+    "failedCheck": "production-client-full-archive-revalidation",
+    "resultSha256": "0AF9772EC8770E826FF3C0C56718B955FFD817196BC399DFF966DE44071A00DB",
+    "classification": "Historical verifier omitted fields now strictly bound by production revalidation; release stopped before tag or Release creation.",
+    "oldVersionsModified": false
+  },
+  "verifierFix": {
+    "commit": "02ab6f291c7a52f9de05b19aa29ae9356dc9c676",
+    "filesChanged": 1,
+    "insertions": 4,
+    "deletions": 1,
+    "productionValidationChanged": false,
+    "freshPassed": 6,
+    "freshTotal": 6,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "preReleaseResultSha256": "961DE5F064552818D4DF0C22A5DFF9D04033320FCAFF7B76A2FCCA7D786AD566"
+  },
+  "build": {
+    "compiler": "Inno Setup 6.7.3",
+    "version": "1.0.2",
+    "fileVersion": "1.0.2.0",
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "packageFiles": 618,
+    "packageTreeSha256": "3516359E42E546B7F00B62CBB6D50C64E3C2C2CC631827FA09B1591BC2854B20",
+    "zipEqualsFreshPublish": true,
+    "productionTestHookMatches": 0,
+    "releaseEvidenceBytes": 72032,
+    "releaseEvidenceSha256": "C0D7C74950A9F8DB5E165A42B938DD740B27FD334A897DF45A5CE3F69EC7F248"
+  },
+  "signing": {
+    "algorithm": "RSA-PSS/SHA256",
+    "rsaBits": 3072,
+    "publicSpkiSha256": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC",
+    "rawSignatureVerified": true,
+    "wrongSignatureRejected": true,
+    "testKeyRejected": true,
+    "fullArchiveRevalidation": "Verified",
+    "finalVerifierPassed": 6,
+    "finalVerifierTotal": 6,
+    "finalVerifierResultSha256": "CB2B6350AFB408C721932A50E8497D93CD60D4D9E2BE2F1B9C445DDD9721DFCD",
+    "privateKeyContentRecorded": false,
+    "privateKeyAbsolutePathRecorded": false
+  },
+  "assets": [
+    {
+      "name": "StoreExpiryInspector-1.0.2-win-x64.zip",
+      "bytes": 109184725,
+      "sha256": "08881BEDDBB400D9B43F0B4A98FDF779AF020E38FCC53C58AFF2752A758611DC"
+    },
+    {
+      "name": "StoreExpiryInspector-Setup-1.0.2.exe",
+      "bytes": 75166394,
+      "sha256": "69C9D4B73DB8BD771EAB0A28BAB6F974E02BC06DEFFD95CBCF58B9DC60A21DF8"
+    },
+    {
+      "name": "update-manifest.json",
+      "bytes": 852,
+      "sha256": "133295DD4598B8F047B7356326C1969605C2E85DBB84EAFDF229FB1DF8C2D224"
+    },
+    {
+      "name": "update-manifest.sig",
+      "bytes": 384,
+      "sha256": "95D555D3D1352F54C7DED4BE75D7E79AFC64564EA654E0D90A39881A0B15078A"
+    }
+  ],
+  "release": {
+    "id": 383564771,
+    "tag": "v1.0.2",
+    "sourceCommit": "02ab6f291c7a52f9de05b19aa29ae9356dc9c676",
+    "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.2",
+    "publishedUtc": "2026-09-06T11:49:28Z",
+    "stable": true,
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "releaseCreatedEvidenceSha256": "AD065A80E2714E1738E76D84D9F927AABE5BD01B4619B3E159335785912F6E36",
+    "releasePublishedEvidenceSha256": "BFE9845713F6A0963230D256C78AC3F1261E7C52281AE640689CBE8CD29BC393"
+  },
+  "anonymousVerification": {
+    "authorizationHeader": false,
+    "firstPassResultSha256": "3EE9AC4D6519D951395CDAA914AB56B23C720EAB1A9BCF445C6587814A4DC171",
+    "finalPassResultSha256": "2368F8A45324E16604DA37EFDFA5700E77115D767A147448B45DAC6EC472F0CE",
+    "allFourAssetsDownloadedTwice": true,
+    "assetBytesAndShaMatched": true,
+    "releaseCount": 1,
+    "tagCount": 1,
+    "latest": "v1.0.2",
+    "onlyRelease": "v1.0.2",
+    "onlyVersionTag": "v1.0.2"
+  },
+  "oldDevelopmentVersionCleanup": {
+    "performedOnlyAfterV102Passed": true,
+    "releaseDeletionOrder": ["v1.0.0", "v1.0.1"],
+    "v100ReleaseId": 383133305,
+    "v101ReleaseId": 383140083,
+    "releaseDeleteHttpStatus": 204,
+    "oldReleasesConfirmedAbsentBeforeTagDeletion": true,
+    "remoteTagDeletionOrder": ["v1.0.0", "v1.0.1"],
+    "localTagDeletionOrder": ["v1.0.0", "v1.0.1"],
+    "oldReleasesAbsent": true,
+    "oldTagsAbsent": true,
+    "historicalCommitsPreserved": true,
+    "historicalGovernanceEvidencePreserved": true
+  },
+  "setup": {
+    "simplifiedChinese": true,
+    "firstInstallDirectorySelectable": true,
+    "userGuiResult": "PASSED",
+    "formalAssetMatchesAnonymousSha": true,
+    "installerOrProductionDiffSinceGuiFrozenSource": false,
+    "authenticode": "NotSigned"
+  },
+  "isolation": {
+    "runtimeRoots": "TEMP/GUID only",
+    "formalInstallAccess": false,
+    "formalDatabaseAccess": false,
+    "productionCodeModifiedDuringRelease": false,
+    "stage11Created": false
+  }
+}

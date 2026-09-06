@@ -1,8 +1,10 @@
 # Stage 10｜v1.0.2 首次正式发行与安装器体验完善
 
-## 当前状态
+## 最终状态
 
-`Stage10 = IN_PROGRESS / S10-T01_RELEASE_CURRENT`。S10-T01 技术门禁与用户最简 Win11 GUI 门禁均已通过，现进入获授权的正式发布、匿名核验及旧开发期 Release/tag 顺序清理；完成前不关闭。
+`Stage10 = CLOSED`；`S10-T01 = CLOSED`。v1.0.2 已作为首个正式对外版本发布并成为 GitHub latest；四项资产、production RSA-PSS/SHA256 签名、完整 ZIP、tag/source 及中文可选目录 Setup 的证据链全部闭合。旧开发期 v1.0.0/v1.0.1 Release 已先删除并确认不存在，随后对应远端和本地 tag 已删除；历史 commits 与 `.ai-dev` 证据完整保留。
+
+正式 tag/source 为 `v1.0.2` → `02ab6f291c7a52f9de05b19aa29ae9356dc9c676`。最终证据见 `../ACCEPTANCE/S10-T01-RELEASE-RESULT.json` 与 `STAGE-10-CLOSEOUT.md`。未创建 Stage11。
 
 2026-09-06 用户明确授权：正式发布 v1.0.2，并在发布前完成安装器简体中文化与“首次安装可选择程序安装路径”。Stage9 保持 CLOSED，不重开。
 
