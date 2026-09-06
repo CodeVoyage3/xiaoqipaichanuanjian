@@ -11,8 +11,9 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
   </ItemGroup>
   <Target Name="CopyFixtureApphostAlias" AfterTargets="Build">
-    <ItemGroup><FixtureRuntime Include="$(TargetDir)*.*" /></ItemGroup>
+    <ItemGroup><FixtureRuntime Include="$(TargetDir)*.*" /><FixtureNative Include="$(TargetDir)runtimes\win-x64\native\e_sqlite3.dll" /></ItemGroup>
     <Copy SourceFiles="@(FixtureRuntime)" DestinationFolder="$(TargetDir)fixture-run\" />
+    <Copy SourceFiles="@(FixtureNative)" DestinationFolder="$(TargetDir)fixture-run\runtimes\win-x64\native\" />
     <Copy SourceFiles="$(TargetDir)$(AssemblyName).exe" DestinationFiles="$(TargetDir)fixture-run\StoreExpiryInspector.exe" />
     <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)fixture-run\StoreExpiryInspector.dll" />
   </Target>

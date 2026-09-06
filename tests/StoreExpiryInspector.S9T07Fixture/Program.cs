@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Runtime.InteropServices;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace StoreExpiryInspector.S9T07Fixture;
@@ -15,6 +16,7 @@ public partial class FixtureApp : System.Windows.Application
     [STAThread]
     public static void Main()
     {
+        SetErrorMode(0x0001 | 0x0002 | 0x8000); _ = WerSetFlags(0x0020);
         var arguments = Environment.GetCommandLineArgs().Skip(1).ToArray();
         if (arguments is ["--s9-t07-kill", var pidText, var startedText, var executable] && int.TryParse(pidText, out var pid) && DateTimeOffset.TryParse(startedText, out var started))
         {
@@ -24,9 +26,9 @@ public partial class FixtureApp : System.Windows.Application
         }
         if (arguments is ["--s9-t07-lock-probe-worker", var workerDatabase, var workerMarker])
         {
-            WriteProbeMarker(workerMarker, "ready");
-            try { using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = workerDatabase, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString()); connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "SELECT count(*) FROM __EFMigrationsHistory;"; command.ExecuteScalar(); }
+            try { var native = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "runtimes", "win-x64", "native", "e_sqlite3.dll")); NativeLibrary.Free(native); WriteProbeMarker(workerMarker, "ready"); using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = workerDatabase, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString()); connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "SELECT count(*) FROM __EFMigrationsHistory;"; command.ExecuteScalar(); }
             catch (SqliteException exception) when (exception.SqliteErrorCode is 5 or 6) { Environment.ExitCode = 3; }
+            catch (Exception exception) { Console.Error.Write(exception); Environment.ExitCode = 4; }
             return;
         }
         if (arguments is ["--s9-t07-lock-probe", var database, var marker])
@@ -35,10 +37,11 @@ public partial class FixtureApp : System.Windows.Application
             var workerExecutable = Environment.ProcessPath ?? throw new InvalidOperationException("Fixture executable path is unavailable.");
             using var probe = Process.Start(new ProcessStartInfo(workerExecutable) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, ArgumentList = { "--s9-t07-lock-probe-worker", database, marker } }) ?? throw new InvalidOperationException("Lock probe worker did not start.");
             var workerStarted = probe.StartTime.ToUniversalTime();
-            if (!SpinWait.SpinUntil(() => { try { return File.ReadAllText(marker) == "ready"; } catch (IOException) { return false; } }, TimeSpan.FromSeconds(5)))
+            var ready = false;
+            if (!SpinWait.SpinUntil(() => { if (probe.HasExited) return true; try { return ready = File.ReadAllText(marker) == "ready"; } catch (IOException) { return false; } }, TimeSpan.FromSeconds(5)) || !ready)
             {
                 if (!probe.HasExited) { if (Math.Abs((probe.StartTime.ToUniversalTime() - workerStarted).TotalSeconds) > 1 || !string.Equals(Path.GetFullPath(probe.MainModule?.FileName ?? string.Empty), Path.GetFullPath(workerExecutable), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Lock probe worker identity mismatch."); probe.Kill(entireProcessTree: true); if (!probe.WaitForExit(5000)) throw new TimeoutException("Lock probe worker did not exit."); }
-                var earlyExit = probe.HasExited ? probe.ExitCode.ToString() : "still running"; throw new InvalidOperationException($"Lock probe worker did not become ready ({earlyExit}). stdout: {probe.StandardOutput.ReadToEnd()} stderr: {probe.StandardError.ReadToEnd()}");
+                var earlyExit = probe.HasExited ? probe.ExitCode.ToString() : "still running"; Console.Error.Write($"Lock probe worker did not become ready ({earlyExit}). stdout: {probe.StandardOutput.ReadToEnd()} stderr: {probe.StandardError.ReadToEnd()}"); Environment.ExitCode = 4; return;
             }
             if (!probe.WaitForExit(1000))
             {
@@ -53,6 +56,12 @@ public partial class FixtureApp : System.Windows.Application
         }
         new FixtureApp().Run();
     }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint SetErrorMode(uint mode);
+
+    [DllImport("kernel32.dll")]
+    private static extern int WerSetFlags(uint flags);
 
     private static void WriteProbeMarker(string path, string state)
     {

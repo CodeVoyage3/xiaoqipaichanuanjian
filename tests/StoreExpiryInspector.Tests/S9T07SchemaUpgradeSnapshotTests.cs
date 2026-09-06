@@ -682,6 +682,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         {
             using (var ownership = connection.CreateCommand()) { ownership.CommandText = "PRAGMA locking_mode;"; Assert.Equal("exclusive", ownership.ExecuteScalar()?.ToString()); }
             var marker = Path.Combine(root, "lock-probe.marker"); var fixture = Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run", "StoreExpiryInspector.exe");
+            Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(fixture)!, "runtimes", "win-x64", "native", "e_sqlite3.dll")), "Lock probe native SQLite dependency is missing.");
             Process? probe = null; var probeStarted = default(DateTime);
             try
             {
@@ -691,6 +692,15 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
             using var command = connection.CreateCommand(); command.CommandText = "CREATE TABLE takeover_fixture (id INTEGER PRIMARY KEY);"; command.ExecuteNonQuery(); migrated = true;
         }));
         Assert.True(migrated);
+    }
+
+    [Fact]
+    public void LockProbeFailsClosedWhenNativeDependencyIsMissing()
+    {
+        var root = CreateCleanRoot(); var app = Path.Combine(root, "probe-app"); CopyDirectory(Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run"), app); File.Delete(Path.Combine(app, "runtimes", "win-x64", "native", "e_sqlite3.dll"));
+        var marker = Path.Combine(root, "missing-native.marker"); var fixture = Path.Combine(app, "StoreExpiryInspector.exe"); using var probe = Process.Start(new ProcessStartInfo(fixture) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, ArgumentList = { "--s9-t07-lock-probe", Path.Combine(root, "data", "app.db"), marker } })!; var started = probe.StartTime.ToUniversalTime();
+        try { Assert.True(probe.WaitForExit(10000), "Missing-native probe did not exit."); var stdout = probe.StandardOutput.ReadToEnd(); var stderr = probe.StandardError.ReadToEnd(); Assert.NotEqual(0, probe.ExitCode); Assert.Contains("did not become ready", stderr); Assert.Contains("e_sqlite3.dll", stderr); Assert.NotEqual("blocked", File.ReadAllText(marker)); Assert.True(string.IsNullOrEmpty(stdout), stdout); }
+        finally { StopExactProcess(probe, started, fixture); }
     }
 
     [Fact]
