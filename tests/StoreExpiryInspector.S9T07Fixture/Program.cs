@@ -78,7 +78,7 @@ public partial class FixtureApp : System.Windows.Application
             if (Environment.GetEnvironmentVariable("S9_T07_FIXTURE_PAUSE_AFTER_MIGRATION_APPLIED") == "1") Thread.Sleep(Timeout.Infinite);
             if (Environment.GetEnvironmentVariable("S9_T07_FIXTURE_FAIL_AFTER_MIGRATION") == "1") { Shutdown(1); return; }
             var window = new Window { Width = 1, Height = 1, ShowInTaskbar = false, Visibility = Visibility.Hidden };
-            window.Loaded += (_, _) => { UpgradeHealthAck.WriteSchema(root, operation, token, "1.0.3", migrations); Shutdown(); };
+            window.Loaded += (_, _) => { UpgradeHealthAck.WriteSchema(root, operation, token, "1.0.4", migrations); Shutdown(); };
             window.Show();
         }
         catch (Exception exception)
@@ -124,7 +124,7 @@ internal static class FixtureMigrations
         Execute(connection, transaction, "CREATE TABLE IF NOT EXISTS s9t07_fixture (id INTEGER PRIMARY KEY, payload BLOB NOT NULL, stage INTEGER NOT NULL DEFAULT 10);");
         Execute(connection, transaction, "INSERT OR IGNORE INTO s9t07_fixture(id,payload) VALUES (1,$blob);", "$blob", Enumerable.Range(0, 131073).Select(i => (byte)(i % 251)).ToArray());
         if (target.Count == 11) Execute(connection, transaction, "CREATE INDEX IF NOT EXISTS ix_s9t07_fixture_stage ON s9t07_fixture(stage); UPDATE s9t07_fixture SET stage=11;");
-        foreach (var migration in target.Skip(Source.Length)) Execute(connection, transaction, "INSERT INTO __EFMigrationsHistory(MigrationId,ProductVersion) VALUES ($migration,'1.0.3');", "$migration", migration);
+        foreach (var migration in target.Skip(Source.Length)) Execute(connection, transaction, "INSERT INTO __EFMigrationsHistory(MigrationId,ProductVersion) VALUES ($migration,'1.0.4');", "$migration", migration);
         transaction.Commit();
     }
     internal static bool VerifyCoreRead(string database, IReadOnlyList<string> target)
