@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <Target Name="PublishIndependentUpdater" AfterTargets="Publish">
-    <MSBuild Projects="..\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(PublishDir)Updater\;PublishProfile=" />
+    <MSBuild Projects="..\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(PublishDir)Updater\;PublishProfile=;NuGetAudit=$(NuGetAudit)" />
   </Target>
 
 </Project>

@@ -10,5 +10,6 @@
     <Compile Include="..\StoreExpiryInspector\Application\Updates\SchemaUpgradeSnapshot.cs" Link="SchemaUpgradeSnapshot.cs" />
     <Compile Include="..\StoreExpiryInspector\Application\Updates\UpgradeHealthAck.cs" Link="UpgradeHealthAck.cs" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
   </ItemGroup>
 </Project>
