@@ -147,7 +147,7 @@ function HasDotSegment(Path: String): Boolean; forward;
 
 function InitializeSetup(): Boolean;
 var
-  UninstallCommand: String;
+  UninstallCommand, DisplayName, DisplayVersion, InstallLocation, AppVersion: String;
 begin
   if Pos('/DIR', Uppercase(GetCmdTail)) > 0 then
   begin
@@ -163,8 +163,12 @@ begin
     exit;
   end;
   if WasInstalled and (not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'UninstallString', UninstallCommand) or
+     not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'DisplayName', DisplayName) or
+     not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'DisplayVersion', DisplayVersion) or
+     not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'InstallLocation', InstallLocation) or
+     (CompareText(DisplayName, '{#AppName}') <> 0) or (CompareText(RemoveBackslashUnlessRoot(ExpandFileName(InstallLocation)), RemoveBackslashUnlessRoot(ExpandFileName(ExistingInstallRoot))) <> 0) or
      not IsSafeExistingUninstall(ExistingInstallRoot, UninstallCommand) or not IsOrdinaryInstallTree(ExistingInstallRoot) or
-     not GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', UninstallCommand)) then
+     not GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', AppVersion) or (CompareText(DisplayVersion + '.0', AppVersion) <> 0)) then
   begin
     SuppressibleMsgBox('已安装程序树无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
     Result := False;
@@ -213,7 +217,7 @@ begin
     Separator := Pos('\', Value);
     if Separator = 0 then begin Part := Value; Value := ''; end
     else begin Part := Copy(Value, 1, Separator - 1); Delete(Value, 1, Separator); end;
-    if (Part = '.') or (Part = '..') then begin Result := True; exit; end;
+    if (Part = '.') or (Part = '..') or ((Length(Part) > 0) and ((Part[Length(Part)] = '.') or (Part[Length(Part)] = ' '))) then begin Result := True; exit; end;
   until Value = '';
 end;
 
@@ -228,9 +232,11 @@ begin
   if EndQuote = 0 then exit;
   Uninstaller := Copy(Command, 2, EndQuote - 1);
   Name := ExtractFileName(Uninstaller);
-  if (CompareText(ExtractFileDir(Uninstaller), RemoveBackslashUnlessRoot(ExpandFileName(Root))) <> 0) or
-     (Length(Name) < 10) or (CompareText(Copy(Name, 1, 5), 'unins') <> 0) or
-     (CompareText(Copy(Name, Length(Name) - 3, 4), '.exe') <> 0) or not FileExists(Uninstaller) then exit;
+  if (Trim(Copy(Command, EndQuote + 2, Length(Command))) <> '') or
+     (CompareText(ExtractFileDir(Uninstaller), RemoveBackslashUnlessRoot(ExpandFileName(Root))) <> 0) or
+     (Length(Name) <> 12) or (CompareText(Copy(Name, 1, 5), 'unins') <> 0) or
+     not ((Name[6] >= '0') and (Name[6] <= '9') and (Name[7] >= '0') and (Name[7] <= '9') and (Name[8] >= '0') and (Name[8] <= '9')) or
+     (CompareText(Copy(Name, 9, 4), '.exe') <> 0) or not FileExists(Uninstaller) then exit;
   Result := True;
 end;
 
@@ -250,6 +256,7 @@ begin
     Result := '安装目录不安全。为保护原数据，安装已停止。';
     exit;
   end;
+  WizardDirValue := ExpandFileName(WizardDirValue);
   if InstallMutex = 0 then
   begin
     InstallMutex := CreateInstallMutex(0, True, '{#AppMutexName}');

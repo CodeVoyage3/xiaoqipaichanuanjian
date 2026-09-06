@@ -21,6 +21,10 @@ public sealed class S10T01InstallRootContractTests
         Assert.Contains("ExpandFileName(Path)", installer);
         Assert.Contains("function HasDotSegment", installer);
         Assert.Contains("function IsSafeExistingUninstall", installer);
+        Assert.Contains("WizardDirValue := ExpandFileName(WizardDirValue)", installer);
+        Assert.Contains("Part[Length(Part)] = '.'", installer);
+        Assert.Contains("Length(Name) <> 12", installer);
+        Assert.Contains("DisplayName", installer);
         Assert.DoesNotContain("Pos('..', Path)", installer);
         Assert.Contains("Inno Setup: App Path", installer);
         Assert.Contains("Path.Combine(local, ProductId)", preparer);
