@@ -22,6 +22,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'S9T05 test Updater build failed' }
     & dotnet build 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj' -c Release --no-restore --no-incremental -p:S9T05TestMode=true -p:NuGetAudit=false
     if ($LASTEXITCODE -ne 0) { throw 'test assembly build failed' }
+    $hardKillSafety = Join-Path $root 'src\StoreExpiryInspector.UpdateSafety\bin\Release\net10.0\s9t07hardkilltest\net10.0\StoreExpiryInspector.UpdateSafety.dll'
+    $testSafety = Join-Path $root 'tests\StoreExpiryInspector.Tests\bin\Release\net10.0-windows\StoreExpiryInspector.UpdateSafety.dll'
+    if (!(Test-Path $hardKillSafety) -or !(Test-Path $testSafety) -or (Get-FileHash -LiteralPath $hardKillSafety -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $testSafety -Algorithm SHA256).Hash) { throw 'test assembly did not bind the S9-T07 hard-kill UpdateSafety artifact' }
     $artifacts = @(
         [pscustomobject]@{ path = (Join-Path $oldPublish 'StoreExpiryInspector.exe'); requireFresh = $false },
         [pscustomobject]@{ path = (Join-Path $root 'src\StoreExpiryInspector\bin\Release\net10.0-windows\s9t07test\net10.0-windows\StoreExpiryInspector.exe'); requireFresh = $true },

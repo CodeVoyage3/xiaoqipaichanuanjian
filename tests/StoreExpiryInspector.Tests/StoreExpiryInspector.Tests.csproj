@@ -19,7 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\StoreExpiryInspector\StoreExpiryInspector.csproj" />
+    <ProjectReference Include="..\..\src\StoreExpiryInspector.UpdateSafety\StoreExpiryInspector.UpdateSafety.csproj">
+      <AdditionalProperties>S9T07HardKillTestMode=true</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\StoreExpiryInspector\StoreExpiryInspector.csproj">
+      <AdditionalProperties>S9T07TestMode=true</AdditionalProperties>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\StoreExpiryInspector.Updater\StoreExpiryInspector.Updater.csproj">
       <AdditionalProperties>S9T05TestMode=true</AdditionalProperties>
     </ProjectReference>
@@ -29,6 +34,10 @@
   <Target Name="CopyProductionAppToTestOutput" AfterTargets="Build">
     <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\StoreExpiryInspector.exe;$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\StoreExpiryInspector.dll"
           DestinationFiles="$(TargetDir)StoreExpiryInspector.exe;$(TargetDir)StoreExpiryInspector.dll" />
+  </Target>
+  <Target Name="BindHardKillUpdateSafetyForS9T07" AfterTargets="Build" Condition="'$(S9T05TestMode)' == 'true'">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector.UpdateSafety\bin\$(Configuration)\net10.0\s9t07hardkilltest\net10.0\StoreExpiryInspector.UpdateSafety.dll"
+          DestinationFolder="$(TargetDir)" />
   </Target>
 
 </Project>

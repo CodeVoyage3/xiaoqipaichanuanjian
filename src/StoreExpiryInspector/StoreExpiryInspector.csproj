@@ -19,7 +19,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\StoreExpiryInspector.UpdateSafety\StoreExpiryInspector.UpdateSafety.csproj" />
+    <ProjectReference Include="..\StoreExpiryInspector.UpdateSafety\StoreExpiryInspector.UpdateSafety.csproj" GlobalPropertiesToRemove="S9T07HardKillTestMode">
+      <AdditionalProperties Condition="'$(S9T07TestMode)' == 'true'">S9T07HardKillTestMode=true</AdditionalProperties>
+    </ProjectReference>
     <Compile Remove="Application\Updates\SchemaUpgradeSnapshot.cs" />
     <Compile Remove="Application\Updates\UpgradeHealthAck.cs" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
