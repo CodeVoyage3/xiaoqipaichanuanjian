@@ -86,6 +86,8 @@ var
 
 function GetFileAttributes(Path: String): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
+function GetDriveType(Path: String): Cardinal;
+  external 'GetDriveTypeW@kernel32.dll stdcall';
 function CreateInstallMutex(Attributes: Integer; InitialOwner: Boolean; Name: String): THandle;
   external 'CreateMutexW@kernel32.dll stdcall';
 procedure CloseHandle(Handle: THandle);
@@ -156,7 +158,9 @@ begin
     Result := False;
     exit;
   end;
-  if WasInstalled and ((ExistingInstallRoot = '') or not IsOrdinaryInstallTree(ExistingInstallRoot) or not FileExists(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe')) then
+  if WasInstalled and ((ExistingInstallRoot = '') or not IsOrdinaryInstallTree(ExistingInstallRoot) or not FileExists(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe') or
+     not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'UninstallString', Version) or
+     (Pos(AddBackslash(RemoveBackslashUnlessRoot(ExistingInstallRoot)) + 'unins', RemoveQuotes(Version)) <> 1)) then
   begin
     SuppressibleMsgBox('已安装程序树无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
     Result := False;
@@ -176,11 +180,13 @@ var
   FullPath, Probe, DataPath: String;
 begin
   Result := False;
+  if (Pos('..', Path) > 0) or (Pos('.\', Path) > 0) or (Pos('/.', Path) > 0) then exit;
   FullPath := RemoveBackslashUnlessRoot(Path);
   DataPath := RemoveBackslashUnlessRoot(ExpandConstant('{#DataRoot}'));
   if (FullPath = '') or (Copy(FullPath, 1, 2) = '\\') or (ExtractFileDrive(FullPath) = '') or
      (CompareText(FullPath, AddBackslash(ExtractFileDrive(FullPath))) = 0) or
-     (Pos(':', Copy(FullPath, 3, Length(FullPath))) > 0) then exit;
+     (Pos(':', Copy(FullPath, 3, Length(FullPath))) > 0) or
+     (GetDriveType(AddBackslash(ExtractFileDrive(FullPath))) <> 3) then exit;
   if (CompareText(FullPath, DataPath) = 0) or
      (CompareText(Copy(FullPath, 1, Length(AddBackslash(DataPath))), AddBackslash(DataPath)) = 0) or
      (CompareText(Copy(DataPath, 1, Length(AddBackslash(FullPath))), AddBackslash(FullPath)) = 0) then exit;

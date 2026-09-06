@@ -631,6 +631,8 @@ internal static class UpdateTransaction
     }
     private static void ValidateOrdinaryTree(string root)
     {
+        try { if (new DriveInfo(Path.GetPathRoot(root)!).DriveType != DriveType.Fixed) throw new InvalidDataException(); }
+        catch (ArgumentException) { throw new InvalidDataException(); }
         for (var current = new DirectoryInfo(root); current is not null; current = current.Parent)
             if (!current.Exists || (current.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException();
         foreach (var entry in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.AllDirectories))

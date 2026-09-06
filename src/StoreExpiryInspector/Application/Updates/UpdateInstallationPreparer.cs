@@ -183,6 +183,8 @@ public sealed class UpdateInstallationPreparer
 
     private static void EnsureOrdinaryTree(string root)
     {
+        try { if (new DriveInfo(Path.GetPathRoot(root)!).DriveType != DriveType.Fixed) throw new InvalidDataException("升级目录不是固定本地卷。"); }
+        catch (ArgumentException) { throw new InvalidDataException("升级目录不是固定本地卷。"); }
         for (var current = new DirectoryInfo(root); current is not null; current = current.Parent)
             if (!current.Exists || (current.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException("升级目录不是普通本地目录。");
         foreach (var entry in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.AllDirectories))
