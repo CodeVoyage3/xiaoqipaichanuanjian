@@ -13,7 +13,7 @@ try {
     $buildStartUtc = [DateTimeOffset]::UtcNow
     & dotnet build 'src\StoreExpiryInspector\StoreExpiryInspector.csproj' -c Release --no-restore --no-incremental -p:NuGetAudit=false
     if ($LASTEXITCODE -ne 0) { throw 'production old build failed' }
-    & dotnet publish 'src\StoreExpiryInspector\StoreExpiryInspector.csproj' -c Release --no-restore --no-build -p:NuGetAudit=false -o $oldPublish
+    & dotnet publish 'src\StoreExpiryInspector\StoreExpiryInspector.csproj' -c Release --no-restore -p:NuGetAudit=false -o $oldPublish
     if ($LASTEXITCODE -ne 0 -or !(Test-Path (Join-Path $oldPublish 'StoreExpiryInspector.exe'))) { throw 'production old publish failed' }
 
     & dotnet build 'src\StoreExpiryInspector\StoreExpiryInspector.csproj' -c Release --no-restore --no-incremental -p:S9T07TestMode=true -p:NuGetAudit=false
