@@ -6,7 +6,7 @@
 
 Stage10 与 `S10-T01` 保持 `CLOSED`；v1.0.2 继续是当前正式公开 stable/latest 版本。Stage11 当前只有一张已授权任务卡：`S11-T01｜图标、首页统计对齐、重置业务数据功能与 v1.0.3 升级回归`。
 
-本阶段实现已冻结，PRE_RELEASE C-K、已知 focused 修复、非 full 门禁及最终 fresh 无 filter Release full 已有独立证据；当前仍缺完整用户 GUI 回执和公开 v1.0.3 `REAL_GITHUB` 门禁，故尚未接受、尚未发布 v1.0.3，不得宣称完成。完整范围、A-K 自动门禁、角色分离和停止条件见 `../TASKS/S11-T01.md`，当前部分技术记录见 `../ACCEPTANCE/S11-T01-PRE-RELEASE.md`。
+本阶段实现已冻结，PRE_RELEASE C-K、已知 focused 修复、非 full 门禁及最终 fresh 无 filter Release full 已有独立证据；用户已分别回执重置生效、正式图标正常、首页统计条对齐正常，并明确“可以发布”。当前仍缺公开 v1.0.3 `REAL_GITHUB` 发布后终验，故尚未接受、尚未发布 v1.0.3，不得宣称完成。完整范围、A-K 自动门禁、角色分离和停止条件见 `../TASKS/S11-T01.md`，当前部分技术记录见 `../ACCEPTANCE/S11-T01-PRE-RELEASE.md`。
 
 ## 阶段目标
 

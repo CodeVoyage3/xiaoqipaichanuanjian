@@ -1,6 +1,6 @@
 # S11-T01 PRE_RELEASE 独立技术状态
 
-记录时间：2026-09-07。当前结论：`S11-T01 = IN_PROGRESS / NOT_ACCEPTED`；`Stage11 = IN_PROGRESS / S11-T01_CURRENT / NOT_ACCEPTED`。本记录不是最终技术通过、不是用户 GUI 全项通过、不是 `REAL_GITHUB` 更新验收，也不授权发布、push、tag 或关闭任务/阶段。
+记录时间：2026-09-07。当前结论：`S11-T01 = IN_PROGRESS / NOT_ACCEPTED`；`Stage11 = IN_PROGRESS / S11-T01_CURRENT / NOT_ACCEPTED`。用户已明确“可以发布”，但本记录不是 `REAL_GITHUB` 更新验收，不授权由 Sol 自行发布、push、tag 或关闭任务/阶段。
 
 ## 冻结边界与适用性
 
@@ -38,6 +38,11 @@
 ## 仍未满足的完成条件
 
 - 尚未存在公开 v1.0.3，因此“官方匿名 public v1.0.2 → 正式公开 v1.0.3”的 `REAL_GITHUB` 门禁客观尚未完成；不得由 PRE_RELEASE 链替代。
-- 用户 GUI 回执仅限“重置生效：首页暂无导入数据且显示 v1.0.3”，不扩展为图标、首页有数据对齐、完整更新链或其他 GUI 项通过。
+
+## 用户 GUI 回执（与自动化证据分离）
+
+- 较早的单项回执：“重置生效”；可见首页回到“暂无导入数据”且界面显示 v1.0.3。该回执不扩展为自动化证据。
+- 2026-09-07 最新明确回执：“正式图标正常、首页统计条对齐正常，可以发布”。该人工回执覆盖用户实际观察到的正式图标和首页统计条，不替代 PRE_RELEASE C-K、fresh full、签名/哈希或发布后 `REAL_GITHUB` 技术证据。
+- 两次人工回执与自动化记录分别保留；“可以发布”是发布授权，不等于发布已发生或发布后终验已通过。
 
 在上述缺口完成并另获收口授权前，必须持续保持 `IN_PROGRESS / NOT_ACCEPTED`，不得写技术全通过、accepted 或 closed。
