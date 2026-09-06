@@ -62,10 +62,13 @@ if (args[0] == "local")
     Check("raw-production-manifest-signature", publicKey.VerifyData(manifest, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss));
     Check("package-size-sha", new FileInfo(packagePath).Length == package.GetProperty("bytes").GetInt64() && sha.Equals(package.GetProperty("sha256").GetString(), StringComparison.OrdinalIgnoreCase), new { bytes = new FileInfo(packagePath).Length, sha });
     var migrations = root.GetProperty("targetMigrations").EnumerateArray().Select(x => x.GetString()!).ToArray();
+    var source = root.GetProperty("source");
     var scratch = Path.Combine(runRoot, Guid.NewGuid().ToString());
     Directory.CreateDirectory(scratch);
     var verified = new VerifiedUpdatePackage(scratch, packagePath, version, sha, migrations, manifest, signature,
-        new CheckedRelease(version, 1, "v" + version.ToString(3), [packageName, "update-manifest.json", "update-manifest.sig"]));
+        new CheckedRelease(version, 1, "v" + version.ToString(3), [packageName, "update-manifest.json", "update-manifest.sig"]),
+        root.GetProperty("minimumProtocolVersion").GetInt32(), Version.Parse(source.GetProperty("minVersion").GetString()!),
+        Version.Parse(source.GetProperty("maxVersion").GetString()!), source.GetProperty("minMigration").GetString(), source.GetProperty("maxMigration").GetString());
     var accepted = service.RevalidateForInstall(verified, CancellationToken.None);
     Check("production-client-full-archive-revalidation", accepted.Outcome == UpdatePackageOutcome.Verified, accepted.Outcome.ToString());
     var wrongSignature = signature.ToArray(); wrongSignature[0] ^= 1;
