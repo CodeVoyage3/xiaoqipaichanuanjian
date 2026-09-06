@@ -212,7 +212,8 @@ var
   Separator: Integer;
 begin
   Result := False;
-  Value := StringChangeEx(Path, '/', '\', True);
+  Value := Path;
+  StringChangeEx(Value, '/', '\', True);
   repeat
     Separator := Pos('\', Value);
     if Separator = 0 then begin Part := Value; Value := ''; end
@@ -250,13 +251,13 @@ var
   ResultCode: Integer;
   PreflightExe: String;
 begin
-  if WasInstalled then WizardDirValue := ExistingInstallRoot;
+  if WasInstalled then WizardForm.DirEdit.Text := ExistingInstallRoot;
   if not IsSafeInstallRoot(WizardDirValue) then
   begin
     Result := '安装目录不安全。为保护原数据，安装已停止。';
     exit;
   end;
-  WizardDirValue := ExpandFileName(WizardDirValue);
+  WizardForm.DirEdit.Text := ExpandFileName(WizardDirValue);
   if InstallMutex = 0 then
   begin
     InstallMutex := CreateInstallMutex(0, True, '{#AppMutexName}');
