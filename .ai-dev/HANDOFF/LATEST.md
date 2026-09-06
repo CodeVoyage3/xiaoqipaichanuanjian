@@ -1,5 +1,15 @@
 # 最新交接
 
+## 2026-09-07：S11-T01 已发布，等待用户人工升级回执
+
+`S11-T01 = USER_AUTHORIZED_MANUAL_UPGRADE_ACCEPTANCE / WAITING_USER_V102_TO_V103_RECEIPT / NOT_ACCEPTED`；`Stage11 = IN_PROGRESS / S11-T01_USER_MANUAL_UPGRADE_ACCEPTANCE_PENDING / NOT_ACCEPTED`。
+
+v1.0.3 已正式公开为 stable/latest：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.3>。Release ID `383669847`，tag/source 为 `v1.0.3` → `651bd1074a6a95f9cfdad70a9e6e7df6ed0d6df7`。四资产已在 draft 阶段重新下载核对后公开：ZIP `109409826` bytes / SHA256 `725DBA97029DC9FC1B66CF4B8019144A66174FABC695439172B5E651F7F3D910`；Setup `75323323` bytes / SHA256 `B9FE900FE5A36166D11475C7C6333E4AA8F8DB4198D241A7C13F67438B5E6E14`；manifest `852` bytes / SHA256 `72DE8AC9E2062C1353A801C7071267EB735EF24E2E414C362CD07588588ACCD3`；signature `384` bytes / SHA256 `83D2B6DB71FCE793FC19DE8E3BA81E6601975D646D5C8F4099CC248C37DDA50F`。Manifest 仅允许 v1.0.2 → v1.0.3，生产 migrationCount 保持 9；v1.0.2 公开资产未覆盖或改写。
+
+发布前 `PRE_RELEASE_PRODUCTION_EQUIVALENT`、最终 fresh full 1159/1159、Release build 0 warning/0 error、EF `NO_MODEL_DRIFT`、migration9、正式资产 RSA-PSS/SHA256 与 ZIP tree 独立复核均已通过。用户已回执重置生效、正式图标正常、首页统计条对齐正常、v1.0.3 可启动，并授权正式发布。
+
+用户最终裁决：停止 S11-T01 后续所有自动化终验，不启动 Windows Sandbox，不再运行 full、focused/regression、build、publish、installer 或新升级 runner，不修改 production Updater，不增加 test adapter/验收基础设施。最终实际 v1.0.2 → v1.0.3 升级体验由用户本人在 Windows 电脑上确认。收到用户明确成功回执前，禁止写 `REAL_GITHUB_V102_TO_V103_UPGRADE_VERIFIED`，禁止关闭 S11-T01/Stage11；后续只需追加用户人工验收结果，不重新跑自动化。
+
 ## 2026-09-06 最终：S10-T01 与 Stage 10 已关闭
 
 `S10-T01 = CLOSED`；`Stage10 = CLOSED`。v1.0.2 已作为首个正式对外版本发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.2>。正式 tag/source 为 `v1.0.2` → `02ab6f291c7a52f9de05b19aa29ae9356dc9c676`，stable、非 draft、非 prerelease、latest，四资产实际匿名下载 size/SHA、production RSA-PSS/SHA256 验签及完整 ZIP 重验全部通过。

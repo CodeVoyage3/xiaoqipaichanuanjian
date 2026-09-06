@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-`Stage11 = IN_PROGRESS / S11-T01_CURRENT / NOT_ACCEPTED`。
+`Stage11 = IN_PROGRESS / S11-T01_USER_MANUAL_UPGRADE_ACCEPTANCE_PENDING / NOT_ACCEPTED`。
 
-Stage10 与 `S10-T01` 保持 `CLOSED`；v1.0.2 继续是当前正式公开 stable/latest 版本。Stage11 当前只有一张已授权任务卡：`S11-T01｜图标、首页统计对齐、重置业务数据功能与 v1.0.3 升级回归`。
+Stage10 与 `S10-T01` 保持 `CLOSED`；v1.0.3 已于 2026-09-07 正式公开为 stable/latest，Release ID `383669847`，tag/source 为 `v1.0.3` → `651bd1074a6a95f9cfdad70a9e6e7df6ed0d6df7`。Stage11 当前只有一张已授权任务卡：`S11-T01｜图标、首页统计对齐、重置业务数据功能与 v1.0.3 升级回归`。
 
-本阶段实现已冻结，PRE_RELEASE C-K、已知 focused 修复、非 full 门禁及最终 fresh 无 filter Release full 已有独立证据；用户已分别回执重置生效、正式图标正常、首页统计条对齐正常，并明确“可以发布”。当前仍缺公开 v1.0.3 `REAL_GITHUB` 发布后终验，故尚未接受、尚未发布 v1.0.3，不得宣称完成。完整范围、A-K 自动门禁、角色分离和停止条件见 `../TASKS/S11-T01.md`，当前部分技术记录见 `../ACCEPTANCE/S11-T01-PRE-RELEASE.md`。
+本阶段实现、发布前技术门禁和用户发布前 GUI 回执均已完成，v1.0.3 正式资产已经公开且匿名复核通过。用户最终裁决为 `USER_AUTHORIZED_MANUAL_UPGRADE_ACCEPTANCE`：停止后续自动化终验，由用户本人在 Windows 电脑上完成实际 v1.0.2 → v1.0.3 升级体验确认。收到该回执前仍为 `NOT_ACCEPTED`，不得写 `REAL_GITHUB_V102_TO_V103_UPGRADE_VERIFIED` 或关闭 Stage11。完整范围见 `../TASKS/S11-T01.md`，发布前技术记录见 `../ACCEPTANCE/S11-T01-PRE-RELEASE.md`。
 
 ## 阶段目标
 
