@@ -13,7 +13,15 @@
 - 最新一次获授权 full 的历史结果永久保留：1158 total / 1156 passed / 2 failed；TRX SHA256 `B611F7E4CFFA80E89B99BF7F31916FCD546E1E7B60FD1487CCEAC6BF7E14BD77`。失败分别属于 S7 草稿保存导航同步与 S9 锁探针 fixture；不得以后续 focused 结果改写为全量通过。
 - S7 修复 `ec4357320fb9f1e1c8745e78e96c2c2be9ef3093` 经目标项及直接相邻 6 项独立复核为 7/7，TRX SHA256 `E636673A25D6990154220B11023EFFE1876434775DFDB5FDD67B84AA3E965446`；断言继续覆盖保存期间导航阻塞、页面未加载及释放后完成。
 - S9 最终 focused `c36463774fe396025cf2c06a468a788863a500ce` 经目标、缺 native 负例及直接相邻项独立复核为 4/4，TRX SHA256 `731E1520AB47891FB11030EB8C5C6A841F288949B67C7781DDE785BDD2999B8D`；Windows Application 日志无新 fixture crash，未遗留 fixture/testhost 进程。
-- 用户已明确：不得再次运行 full，除非后续另行明确批准。因此最终 fresh、无 filter、Release full 仍是未完成门禁。
+- 用户随后明确批准只运行一次最终 fresh full；该一次性授权已使用，未进行失败补跑或第二次 full。
+
+## 最终 fresh full
+
+- 基于治理提交 `d98b022f1bd1f20b83deac6068d0dabd53fc8895` fresh fetch 后确认：`origin/main=034b0f9a366275a9c3dd4f770c8c68da78cf837f`、ahead 11 / behind 0、工作区 clean；S9 focused 后只新增三份治理文档。
+- 严格只运行一次既有 `tests/S9T07-RunFinalFull.ps1`，Release-first 构建与测试串行完成，进程 exit 0。最终 TRX 为 1159 total / 1159 executed / 1159 passed；failure/error/timeout/aborted/skipped/notExecuted/inconclusive/disconnected/warning/pending/inProgress 均为 0，测试持续时间 12 m 41 s。
+- 实际总数为 1159，而不是运行前预估的 1158：S9 focused 修复新增了“缺 native 必须 fail-closed”的负例，测试集合因此增加 1 项；没有通过 filter、skip 或删除测试缩减集合。
+- TRX：`%TEMP%/StoreExpiryInspector-S11-FinalFull-6618aa8815074273a9bf35421f9f8824/S9T07-final-full.trx`，1,777,618 bytes，SHA256 `34CD181DF8F9DC9432CA7D8264FEB7E6DF9712F8CAF073610B7A05D470241104`。自然结束后 App/Updater/testhost/dotnet/ISCC 匹配残留进程为 0。
+- 该 fresh 通过不删除或改写前述历史 1156/1158 失败及其 TRX。
 
 ## 本轮非 full 独立门禁
 
@@ -29,7 +37,6 @@
 
 ## 仍未满足的完成条件
 
-- 最终 fresh、无 filter、Release full 尚未运行；必须由用户后续明确批准，且需达到 failure/error/timeout/aborted/skipped/notExecuted 全部为 0。
 - 尚未存在公开 v1.0.3，因此“官方匿名 public v1.0.2 → 正式公开 v1.0.3”的 `REAL_GITHUB` 门禁客观尚未完成；不得由 PRE_RELEASE 链替代。
 - 用户 GUI 回执仅限“重置生效：首页暂无导入数据且显示 v1.0.3”，不扩展为图标、首页有数据对齐、完整更新链或其他 GUI 项通过。
 
