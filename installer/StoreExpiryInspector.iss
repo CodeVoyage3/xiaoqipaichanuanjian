@@ -142,8 +142,12 @@ begin
 end;
 
 function IsOrdinaryInstallTree(Path: String): Boolean; forward;
+function IsSafeExistingUninstall(Root, Command: String): Boolean; forward;
+function HasDotSegment(Path: String): Boolean; forward;
 
 function InitializeSetup(): Boolean;
+var
+  UninstallCommand: String;
 begin
   if Pos('/DIR', Uppercase(GetCmdTail)) > 0 then
   begin
@@ -158,9 +162,9 @@ begin
     Result := False;
     exit;
   end;
-  if WasInstalled and ((ExistingInstallRoot = '') or not IsOrdinaryInstallTree(ExistingInstallRoot) or not FileExists(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe') or
-     not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'UninstallString', Version) or
-     (Pos(AddBackslash(RemoveBackslashUnlessRoot(ExistingInstallRoot)) + 'unins', RemoveQuotes(Version)) <> 1)) then
+  if WasInstalled and (not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'UninstallString', UninstallCommand) or
+     not IsSafeExistingUninstall(ExistingInstallRoot, UninstallCommand) or not IsOrdinaryInstallTree(ExistingInstallRoot) or
+     not GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', UninstallCommand)) then
   begin
     SuppressibleMsgBox('已安装程序树无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
     Result := False;
@@ -180,8 +184,8 @@ var
   FullPath, Probe, DataPath: String;
 begin
   Result := False;
-  if (Pos('..', Path) > 0) or (Pos('.\', Path) > 0) or (Pos('/.', Path) > 0) then exit;
-  FullPath := RemoveBackslashUnlessRoot(Path);
+  if (Length(Path) < 3) or (Path[2] <> ':') or ((Path[3] <> '\') and (Path[3] <> '/')) or HasDotSegment(Path) then exit;
+  FullPath := RemoveBackslashUnlessRoot(ExpandFileName(Path));
   DataPath := RemoveBackslashUnlessRoot(ExpandConstant('{#DataRoot}'));
   if (FullPath = '') or (Copy(FullPath, 1, 2) = '\\') or (ExtractFileDrive(FullPath) = '') or
      (CompareText(FullPath, AddBackslash(ExtractFileDrive(FullPath))) = 0) or
@@ -195,6 +199,38 @@ begin
   Probe := AddBackslash(FullPath) + '.store-expiry-write-probe';
   if FileExists(Probe) or not SaveStringToFile(Probe, '', False) then exit;
   DeleteFile(Probe);
+  Result := True;
+end;
+
+function HasDotSegment(Path: String): Boolean;
+var
+  Value, Part: String;
+  Separator: Integer;
+begin
+  Result := False;
+  Value := StringChangeEx(Path, '/', '\', True);
+  repeat
+    Separator := Pos('\', Value);
+    if Separator = 0 then begin Part := Value; Value := ''; end
+    else begin Part := Copy(Value, 1, Separator - 1); Delete(Value, 1, Separator); end;
+    if (Part = '.') or (Part = '..') then begin Result := True; exit; end;
+  until Value = '';
+end;
+
+function IsSafeExistingUninstall(Root, Command: String): Boolean;
+var
+  EndQuote: Integer;
+  Uninstaller, Name: String;
+begin
+  Result := False;
+  if (Length(Command) < 3) or (Command[1] <> '"') then exit;
+  EndQuote := Pos('"', Copy(Command, 2, Length(Command)));
+  if EndQuote = 0 then exit;
+  Uninstaller := Copy(Command, 2, EndQuote - 1);
+  Name := ExtractFileName(Uninstaller);
+  if (CompareText(ExtractFileDir(Uninstaller), RemoveBackslashUnlessRoot(ExpandFileName(Root))) <> 0) or
+     (Length(Name) < 10) or (CompareText(Copy(Name, 1, 5), 'unins') <> 0) or
+     (CompareText(Copy(Name, Length(Name) - 3, 4), '.exe') <> 0) or not FileExists(Uninstaller) then exit;
   Result := True;
 end;
 

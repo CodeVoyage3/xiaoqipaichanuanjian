@@ -18,6 +18,10 @@ public sealed class S10T01InstallRootContractTests
         Assert.Contains("DisableDirPage=no", installer);
         Assert.Contains("UsePreviousAppDir=yes", installer);
         Assert.Contains("function IsSafeInstallRoot", installer);
+        Assert.Contains("ExpandFileName(Path)", installer);
+        Assert.Contains("function HasDotSegment", installer);
+        Assert.Contains("function IsSafeExistingUninstall", installer);
+        Assert.DoesNotContain("Pos('..', Path)", installer);
         Assert.Contains("Inno Setup: App Path", installer);
         Assert.Contains("Path.Combine(local, ProductId)", preparer);
         Assert.Contains("Path.Combine(installRoot, \"app\")", preparer);
