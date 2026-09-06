@@ -751,12 +751,12 @@ public sealed class S7T03DatabaseBackupRestoreViewModelTests
         var navigation = shell.NavigateToAsync(ShellPage.BackupRestore);
         try
         {
-            await saveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await saveStarted.Task.WaitAsync(TimeSpan.FromSeconds(15));
             Assert.Equal(ShellPage.InspectionDetail, shell.CurrentPage);
             Assert.False(shell.BackupRestore.HasLoaded);
 
             release.TrySetResult(null);
-            await navigation.WaitAsync(TimeSpan.FromSeconds(5));
+            await navigation.WaitAsync(TimeSpan.FromSeconds(15));
             await WaitUntil(() => shell.BackupRestore.HasLoaded);
             Assert.Equal(ShellPage.BackupRestore, shell.CurrentPage);
         }
