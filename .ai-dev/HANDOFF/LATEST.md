@@ -1,5 +1,13 @@
 # 最新交接
 
+## 2026-09-06 当前：S10-T01 发布前全部门禁通过
+
+`S10-T01 = TECHNICALLY_ACCEPTED / GUI_PASSED / RELEASE_AUTHORIZED`；`Stage10 = IN_PROGRESS / S10-T01_RELEASE_CURRENT`。用户已对冻结候选明确回复“通过”：简体中文向导、首次目录选择、自定义本地目录安装、快捷方式启动、v1.0.2 显示和退出重开均通过。该回执是用户 GUI 证据，不冒充 Sol 自动化。
+
+冻结生产实现 HEAD `b819e409c490cf5242d9038788bb2e7891748613`；Sol fresh full 1150/1150，全部异常计数为0；build 0 warning/0 error；EF无漂移、migration9；self-contained App/Updater、包图、secret/测试hook扫描、官方ISCC6.7.3编译、Setup A-N 隔离矩阵全部通过。发布前详细证据见 `../ACCEPTANCE/S10-T01.md` 与 `../ACCEPTANCE/S10-T01-PRE-RELEASE-RESULT.json`。
+
+下一步严格执行：先提交并push本治理状态，确认main同步；从同步source生成并签名四项v1.0.2资产；创建stable非draft非prerelease Release；匿名核验latest/tag/source/资产/hash/签名/ZIP/Setup。任何失败立即停止并保留v1.0.0/v1.0.1。仅核验全绿后，依次删除旧Release，确认不存在，再删除对应tag；最后治理closeout并push。不创建Stage11，不访问正式安装或正式数据库。
+
 ## 2026-09-06 最终交接：S9-T07 与 Stage 9 已关闭
 
 `S9-T07 = TECHNICALLY_ACCEPTED / CLOSED`；`Stage9 = CLOSED`。独立 Sol 最终完整 diff 与自动化验收为 `PASS`，没有 correctness/security/data-loss/process-lifecycle 阻断；无需新增人工 GUI 门禁。最终证据索引为 `../ACCEPTANCE/S9-T07-RESULT.json`，阶段总结为 `../STAGES/STAGE-9-CLOSEOUT.md`。下方所有 `IN_PROGRESS / NOT_ACCEPTED`、旧代理、施工与待验收内容均为历史记录。

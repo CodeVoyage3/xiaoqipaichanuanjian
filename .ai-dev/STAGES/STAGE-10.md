@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`Stage10 = IN_PROGRESS / S10-T01_CURRENT`。
+`Stage10 = IN_PROGRESS / S10-T01_RELEASE_CURRENT`。S10-T01 技术门禁与用户最简 Win11 GUI 门禁均已通过，现进入获授权的正式发布、匿名核验及旧开发期 Release/tag 顺序清理；完成前不关闭。
 
 2026-09-06 用户明确授权：正式发布 v1.0.2，并在发布前完成安装器简体中文化与“首次安装可选择程序安装路径”。Stage9 保持 CLOSED，不重开。
 

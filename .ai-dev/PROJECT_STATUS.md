@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-06 当前：S10-T01 发布前门禁通过
+
+`S10-T01 = TECHNICALLY_ACCEPTED / GUI_PASSED / RELEASE_AUTHORIZED`；`Stage10 = IN_PROGRESS / S10-T01_RELEASE_CURRENT`。冻结实现 `b819e409c490cf5242d9038788bb2e7891748613` 已通过 Sol 完整diff、fresh full 1150/1150、build0/0、EF migration9、self-contained publish、secret/test-hook扫描、官方ISCC编译及Setup A-N隔离矩阵。用户随后明确回复“通过”，完成简体中文向导、首次目录选择、自定义目录安装、快捷方式、v1.0.2和退出重开GUI门禁。
+
+已授权的正式发布与清理尚未执行。本治理状态先普通push；之后生成RSA-PSS/SHA256签名四资产并发布stable v1.0.2，匿名核验全部通过后才依序删除v1.0.0/v1.0.1 Release，再删除对应tag。任何失败均停止且保留旧版本。详细证据见 `ACCEPTANCE/S10-T01.md` 与 `ACCEPTANCE/S10-T01-PRE-RELEASE-RESULT.json`；Stage9保持CLOSED，不创建Stage11，不访问正式安装或正式数据库。
+
 ## 2026-09-06 当前：Stage 9 已关闭
 
 `S9-T07 = TECHNICALLY_ACCEPTED / CLOSED`；`Stage9 = CLOSED`。独立 Sol 已完成当前完整 diff 与最终自动化门禁，结论 `PASS`；无需新增人工 GUI 验收。生产 migration 保持 9，末条为 `20260901155124_AddPolicyAndBaselineFoundation`，无真实 migration10/ModelSnapshot 漂移；未发布 v1.0.2，未创建 Stage10。最终证据见 `ACCEPTANCE/S9-T07-RESULT.json` 与 `STAGES/STAGE-9-CLOSEOUT.md`。

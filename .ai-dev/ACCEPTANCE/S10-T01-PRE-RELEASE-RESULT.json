@@ -1,0 +1,98 @@
+{
+  "card": "S10-T01",
+  "stage": "Stage10",
+  "recordedAt": "2026-09-06",
+  "state": "TECHNICALLY_ACCEPTED_GUI_PASSED_RELEASE_AUTHORIZED",
+  "stageState": "IN_PROGRESS_S10_T01_RELEASE_CURRENT",
+  "frozenImplementationCommit": "b819e409c490cf5242d9038788bb2e7891748613",
+  "baselineCommit": "4a897c91fcb77f52253c60e8c814ab214db5c94d",
+  "solVerdict": "PASS",
+  "freshFull": {
+    "total": 1150,
+    "passed": 1150,
+    "failed": 0,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "skipped": 0,
+    "notExecuted": 0,
+    "trx": "%TEMP%/02f2fc84-b56e-49ca-b67f-5155e78f8acf/S9T07-final-full.trx",
+    "bytes": 1765821,
+    "sha256": "8027632CBEFE90A27917598349A2E412E1E34BC459628A328E32B5F730D033D8"
+  },
+  "build": { "warnings": 0, "errors": 0 },
+  "ef": {
+    "hasPendingModelChanges": false,
+    "migrationCount": 9,
+    "lastMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+    "realMigration10": false
+  },
+  "publish": {
+    "appFiles": 618,
+    "appBytes": 247217465,
+    "updaterFiles": 197,
+    "updaterBytes": 82744280,
+    "selfContained": true,
+    "sqliteNativeVersion": "2.1.13",
+    "oldSqliteNative211Matches": 0,
+    "productionTestHookMatches": 0,
+    "secretMatches": 0
+  },
+  "languageAsset": {
+    "path": "installer/ChineseSimplified.isl",
+    "bytes": 21099,
+    "sha256": "BF0751FA176569C6FAA2F6E17ED2734617BEF325D5CC06EAE030FDD0258EE778",
+    "encoding": "UTF-8",
+    "license": "MIT",
+    "upstreamByteMatch": true
+  },
+  "installerCandidate": {
+    "compiler": "Inno Setup 6.7.3",
+    "bytes": 75156265,
+    "sha256": "D85612A98CE156B0AAD75C1C5944C560CC022DD1EBC0D86732DD34D449DDF115",
+    "authenticode": "NotSigned",
+    "purpose": "unpublished user GUI acceptance candidate only; formal release asset will be rebuilt from synchronized source"
+  },
+  "setupMatrix": {
+    "cases": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
+    "passed": 11,
+    "total": 11,
+    "resultSha256": "EDAAA819A7B5FC00537DF82384A58F275672E24387CB378E2C3691C2D92B5592"
+  },
+  "updaterRegression": {
+    "cases": ["L", "M", "N"],
+    "passed": 6,
+    "total": 6,
+    "failed": 0,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "skipped": 0,
+    "trxSha256": "487E107E36D14269CD2252A0A722AADCE7BE77AF3445740EC0F67F064593EAE2"
+  },
+  "userGui": {
+    "result": "PASSED",
+    "receipt": "User explicitly replied: 通过",
+    "scope": [
+      "simplified Chinese wizard",
+      "first-install directory selection page",
+      "custom local install directory",
+      "desktop shortcut launch",
+      "v1.0.2 display",
+      "close and reopen"
+    ]
+  },
+  "isolation": {
+    "runtimeRoots": "TEMP/GUID only",
+    "formalInstallAccess": false,
+    "formalDatabaseAccess": false,
+    "remainingProductOrTestProcesses": 0
+  },
+  "release": {
+    "authorized": true,
+    "published": false,
+    "tagCreated": false,
+    "oldDevelopmentReleasesOrTagsModified": false,
+    "stopRule": "Any publish or anonymous-verification failure preserves v1.0.0 and v1.0.1 releases and tags."
+  }
+}
