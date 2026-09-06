@@ -50,7 +50,6 @@ DisableDirPage=no
 UsePreviousAppDir=yes
 ShowLanguageDialog=no
 LanguageDetectionMethod=none
-DefaultLanguageName=chinesesimp
 CloseApplications=no
 RestartApplications=no
 PrivilegesRequired=lowest
@@ -76,7 +75,7 @@ Name: "{group}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe";
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#RunValueName}"; Flags: uninsdeletevalue
 
 [Languages]
-Name: "chinesesimp"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesesimp"; MessagesFile: "ChineseSimplified.isl"
 
 [Code]
 var

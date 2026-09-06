@@ -14,7 +14,8 @@ public sealed class S10T01InstallRootContractTests
         var preparer = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "Application", "Updates", "UpdateInstallationPreparer.cs"));
         var updater = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector.Updater", "Program.cs"));
 
-        Assert.Contains("DefaultLanguageName=chinesesimp", installer);
+        Assert.Contains("[Languages]", installer);
+        Assert.Contains("Name: \"chinesesimp\"; MessagesFile: \"ChineseSimplified.isl\"", installer);
         Assert.Contains("DisableDirPage=no", installer);
         Assert.Contains("UsePreviousAppDir=yes", installer);
         Assert.Contains("function IsSafeInstallRoot", installer);
