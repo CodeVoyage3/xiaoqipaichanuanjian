@@ -44,6 +44,24 @@ internal static class WpfDialogService
         dialog.Closed += (_, _) => { model.PropertyChanged -= changed; model.DialogClosed(); };
         buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.ShowDialog();
     }
+    public static void ShowForcedUpdate(Window owner, UpdateNotificationViewModel model, Action exit)
+    {
+        var dialog = new Window { Owner = owner, Title = "必须更新", Width = 460, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
+        var panel = new StackPanel { Margin = new Thickness(24) };
+        panel.Children.Add(new TextBlock { Text = "必须更新后才能继续使用", FontSize = 18, FontWeight = FontWeights.SemiBold });
+        panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
+        var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap };
+        panel.Children.Add(status);
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
+        var quit = new Button { Content = "退出软件", Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
+        var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
+        quit.Click += (_, _) => { dialog.Close(); exit(); };
+        update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
+        dialog.Closing += (_, eventArgs) => { if (dialog.DialogResult is null) { eventArgs.Cancel = true; exit(); } };
+        System.ComponentModel.PropertyChangedEventHandler changed = (_, _) => dialog.Dispatcher.BeginInvoke(() => { status.Text = model.StatusText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); });
+        model.PropertyChanged += changed; dialog.Closed += (_, _) => model.PropertyChanged -= changed;
+        buttons.Children.Add(quit); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => update.Focus(); dialog.ShowDialog();
+    }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {
         var dialog = new Window

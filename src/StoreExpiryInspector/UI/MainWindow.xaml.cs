@@ -25,6 +25,8 @@ public partial class MainWindow : Window
     private readonly UpdateNetworkDiagnostics? _updateDiagnostics;
     private Task<UpdatePackageResult>? _updateWorker;
     private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>>? _installPreparedUpdate;
+    private Action? _forcedUpdateAccepted;
+    private bool _forcedUpdateShown;
     internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
@@ -84,7 +86,23 @@ public partial class MainWindow : Window
     internal void ConfigureUpdateInstallation(Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>> installPreparedUpdate) =>
         _installPreparedUpdate = installPreparedUpdate;
 
+    internal void ConfigureForcedUpdate(Action accepted) => _forcedUpdateAccepted = accepted;
+
     internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
+
+    internal void ShowForcedUpdate(UpdateCheckResult result, Action exit)
+    {
+        if (IsClosed || _forcedUpdateShown || result.LatestVersion is null) return;
+        _forcedUpdateShown = true;
+        IsEnabled = false;
+        UpdateNotificationViewModel? model = null;
+        model = new UpdateNotificationViewModel(result, () => { }, () =>
+        {
+            _forcedUpdateAccepted?.Invoke();
+            _ = PrepareUpdateAsync(result, model!);
+        }, dialogClosed: () => { });
+        WpfDialogService.ShowForcedUpdate(this, model, exit);
+    }
 
     internal bool TryShowUpdateAvailable(UpdateCheckResult result, Action<UpdateNotificationViewModel>? show = null)
     {

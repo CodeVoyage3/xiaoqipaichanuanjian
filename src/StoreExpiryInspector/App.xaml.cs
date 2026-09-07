@@ -28,6 +28,8 @@ public partial class App : System.Windows.Application
     private UpdateCheckRuntime? _updateCheckRuntime;
     private int _updateCheckStarted;
     private UpdateNetworkDiagnostics? _updateDiagnostics;
+    private UpdatePolicyStore? _updatePolicyStore;
+    private UpdatePolicyState? _updatePolicyState;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
@@ -447,14 +449,39 @@ public partial class App : System.Windows.Application
         }
         if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
         var checker = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
+        _updatePolicyStore ??= new UpdatePolicyStore(RuntimeDataRoot.RootDirectory);
+        mainWindow.ConfigureForcedUpdate(() =>
+        {
+            if (_updatePolicyStore is not null && _updatePolicyState is not null)
+                _updatePolicyState = UpdatePolicyGate.EnableAutoContinue(_updatePolicyStore, _updatePolicyState);
+        });
         _updateDiagnostics?.Add("gui-check-start", new { simulatedSourceVersion = currentVersion.ToString(3), threadId = Environment.CurrentManagedThreadId });
         _updateCheckRuntime = new UpdateCheckRuntime(
             cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),
             result => Dispatcher.BeginInvoke(() =>
             {
-                if (!_explicitExit && !mainWindow.IsClosed && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
-                    mainWindow.ShowUpdateAvailable(result);
-            }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }));
+                if (_explicitExit || mainWindow.IsClosed || _updatePolicyStore is null) return;
+                try
+                {
+                    var decision = UpdatePolicyGate.Evaluate(_updatePolicyStore, result, DateTime.UtcNow);
+                    _updatePolicyState = decision.State;
+                    if (decision.Decision == UpdatePolicyDecision.ForceUpdate && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
+                        mainWindow.ShowForcedUpdate(result, ExitApplication);
+                    else if (decision.Decision == UpdatePolicyDecision.RecheckRequired)
+                    {
+                        mainWindow.IsEnabled = false;
+                        WpfDialogService.Show(mainWindow, "必须联网验证版本", "版本状态无法可信确认，软件不会开放业务。请恢复网络后重试或退出软件。", "退出软件", WpfDialogKind.Warning, showCancel: false);
+                        ExitApplication();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    _logger?.TryWrite("error", "update_policy_persistence_failed", "更新策略无法持久化，已停止业务。", exception.ToString());
+                    mainWindow.IsEnabled = false;
+                    WpfDialogService.Show(mainWindow, "更新策略错误", "更新策略无法安全保存，软件不会开放业务。", "退出软件", WpfDialogKind.Error, showCancel: false);
+                    ExitApplication();
+                }
+            }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }), TimeSpan.FromHours(6));
         _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
     }
 
