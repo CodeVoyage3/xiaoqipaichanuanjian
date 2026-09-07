@@ -538,13 +538,15 @@ public partial class App : System.Windows.Application
         var path = Path.Combine(RuntimeDataRoot.RootDirectory, "updates", operationId, "journal.json");
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var journal = document.RootElement;
-        UpdateProtocolJson.RequireObject(journal, "OperationId", "DataRoot", "AppPath", "Phase", "Schema");
+        UpdateProtocolJson.RequireObject(journal, "OperationId", "DataRoot", "AppPath", "SourceVersion", "TargetVersion", "Phase", "Schema");
         var schema = journal.GetProperty("Schema");
-        UpdateProtocolJson.RequireObject(schema, "Phase", "LaunchToken");
+        UpdateProtocolJson.RequireObject(schema, "Phase", "Snapshot", "SourceMigrations", "TargetMigrations", "LaunchToken", "CandidatePid", "CandidateStartedUtc", "LastError");
         if (journal.GetProperty("OperationId").GetString() != operationId ||
             !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("DataRoot").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(RuntimeDataRoot.RootDirectory)), StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("AppPath").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)), StringComparison.OrdinalIgnoreCase) ||
             schema.GetProperty("LaunchToken").GetString() != intent.LaunchToken) throw new InvalidDataException("普通启动终态无效。");
+        var wire = JsonSerializer.Deserialize<SchemaUpdateJournal>(schema.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } }) ?? throw new InvalidDataException("普通启动终态无效。");
+        SchemaUpdateJournal.Validate(wire, operationId, journal.GetProperty("SourceVersion").GetString()!, journal.GetProperty("TargetVersion").GetString()!);
         var (phase, phaseName, schemaPhase, schemaName) = intent.Role == NormalLaunchRole.Candidate
             ? (10, "Completed", 8, "CandidateCommitted")
             : (15, "RolledBack", 16, "RolledBack");
