@@ -1,3 +1,11 @@
+# 2026-09-07 当前：Stage13 / S13-T01 治理冻结，实施已授权
+
+- fresh fetch：`HEAD == origin/main == 13156822a0873c47c6bd24a3d3a4d75e40beb494`，ahead/behind `0/0`；GitHub stable/latest `v1.0.4`，产品 source `c2b3f699408f422b3aeaf5b96321a6df08a038c5`。Stage12/S12-T01 CLOSED；开工前无 Stage13/S13 文件。
+- Stage13 = IN_PROGRESS；S13-T01 = GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED；目标 v1.0.5。范围为强制升级 durable gate、24小时网络宽限、错误分类、首次启动/回拨、6小时复检、强制 modal/托盘无绕过、AutoContinue 与签名合法路径。
+- `1.0.2 / 1.0.3 / 1.0.4 -> 1.0.5` 为 RELEASE BLOCKER；三者 migrationCount=9 仅表示兼容可能，必须分别证明现有旧客户端/Updater 全链安全后才决定 manifest source range。
+- production migration=9，默认不得新增；默认 NO_FULL。治理文件见 STAGES/STAGE-13.md、TASKS/S13-T01.md、ANALYSIS/S13-T01-FORCED-UPDATE-DESIGN.md、ACCEPTANCE/S13-T01.md。
+- 用户已正式授权实施；先仅提交冻结治理，再从干净隔离 worktree 创建全新 Terra。仍禁止访问正式数据、修改/重建/发布 v1.0.4、push、tag、Release 或创建 S13-T02。
+
 # 2026-09-07 最终状态：v1.0.4 RELEASED，Stage12 CLOSED
 
 - S12-T01 = RELEASED_AND_ACCEPTED / CLOSED

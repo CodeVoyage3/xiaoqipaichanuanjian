@@ -1,3 +1,15 @@
+# 2026-09-07：Stage13 / S13-T01 治理冻结，实施已授权
+
+fresh fetch 已确认 `HEAD == origin/main == 13156822a0873c47c6bd24a3d3a4d75e40beb494`、ahead/behind `0/0`；GitHub latest 为 stable v1.0.4，产品 source c2b3f699408f422b3aeaf5b96321a6df08a038c5；Stage12/S12-T01 CLOSED，开工前无 Stage13/S13 文件。
+
+已建立 Stage13、S13-T01 TASK/ANALYSIS/ACCEPTANCE。目标 v1.0.5；范围冻结为 durable 强制升级、24小时仅网络宽限、首次启动/回拨/损坏 fail-closed、严格安全错误分类、启动与6小时检查、modal/托盘无绕过、AutoContinue 和签名合法路径。Stage9 pending recovery/candidate ACK/rollback/maintenance/schema/Updater recovery 必须先于普通门禁，禁止改写其冻结语义。
+
+v1.0.5 的 `1.0.2 / 1.0.3 / 1.0.4 -> 1.0.5` 是 RELEASE BLOCKER；当前三 tag 均 migration9 不是放宽依据，须分别用原客户端/Updater与 TEMP/GUID 合成数据证明协议、签名、包、maintenance、journal、ACK、recovery/rollback、数据保持。全部通过后才可考虑 source 1.0.2..1.0.4，否则保留/设计安全桥梁。
+
+production migration=9、默认禁止新增；默认 NO_FULL，只跑 S13 新专项、focused、直接相关 S9-T03/T04/T06/upgrade-safety。仅触及任务卡列出的核心事务/恢复/Schema 或发生无法解释跨模块回归时由 Sol 重评最终一次 full。
+
+用户已正式授权实施。先仅提交冻结治理，再从干净隔离 worktree 创建全新 Terra；Sol 不写生产代码。仍禁止访问正式数据库/安装根/数据根/备份、修改 v1.0.4 Release、push、tag、Release 或创建 S13-T02；既有 Stage4ViewModelTests 换行状态与未跟踪操作手册继续隔离。
+
 # 2026-09-07 最终状态：v1.0.4 RELEASED，Stage12 CLOSED
 
 - S12-T01 = RELEASED_AND_ACCEPTED / CLOSED

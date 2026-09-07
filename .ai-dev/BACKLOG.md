@@ -1,3 +1,9 @@
+## Stage13 Release 桥梁保留规则（2026-09-07）
+
+- stable Release 只要仍承担任一支持源版本到 latest 的合法升级桥梁，就不得删除。
+- 删除旧 Release 前必须用全部支持源版本重新证明仍存在逐跳签名授权、protocol/source/migration 合法的路径；无路径则 fail-closed，不以 latest 或 Setup 强装替代。
+- v1.0.5 发布前，`1.0.2 / 1.0.3 / 1.0.4 -> 1.0.5` 直接兼容证明是 RELEASE BLOCKER；详见 `TASKS/S13-T01.md` 与 `ACCEPTANCE/S13-T01.md`。
+
 ## 后续验证：首次由v1.0.4发起真实在线升级
 人工确认升级通知modal、取消/关闭恢复主界面、全过程无黑色控制台、自动进入新版本、原数据正常。通过后可追加REAL_V104_TO_NEXT_UPDATE_UX_VERIFIED。此项不阻塞S12/Stage12关闭，不据此创建新版本或Stage13。
 
