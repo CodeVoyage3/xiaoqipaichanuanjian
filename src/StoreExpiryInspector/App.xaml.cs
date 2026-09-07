@@ -206,19 +206,33 @@ public partial class App : System.Windows.Application
         MainWindow.Show();
         if (normalLaunchOperation is not null)
         {
-            try
-            {
-                if (!_normalLaunchAcknowledged) throw new InvalidDataException("普通启动加载确认无效。");
-                WaitForNormalLaunchTerminal(normalLaunchOperation);
-                if (!bypassStartupPolicy && !PassStartupUpdatePolicy()) return;
-                MainWindow.IsEnabled = true;
-            }
-            catch (Exception exception)
-            {
-                _logger.TryWrite("error", "normal_launch_completion_failed", "普通启动事务未可信完成，业务不会开放。", exception.ToString());
-                Shutdown(1); return;
-            }
+            Dispatcher.BeginInvoke(() => _ = CompleteNormalLaunchAsync(normalLaunchOperation, bypassStartupPolicy));
+            return;
         }
+        StartOrdinaryRuntime();
+    }
+
+    private async Task CompleteNormalLaunchAsync(string operationId, bool bypassStartupPolicy)
+    {
+        try
+        {
+            if (!_normalLaunchAcknowledged) throw new InvalidDataException("普通启动加载确认无效。");
+            WaitForNormalLaunchTerminal(operationId);
+            if (MainWindow?.DataContext is not ShellViewModel shell) throw new InvalidDataException("普通启动 Shell 无效。");
+            await shell.StartupLoadTask;
+            if (!bypassStartupPolicy && !await PassStartupUpdatePolicyAsync()) return;
+            MainWindow.IsEnabled = true;
+            StartOrdinaryRuntime();
+        }
+        catch (Exception exception)
+        {
+            _logger?.TryWrite("error", "normal_launch_completion_failed", "普通启动事务未可信完成，业务不会开放。", exception.ToString());
+            Shutdown(1);
+        }
+    }
+
+    private void StartOrdinaryRuntime()
+    {
 #if S9T07_TEST
         if (RuntimeDataRoot.IsTestUpdateInstall)
         {
@@ -386,8 +400,8 @@ public partial class App : System.Windows.Application
         if (mainWindow.DataContext is ShellViewModel shell)
         {
             shell.ConfigureDatabaseProtectionRuntime(
-                BeginDatabaseMaintenanceAsync,
-                EndDatabaseMaintenance,
+                () => BeginDatabaseMaintenanceAsync(),
+                resumeScheduler => EndDatabaseMaintenance(resumeScheduler),
                 ExitApplication);
             if (_updateDiagnostics is null) mainWindow.ConfigureUpdateInstallation(InstallPreparedUpdateAsync);
             mainWindow.Closing += MainWindow_Closing;
@@ -557,7 +571,9 @@ public partial class App : System.Windows.Application
         element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out var value) && value == number ||
         element.ValueKind == JsonValueKind.String && element.GetString() == name;
 
-    private bool PassStartupUpdatePolicy()
+    private bool PassStartupUpdatePolicy() => PassStartupUpdatePolicyAsync().GetAwaiter().GetResult();
+
+    private async Task<bool> PassStartupUpdatePolicyAsync()
     {
         if (!GitHubReleaseUpdateChecker.TryGetCurrentVersion(out var currentVersion))
         {
@@ -578,10 +594,10 @@ public partial class App : System.Windows.Application
                 _updatePolicyState = decision.State;
                 if (decision.Decision == UpdatePolicyDecision.AllowBusiness) return true;
                 var canUpdate = decision.Decision == UpdatePolicyDecision.ForceUpdate && result.Outcome == UpdateCheckOutcome.UpdateAvailable && result.Release is not null;
-                if (decision.State.AutoContinue && canUpdate && PrepareStartupUpdate(result, currentVersion)) return false;
+                if (decision.State.AutoContinue && canUpdate && await PrepareStartupUpdateAsync(result, currentVersion)) return false;
                 var action = WpfDialogService.ShowStartupUpdateGate(canUpdate ? "必须更新" : "必须联网验证版本", canUpdate ? "必须更新后才能继续使用。" : "版本状态无法可信确认，软件不会开放业务。请恢复网络后重试或退出软件。", canUpdate);
                 if (action == StartupUpdateGateAction.Exit) { Shutdown(); return false; }
-                if (action == StartupUpdateGateAction.Update && PrepareStartupUpdate(result, currentVersion)) return false;
+                if (action == StartupUpdateGateAction.Update && await PrepareStartupUpdateAsync(result, currentVersion)) return false;
             }
             catch (Exception exception)
             {
@@ -592,8 +608,9 @@ public partial class App : System.Windows.Application
         }
     }
 
-    private bool PrepareStartupUpdate(UpdateCheckResult result, Version currentVersion)
+    private async Task<bool> PrepareStartupUpdateAsync(UpdateCheckResult result, Version currentVersion)
     {
+        var acquiredMaintenance = false;
         try
         {
             if (_updatePolicyStore is null || _updatePolicyState is null || result.Release is null) return false;
@@ -601,12 +618,32 @@ public partial class App : System.Windows.Application
             var downloader = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics);
             var package = downloader.PrepareAsync(result.Release, currentVersion, null, CancellationToken.None).GetAwaiter().GetResult();
             if (package.Outcome != UpdatePackageOutcome.Verified || package.Package is null) return false;
-            using var parent = Process.GetCurrentProcess();
-            var prepared = new UpdateInstallationPreparer(downloader).Prepare(package.Package, parent, CancellationToken.None);
+            if (MainWindow?.DataContext is ShellViewModel)
+            {
+                if (!await BeginDatabaseMaintenanceAsync(keepWindowBlocked: true)) return false;
+                acquiredMaintenance = true;
+            }
+            var prepared = await Task.Run(() =>
+            {
+                using var parent = Process.GetCurrentProcess();
+                return new UpdateInstallationPreparer(downloader).Prepare(package.Package, parent, CancellationToken.None);
+            });
             if (Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) is null) return false;
-            _explicitExit = true; Shutdown(); return true;
+            _explicitExit = true;
+            StopRuntime();
+            MainWindow?.Close();
+            Shutdown();
+            return true;
         }
-        catch (Exception exception) { _logger?.TryWrite("error", "startup_forced_update_prepare_failed", "强制更新准备失败，仍保持阻断。", exception.ToString()); return false; }
+        catch (Exception exception)
+        {
+            _logger?.TryWrite("error", "startup_forced_update_prepare_failed", "强制更新准备失败，仍保持阻断。", exception.ToString());
+            return false;
+        }
+        finally
+        {
+            if (acquiredMaintenance && !_explicitExit) EndDatabaseMaintenance(true, keepWindowBlocked: true);
+        }
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -807,7 +844,7 @@ public partial class App : System.Windows.Application
         _trayIcon = null;
     }
 
-    private async Task<bool> BeginDatabaseMaintenanceAsync()
+    private async Task<bool> BeginDatabaseMaintenanceAsync(bool keepWindowBlocked = false)
     {
         if (_databaseMaintenanceLease is not null ||
             MainWindow?.DataContext is not ShellViewModel shell)
@@ -820,7 +857,7 @@ public partial class App : System.Windows.Application
         // workers. This preserves the existing Stage 4 save contract.
         if (!await shell.Detail.WaitForStableSaveAsync())
         {
-            MainWindow.IsEnabled = true;
+            if (!keepWindowBlocked) MainWindow.IsEnabled = true;
             return false;
         }
 
@@ -835,7 +872,7 @@ public partial class App : System.Windows.Application
                 {
                     _reminderScheduler?.Start();
                 }
-                MainWindow.IsEnabled = true;
+                if (!keepWindowBlocked) MainWindow.IsEnabled = true;
 
                 return false;
             }
@@ -849,13 +886,13 @@ public partial class App : System.Windows.Application
             {
                 _reminderScheduler?.Start();
             }
-            MainWindow.IsEnabled = true;
+            if (!keepWindowBlocked) MainWindow.IsEnabled = true;
 
             throw;
         }
     }
 
-    private void EndDatabaseMaintenance(bool resumeScheduler)
+    private void EndDatabaseMaintenance(bool resumeScheduler, bool keepWindowBlocked = false)
     {
         var lease = _databaseMaintenanceLease;
         _databaseMaintenanceLease = null;
@@ -864,6 +901,6 @@ public partial class App : System.Windows.Application
         {
             _reminderScheduler?.Start();
         }
-        if (!_explicitExit && MainWindow is not null) MainWindow.IsEnabled = true;
+        if (!_explicitExit && !keepWindowBlocked && MainWindow is not null) MainWindow.IsEnabled = true;
     }
 }

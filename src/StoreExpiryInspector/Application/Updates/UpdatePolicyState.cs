@@ -126,7 +126,12 @@ public static class UpdatePolicyGate
         }
         if (check.Outcome == UpdateCheckOutcome.UpdateAvailable && check.LatestVersion is not null && check.LatestVersion > check.CurrentVersion)
         {
-            var target = required is not null && required.CompareTo(check.LatestVersion) > 0 ? required : check.LatestVersion;
+            if (required is not null && check.LatestVersion < required)
+            {
+                state = state with { LastSuccessfulCheckUtc = utcNow, LastBlockingReason = "REQUIRED_VERSION_AHEAD_OF_REMOTE" };
+                store.Save(state); return (UpdatePolicyDecision.RecheckRequired, state);
+            }
+            var target = check.LatestVersion;
             state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = target.ToString(3), ForcedUpdateRequired = true, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
             store.Save(state); return (UpdatePolicyDecision.ForceUpdate, state);
         }

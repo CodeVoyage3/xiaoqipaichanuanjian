@@ -97,6 +97,15 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
     }
 
     [Fact]
+    public void PersistedHigherRequiredVersionRejectsLowerTrustedLatestWithoutOfferingIt()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        _ = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 7), new Version(1, 0, 9)), now);
+        var result = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 7), new Version(1, 0, 8)), now.AddMinutes(1));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, result.Decision); Assert.Equal("1.0.9", result.State.RequiredVersion); Assert.True(result.State.ForcedUpdateRequired);
+    }
+
+    [Fact]
     public void AutoContinueSurvivesReloadAndOnlyTrustedLatestConsumesIt()
     {
         var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
