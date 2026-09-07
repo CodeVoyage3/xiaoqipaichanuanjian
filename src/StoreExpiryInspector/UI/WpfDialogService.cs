@@ -42,7 +42,7 @@ internal static class WpfDialogService
         };
         model.PropertyChanged += changed;
         dialog.Closed += (_, _) => { model.PropertyChanged -= changed; model.DialogClosed(); };
-        buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.Show();
+        buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.ShowDialog();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {
@@ -57,8 +57,8 @@ internal static class WpfDialogService
         panel.Children.Add(new TextBlock { Text = "导出成功", FontSize = 18, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = $"商品/任务数量：{result.TaskCount}\n批次数：{result.RowCount}\n完整路径：{result.OutputPath}", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
-        buttons.Children.Add(OpenButton("打开文件", () => Open(result.OutputPath, false), owner));
-        buttons.Children.Add(OpenButton("打开所在文件夹", () => Open(result.OutputPath, true), owner));
+        buttons.Children.Add(OpenButton("打开文件", () => Open(result.OutputPath, false, dialog), owner));
+        buttons.Children.Add(OpenButton("打开所在文件夹", () => Open(result.OutputPath, true, dialog), owner));
         var close = new Button { Content = "确定", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "PrimaryButtonStyle") };
         close.Click += (_, _) => dialog.DialogResult = true;
         buttons.Children.Add(close); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => close.Focus(); dialog.ShowDialog();
@@ -71,7 +71,7 @@ internal static class WpfDialogService
         return button;
     }
 
-    private static void Open(string path, bool select)
+    private static void Open(string path, bool select, Window owner)
     {
         try
         {
@@ -80,7 +80,7 @@ internal static class WpfDialogService
         }
         catch (Exception)
         {
-            Show(null, "无法打开", select ? "无法打开所在文件夹，请确认文件仍存在。" : "无法打开文件，请确认文件仍存在。", "知道了", WpfDialogKind.Error, "请确认文件未被移动或删除后重试。", false);
+            Show(owner, "无法打开", select ? "无法打开所在文件夹，请确认文件仍存在。" : "无法打开文件，请确认文件仍存在。", "知道了", WpfDialogKind.Error, "请确认文件未被移动或删除后重试。", false);
         }
     }
 

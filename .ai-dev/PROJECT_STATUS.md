@@ -1,3 +1,22 @@
+## 2026-09-07 最终Candidate准备（最新裁决）
+已批准热修source冻结：即时刷新/布局USER_GUI_ACCEPTED、取消更新文案、更新通知modal及导出Owner、Updater WinExe。仅4个生产文件，无安全状态机/业务/模型/依赖扩大。modal1/1与console2/2 Sol证据继续有效，本轮不重跑。
+当前仅Release build、EF NO_MODEL_DRIFT/migration9、全新App/Updater publish/Setup/ZIP/manifest/signature、PE2、签名/tree/secret与隔离启动。禁止full/178/旧GUI重验/公开发布。完成后停止待最终GUI与发布后真实公开升级。HISTORICAL_TEST_ISOLATION_UNCERTAINTY保持，禁止探测正式数据。
+S12-T01=IN_PROGRESS/NOT_ACCEPTED，Stage12=IN_PROGRESS，v1.0.4=NOT_RELEASED。旧candidate保持SUPERSEDED_BY_GLOBAL_MODAL_FIX。
+## 2026-09-07 升级黑框最小修复专项通过
+黑框源码根因为Updater控制台OutputType；唯一新增生产改动csproj Exe→WinExe。正式启动无shell包装，UseShellExecute=false与Updater自身WorkingDirectory均保持。生产publish与实际runner PE subsystem=2。
+Terra2/2、Sol独立成功链+关键rollback2/2通过；关键错误留journal LastError，旧版ACK恢复正常。测试夹具证据不冒充正式GitHub升级。无full/178/modal/已通过两项重验；未改安全状态机/rollback/maintenance/ACK/schema。详细独立证据见本卡console验收记录。
+本次按用户停止点不生成candidate；S12-T01仍IN_PROGRESS/NOT_ACCEPTED。旧candidate继续SUPERSEDED_BY_GLOBAL_MODAL_FIX。待后续统一生成一次新的最终候选。
+## 2026-09-07 当前裁决：modal技术收口，调查升级黑框
+Modal事实已接受：31自定义+3原生入口；唯一业务Window.Show为更新通知；其余已有modal；导出失败提示补Owner。本轮modal生产仅WpfDialogService.cs，无业务modeless，主壳Show保留。Terra安全宿主21/21、Sol独立1/1、Release build0/0通过，不full。
+历史测试风险只记HISTORICAL_TEST_ISOLATION_UNCERTAINTY：不能证明正式数据被修改，也不能绝对证明从未访问。禁止为追查而读/查/hash/copy/对比/修改正式DB、数据根或备份。该finding属测试流程，不是产品defect，不单独阻塞发布。继续使用安全Dispatcher与TEMP/GUID隔离。
+唯一当前产品问题：升级黑色控制台窗口。先查OutputType/ProcessStartInfo/包装/Console与journal，最小WinExe或必要显示参数；保护Updater自身WorkingDirectory及全部安全状态机/协议。只成功链+一个rollback+PE/启动链/日志targeted，不full/178/旧两项重验。
+停止点：调查、最小修复及独立专项后回报，先不生成candidate。旧candidate保持SUPERSEDED_BY_GLOBAL_MODAL_FIX，资产不复用不发布。S12-T01=IN_PROGRESS/NOT_ACCEPTED。
+## 2026-09-07 用户GUI回执与新增modal finding（当前裁决）
+用户已通过首次导入不重启即时出现今日排查、确认窗底部按钮完整可见与提交正常。前轮证据继续有效，不重新验收/机械重跑178项。取消更新文案保留。
+唯一新增范围：业务弹窗统一模态。先完整盘点Show/ShowDialog/Owner及async链，再标准WPF Owner+ShowDialog最小修复；不得全局替换、增加主窗禁用状态机/锁/WindowManager，不动Domain/DB/Import事务/任务算法/Updater核心。
+仅modal targeted、直接dialog回归、Release build、diff/secret；模型未动沿用NO_MODEL_DRIFT/migration9。默认不full，不能因公共DialogService而扩测。
+旧candidate source94d3efc及TEMP/7f1607db-db80-4979-a150-21405e45f298资产标记SUPERSEDED_BY_GLOBAL_MODAL_FIX；原字节与证据保留，不得用于发布。
+本次停止点：盘点、最小修复与独立targeted报告后停止，先不生成新candidate。S12-T01与Stage12仍IN_PROGRESS/NOT_ACCEPTED；不发布、不创建Stage13。
 ## 2026-09-07 最小实施与独立源码门禁通过
 Sol独立专项/必要邻近回归178/178，Release build 0 warning/0 error，EF NO_MODEL_DRIFT，migrationCount9，diff-check与限定secret scan通过。生产仅3个UI文件；未跑full，无扩大理由。
 详见 .ai-dev/ACCEPTANCE/S12-T01-SOL.md。S12-T01仍IN_PROGRESS/NOT_ACCEPTED；候选publish/package/signature/hash与候选升级未完成，尚未准备用户GUI候选；正式发布和POST-RELEASE真实在线升级亦未进行。

@@ -1,9 +1,11 @@
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.UI;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using Xunit;
 
@@ -125,10 +127,11 @@ public sealed class S9T03UpdateCheckTests
                 var window = new MainWindow(shell);
                 window.Show();
                 var deadline = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(25) };
-                deadline.Tick += (_, _) => { failure = new TimeoutException("Synthetic WPF core readiness did not complete."); deadline.Stop(); app.Shutdown(); };
+                deadline.Tick += (_, _) => { failure = new TimeoutException("Synthetic WPF core readiness did not complete."); deadline.Stop(); window.Dispatcher.BeginInvokeShutdown(System.Windows.Threading.DispatcherPriority.Background); };
                 deadline.Start();
                 _ = shell.StartupLoadTask.ContinueWith(_ => window.Dispatcher.BeginInvoke(() =>
                 {
+                    var completionScheduled = false;
                     try
                     {
                         Assert.False(shell.Dashboard.IsLoading); Assert.False(shell.PendingTasks.IsLoading);
@@ -139,18 +142,61 @@ public sealed class S9T03UpdateCheckTests
                         Assert.False(window.TryShowUpdateAvailable(update, _ => shown++));
                         Assert.False(window.TryShowUpdateAvailable(UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 0)), _ => shown++));
                         Assert.Equal(1, shown);
+                        var ownerHandle = new WindowInteropHelper(window).EnsureHandle();
+                        EnableWindow(ownerHandle, true);
+                        Assert.True(IsWindowEnabled(ownerHandle));
+                        Exception? modalFailure = null;
+                        window.Dispatcher.BeginInvoke(() =>
+                        {
+                            Window? prompt = null;
+                            try
+                            {
+                                prompt = System.Windows.Application.Current.Windows.Cast<Window>().Single(item => item.Title == "发现新版本");
+                                var buttons = (StackPanel)((StackPanel)prompt.Content).Children[^1];
+                                Assert.Same(window, prompt.Owner);
+                                Assert.False(IsWindowEnabled(ownerHandle));
+                                Assert.Equal(Brushes.White, ((TextBlock)((Button)buttons.Children[1]).Content).Foreground);
+                            }
+                            catch (Exception exception) { modalFailure = exception; }
+                            finally { prompt?.Close(); }
+                        });
                         WpfDialogService.ShowUpdateAvailable(window, new UpdateNotificationViewModel(update, () => { }, () => { }));
-                        var prompt = System.Windows.Application.Current.Windows.Cast<Window>().Single(item => item.Title == "发现新版本");
-                        var buttons = (StackPanel)((StackPanel)prompt.Content).Children[^1];
-                        Assert.Equal(Brushes.White, ((TextBlock)((Button)buttons.Children[1]).Content).Foreground);
-                        prompt.Close();
-                        window.Close();
-                        Assert.False(window.TryShowUpdateAvailable(new UpdateCheckResult(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 0), new Version(1, 0, 2)), _ => shown++));
+                        completionScheduled = true;
+                        window.Dispatcher.BeginInvoke(() =>
+                        {
+                            try
+                            {
+                                Assert.Null(modalFailure);
+                                Assert.True(IsWindowEnabled(ownerHandle));
+                                Assert.True(ShowGenericDialog(window, ownerHandle, "确认测试", buttons => ((Button)buttons.Children[^1]).RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
+                                Assert.False(ShowGenericDialog(window, ownerHandle, "取消测试", buttons => ((Button)buttons.Children[0]).RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
+                                Assert.False(ShowGenericDialog(window, ownerHandle, "关闭测试", _ => System.Windows.Application.Current.Windows.Cast<Window>().Single(item => item.Title == "关闭测试").Close()));
+                                var confirmation = new TodayInspectionConfirmationWindow { Owner = window };
+                                Exception? confirmationFailure = null;
+                                window.Dispatcher.BeginInvoke(() =>
+                                {
+                                    try
+                                    {
+                                        Assert.Same(window, confirmation.Owner);
+                                        Assert.False(IsWindowEnabled(ownerHandle));
+                                    }
+                                    catch (Exception exception) { confirmationFailure = exception; }
+                                    finally { confirmation.Close(); }
+                                });
+                                confirmation.ShowDialog();
+                                Assert.Null(confirmationFailure);
+                                Assert.True(IsWindowEnabled(ownerHandle));
+                                window.Close();
+                                Assert.False(window.TryShowUpdateAvailable(new UpdateCheckResult(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 0), new Version(1, 0, 2)), _ => shown++));
+                            }
+                            catch (Exception exception) { failure = exception; }
+                            finally { deadline.Stop(); window.Dispatcher.BeginInvokeShutdown(System.Windows.Threading.DispatcherPriority.Background); }
+                        }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
                     }
                     catch (Exception exception) { failure = exception; }
-                    finally { deadline.Stop(); app.Shutdown(); }
+                    finally { if (!completionScheduled) { deadline.Stop(); window.Dispatcher.BeginInvokeShutdown(System.Windows.Threading.DispatcherPriority.Background); } }
                 }));
-                app.Run();
+                System.Windows.Threading.Dispatcher.Run();
             }
             catch (Exception exception) { failure = exception; }
             finally { System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown(); }
@@ -163,6 +209,34 @@ public sealed class S9T03UpdateCheckTests
 
     private static async Task<UpdateCheckResult> CheckAsync(HttpStatusCode status, string body, string current = "1.0.0") =>
         await new GitHubReleaseUpdateChecker(new Handler(_ => new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8) })).CheckAsync(Version.Parse(current), CancellationToken.None);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowEnabled(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnableWindow(IntPtr handle, bool enable);
+
+    private static bool ShowGenericDialog(Window owner, IntPtr ownerHandle, string title, Action<StackPanel> close)
+    {
+        Exception? failure = null;
+        owner.Dispatcher.BeginInvoke(() =>
+        {
+            Window? dialog = null;
+            try
+            {
+                dialog = System.Windows.Application.Current.Windows.Cast<Window>().Single(item => item.Title == title);
+                Assert.Same(owner, dialog.Owner);
+                Assert.False(IsWindowEnabled(ownerHandle));
+                close((StackPanel)((StackPanel)dialog.Content).Children[^1]);
+            }
+            catch (Exception exception) { failure = exception; }
+            finally { if (dialog?.IsVisible == true) dialog.Close(); }
+        });
+        var result = WpfDialogService.Show(owner, title, "测试", "确认", WpfDialogKind.Warning);
+        Assert.Null(failure);
+        Assert.True(IsWindowEnabled(ownerHandle));
+        return result;
+    }
 
     private sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> response) : HttpMessageHandler
     {
