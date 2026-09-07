@@ -1,4 +1,12 @@
-# 2026-09-07：Stage13 / S13-T01 治理冻结，实施已授权
+# 2026-09-07：S13-T01 已实现，Sol 技术验收就绪，三源发布阻断保留
+
+隔离分支 `codex/s13-t01-terra` 当前 HEAD `3b483ef772d6442febfbcdd16ab87c6965839445`；S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED，Stage13 = IN_PROGRESS。未 push/tag/release，未创建 S13-T02。
+
+Sol 已完成完整 diff 与独立门禁：S13 + S9-T03/T04/T06 主集合90/90、normal-launch safety 7/7，Release App/Updater 0/0，EF NO_MODEL_DRIFT，migration9，TEMP/GUID candidate App/Updater 1.0.5.0 且 PE subsystem2，diff/secret PASS；NO_FULL 保持。完整记录见 `../ACCEPTANCE/S13-T01-SOL.md`。
+
+仍不得发布：1.0.2/1.0.3/1.0.4 公开原客户端/旧 Updater 到 production-signed v1.0.5 候选的全链尚未分别证明。现有旧专项仅覆盖 1.0.3→fixture1.0.4，不能泛化；后续需单独授权生成/签名候选并完成三源 source/migration/manifest/ZIP/maintenance/journal/ACK/normal/data/rollback 验证，才能裁决 manifest source range。
+
+# 2026-09-07 历史：Stage13 / S13-T01 治理冻结，实施已授权
 
 fresh fetch 已确认 `HEAD == origin/main == 13156822a0873c47c6bd24a3d3a4d75e40beb494`、ahead/behind `0/0`；GitHub latest 为 stable v1.0.4，产品 source c2b3f699408f422b3aeaf5b96321a6df08a038c5；Stage12/S12-T01 CLOSED，开工前无 Stage13/S13 文件。
 

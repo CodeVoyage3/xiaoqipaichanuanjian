@@ -1,8 +1,10 @@
 # Stage13｜强制升级与合法跨版本升级链
 
 Stage13 = IN_PROGRESS
-S13-T01 = GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED
+S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED
 目标版本：v1.0.5。
+
+当前实现 HEAD 为 `3b483ef772d6442febfbcdd16ab87c6965839445`。独立 focused/build/EF/migration/candidate identity 门禁通过；三源公开旧客户端到 v1.0.5 的 production-signed 全链仍是 Release blocker，因此不关闭本卡或阶段。详见 `../ACCEPTANCE/S13-T01-SOL.md`。
 
 ## 开工现场（2026-09-07，Asia/Shanghai）
 

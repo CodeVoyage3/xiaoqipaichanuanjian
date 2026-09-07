@@ -1,4 +1,11 @@
-# 2026-09-07 当前：Stage13 / S13-T01 治理冻结，实施已授权
+# 2026-09-07 当前：S13-T01 已实现，进入 Sol 技术验收就绪停止点
+
+- Stage13 = IN_PROGRESS；S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED；隔离分支 HEAD `3b483ef772d6442febfbcdd16ab87c6965839445`，未 push/tag/release。
+- Sol 独立复核与 focused 通过：S13 + S9-T03/T04/T06 主集合 90/90，normal-launch safety 7/7；Release App/Updater 0 warning/0 error；EF NO_MODEL_DRIFT；migrationCount=9；candidate App/Updater 1.0.5.0、PE subsystem 2；diff/secret scan PASS。默认 NO_FULL 保持。
+- `1.0.2 / 1.0.3 / 1.0.4 -> 1.0.5` 公开原客户端/旧 Updater 全链仍为 RELEASE BLOCKER；没有 production-signed v1.0.5 候选前不得冒称通过，不批准 manifest source range，不发布。详见 `ACCEPTANCE/S13-T01-SOL.md`。
+- 未访问正式安装/数据库/数据根/备份；未修改 v1.0.4；未创建 S13-T02。主工作区既有 Stage4ViewModelTests 换行状态与未跟踪操作手册保持未触碰。
+
+# 2026-09-07 历史：Stage13 / S13-T01 治理冻结，实施已授权
 
 - fresh fetch：`HEAD == origin/main == 13156822a0873c47c6bd24a3d3a4d75e40beb494`，ahead/behind `0/0`；GitHub stable/latest `v1.0.4`，产品 source `c2b3f699408f422b3aeaf5b96321a6df08a038c5`。Stage12/S12-T01 CLOSED；开工前无 Stage13/S13 文件。
 - Stage13 = IN_PROGRESS；S13-T01 = GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED；目标 v1.0.5。范围为强制升级 durable gate、24小时网络宽限、错误分类、首次启动/回拨、6小时复检、强制 modal/托盘无绕过、AutoContinue 与签名合法路径。
