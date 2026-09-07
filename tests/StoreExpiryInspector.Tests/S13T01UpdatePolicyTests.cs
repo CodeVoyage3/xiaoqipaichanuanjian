@@ -40,7 +40,7 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
         _ = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 5)), now);
         Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 5)), now.AddMinutes(-1)).Decision);
         File.Delete(Path.Combine(_root, "updates", "update-policy-anchor.json"));
-        Assert.Throws<InvalidDataException>(() => UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now.AddMinutes(1)));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now.AddMinutes(1)).Decision);
     }
 
     [Fact]
@@ -52,7 +52,22 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
         var state = new UpdatePolicyState(1, "StoreExpiryInspector", Guid.NewGuid().ToString("N"), now, now, null, null, true, false, null);
         File.WriteAllText(Path.Combine(updates, "update-policy-state.json"), System.Text.Json.JsonSerializer.Serialize(state));
         File.WriteAllText(Path.Combine(updates, "update-policy-anchor.json"), "{\"SchemaVersion\":1,\"ProductId\":\"StoreExpiryInspector\",\"StateId\":\"" + state.StateId + "\"}");
-        Assert.Throws<InvalidDataException>(() => UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now).Decision);
+    }
+
+    [Theory]
+    [InlineData(UpdateCheckOutcome.InvalidRemoteMetadata)]
+    [InlineData(UpdateCheckOutcome.SecurityFailure)]
+    [InlineData(UpdateCheckOutcome.NoLegalUpgradePath)]
+    [InlineData(UpdateCheckOutcome.NoPublishedRelease)]
+    [InlineData(UpdateCheckOutcome.RemoteOlder)]
+    [InlineData(UpdateCheckOutcome.Cancelled)]
+    public void SecurityAndPathFailuresNeverUseOfflineGrace(UpdateCheckOutcome outcome)
+    {
+        var now = DateTime.UnixEpoch.AddDays(10);
+        var decision = UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(outcome, new Version(1, 0, 5)), now);
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, decision.Decision);
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now.AddMinutes(1)).Decision);
     }
 
     public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }

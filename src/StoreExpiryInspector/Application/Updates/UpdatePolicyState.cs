@@ -78,13 +78,21 @@ public static class UpdatePolicyGate
     public static (UpdatePolicyDecision Decision, UpdatePolicyState State) Evaluate(UpdatePolicyStore store, UpdateCheckResult check, DateTime utcNow)
     {
         UpdatePolicyState state;
+        var repairedState = false;
         try { state = store.LoadOrCreate(utcNow); }
         catch (InvalidDataException)
         {
-            if (IsTemporary(check.Outcome)) throw;
+            if (check.Outcome is not (UpdateCheckOutcome.UpToDate or UpdateCheckOutcome.UpdateAvailable))
+            {
+                // Persist the fail-closed fact so a later temporary outage cannot
+                // turn damaged or hostile state into a fresh 24-hour install.
+                state = NewState(utcNow, "STATE_INVALID");
+                store.Save(state);
+                return (UpdatePolicyDecision.RecheckRequired, state);
+            }
             // A verified result may repair a damaged policy pair, but no local or
             // temporary-failure path gets to turn corruption into a new install.
-            state = new UpdatePolicyState(1, "StoreExpiryInspector", Guid.NewGuid().ToString("N"), utcNow, utcNow, null, null, false, false, "STATE_INVALID");
+            state = NewState(utcNow, "STATE_INVALID"); repairedState = true;
         }
         if (utcNow < state.LastObservedUtc)
         {
@@ -102,7 +110,7 @@ public static class UpdatePolicyGate
             state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = check.LatestVersion.ToString(3), ForcedUpdateRequired = true, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
             store.Save(state); return (UpdatePolicyDecision.ForceUpdate, state);
         }
-        if (state.ForcedUpdateRequired || !IsTemporary(check.Outcome))
+        if (state.ForcedUpdateRequired || (!string.IsNullOrEmpty(state.LastBlockingReason) && !repairedState) || !IsTemporary(check.Outcome))
         {
             state = state with { LastBlockingReason = state.ForcedUpdateRequired ? state.LastBlockingReason ?? "FORCED_UPDATE_REQUIRED" : "SECURITY_OR_PATH_RECHECK_REQUIRED" };
             store.Save(state); return (UpdatePolicyDecision.RecheckRequired, state);
@@ -121,4 +129,5 @@ public static class UpdatePolicyGate
     }
 
     private static bool IsTemporary(UpdateCheckOutcome outcome) => outcome is UpdateCheckOutcome.NetworkUnavailable or UpdateCheckOutcome.RateLimited;
+    private static UpdatePolicyState NewState(DateTime utcNow, string reason) => new(1, "StoreExpiryInspector", Guid.NewGuid().ToString("N"), utcNow, utcNow, null, null, false, false, reason);
 }

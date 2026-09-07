@@ -140,6 +140,7 @@ public partial class App : System.Windows.Application
             StartUpgradeVerification(operationId, schemaToken, schemaToken is not null && !sourceVerification);
             return;
         }
+        if (!PassStartupUpdatePolicy()) return;
         try
         {
             DatabaseInitializer.Initialize();
@@ -449,6 +450,7 @@ public partial class App : System.Windows.Application
         }
         if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
         var checker = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
+        var resolver = new TrustedUpdatePathResolver(checker, new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics));
         _updatePolicyStore ??= new UpdatePolicyStore(RuntimeDataRoot.RootDirectory);
         mainWindow.ConfigureForcedUpdate(() =>
         {
@@ -457,7 +459,7 @@ public partial class App : System.Windows.Application
         });
         _updateDiagnostics?.Add("gui-check-start", new { simulatedSourceVersion = currentVersion.ToString(3), threadId = Environment.CurrentManagedThreadId });
         _updateCheckRuntime = new UpdateCheckRuntime(
-            cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),
+            cancellationToken => resolver.CheckAsync(currentVersion, StaticMigrations(), cancellationToken),
             result => Dispatcher.BeginInvoke(() =>
             {
                 if (_explicitExit || mainWindow.IsClosed || _updatePolicyStore is null) return;
@@ -466,9 +468,13 @@ public partial class App : System.Windows.Application
                     var decision = UpdatePolicyGate.Evaluate(_updatePolicyStore, result, DateTime.UtcNow);
                     _updatePolicyState = decision.State;
                     if (decision.Decision == UpdatePolicyDecision.ForceUpdate && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
+                    {
+                        StopRuntime();
                         mainWindow.ShowForcedUpdate(result, ExitApplication);
+                    }
                     else if (decision.Decision == UpdatePolicyDecision.RecheckRequired)
                     {
+                        StopRuntime();
                         mainWindow.IsEnabled = false;
                         WpfDialogService.Show(mainWindow, "必须联网验证版本", "版本状态无法可信确认，软件不会开放业务。请恢复网络后重试或退出软件。", "退出软件", WpfDialogKind.Warning, showCancel: false);
                         ExitApplication();
@@ -483,6 +489,58 @@ public partial class App : System.Windows.Application
                 }
             }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }), TimeSpan.FromHours(6));
         _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
+    }
+
+    private bool PassStartupUpdatePolicy()
+    {
+        if (!GitHubReleaseUpdateChecker.TryGetCurrentVersion(out var currentVersion))
+        {
+            WpfDialogService.ShowStartupUpdateGate("版本验证失败", "无法确认当前程序版本，软件不会开放业务。", false);
+            Shutdown(1); return false;
+        }
+        if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
+        _updatePolicyStore = new UpdatePolicyStore(RuntimeDataRoot.RootDirectory);
+        var resolver = new TrustedUpdatePathResolver(new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics), new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics));
+        while (true)
+        {
+            UpdateCheckResult result;
+            try { result = resolver.CheckAsync(currentVersion, StaticMigrations(), CancellationToken.None).GetAwaiter().GetResult(); }
+            catch (Exception exception) { _logger?.TryWrite("error", "startup_update_check_failed", "启动版本验证异常，已阻断业务。", exception.ToString()); result = UpdateCheckResult.From(UpdateCheckOutcome.SecurityFailure, currentVersion); }
+            try
+            {
+                var decision = UpdatePolicyGate.Evaluate(_updatePolicyStore, result, DateTime.UtcNow);
+                _updatePolicyState = decision.State;
+                if (decision.Decision == UpdatePolicyDecision.AllowBusiness) return true;
+                var canUpdate = decision.Decision == UpdatePolicyDecision.ForceUpdate && result.Outcome == UpdateCheckOutcome.UpdateAvailable && result.Release is not null;
+                if (decision.State.AutoContinue && canUpdate && PrepareStartupUpdate(result, currentVersion)) return false;
+                var action = WpfDialogService.ShowStartupUpdateGate(canUpdate ? "必须更新" : "必须联网验证版本", canUpdate ? "必须更新后才能继续使用。" : "版本状态无法可信确认，软件不会开放业务。请恢复网络后重试或退出软件。", canUpdate);
+                if (action == StartupUpdateGateAction.Exit) { Shutdown(); return false; }
+                if (action == StartupUpdateGateAction.Update && PrepareStartupUpdate(result, currentVersion)) return false;
+            }
+            catch (Exception exception)
+            {
+                _logger?.TryWrite("error", "startup_update_policy_failed", "更新策略无法持久化，已停止业务。", exception.ToString());
+                WpfDialogService.ShowStartupUpdateGate("更新策略错误", "更新策略无法安全保存，软件不会开放业务。", false);
+                Shutdown(1); return false;
+            }
+        }
+    }
+
+    private bool PrepareStartupUpdate(UpdateCheckResult result, Version currentVersion)
+    {
+        try
+        {
+            if (_updatePolicyStore is null || _updatePolicyState is null || result.Release is null) return false;
+            _updatePolicyState = UpdatePolicyGate.EnableAutoContinue(_updatePolicyStore, _updatePolicyState);
+            var downloader = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics);
+            var package = downloader.PrepareAsync(result.Release, currentVersion, null, CancellationToken.None).GetAwaiter().GetResult();
+            if (package.Outcome != UpdatePackageOutcome.Verified || package.Package is null) return false;
+            using var parent = Process.GetCurrentProcess();
+            var prepared = new UpdateInstallationPreparer(downloader).Prepare(package.Package, parent, CancellationToken.None);
+            if (Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) is null) return false;
+            _explicitExit = true; Shutdown(); return true;
+        }
+        catch (Exception exception) { _logger?.TryWrite("error", "startup_forced_update_prepare_failed", "强制更新准备失败，仍保持阻断。", exception.ToString()); return false; }
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

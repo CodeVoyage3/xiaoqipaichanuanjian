@@ -11,13 +11,15 @@ namespace StoreExpiryInspector.Application.Updates;
 public enum UpdateCheckOutcome
 {
     UpdateAvailable, UpToDate, NoPublishedRelease, RemoteOlder,
-    NetworkUnavailable, RateLimited, InvalidRemoteMetadata, Cancelled
+    NetworkUnavailable, RateLimited, InvalidRemoteMetadata, Cancelled = 7,
+    SecurityFailure = 8, NoLegalUpgradePath = 9
 }
 
 public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null, CheckedRelease? Release = null)
 {
     public static UpdateCheckResult From(UpdateCheckOutcome outcome, Version current) => new(outcome, current);
 }
+public sealed record StableReleaseListResult(UpdateCheckOutcome Outcome, IReadOnlyList<CheckedRelease> Releases);
 
 public sealed class GitHubReleaseUpdateChecker
 {
@@ -96,6 +98,44 @@ public sealed class GitHubReleaseUpdateChecker
         catch (IOException) { return UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, currentVersion); }
         catch (JsonException) { return UpdateCheckResult.From(UpdateCheckOutcome.InvalidRemoteMetadata, currentVersion); }
         catch (InvalidOperationException) { return UpdateCheckResult.From(UpdateCheckOutcome.InvalidRemoteMetadata, currentVersion); }
+    }
+
+    public async Task<StableReleaseListResult> ListStableReleasesAsync(CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(_timeout);
+        try
+        {
+            var uri = new Uri("https://api.github.com/repos/CodeVoyage3/xiaoqipaichanuanjian/releases?per_page=100");
+            using var response = await _client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            if (response.StatusCode is HttpStatusCode.Forbidden or (HttpStatusCode)429) return new(UpdateCheckOutcome.RateLimited, []);
+            if (!response.IsSuccessStatusCode) return new(UpdateCheckOutcome.NetworkUnavailable, []);
+            await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+            using var data = new MemoryStream(); var buffer = new byte[8192];
+            for (int read; (read = await stream.ReadAsync(buffer, timeout.Token)) > 0;)
+            {
+                if (data.Length + read > 1024 * 1024) return new(UpdateCheckOutcome.InvalidRemoteMetadata, []);
+                data.Write(buffer, 0, read);
+            }
+            using var json = JsonDocument.Parse(data.ToArray());
+            if (json.RootElement.ValueKind != JsonValueKind.Array) return new(UpdateCheckOutcome.InvalidRemoteMetadata, []);
+            var releases = new List<CheckedRelease>();
+            foreach (var item in json.RootElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object || !IsFalse(item, "draft") || !IsFalse(item, "prerelease")) continue;
+                if (!item.TryGetProperty("id", out var id) || !id.TryGetInt64(out var releaseId) || releaseId <= 0 || !item.TryGetProperty("tag_name", out var tag) || tag.ValueKind != JsonValueKind.String || !TryParseTag(tag.GetString(), out var version) || !item.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) continue;
+                var names = new List<string>();
+                foreach (var asset in assets.EnumerateArray())
+                    if (asset.TryGetProperty("name", out var name) && name.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(name.GetString())) names.Add(name.GetString()!); else { names.Clear(); break; }
+                if (names.Count == assets.GetArrayLength() && names.Distinct(StringComparer.Ordinal).Count() == names.Count) releases.Add(new(version, releaseId, tag.GetString()!, names));
+            }
+            return releases.GroupBy(item => item.Version).Any(group => group.Count() != 1) ? new(UpdateCheckOutcome.InvalidRemoteMetadata, []) : new(UpdateCheckOutcome.UpToDate, releases);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return new(UpdateCheckOutcome.Cancelled, []); }
+        catch (OperationCanceledException) { return new(UpdateCheckOutcome.NetworkUnavailable, []); }
+        catch (HttpRequestException) { return new(UpdateCheckOutcome.NetworkUnavailable, []); }
+        catch (IOException) { return new(UpdateCheckOutcome.NetworkUnavailable, []); }
+        catch (JsonException) { return new(UpdateCheckOutcome.InvalidRemoteMetadata, []); }
     }
 
     public static bool TryGetCurrentVersion(out Version version)

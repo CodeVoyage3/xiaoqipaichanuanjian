@@ -8,6 +8,8 @@ using StoreExpiryInspector.Application.Tasks;
 
 namespace StoreExpiryInspector.UI;
 
+internal enum StartupUpdateGateAction { Exit, Retry, Update }
+
 internal enum WpfDialogKind
 {
     Information,
@@ -18,6 +20,27 @@ internal enum WpfDialogKind
 
 internal static class WpfDialogService
 {
+    public static StartupUpdateGateAction ShowStartupUpdateGate(string title, string message, bool canUpdate)
+    {
+        var dialog = new Window { Title = title, Width = 460, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterScreen, ShowInTaskbar = true };
+        var panel = new StackPanel { Margin = new Thickness(24) };
+        panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, FontSize = 15 });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
+        var exit = new Button { Content = "退出软件", Width = 88, IsCancel = true };
+        var retry = new Button { Content = canUpdate ? "重新检查" : "重试", Width = 88, Margin = new Thickness(8, 0, 0, 0) };
+        exit.Click += (_, _) => dialog.DialogResult = false;
+        retry.Click += (_, _) => { dialog.Tag = StartupUpdateGateAction.Retry; dialog.DialogResult = true; };
+        if (canUpdate)
+        {
+            var update = new Button { Content = "立即更新", Width = 88, Margin = new Thickness(8, 0, 0, 0) };
+            update.Click += (_, _) => { dialog.Tag = StartupUpdateGateAction.Update; dialog.DialogResult = true; };
+            buttons.Children.Add(update);
+        }
+        buttons.Children.Add(exit); buttons.Children.Add(retry); panel.Children.Add(buttons); dialog.Content = panel;
+        dialog.Closing += (_, args) => { if (dialog.DialogResult is null) { args.Cancel = true; dialog.DialogResult = false; } };
+        dialog.ShowDialog();
+        return dialog.Tag is StartupUpdateGateAction action ? action : StartupUpdateGateAction.Exit;
+    }
     public static void ShowUpdateAvailable(Window owner, UpdateNotificationViewModel model)
     {
         var dialog = new Window { Owner = owner, Title = "发现新版本", Width = 460, MaxHeight = 420, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
