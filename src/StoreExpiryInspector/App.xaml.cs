@@ -30,6 +30,7 @@ public partial class App : System.Windows.Application
     private UpdateNetworkDiagnostics? _updateDiagnostics;
     private UpdatePolicyStore? _updatePolicyStore;
     private UpdatePolicyState? _updatePolicyState;
+    private bool _normalLaunchAcknowledged;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
@@ -140,7 +141,16 @@ public partial class App : System.Windows.Application
             StartUpgradeVerification(operationId, schemaToken, schemaToken is not null && !sourceVerification);
             return;
         }
-        if (!PassStartupUpdatePolicy()) return;
+        if (RuntimeDataRoot.NormalLaunchOperationId is { } normalLaunchOperation)
+        {
+            try { CompleteNormalLaunchHandshake(normalLaunchOperation); }
+            catch (Exception exception) { _logger.TryWrite("error", "normal_launch_loaded_failed", "普通启动加载确认无效。", exception.ToString()); Shutdown(1); return; }
+        }
+        var bypassStartupPolicy = RuntimeDataRoot.IsSmokeRun;
+#if S9T07_TEST
+        bypassStartupPolicy |= RuntimeDataRoot.IsTestUpdateInstall;
+#endif
+        if (!bypassStartupPolicy && !PassStartupUpdatePolicy()) return;
         try
         {
             DatabaseInitializer.Initialize();
@@ -187,7 +197,7 @@ public partial class App : System.Windows.Application
         {
             MainWindow = new UI.MainWindow(_updateDiagnostics);
         }
-        if (RuntimeDataRoot.NormalLaunchOperationId is { } loadedOperation)
+        if (!_normalLaunchAcknowledged && RuntimeDataRoot.NormalLaunchOperationId is { } loadedOperation)
             MainWindow.Loaded += (_, _) => { try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, loadedOperation, RuntimeDataRoot.NormalLaunchToken!); } catch { Shutdown(1); } };
         MainWindow.Show();
 #if S9T07_TEST
@@ -489,6 +499,23 @@ public partial class App : System.Windows.Application
                 }
             }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }), TimeSpan.FromHours(6));
         _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
+    }
+
+    private void CompleteNormalLaunchHandshake(string operationId)
+    {
+        // Stage9 requires a live WPF load acknowledgement before any ordinary
+        // startup work.  This tiny non-business window performs only that frozen
+        // handshake; it is closed before S13 can evaluate or open the shell.
+        Exception? failure = null;
+        var handshake = new Window { Width = 1, Height = 1, Left = -10000, Top = -10000, WindowStyle = WindowStyle.None, ShowInTaskbar = false, ShowActivated = false };
+        handshake.Loaded += (_, _) =>
+        {
+            try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, operationId, RuntimeDataRoot.NormalLaunchToken!); _normalLaunchAcknowledged = true; }
+            catch (Exception exception) { failure = exception; }
+        };
+        handshake.Show();
+        handshake.Close();
+        if (failure is not null || !_normalLaunchAcknowledged) throw failure ?? new InvalidDataException("普通启动加载确认无效。");
     }
 
     private bool PassStartupUpdatePolicy()

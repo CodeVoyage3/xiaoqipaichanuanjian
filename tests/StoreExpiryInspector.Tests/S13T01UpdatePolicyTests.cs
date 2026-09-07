@@ -55,6 +55,67 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
         Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now).Decision);
     }
 
+    [Fact]
+    public void DoublePolicyFileDeletionOnExistingDataRootNeverBecomesFreshGrace()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        _ = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 5)), now);
+        Directory.CreateDirectory(Path.Combine(_root, "data")); File.WriteAllText(Path.Combine(_root, "data", "app.db"), "existing-data-presence-only");
+        File.Delete(Path.Combine(_root, "updates", "update-policy-state.json")); File.Delete(Path.Combine(_root, "updates", "update-policy-anchor.json"));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now.AddMinutes(1)).Decision);
+    }
+
+    [Fact]
+    public void RemoteOlderCannotClearPersistedForcedState()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        _ = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 5), new Version(1, 0, 6)), now);
+        var result = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.RemoteOlder, new Version(1, 0, 5)), now.AddMinutes(1));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, result.Decision); Assert.True(result.State.ForcedUpdateRequired);
+    }
+
+    [Fact]
+    public void AutoContinueSurvivesReloadAndOnlyTrustedLatestConsumesIt()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        var forced = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 5), new Version(1, 0, 6)), now);
+        _ = UpdatePolicyGate.EnableAutoContinue(store, forced.State);
+        Assert.True(store.LoadOrCreate(now.AddMinutes(1)).AutoContinue);
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now.AddMinutes(2)).Decision);
+        var final = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 6)), now.AddMinutes(3));
+        Assert.False(final.State.AutoContinue); Assert.False(final.State.ForcedUpdateRequired);
+    }
+
+    [Theory]
+    [InlineData(UpdateCheckOutcome.NetworkUnavailable, UpdatePolicyDecision.AllowBusiness)]
+    [InlineData(UpdateCheckOutcome.RateLimited, UpdatePolicyDecision.AllowBusiness)]
+    [InlineData(UpdateCheckOutcome.Cancelled, UpdatePolicyDecision.RecheckRequired)]
+    [InlineData(UpdateCheckOutcome.InvalidRemoteMetadata, UpdatePolicyDecision.RecheckRequired)]
+    [InlineData(UpdateCheckOutcome.NoPublishedRelease, UpdatePolicyDecision.RecheckRequired)]
+    [InlineData(UpdateCheckOutcome.RemoteOlder, UpdatePolicyDecision.RecheckRequired)]
+    [InlineData(UpdateCheckOutcome.SecurityFailure, UpdatePolicyDecision.RecheckRequired)]
+    [InlineData(UpdateCheckOutcome.NoLegalUpgradePath, UpdatePolicyDecision.RecheckRequired)]
+    public void FreshPolicyClassifiesOnlyTemporaryFailuresAsGrace(UpdateCheckOutcome outcome, UpdatePolicyDecision expected)
+    {
+        var result = UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(outcome, new Version(1, 0, 5)), DateTime.UnixEpoch.AddDays(10));
+        Assert.Equal(expected, result.Decision);
+    }
+
+    [Theory]
+    [InlineData(UpdateCheckOutcome.NetworkUnavailable)]
+    [InlineData(UpdateCheckOutcome.RateLimited)]
+    [InlineData(UpdateCheckOutcome.InvalidRemoteMetadata)]
+    [InlineData(UpdateCheckOutcome.SecurityFailure)]
+    [InlineData(UpdateCheckOutcome.NoLegalUpgradePath)]
+    [InlineData(UpdateCheckOutcome.RemoteOlder)]
+    public void PersistedForcedStateBlocksEveryNonTrustedFollowup(UpdateCheckOutcome outcome)
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        _ = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 5), new Version(1, 0, 6)), now);
+        var result = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(outcome, new Version(1, 0, 5)), now.AddMinutes(1));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, result.Decision); Assert.True(result.State.ForcedUpdateRequired);
+    }
+
     [Theory]
     [InlineData(UpdateCheckOutcome.InvalidRemoteMetadata)]
     [InlineData(UpdateCheckOutcome.SecurityFailure)]

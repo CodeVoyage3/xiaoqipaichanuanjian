@@ -47,6 +47,9 @@ public sealed record UpdatePackageOptions(RSAParameters? TrustedPublicKey = null
 
 public sealed class SignedUpdatePackageDownloader
 {
+    // Stage9's schema-1 wire implementation explicitly supports protocol 1
+    // and 2.  Preserve the signed minimum; do not turn it into a default.
+    private const int HighestSupportedProtocolVersion = 2;
     private const string Owner = "CodeVoyage3";
     private const string Repo = "xiaoqipaichanuanjian";
     private const long PackageLimit = 256L * 1024 * 1024;
@@ -102,7 +105,8 @@ public sealed class SignedUpdatePackageDownloader
             var signature = await ReadSmallAsync("Signature", AssetUri(release, "update-manifest.sig"), 1024, UpdatePackageOutcome.SignatureMissing, cancellationToken);
             if (!anchor.VerifyData(raw, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) return MetadataFail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名无效。");
             if (!TryParseManifest(raw, out var manifest)) return MetadataFail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。");
-            if (manifest.MinimumProtocolVersion is < 1 or > 2) return MetadataFail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
+            if (!HasSupportedSchema(raw)) return MetadataFail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
+            if (manifest.MinimumProtocolVersion is < 1 or > HighestSupportedProtocolVersion) return MetadataFail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
             if (manifest.Version != release.Version || manifest.ReleaseTag != release.Tag || manifest.Repository != Owner + "/" + Repo || manifest.Channel != "stable" || manifest.Rid != "win-x64") return MetadataFail(UpdatePackageOutcome.VersionMismatch, "更新清单身份不一致。");
             var package = $"StoreExpiryInspector-{manifest.Version:0.0.0}-win-x64.zip";
             if (manifest.PackageName != package || release.AssetNames.Count(name => name == package) != 1 || manifest.PackageBytes > PackageLimit) return MetadataFail(UpdatePackageOutcome.AssetMissing, "发行中没有唯一匹配的更新包。");
@@ -147,9 +151,9 @@ public sealed class SignedUpdatePackageDownloader
             var signature = await ReadSmallAsync("Signature", signatureUri, 1024, UpdatePackageOutcome.SignatureMissing, cancellationToken);
             using var verifier = _options.CreateVerifier()!;
             if (!verifier.VerifyData(rawManifest, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名无效。");
-            try { using var schema = JsonDocument.Parse(rawManifest); if (schema.RootElement.ValueKind != JsonValueKind.Object || !schema.RootElement.TryGetProperty("schemaVersion", out var schemaVersion) || schemaVersion.ValueKind != JsonValueKind.Number || !schemaVersion.TryGetInt32(out var value)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); if (value != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。"); } catch (JsonException) { return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); }
             if (!TryParseManifest(rawManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。");
-            if (manifest.MinimumProtocolVersion is < 1 or > 2) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
+            if (!HasSupportedSchema(rawManifest)) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
+            if (manifest.MinimumProtocolVersion is < 1 or > HighestSupportedProtocolVersion) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
             if (manifest.Version != release.Version || manifest.ReleaseTag != release.Tag || manifest.Repository != Owner + "/" + Repo) return Fail(UpdatePackageOutcome.VersionMismatch, "更新清单与发行版本不一致。");
             if (manifest.Rid != "win-x64") return Fail(UpdatePackageOutcome.UnsupportedPlatform, "更新包平台不受支持。");
             if (manifest.Channel != "stable") return Fail(UpdatePackageOutcome.InvalidManifest, "更新通道无效。");
@@ -194,7 +198,8 @@ public sealed class SignedUpdatePackageDownloader
         {
             using var verifier = _options.CreateVerifier();
             if (verifier is null || package.SignedManifest is null || package.ManifestSignature is null || package.Release is null) return Fail(UpdatePackageOutcome.SigningNotConfigured, "更新包缺少可重验的发行身份。");
-            if (!verifier.VerifyData(package.SignedManifest, package.ManifestSignature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss) || !TryParseManifest(package.SignedManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名或格式无效。");
+            if (!verifier.VerifyData(package.SignedManifest, package.ManifestSignature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss) || !HasSupportedSchema(package.SignedManifest) || !TryParseManifest(package.SignedManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名或格式无效。");
+            if (manifest.MinimumProtocolVersion is < 1 or > HighestSupportedProtocolVersion || package.MinimumProtocolVersion != manifest.MinimumProtocolVersion) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
             if (manifest.Version != package.Version || manifest.ReleaseTag != package.Release.Tag || manifest.Repository != Owner + "/" + Repo || manifest.Rid != "win-x64" || manifest.MinimumProtocolVersion != package.MinimumProtocolVersion || manifest.TargetMigrations.Count != package.TargetMigrations.Count || !manifest.TargetMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal) || manifest.MinVersion != package.SourceMinVersion || manifest.MaxVersion != package.SourceMaxVersion || manifest.MinMigration != package.SourceMinMigration || manifest.MaxMigration != package.SourceMaxMigration) return Fail(UpdatePackageOutcome.VersionMismatch, "更新包身份在安装前发生变化。");
             if (!File.Exists(package.PackagePath) || !string.Equals(manifest.PackageHash, package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             using var packageStream = File.OpenRead(package.PackagePath);
@@ -482,6 +487,15 @@ public sealed class SignedUpdatePackageDownloader
             manifest = new(version, String(root, "releaseTag"), String(root, "repository"), String(root, "channel"), String(root, "rid"), Int(root, "minimumProtocolVersion"), String(package, "fileName"), Long(package, "bytes"), hash, migrations!, min, max, String(source, "minMigration"), String(source, "maxMigration")); return true;
         }
         catch { return false; }
+    }
+    private static bool HasSupportedSchema(byte[] bytes)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(bytes);
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("schemaVersion", out var schemaVersion) && schemaVersion.ValueKind == JsonValueKind.Number && schemaVersion.TryGetInt32(out var value) && value == 1;
+        }
+        catch (JsonException) { return false; }
     }
     private static bool NoDuplicateProperties(JsonElement element) => element.ValueKind switch { JsonValueKind.Object => element.EnumerateObject().GroupBy(property => property.Name, StringComparer.Ordinal).All(group => group.Count() == 1 && NoDuplicateProperties(group.First().Value)), JsonValueKind.Array => element.EnumerateArray().All(NoDuplicateProperties), _ => true };
     private static JsonElement Object(JsonElement element, string name) => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Object ? value : throw new JsonException();

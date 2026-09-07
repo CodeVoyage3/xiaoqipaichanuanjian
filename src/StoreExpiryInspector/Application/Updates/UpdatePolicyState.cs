@@ -22,11 +22,13 @@ public sealed class UpdatePolicyStore
 {
     private const int Schema = 1;
     private const string Product = "StoreExpiryInspector";
+    private readonly string _root;
     private readonly string _statePath;
     private readonly string _anchorPath;
 
     public UpdatePolicyStore(string root)
     {
+        _root = root;
         var updates = Path.Combine(root, "updates");
         _statePath = Path.Combine(updates, "update-policy-state.json");
         _anchorPath = Path.Combine(updates, "update-policy-anchor.json");
@@ -37,6 +39,7 @@ public sealed class UpdatePolicyStore
         var hasState = File.Exists(_statePath); var hasAnchor = File.Exists(_anchorPath);
         if (!hasState && !hasAnchor)
         {
+            if (!CanCreateFreshState()) throw new InvalidDataException("更新策略状态缺失，必须联网重新验证。");
             var state = new UpdatePolicyState(Schema, Product, Guid.NewGuid().ToString("N"), utcNow, utcNow, null, null, false, false, null);
             Save(state); return state;
         }
@@ -66,6 +69,16 @@ public sealed class UpdatePolicyStore
     }
 
     private sealed record Anchor(int SchemaVersion, string ProductId, string StateId);
+
+    // A pre-Stage13 installation has its durable SQLite file.  Do not open,
+    // query or hash it here: presence alone prevents policy-file deletion from
+    // becoming a new 24-hour grace period.
+    private bool CanCreateFreshState()
+    {
+        if (File.Exists(Path.Combine(_root, "data", "app.db"))) return false;
+        var updates = Path.Combine(_root, "updates");
+        return !Directory.Exists(updates) || !Directory.EnumerateFileSystemEntries(updates).Any();
+    }
 
     private static bool ValidRequiredVersion(string? value) => string.IsNullOrWhiteSpace(value) ||
         Version.TryParse(value, out var version) && version is not null && version.Build >= 0 && version.Revision < 0;
