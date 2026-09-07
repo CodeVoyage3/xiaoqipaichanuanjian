@@ -28,14 +28,14 @@
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="16">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <StackPanel>
             <TextBlock Text="排查结果确认" FontSize="20" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding PreviewSummaryText}" Margin="0,4,0,0" FontWeight="SemiBold" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding StatusText}" Margin="0,3,0,0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding PreviewIssueText}" Margin="0,4,0,0" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
         </StackPanel>
-        <DataGrid Grid.Row="1" Margin="0,8" MaxHeight="280" VerticalAlignment="Top" ItemsSource="{Binding PreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
+        <DataGrid Grid.Row="1" Margin="0,8" MaxHeight="280" ItemsSource="{Binding PreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
                   GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}" HeadersVisibility="Column" SelectionUnit="Cell" SelectionMode="Single"
                   EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"

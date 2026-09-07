@@ -1,3 +1,11 @@
+## 2026-09-07 最小实施与独立源码门禁通过
+Sol独立专项/必要邻近回归178/178，Release build 0 warning/0 error，EF NO_MODEL_DRIFT，migrationCount9，diff-check与限定secret scan通过。生产仅3个UI文件；未跑full，无扩大理由。
+详见 .ai-dev/ACCEPTANCE/S12-T01-SOL.md。S12-T01仍IN_PROGRESS/NOT_ACCEPTED；候选publish/package/signature/hash与候选升级未完成，尚未准备用户GUI候选；正式发布和POST-RELEASE真实在线升级亦未进行。
+## 2026-09-07 当前：Stage12 / S12-T01 实施中
+
+Stage11 = CLOSED；v1.0.3 = stable/latest，source 651bd1074a6a95f9cfdad70a9e6e7df6ed0d6df7。
+Stage12 = IN_PROGRESS；S12-T01 = IN_PROGRESS / NOT_ACCEPTED，目标v1.0.4。
+用户已通过接任报告并授权全新Terra最小实施；专项先行，默认不跑full。范围和停止点见 TASKS/S12-T01.md。发布前候选验收与发布后正式在线升级分别记录。以下旧状态不代表当前状态。
 # 最新交接
 
 ## 2026-09-07：S11-T01 与 Stage11 已按用户人工升级回执关闭

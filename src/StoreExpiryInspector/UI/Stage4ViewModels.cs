@@ -1176,7 +1176,11 @@ public sealed class ShellViewModel : ViewModelBase
                 ? FailClosedLoader<ImportConfirmationContract, DateTime, ConfirmedImportResult>("importExecutor")
                 : null),
             refreshDashboard: Dashboard.LoadAsync,
-            refreshPendingTasks: PendingTasks.LoadAsync,
+            refreshPendingTasks: async () =>
+            {
+                await PendingTasks.LoadAsync();
+                await TodayInspection!.LoadAsync();
+            },
             logException: logException ?? LogImportException,
             utcNow: utcNow);
         TodayInspection = new TodayInspectionViewModel(

@@ -32,7 +32,7 @@ internal static class WpfDialogService
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
         var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
-        var cancel = new Button { Content = "取消准备", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "SecondaryButtonStyle") };
+        var cancel = new Button { Content = "取消更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "SecondaryButtonStyle") };
         later.Click += (_, _) => { model.DismissCommand.Execute(null); dialog.Close(); };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
         cancel.Click += (_, _) => model.CancelCommand.Execute(null);

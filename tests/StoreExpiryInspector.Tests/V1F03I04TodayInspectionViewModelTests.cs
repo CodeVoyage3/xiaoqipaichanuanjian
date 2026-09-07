@@ -197,9 +197,11 @@ public sealed class V1F03I04TodayInspectionViewModelTests
 
         Assert.Equal(new[] { "全部", "宠物", "食品" }, vm.Categories);
         vm.SelectedCategory = "食品";
+        await WaitUntil(() => !vm.IsLoadingTasks);
         vm.SelectAllCommand.Execute(null);
         Assert.Equal(new long[] { 1, 3 }, vm.VisibleTasks.Where(task => task.IsSelected).Select(task => task.TaskId));
         vm.SelectedCategory = "宠物";
+        await WaitUntil(() => !vm.IsLoadingTasks);
         Assert.False(vm.VisibleTasks.Single().IsSelected);
         vm.VisibleTasks.Single().IsSelected = true;
         await vm.ExportAsync("C:\\plan.xlsx");
@@ -364,17 +366,17 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             loadOpenTaskIds: ids => ids.Where(openIds.Contains).ToArray());
 
         vm.SelectedCategory = "食品";
-        await WaitUntil(() => vm.Tasks.Count == 50 && vm.SelectedCategory == "食品");
+        await WaitUntil(() => !vm.IsLoadingTasks && vm.Tasks.Count == 50 && vm.SelectedCategory == "食品");
         vm.SelectAllCommand.Execute(null);
         await WaitUntil(() => vm.SelectedCount == 51);
         vm.SelectedCategory = "饮料";
-        await WaitUntil(() => vm.Tasks.Count == 1 && vm.Tasks[0].TaskId == 99);
+        await WaitUntil(() => !vm.IsLoadingTasks && vm.Tasks.Count == 1 && vm.Tasks[0].TaskId == 99);
         vm.SelectAllCommand.Execute(null);
         await WaitUntil(() => vm.SelectedCount == 52);
         vm.SelectedCategory = "食品";
-        await WaitUntil(() => vm.Tasks.Count == 50 && vm.SelectedCategory == "食品");
+        await WaitUntil(() => !vm.IsLoadingTasks && vm.Tasks.Count == 50 && vm.SelectedCategory == "食品");
         vm.NextPageCommand.Execute(null);
-        await WaitUntil(() => vm.CurrentPage == 2 && vm.Tasks.Single().TaskId == 51);
+        await WaitUntil(() => !vm.IsLoadingTasks && vm.CurrentPage == 2 && vm.Tasks.Count == 1 && vm.Tasks[0].TaskId == 51);
         Assert.True(vm.Tasks.Single().IsSelected);
 
         await vm.ExportAsync("test.xlsx");
@@ -633,8 +635,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("ToolTip\" Value=\"{Binding Reason}\"", window, StringComparison.Ordinal);
         Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
         Assert.Contains("MaxHeight=\"280\"", window, StringComparison.Ordinal);
-        Assert.Contains("VerticalAlignment=\"Top\"", window, StringComparison.Ordinal);
-        Assert.DoesNotContain("<RowDefinition Height=\"*\"/>", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("DataGrid Grid.Row=\"1\" Margin=\"0,8\" MaxHeight=\"280\" VerticalAlignment=\"Top\"", window, StringComparison.Ordinal);
+        Assert.Contains("<RowDefinition Height=\"*\"/>", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"不晚于今天\"", window, StringComparison.Ordinal);
         Assert.Contains("HasIssue", window, StringComparison.Ordinal);
         Assert.Contains("DatePicker", window, StringComparison.Ordinal);

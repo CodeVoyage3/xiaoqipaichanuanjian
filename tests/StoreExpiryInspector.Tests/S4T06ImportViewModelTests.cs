@@ -4,6 +4,7 @@ using System.Security;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Imports;
+using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.UI;
 using Xunit;
 
@@ -11,6 +12,104 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class S4T06ImportViewModelTests
 {
+    [Fact]
+    public async Task FirstImportAppearsWhenTodayInspectionIsOpenedForTheFirstTime()
+    {
+        using var fixture = TestFixture.Create("2026-09-10");
+        var shell = CreateShell(fixture);
+
+        await shell.StartupLoadTask;
+        await shell.Import.SelectFileAsync(fixture.Path);
+        await shell.Import.ConfirmAsync();
+        Assert.Equal(ImportPageState.Succeeded, shell.Import.State);
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        await WaitUntil(() => shell.TodayInspection.HasLoadedTasks && !shell.TodayInspection.IsLoadingTasks);
+
+        Assert.Single(shell.TodayInspection.Tasks);
+        Assert.Equal(1, shell.Dashboard.OpenTaskCount);
+    }
+
+    [Theory]
+    [InlineData("食品", "food", 5, "2026-12-31")]
+    [InlineData("食品", "food", 0, "2026-09-10")]
+    [InlineData("应季搭配", "seasonal_assortment", 5, "2026-09-10")]
+    [InlineData("赠品小样", "gift_sample", 5, "2026-09-10")]
+    public async Task ImportWithoutEligibleTodayTasksKeepsCurrentSessionEmpty(string category, string expectedCategoryCode, int stock, string expiryDate)
+    {
+        using var fixture = TestFixture.Create(expiryDate, category, stock);
+        var shell = CreateShell(fixture);
+
+        await shell.StartupLoadTask;
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        await WaitUntil(() => shell.TodayInspection.HasLoadedTasks && !shell.TodayInspection.IsLoadingTasks);
+        await shell.Import.SelectFileAsync(fixture.Path);
+        await shell.Import.ConfirmAsync();
+        Assert.Equal(ImportPageState.Succeeded, shell.Import.State);
+
+        using (var context = fixture.Database.Open())
+        {
+            var product = Assert.Single(context.Products);
+            Assert.Equal(expectedCategoryCode, product.CategoryCode);
+            Assert.Equal(stock, product.EffectiveStockQty);
+            Assert.Empty(context.Tasks.Where(task => task.Status == "open"));
+        }
+        Assert.Empty(shell.TodayInspection.Tasks);
+        Assert.Equal(0, shell.Dashboard.OpenTaskCount);
+    }
+
+    [Fact]
+    public async Task RepeatedTodayRefreshAndPageChangesDoNotDuplicateImportedTasks()
+    {
+        using var fixture = TestFixture.Create("2026-09-10");
+        var shell = CreateShell(fixture);
+
+        await shell.StartupLoadTask;
+        await shell.Import.SelectFileAsync(fixture.Path);
+        await shell.Import.ConfirmAsync();
+        Assert.Equal(ImportPageState.Succeeded, shell.Import.State);
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        await WaitUntil(() => shell.TodayInspection.HasLoadedTasks && !shell.TodayInspection.IsLoadingTasks);
+        await shell.TodayInspection.LoadAsync();
+        await shell.NavigateToAsync(ShellPage.Dashboard);
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+
+        using (var context = fixture.Database.Open())
+        {
+            Assert.Single(context.Tasks);
+            Assert.Single(context.Tasks.Where(task => task.Status == "open"));
+        }
+        Assert.Single(shell.TodayInspection.Tasks);
+        Assert.Equal(1, shell.Dashboard.OpenTaskCount);
+    }
+
+    [Fact]
+    public async Task SecondImportWithZeroStockClosesOldTaskAndClearsTodaySession()
+    {
+        using var fixture = TestFixture.Create("2026-09-10");
+        var shell = CreateShell(fixture);
+
+        await shell.StartupLoadTask;
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        await WaitUntil(() => shell.TodayInspection.HasLoadedTasks && !shell.TodayInspection.IsLoadingTasks);
+        await shell.Import.SelectFileAsync(fixture.Path);
+        await shell.Import.ConfirmAsync();
+        Assert.Equal(ImportPageState.Succeeded, shell.Import.State);
+        Assert.Single(shell.TodayInspection.Tasks);
+
+        var zeroStockPath = fixture.CreateWorkbook("zero-stock.xlsx", includeRow: true, productCode: "P-A", expiryDate: "2026-09-10", stock: 0);
+        await shell.Import.SelectFileAsync(zeroStockPath);
+        await shell.Import.ConfirmAsync();
+        Assert.Equal(ImportPageState.Succeeded, shell.Import.State);
+
+        using (var context = fixture.Database.Open())
+        {
+            Assert.Empty(context.Tasks.Where(task => task.Status == "open"));
+            Assert.Equal(0, context.Products.Single().EffectiveStockQty);
+        }
+        Assert.Empty(shell.TodayInspection.Tasks);
+        Assert.Equal(0, shell.Dashboard.OpenTaskCount);
+    }
+
     [Fact]
     public void StartsWithoutAFileAndCannotConfirm()
     {
@@ -20,6 +119,54 @@ public sealed class S4T06ImportViewModelTests
         Assert.Equal("未选择文件", vm.SelectedFileName);
         Assert.False(vm.CanConfirm);
         Assert.False(vm.ConfirmCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task FirstImportRefreshesAnAlreadyLoadedEmptyTodayInspectionWithoutRestart()
+    {
+        using var fixture = TestFixture.Create("2026-09-10");
+        var query = new InspectionTaskQuery();
+        var todayLoadTotals = new List<int>();
+        var shell = new ShellViewModel(
+            dashboardLoader: () =>
+            {
+                using var context = fixture.Database.Open();
+                return query.Dashboard(context);
+            },
+            taskLoader: request =>
+            {
+                using var context = fixture.Database.Open();
+                var result = query.SearchOpenTasks(context, request);
+                if (request.PageSize == 50)
+                {
+                    lock (todayLoadTotals) todayLoadTotals.Add(result.TotalCount);
+                }
+                return result;
+            },
+            importParser: fixture.Coordinator.Parse,
+            importPreviewConfirmation: fixture.Coordinator.Confirm,
+            importExecutor: fixture.Coordinator.Execute,
+            utcNow: () => fixture.UtcNow);
+
+        await shell.StartupLoadTask;
+        await shell.NavigateToAsync(ShellPage.TodayInspection);
+        await WaitUntil(() => shell.TodayInspection.HasLoadedTasks && !shell.TodayInspection.IsLoadingTasks);
+        Assert.True(shell.TodayInspection.HasLoadedTasks);
+        Assert.Empty(shell.TodayInspection.Tasks);
+
+        await shell.Import.SelectFileAsync(fixture.Path);
+        await shell.Import.ConfirmAsync();
+
+        Assert.Equal(ImportPageState.Succeeded, shell.Import.State);
+        Assert.False(shell.Import.HasRefreshError, shell.Import.RefreshErrorMessage);
+        using (var context = fixture.Database.Open())
+        {
+            var product = Assert.Single(context.Products);
+            Assert.True(context.Tasks.Any(), $"policy={product.PolicyCode}; status={product.ExpiryManagementStatus}; stock={product.EffectiveStockQty}; expiry={context.Batches.Single().ExpiryDate:yyyy-MM-dd}");
+        }
+        Assert.Equal(new[] { 0, 0, 1, 1 }, todayLoadTotals);
+        Assert.Single(shell.TodayInspection.Tasks);
+        Assert.Equal(1, shell.Dashboard.OpenTaskCount);
     }
 
     [Fact]
@@ -475,6 +622,26 @@ public sealed class S4T06ImportViewModelTests
         Assert.True(File.Exists(context.BackupRecords.AsNoTracking().Single().FilePath));
     }
 
+    private static ShellViewModel CreateShell(TestFixture fixture)
+    {
+        var query = new InspectionTaskQuery();
+        return new ShellViewModel(
+            dashboardLoader: () =>
+            {
+                using var context = fixture.Database.Open();
+                return query.Dashboard(context);
+            },
+            taskLoader: request =>
+            {
+                using var context = fixture.Database.Open();
+                return query.SearchOpenTasks(context, request);
+            },
+            importParser: fixture.Coordinator.Parse,
+            importPreviewConfirmation: fixture.Coordinator.Confirm,
+            importExecutor: fixture.Coordinator.Execute,
+            utcNow: () => fixture.UtcNow);
+    }
+
     private sealed class TestFixture : IDisposable
     {
         private TestFixture(string directory, string path, SqliteTestDatabase database, DataImportCoordinator coordinator)
@@ -495,7 +662,7 @@ public sealed class S4T06ImportViewModelTests
 
         public DateTime UtcNow => new(2026, 8, 28, 1, 2, 3, DateTimeKind.Utc);
 
-        public static TestFixture Create()
+        public static TestFixture Create(string expiryDate = "2026-12-31", string category = "食品", int stock = 5)
         {
             var directory = System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
@@ -505,7 +672,7 @@ public sealed class S4T06ImportViewModelTests
             var database = SqliteTestDatabase.Create();
             var snapshotDirectory = System.IO.Path.Combine(directory, "snapshots");
             var path = System.IO.Path.Combine(directory, "A.xlsx");
-            WriteWorkbook(path, includeRow: true, productCode: "P-A");
+            WriteWorkbook(path, includeRow: true, productCode: "P-A", expiryDate: expiryDate, category: category, stock: stock);
             var coordinator = new DataImportCoordinator(
                 database.Open,
                 snapshotDirectory,
@@ -514,10 +681,10 @@ public sealed class S4T06ImportViewModelTests
             return new(directory, path, database, coordinator);
         }
 
-        public string CreateWorkbook(string fileName, bool includeRow, string productCode = "P-A")
+        public string CreateWorkbook(string fileName, bool includeRow, string productCode = "P-A", string expiryDate = "2026-12-31", string category = "食品", int stock = 5)
         {
             var path = System.IO.Path.Combine(Directory, fileName);
-            WriteWorkbook(path, includeRow, productCode);
+            WriteWorkbook(path, includeRow, productCode, expiryDate, category, stock);
             return path;
         }
 
@@ -530,7 +697,7 @@ public sealed class S4T06ImportViewModelTests
             }
         }
 
-        private static void WriteWorkbook(string path, bool includeRow, string productCode)
+        private static void WriteWorkbook(string path, bool includeRow, string productCode, string expiryDate = "2026-12-31", string category = "食品", int stock = 5)
         {
             using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
             AddEntry(archive, "[Content_Types].xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>");
@@ -547,8 +714,8 @@ public sealed class S4T06ImportViewModelTests
             var row = includeRow
                 ? string.Concat(new[]
                 {
-                    "食品", productCode, $"B-{productCode[2..]}", "S4-T06 商品", "2026-01-01", "2026-12-31",
-                    "12", "M", "否", "3", "5"
+                    category, productCode, $"B-{productCode[2..]}", "S4-T06 商品", "2026-01-01", expiryDate,
+                    "12", "M", "否", "3", stock.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 }.Select((value, index) => InlineCell(index, 2, value)))
                 : string.Empty;
             AddEntry(
@@ -579,5 +746,15 @@ public sealed class S4T06ImportViewModelTests
 
             return result;
         }
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 100 && !condition(); attempt++)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.True(condition());
     }
 }
