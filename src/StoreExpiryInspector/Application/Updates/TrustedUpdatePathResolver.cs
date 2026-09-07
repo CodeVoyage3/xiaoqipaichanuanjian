@@ -30,19 +30,22 @@ public sealed class TrustedUpdatePathResolver
         if (authoritative.Outcome != UpdatePackageOutcome.Verified || authoritative.Metadata is null)
             return UpdateCheckResult.From(UpdateCheckOutcome.SecurityFailure, currentVersion);
         var listed = await _releases.ListStableReleasesAsync(cancellationToken);
-        if (listed.Outcome is UpdateCheckOutcome.NetworkUnavailable or UpdateCheckOutcome.RateLimited or UpdateCheckOutcome.Cancelled) return UpdateCheckResult.From(listed.Outcome, currentVersion);
-        if (listed.Outcome != UpdateCheckOutcome.UpToDate) return UpdateCheckResult.From(UpdateCheckOutcome.SecurityFailure, currentVersion);
+        if (listed.Outcome is UpdateCheckOutcome.NetworkUnavailable or UpdateCheckOutcome.RateLimited or UpdateCheckOutcome.Cancelled)
+            return new(listed.Outcome, currentVersion, latest.LatestVersion, TrustedHigherLatest: latest.LatestVersion > currentVersion);
+        if (listed.Outcome != UpdateCheckOutcome.UpToDate)
+            return new(UpdateCheckOutcome.SecurityFailure, currentVersion, latest.LatestVersion, TrustedHigherLatest: latest.LatestVersion > currentVersion);
         var trusted = new List<VerifiedReleaseMetadata> { authoritative.Metadata };
         foreach (var candidate in listed.Releases.OrderBy(item => item.Version))
         {
             if (candidate.Version == latest.LatestVersion) continue;
             var verified = await _packages.VerifyReleaseMetadataAsync(candidate, cancellationToken);
             if (verified.Outcome is UpdatePackageOutcome.NetworkUnavailable or UpdatePackageOutcome.RateLimited or UpdatePackageOutcome.Cancelled)
-                return UpdateCheckResult.From(verified.Outcome == UpdatePackageOutcome.RateLimited ? UpdateCheckOutcome.RateLimited : UpdateCheckOutcome.NetworkUnavailable, currentVersion);
+                return new(verified.Outcome == UpdatePackageOutcome.RateLimited ? UpdateCheckOutcome.RateLimited : verified.Outcome == UpdatePackageOutcome.Cancelled ? UpdateCheckOutcome.Cancelled : UpdateCheckOutcome.NetworkUnavailable, currentVersion, latest.LatestVersion, TrustedHigherLatest: latest.LatestVersion > currentVersion);
             if (verified.Outcome != UpdatePackageOutcome.Verified || verified.Metadata is null) continue; // Bad release is never a graph node.
             if (verified.Outcome == UpdatePackageOutcome.Verified && verified.Metadata is not null) trusted.Add(verified.Metadata);
         }
-        return ResolveVerifiedPath(currentVersion, currentMigrations, latest.LatestVersion, trusted);
+        var resolved = ResolveVerifiedPath(currentVersion, currentMigrations, latest.LatestVersion, trusted);
+        return resolved.Outcome == UpdateCheckOutcome.UpdateAvailable ? resolved : resolved with { TrustedHigherLatest = latest.LatestVersion > currentVersion };
     }
 
     public static UpdateCheckResult ResolveVerifiedPath(Version currentVersion, IReadOnlyList<string> currentMigrations, IEnumerable<VerifiedReleaseMetadata> releases)

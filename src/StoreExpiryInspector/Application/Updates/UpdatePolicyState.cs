@@ -91,11 +91,13 @@ public static class UpdatePolicyGate
     public static (UpdatePolicyDecision Decision, UpdatePolicyState State) Evaluate(UpdatePolicyStore store, UpdateCheckResult check, DateTime utcNow)
     {
         UpdatePolicyState state;
+        var trustedLatest = check.TrustedHigherLatest ? check.LatestVersion : null;
+        var trustedHigher = trustedLatest is not null && trustedLatest > check.CurrentVersion;
         var repairedState = false;
         try { state = store.LoadOrCreate(utcNow); }
         catch (InvalidDataException)
         {
-            if (check.Outcome is not (UpdateCheckOutcome.UpToDate or UpdateCheckOutcome.UpdateAvailable))
+            if (check.Outcome is not (UpdateCheckOutcome.UpToDate or UpdateCheckOutcome.UpdateAvailable) && !trustedHigher)
             {
                 // Persist the fail-closed fact so a later temporary outage cannot
                 // turn damaged or hostile state into a fresh 24-hour install.
@@ -114,6 +116,13 @@ public static class UpdatePolicyGate
         }
         state = state with { LastObservedUtc = utcNow };
         var required = ParseRequiredVersion(state);
+        if (trustedHigher)
+        {
+            var target = required is not null && required > trustedLatest! ? required : trustedLatest!;
+            state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = target.ToString(3), ForcedUpdateRequired = true, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
+            store.Save(state);
+            return (check.Outcome == UpdateCheckOutcome.UpdateAvailable && check.Release is not null && check.LatestVersion >= target ? UpdatePolicyDecision.ForceUpdate : UpdatePolicyDecision.RecheckRequired, state);
+        }
         if (check.Outcome == UpdateCheckOutcome.UpToDate)
         {
             if (required is not null && check.CurrentVersion.CompareTo(required) < 0)

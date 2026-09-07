@@ -15,7 +15,7 @@ public enum UpdateCheckOutcome
     SecurityFailure = 8, NoLegalUpgradePath = 9
 }
 
-public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null, CheckedRelease? Release = null)
+public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null, CheckedRelease? Release = null, bool TrustedHigherLatest = false)
 {
     public static UpdateCheckResult From(UpdateCheckOutcome outcome, Version current) => new(outcome, current);
 }

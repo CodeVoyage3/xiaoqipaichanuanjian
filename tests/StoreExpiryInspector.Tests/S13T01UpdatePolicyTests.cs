@@ -18,6 +18,36 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
     }
 
     [Fact]
+    public void TrustedHigherThenListNetworkFailurePersistsForcedStateAcrossRestart()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10);
+        var current = new Version(1, 0, 5);
+        var result = new UpdateCheckResult(UpdateCheckOutcome.NetworkUnavailable, current, new Version(1, 0, 6), TrustedHigherLatest: true);
+        var blocked = UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), result, now);
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, blocked.Decision); Assert.True(blocked.State.ForcedUpdateRequired); Assert.Equal("1.0.6", blocked.State.RequiredVersion);
+        var restarted = UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, current), now.AddMinutes(1));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, restarted.Decision); Assert.True(restarted.State.ForcedUpdateRequired); Assert.Equal("1.0.6", restarted.State.RequiredVersion);
+    }
+
+    [Fact]
+    public void TrustedHigherWithoutLegalPathPersistsForcedState()
+    {
+        var current = new Version(1, 0, 5);
+        var result = new UpdateCheckResult(UpdateCheckOutcome.NoLegalUpgradePath, current, new Version(1, 0, 6), TrustedHigherLatest: true);
+        var blocked = UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), result, DateTime.UnixEpoch.AddDays(10));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, blocked.Decision); Assert.True(blocked.State.ForcedUpdateRequired); Assert.Equal("1.0.6", blocked.State.RequiredVersion);
+    }
+
+    [Fact]
+    public void UntrustedNetworkFailureWithAClaimedVersionKeepsFreshGrace()
+    {
+        var current = new Version(1, 0, 5);
+        var result = new UpdateCheckResult(UpdateCheckOutcome.NetworkUnavailable, current, new Version(1, 0, 6));
+        var allowed = UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), result, DateTime.UnixEpoch.AddDays(10));
+        Assert.Equal(UpdatePolicyDecision.AllowBusiness, allowed.Decision); Assert.False(allowed.State.ForcedUpdateRequired);
+    }
+
+    [Fact]
     public void ForcedStateSurvivesOfflineAndOnlyTrustedLatestClearsIt()
     {
         var store = new UpdatePolicyStore(_root);
