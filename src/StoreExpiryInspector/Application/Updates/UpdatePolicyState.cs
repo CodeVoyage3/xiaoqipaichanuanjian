@@ -113,14 +113,21 @@ public static class UpdatePolicyGate
             store.Save(state); return (UpdatePolicyDecision.RecheckRequired, state);
         }
         state = state with { LastObservedUtc = utcNow };
+        var required = ParseRequiredVersion(state);
         if (check.Outcome == UpdateCheckOutcome.UpToDate)
         {
+            if (required is not null && check.CurrentVersion.CompareTo(required) < 0)
+            {
+                state = state with { LastSuccessfulCheckUtc = utcNow, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
+                store.Save(state); return (UpdatePolicyDecision.RecheckRequired, state);
+            }
             state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = null, ForcedUpdateRequired = false, AutoContinue = false, LastBlockingReason = null };
             store.Save(state); return (UpdatePolicyDecision.AllowBusiness, state);
         }
         if (check.Outcome == UpdateCheckOutcome.UpdateAvailable && check.LatestVersion is not null && check.LatestVersion > check.CurrentVersion)
         {
-            state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = check.LatestVersion.ToString(3), ForcedUpdateRequired = true, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
+            var target = required is not null && required.CompareTo(check.LatestVersion) > 0 ? required : check.LatestVersion;
+            state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = target.ToString(3), ForcedUpdateRequired = true, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
             store.Save(state); return (UpdatePolicyDecision.ForceUpdate, state);
         }
         if (state.ForcedUpdateRequired || (!string.IsNullOrEmpty(state.LastBlockingReason) && !repairedState) || !IsTemporary(check.Outcome))
@@ -142,5 +149,7 @@ public static class UpdatePolicyGate
     }
 
     private static bool IsTemporary(UpdateCheckOutcome outcome) => outcome is UpdateCheckOutcome.NetworkUnavailable or UpdateCheckOutcome.RateLimited;
+    private static Version? ParseRequiredVersion(UpdatePolicyState state) =>
+        string.IsNullOrWhiteSpace(state.RequiredVersion) ? null : Version.Parse(state.RequiredVersion);
     private static UpdatePolicyState NewState(DateTime utcNow, string reason) => new(1, "StoreExpiryInspector", Guid.NewGuid().ToString("N"), utcNow, utcNow, null, null, false, false, reason);
 }

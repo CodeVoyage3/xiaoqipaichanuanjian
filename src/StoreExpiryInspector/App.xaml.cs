@@ -2,6 +2,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -141,16 +142,12 @@ public partial class App : System.Windows.Application
             StartUpgradeVerification(operationId, schemaToken, schemaToken is not null && !sourceVerification);
             return;
         }
-        if (RuntimeDataRoot.NormalLaunchOperationId is { } normalLaunchOperation)
-        {
-            try { CompleteNormalLaunchHandshake(normalLaunchOperation); }
-            catch (Exception exception) { _logger.TryWrite("error", "normal_launch_loaded_failed", "普通启动加载确认无效。", exception.ToString()); Shutdown(1); return; }
-        }
         var bypassStartupPolicy = RuntimeDataRoot.IsSmokeRun;
 #if S9T07_TEST
         bypassStartupPolicy |= RuntimeDataRoot.IsTestUpdateInstall;
 #endif
-        if (!bypassStartupPolicy && !PassStartupUpdatePolicy()) return;
+        var normalLaunchOperation = RuntimeDataRoot.NormalLaunchOperationId;
+        if (normalLaunchOperation is null && !bypassStartupPolicy && !PassStartupUpdatePolicy()) return;
         try
         {
             DatabaseInitializer.Initialize();
@@ -197,9 +194,31 @@ public partial class App : System.Windows.Application
         {
             MainWindow = new UI.MainWindow(_updateDiagnostics);
         }
-        if (!_normalLaunchAcknowledged && RuntimeDataRoot.NormalLaunchOperationId is { } loadedOperation)
-            MainWindow.Loaded += (_, _) => { try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, loadedOperation, RuntimeDataRoot.NormalLaunchToken!); } catch { Shutdown(1); } };
+        if (normalLaunchOperation is not null)
+        {
+            MainWindow.IsEnabled = false;
+            MainWindow.Loaded += (_, _) =>
+            {
+                try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, normalLaunchOperation, RuntimeDataRoot.NormalLaunchToken!); _normalLaunchAcknowledged = true; }
+                catch { Shutdown(1); }
+            };
+        }
         MainWindow.Show();
+        if (normalLaunchOperation is not null)
+        {
+            try
+            {
+                if (!_normalLaunchAcknowledged) throw new InvalidDataException("普通启动加载确认无效。");
+                WaitForNormalLaunchTerminal(normalLaunchOperation);
+                if (!bypassStartupPolicy && !PassStartupUpdatePolicy()) return;
+                MainWindow.IsEnabled = true;
+            }
+            catch (Exception exception)
+            {
+                _logger.TryWrite("error", "normal_launch_completion_failed", "普通启动事务未可信完成，业务不会开放。", exception.ToString());
+                Shutdown(1); return;
+            }
+        }
 #if S9T07_TEST
         if (RuntimeDataRoot.IsTestUpdateInstall)
         {
@@ -501,22 +520,40 @@ public partial class App : System.Windows.Application
         _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
     }
 
-    private void CompleteNormalLaunchHandshake(string operationId)
+    private static void WaitForNormalLaunchTerminal(string operationId)
     {
-        // Stage9 requires a live WPF load acknowledgement before any ordinary
-        // startup work.  This tiny non-business window performs only that frozen
-        // handshake; it is closed before S13 can evaluate or open the shell.
-        Exception? failure = null;
-        var handshake = new Window { Width = 1, Height = 1, Left = -10000, Top = -10000, WindowStyle = WindowStyle.None, ShowInTaskbar = false, ShowActivated = false };
-        handshake.Loaded += (_, _) =>
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(45);
+        while (DateTime.UtcNow < deadline)
         {
-            try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, operationId, RuntimeDataRoot.NormalLaunchToken!); _normalLaunchAcknowledged = true; }
-            catch (Exception exception) { failure = exception; }
-        };
-        handshake.Show();
-        handshake.Close();
-        if (failure is not null || !_normalLaunchAcknowledged) throw failure ?? new InvalidDataException("普通启动加载确认无效。");
+            var intent = NormalLaunchHandshake.Read(RuntimeDataRoot.RootDirectory, operationId);
+            if (intent.State != NormalLaunchState.Loaded) throw new InvalidDataException("普通启动加载确认无效。");
+            if (HasTrustedNormalLaunchTerminal(operationId, intent)) return;
+            Thread.Sleep(100);
+        }
+        throw new TimeoutException("普通启动事务未在限定时间内完成。");
     }
+
+    private static bool HasTrustedNormalLaunchTerminal(string operationId, NormalLaunchIntent intent)
+    {
+        var path = Path.Combine(RuntimeDataRoot.RootDirectory, "updates", operationId, "journal.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var journal = document.RootElement;
+        UpdateProtocolJson.RequireObject(journal, "OperationId", "DataRoot", "AppPath", "Phase", "Schema");
+        var schema = journal.GetProperty("Schema");
+        UpdateProtocolJson.RequireObject(schema, "Phase", "LaunchToken");
+        if (journal.GetProperty("OperationId").GetString() != operationId ||
+            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("DataRoot").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(RuntimeDataRoot.RootDirectory)), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("AppPath").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)), StringComparison.OrdinalIgnoreCase) ||
+            schema.GetProperty("LaunchToken").GetString() != intent.LaunchToken) throw new InvalidDataException("普通启动终态无效。");
+        var (phase, phaseName, schemaPhase, schemaName) = intent.Role == NormalLaunchRole.Candidate
+            ? (10, "Completed", 8, "CandidateCommitted")
+            : (15, "RolledBack", 16, "RolledBack");
+        return IsExactPhase(journal.GetProperty("Phase"), phase, phaseName) && IsExactPhase(schema.GetProperty("Phase"), schemaPhase, schemaName);
+    }
+
+    private static bool IsExactPhase(JsonElement element, int number, string name) =>
+        element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out var value) && value == number ||
+        element.ValueKind == JsonValueKind.String && element.GetString() == name;
 
     private bool PassStartupUpdatePolicy()
     {

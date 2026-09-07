@@ -75,6 +75,28 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
     }
 
     [Fact]
+    public void RequiredVersionOnlyMovesForwardAndClearsAtThePersistedTarget()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        var forced = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 7), new Version(1, 0, 9)), now);
+        var lower = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 7), new Version(1, 0, 8)), now.AddMinutes(1));
+        Assert.Equal("1.0.9", lower.State.RequiredVersion); Assert.True(lower.State.ForcedUpdateRequired);
+        var staleLatest = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 8)), now.AddMinutes(2));
+        Assert.Equal(UpdatePolicyDecision.RecheckRequired, staleLatest.Decision); Assert.Equal("1.0.9", staleLatest.State.RequiredVersion);
+        var final = UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.UpToDate, new Version(1, 0, 9)), now.AddMinutes(3));
+        Assert.Equal(UpdatePolicyDecision.AllowBusiness, final.Decision); Assert.False(final.State.ForcedUpdateRequired); Assert.Null(final.State.RequiredVersion);
+    }
+
+    [Fact]
+    public void TrustedHigherLatestRaisesTheRequiredVersion()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
+        _ = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 7), new Version(1, 0, 8)), now);
+        var raised = UpdatePolicyGate.Evaluate(store, new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 7), new Version(1, 0, 9)), now.AddMinutes(1));
+        Assert.Equal("1.0.9", raised.State.RequiredVersion); Assert.True(raised.State.ForcedUpdateRequired);
+    }
+
+    [Fact]
     public void AutoContinueSurvivesReloadAndOnlyTrustedLatestConsumesIt()
     {
         var now = DateTime.UnixEpoch.AddDays(10); var store = new UpdatePolicyStore(_root);
