@@ -1,6 +1,6 @@
 # S12-T01 Updater 控制台窗口独立验收（Sol）
 
-日期：2026-09-07（Asia/Shanghai）  
+日期：2026-09-07（Asia/Shanghai）
 结论：**最小修复与限定自动化门禁通过；尚未重建 v1.0.4 candidate，也未发布。**
 
 ## 根因与最终差异
@@ -58,4 +58,3 @@ Fixture10 是测试迁移目标，用于验证已有跨 schema 状态机，不�
 - 先前安全宿主不确定性继续以 `HISTORICAL_TEST_ISOLATION_UNCERTAINTY` 记录，不以探测正式根消除，也不阻塞本项技术结论。
 - 未重跑 178 项、full、modal 或旧 GUI 两项；未制作 candidate、Setup，未发布、打 tag 或上传。
 - 下一步只能在包含此 WinExe 修复的新 candidate 上执行用户限定升级 GUI 验收；本报告不冒充实际 v1.0.3 → v1.0.4 正式升级。
-
