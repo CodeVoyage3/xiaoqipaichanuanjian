@@ -45,10 +45,13 @@ public sealed class UpdatePolicyStore
         {
             var state = JsonSerializer.Deserialize<UpdatePolicyState>(File.ReadAllBytes(_statePath)) ?? throw new InvalidDataException();
             var anchor = JsonSerializer.Deserialize<Anchor>(File.ReadAllBytes(_anchorPath)) ?? throw new InvalidDataException();
-            if (state.SchemaVersion != Schema || state.ProductId != Product || string.IsNullOrWhiteSpace(state.StateId) ||
+            if (state.SchemaVersion != Schema || state.ProductId != Product || !Guid.TryParseExact(state.StateId, "N", out _) ||
                 anchor.SchemaVersion != Schema || anchor.ProductId != Product || anchor.StateId != state.StateId ||
+                state.FirstObservedUtc.Kind != DateTimeKind.Utc || state.LastObservedUtc.Kind != DateTimeKind.Utc || state.LastSuccessfulCheckUtc?.Kind != DateTimeKind.Utc ||
                 state.FirstObservedUtc > state.LastObservedUtc || state.LastSuccessfulCheckUtc > state.LastObservedUtc ||
-                (state.ForcedUpdateRequired && string.IsNullOrWhiteSpace(state.RequiredVersion))) throw new InvalidDataException();
+                (state.ForcedUpdateRequired != !string.IsNullOrWhiteSpace(state.RequiredVersion)) ||
+                (state.AutoContinue && !state.ForcedUpdateRequired) ||
+                !ValidRequiredVersion(state.RequiredVersion)) throw new InvalidDataException();
             return state;
         }
         catch (JsonException exception) { throw new InvalidDataException("更新策略状态损坏，必须联网重新验证。", exception); }
@@ -63,6 +66,9 @@ public sealed class UpdatePolicyStore
     }
 
     private sealed record Anchor(int SchemaVersion, string ProductId, string StateId);
+
+    private static bool ValidRequiredVersion(string? value) => string.IsNullOrWhiteSpace(value) ||
+        Version.TryParse(value, out var version) && version is not null && version.Build >= 0 && version.Revision < 0;
 }
 
 public static class UpdatePolicyGate
@@ -76,6 +82,8 @@ public static class UpdatePolicyGate
         catch (InvalidDataException)
         {
             if (IsTemporary(check.Outcome)) throw;
+            // A verified result may repair a damaged policy pair, but no local or
+            // temporary-failure path gets to turn corruption into a new install.
             state = new UpdatePolicyState(1, "StoreExpiryInspector", Guid.NewGuid().ToString("N"), utcNow, utcNow, null, null, false, false, "STATE_INVALID");
         }
         if (utcNow < state.LastObservedUtc)
@@ -89,7 +97,7 @@ public static class UpdatePolicyGate
             state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = null, ForcedUpdateRequired = false, AutoContinue = false, LastBlockingReason = null };
             store.Save(state); return (UpdatePolicyDecision.AllowBusiness, state);
         }
-        if (check.Outcome == UpdateCheckOutcome.UpdateAvailable && check.LatestVersion is not null)
+        if (check.Outcome == UpdateCheckOutcome.UpdateAvailable && check.LatestVersion is not null && check.LatestVersion > check.CurrentVersion)
         {
             state = state with { LastSuccessfulCheckUtc = utcNow, RequiredVersion = check.LatestVersion.ToString(3), ForcedUpdateRequired = true, LastBlockingReason = "FORCED_UPDATE_REQUIRED" };
             store.Save(state); return (UpdatePolicyDecision.ForceUpdate, state);

@@ -43,5 +43,17 @@ public sealed class S13T01UpdatePolicyTests : IDisposable
         Assert.Throws<InvalidDataException>(() => UpdatePolicyGate.Evaluate(store, UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now.AddMinutes(1)));
     }
 
+    [Fact]
+    public void ContradictoryForcedAutoContinueAndVersionStateFailsClosed()
+    {
+        var now = DateTime.UnixEpoch.AddDays(10);
+        var updates = Path.Combine(_root, "updates");
+        Directory.CreateDirectory(updates);
+        var state = new UpdatePolicyState(1, "StoreExpiryInspector", Guid.NewGuid().ToString("N"), now, now, null, null, true, false, null);
+        File.WriteAllText(Path.Combine(updates, "update-policy-state.json"), System.Text.Json.JsonSerializer.Serialize(state));
+        File.WriteAllText(Path.Combine(updates, "update-policy-anchor.json"), "{\"SchemaVersion\":1,\"ProductId\":\"StoreExpiryInspector\",\"StateId\":\"" + state.StateId + "\"}");
+        Assert.Throws<InvalidDataException>(() => UpdatePolicyGate.Evaluate(new UpdatePolicyStore(_root), UpdateCheckResult.From(UpdateCheckOutcome.NetworkUnavailable, new Version(1, 0, 5)), now));
+    }
+
     public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }
 }
