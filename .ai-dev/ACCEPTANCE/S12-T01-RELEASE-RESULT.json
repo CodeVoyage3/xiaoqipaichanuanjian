@@ -1,0 +1,125 @@
+{
+  "card": "S12-T01",
+  "stage": "Stage12",
+  "recordedAt": "2026-09-07",
+  "state": "RELEASED_AND_ACCEPTED",
+  "stageState": "CLOSED",
+  "publicReleaseAssetEquivalence": "PASS",
+  "release": {
+    "id": 383891004,
+    "tag": "v1.0.4",
+    "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.4",
+    "publishedUtc": "2026-09-07T07:11:42Z",
+    "stable": true,
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "annotatedTagSha": "d66c32f4361571c1b16138e554ffebb24e4be187",
+    "sourceCommit": "c2b3f699408f422b3aeaf5b96321a6df08a038c5"
+  },
+  "anonymousVerification": {
+    "authorizationHeader": false,
+    "freshDownload": true,
+    "downloadRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\122e0af2-5d67-4c44-a3f4-14a2531a6628",
+    "receipt": "C:\\Users\\39037\\AppData\\Local\\Temp\\122e0af2-5d67-4c44-a3f4-14a2531a6628\\public-release-equivalence.json",
+    "receiptSha256": "55186658150D32D144D8D2FDB66D1AE62D3DE82AF5286CB1B5B72FFFAE190658",
+    "allFourAssetsDownloaded": true,
+    "assetBytesAndShaMatchedFrozenCandidate": true
+  },
+  "assets": [
+    {
+      "name": "StoreExpiryInspector-1.0.4-win-x64.zip",
+      "bytes": 109410517,
+      "sha256": "4598C9A608B4B048A1E97BACD4D22C86E7C8DC4DB2637B527631DBB88EFA079D",
+      "matchesFrozenCandidate": true
+    },
+    {
+      "name": "StoreExpiryInspector-Setup-1.0.4.exe",
+      "bytes": 75334652,
+      "sha256": "AEE5229B94D7048846CA6CEEA37BDB7049E1C7882734B471D3EF4A8BFCF6DAC3",
+      "matchesFrozenCandidate": true
+    },
+    {
+      "name": "update-manifest.json",
+      "bytes": 852,
+      "sha256": "A86C73692CC54128A486BF59156A7C0EAA0BBC07175BC47988E07C643D1B80D0",
+      "matchesFrozenCandidate": true
+    },
+    {
+      "name": "update-manifest.sig",
+      "bytes": 384,
+      "sha256": "25A302A014AFB3A2C9164E69D273D8B1D497C820982685D5EDE587606DC704D1",
+      "matchesFrozenCandidate": true
+    }
+  ],
+  "manifest": {
+    "version": "1.0.4",
+    "releaseTag": "v1.0.4",
+    "sourceMinVersion": "1.0.3",
+    "sourceMaxVersion": "1.0.3",
+    "packageBytes": 109410517,
+    "packageSha256": "4598C9A608B4B048A1E97BACD4D22C86E7C8DC4DB2637B527631DBB88EFA079D",
+    "migrationCount": 9
+  },
+  "signing": {
+    "algorithm": "RSA-PSS/SHA256",
+    "productionPublicKeySpkiSha256": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC",
+    "verified": true,
+    "authenticode": "NotSigned"
+  },
+  "zip": {
+    "entries": 618,
+    "frozenTreeDifferences": 0,
+    "appFileVersion": "1.0.4.0",
+    "updaterFileVersion": "1.0.4.0",
+    "appPeSubsystem": 2,
+    "updaterPeSubsystem": 2,
+    "embeddedMigrationCount": 9
+  },
+  "previousStableRelease": {
+    "tag": "v1.0.3",
+    "releaseId": 383669847,
+    "draft": false,
+    "prerelease": false,
+    "assetCount": 4,
+    "assetsUnchanged": true,
+    "assets": [
+      {
+        "name": "StoreExpiryInspector-1.0.3-win-x64.zip",
+        "bytes": 109409826,
+        "sha256": "725DBA97029DC9FC1B66CF4B8019144A66174FABC695439172B5E651F7F3D910"
+      },
+      {
+        "name": "StoreExpiryInspector-Setup-1.0.3.exe",
+        "bytes": 75323323,
+        "sha256": "B9FE900FE5A36166D11475C7C6333E4AA8F8DB4198D241A7C13F67438B5E6E14"
+      },
+      {
+        "name": "update-manifest.json",
+        "bytes": 852,
+        "sha256": "72DE8AC9E2062C1353A801C7071267EB735EF24E2E414C362CD07588588ACCD3"
+      },
+      {
+        "name": "update-manifest.sig",
+        "bytes": 384,
+        "sha256": "83D2B6DB71FCE793FC19DE8E3BA81E6601975D646D5C8F4099CC248C37DDA50F"
+      }
+    ]
+  },
+  "scope": {
+    "candidateRebuilt": false,
+    "testsRun": false,
+    "formalInstallAccess": false,
+    "formalDatabaseAccess": false,
+    "formalUpgradeExecuted": false,
+    "v103AssetsDownloadedThisRun": false,
+    "v103IdentityCheck": "anonymous GitHub API digest and size",
+    "productionCodeModified": false
+  },
+  "deferredEvidence": {
+    "name": "REAL_V104_TO_NEXT_UPDATE_UX_VERIFIED",
+    "blockingS12": false,
+    "reason": "The v1.0.3 to v1.0.4 hop uses the v1.0.3 app and updater. The v1.0.4 modal and Windows-GUI updater behavior can first be observed when v1.0.4 initiates a later upgrade."
+  },
+  "historicalTestIsolationUncertainty": "PRESERVED"
+}
