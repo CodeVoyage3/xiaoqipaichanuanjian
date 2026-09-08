@@ -76,6 +76,36 @@ public sealed class S13T01SameSchemaNormalLaunchTests
         }
     }
 
+    [Fact]
+    public async Task UpdaterRejectsSchemaBoundNormalLaunchWhenSchemaWasRemoved()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var operation = Guid.NewGuid().ToString();
+        var install = Path.Combine(root, "install");
+        var app = Path.Combine(install, "app");
+        var staging = Path.Combine(install, "stage");
+        var old = Path.Combine(install, "old");
+        Directory.CreateDirectory(app); Directory.CreateDirectory(staging); Directory.CreateDirectory(old);
+        var operationRoot = Path.Combine(data, "updates", operation); Directory.CreateDirectory(operationRoot);
+        var now = DateTimeOffset.UtcNow;
+        var journalPath = Path.Combine(operationRoot, "journal.json");
+        var journal = new UpdateJournal(operation, "StoreExpiryInspector", install, data, app, staging, old, new string('A', 64), "1.0.4", "1.0.5", 0, now, UpdatePhase.Committed, TreeFingerprint.Create(old), TreeFingerprint.Create(app), now, now);
+        await File.WriteAllTextAsync(journalPath, JsonSerializer.Serialize(journal));
+        NormalLaunchHandshake.Write(data, new NormalLaunchIntent(operation, Guid.NewGuid().ToString(), NormalLaunchRole.Candidate, journal.CandidateTree.Hash, 9, 8, NormalLaunchState.Pending, 0, null, now));
+        try
+        {
+            var updater = Path.Combine(FindRoot(), "src", "StoreExpiryInspector.Updater", "bin", "Release", "net10.0", "win-x64", "s9t05test", "net10.0", "win-x64", "StoreExpiryInspector.Updater.exe");
+            using var process = Process.Start(new ProcessStartInfo(updater) { UseShellExecute = false, ArgumentList = { "--journal", journalPath } })!;
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await process.WaitForExitAsync(timeout.Token);
+            Assert.Equal(1, process.ExitCode);
+            using var unchanged = JsonDocument.Parse(await File.ReadAllTextAsync(journalPath));
+            Assert.Equal((int)UpdatePhase.Committed, unchanged.RootElement.GetProperty("Phase").GetInt32());
+        }
+        finally { DeleteDirectory(data); DeleteDirectory(root); }
+    }
+
     private static string FindRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)

@@ -492,13 +492,15 @@ internal static class UpdateTransaction
             var snapshot = schema.GetProperty("Snapshot");
             UpdateProtocolJson.RequireObject(snapshot, "OperationId", "SourceVersion", "DataRootIdentity", "SnapshotPath", "SourceSha256", "SnapshotSha256", "LogicalFingerprint", "SourceMigrations", "CreatedUtc");
         }
-        if ((!hasSchema || schema.ValueKind == JsonValueKind.Null) && HasSchemaEvidence(path)) throw new InvalidDataException("Schema operation evidence requires a schema journal.");
+        if ((!hasSchema || schema.ValueKind == JsonValueKind.Null) && HasSchemaEvidence(path, document.RootElement.GetProperty("AppPath").GetString()!)) throw new InvalidDataException("Schema operation evidence requires a schema journal.");
         return JsonSerializer.Deserialize<UpdateJournal>(text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } }) ?? throw new InvalidDataException();
     }
-    private static bool HasSchemaEvidence(string journalPath)
+    private static bool HasSchemaEvidence(string journalPath, string appPath)
     {
         var operation = Path.GetDirectoryName(journalPath)!;
-        return new[] { "schema-source.db", "schema-restore.json", "candidate-identity.json", "candidate-authorization.json" }.Any(file => File.Exists(Path.Combine(operation, file))) || (File.Exists(Path.Combine(operation, "health-ack.json")) && !UpdateProtocolJson.IsLegacyHealthAck(Path.Combine(operation, "health-ack.json")));
+        var normalLaunch = Path.Combine(operation, "normal-launch.json");
+        return new[] { "schema-source.db", "schema-restore.json", "candidate-identity.json", "candidate-authorization.json" }.Any(file => File.Exists(Path.Combine(operation, file))) || (File.Exists(Path.Combine(operation, "health-ack.json")) && !UpdateProtocolJson.IsLegacyHealthAck(Path.Combine(operation, "health-ack.json"))) ||
+            (File.Exists(normalLaunch) && !NormalLaunchHandshake.IsSameSchemaIntent(Path.GetDirectoryName(Path.GetDirectoryName(operation)!)!, Path.GetFileName(operation), appPath));
     }
     private static bool IsValidPhasePair(UpdatePhase outer, SchemaPhase schema) => outer switch
     {

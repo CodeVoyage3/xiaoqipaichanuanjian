@@ -29,6 +29,15 @@ public static class NormalLaunchHandshake
         var result = JsonSerializer.Deserialize<NormalLaunchIntent>(text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new InvalidDataException("普通启动协议无效。");
         Validate(result, operationId); return result;
     }
+    public static bool IsSameSchemaIntent(string root, string operationId, string executableRoot)
+    {
+        try
+        {
+            var intent = Read(root, operationId);
+            return ValidateJournalIntent(root, intent, executableRoot, true) is null;
+        }
+        catch { return false; }
+    }
     public static void Write(string root, NormalLaunchIntent intent) { Validate(intent, intent.OperationId); DurableFile.Replace(PathFor(root, intent.OperationId), JsonSerializer.Serialize(intent, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })); }
     public static NormalLaunchIntent Identify(string root, string operationId, string token, string executableRoot, Action<SchemaUpdateJournal>? validateSchema = null)
     {
@@ -51,7 +60,7 @@ public static class NormalLaunchHandshake
         try { using var process = Process.GetProcessById(intent.Pid); return Math.Abs((process.StartTime.ToUniversalTime() - intent.StartedUtc.Value.UtcDateTime).TotalSeconds) <= 1 && string.Equals(Path.GetFullPath(process.MainModule?.FileName ?? string.Empty), Path.GetFullPath(executablePath), StringComparison.OrdinalIgnoreCase); }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { return false; }
     }
-    private static SchemaUpdateJournal? ValidateJournalIntent(string root, NormalLaunchIntent intent, string executableRoot)
+    private static SchemaUpdateJournal? ValidateJournalIntent(string root, NormalLaunchIntent intent, string executableRoot, bool allowSameSchemaCompleted = false)
     {
         var path = Path.Combine(root, "updates", intent.OperationId, "journal.json"); var text = File.ReadAllText(path); using var document = JsonDocument.Parse(text); var journal = document.RootElement;
         var fields = new[] { "OperationId", "ProductId", "InstallRoot", "DataRoot", "AppPath", "StagingPath", "OldPath", "PackageSha256", "SourceVersion", "TargetVersion", "ParentPid", "ParentStartedUtc", "Phase", "OldTree", "CandidateTree", "CreatedUtc", "UpdatedUtc", "CandidatePid", "CandidateStartedUtc", "LastError" };
@@ -59,7 +68,12 @@ public static class NormalLaunchHandshake
         UpdateProtocolJson.RequireObject(journal, journal.TryGetProperty("Schema", out _) ? [.. fields, "Schema"] : fields); UpdateProtocolJson.RequireObject(journal.GetProperty("OldTree"), "Files", "Hash"); UpdateProtocolJson.RequireObject(journal.GetProperty("CandidateTree"), "Files", "Hash");
         if (!hasSchema)
         {
-            RequireExactPhase(journal.GetProperty("Phase"), 9, "Committed");
+            if (allowSameSchemaCompleted && intent.State == NormalLaunchState.Loaded)
+            {
+                try { RequireExactPhase(journal.GetProperty("Phase"), 10, "Completed"); }
+                catch (InvalidDataException) { RequireExactPhase(journal.GetProperty("Phase"), 9, "Committed"); }
+            }
+            else RequireExactPhase(journal.GetProperty("Phase"), 9, "Committed");
             if (intent.Role != NormalLaunchRole.Candidate || intent.ExpectedOuterPhase != 9 || intent.ExpectedSchemaPhase != -1 || journal.GetProperty("OperationId").GetString() != intent.OperationId || !string.Equals(NormalizePath(journal.GetProperty("DataRoot").GetString()!), NormalizePath(root), StringComparison.OrdinalIgnoreCase) || !string.Equals(NormalizePath(journal.GetProperty("AppPath").GetString()!), NormalizePath(executableRoot), StringComparison.OrdinalIgnoreCase) || journal.GetProperty("CandidateTree").GetProperty("Hash").GetString() != intent.ExpectedTreeHash) throw new InvalidDataException("普通启动事务状态无效。");
             return null;
         }
