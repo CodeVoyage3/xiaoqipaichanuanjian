@@ -40,4 +40,10 @@
           DestinationFolder="$(TargetDir)" />
   </Target>
 
+  <Target Name="BuildS9T07TestOnlySyntheticTarget" AfterTargets="Build">
+    <MSBuild Projects="$(MSBuildProjectDirectory)\..\StoreExpiryInspector.S9T07Fixture\StoreExpiryInspector.S9T07Fixture.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);Version=99.0.0;AssemblyVersion=99.0.0.0;FileVersion=99.0.0.0;AppendTargetFrameworkToOutputPath=false;OutputPath=$(MSBuildProjectDirectory)\..\StoreExpiryInspector.S9T07Fixture\bin\$(Configuration)\net10.0-windows\test-only-synthetic-target\;IntermediateOutputPath=obj\$(Configuration)\net10.0-windows\test-only-synthetic-target\" />
+  </Target>
+
 </Project>

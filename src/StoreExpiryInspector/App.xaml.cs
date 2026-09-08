@@ -633,8 +633,8 @@ public partial class App : System.Windows.Application
             TestInstallMarker(stage);
             var packagePath = RequiredTestPath("S9_T07_TEST_PACKAGE"); TestInstallMarker(stage = "package-path"); var manifest = File.ReadAllBytes(RequiredTestPath("S9_T07_TEST_MANIFEST")); var signature = File.ReadAllBytes(RequiredTestPath("S9_T07_TEST_SIGNATURE"));
             var key = Convert.FromBase64String(Environment.GetEnvironmentVariable("S9_T07_TEST_PUBLIC_KEY") ?? throw new InvalidDataException());
-            using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(key, out _); TestInstallMarker(stage = "key-imported"); var version = new Version(1, 0, 4); var target = StaticMigrations().Concat(["20260905120000_S9T07Fixture10"]).ToArray();
-            var verified = new VerifiedUpdatePackage(Path.GetDirectoryName(packagePath)!, packagePath, version, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(packagePath))).ToLowerInvariant(), target, manifest, signature, new CheckedRelease(version, 1, "v1.0.4", []), 2, new Version(1, 0, 3), new Version(1, 0, 3), target[0], target[^2]);
+            using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(key, out _); TestInstallMarker(stage = "key-imported"); var version = new Version(99, 0, 0); var target = StaticMigrations().Concat(["20260905120000_S9T07Fixture10"]).ToArray();
+            var verified = new VerifiedUpdatePackage(Path.GetDirectoryName(packagePath)!, packagePath, version, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(packagePath))).ToLowerInvariant(), target, manifest, signature, new CheckedRelease(version, 1, "v99.0.0", []), 2, new Version(1, 0, 5), new Version(1, 0, 5), target[0], target[^2]);
             TestInstallMarker("verified-input"); var result = await InstallPreparedUpdateAsync(verified, new SignedUpdatePackageDownloader(options: new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: Path.GetDirectoryName(packagePath)!)));
             if (result.Outcome != UpdatePackageOutcome.Verified) { Shutdown(1); return; }
             TestInstallMarker("install-returned-" + result.Outcome);

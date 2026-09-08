@@ -106,7 +106,7 @@ public partial class FixtureApp : System.Windows.Application
             if (Environment.GetEnvironmentVariable("S9_T07_FIXTURE_PAUSE_AFTER_MIGRATION_APPLIED") == "1") Thread.Sleep(Timeout.Infinite);
             if (Environment.GetEnvironmentVariable("S9_T07_FIXTURE_FAIL_AFTER_MIGRATION") == "1") { Shutdown(1); return; }
             var window = new Window { Width = 1, Height = 1, ShowInTaskbar = false, Visibility = Visibility.Hidden };
-            window.Loaded += (_, _) => { UpgradeHealthAck.WriteSchema(root, operation, token, "1.0.4", migrations); Shutdown(); };
+            window.Loaded += (_, _) => { UpgradeHealthAck.WriteSchema(root, operation, token, typeof(FixtureApp).Assembly.GetName().Version!.ToString(3), migrations); Shutdown(); };
             window.Show();
         }
         catch (Exception exception)
