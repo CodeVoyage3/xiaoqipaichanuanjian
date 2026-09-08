@@ -1,10 +1,11 @@
-# 2026-09-08 当前：v1.0.5 最终候选已获技术接受，等待发布授权
+# 2026-09-08 当前：stable v1.0.5 已发布，等待用户真实升级
 
-- Stage13 = IN_PROGRESS；S13-T01 = FINAL_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED；v1.0.5 = NOT_RELEASED。
-- 最终产品 source 固定 `3b483ef772d6442febfbcdd16ab87c6965839445`；当前 governance HEAD 不改变产品身份。最终四资产持久冻结于 `D:\S13-TestAssets\v1.0.5-final\3b483ef7`，构建输出与持久副本逐字节一致。
-- 最终 manifest 为 stable `v1.0.5`，严格 `minVersion=maxVersion=1.0.4`，source migration min/max 与 target 末迁移均为 production migration 9；production RSA-PSS/SHA256 验签通过。
-- Release App/Updater build 0 warning/0 error；App/Updater `1.0.5.0`；Updater subsystem 2；Setup `1.0.5`；ZIP 618 项逐项复核、禁入项 0；EF NO_MODEL_DRIFT、migrationCount 9、隔离 smoke、diff-check、secret scan 均 PASS。
-- 本轮没有生产代码修改，没有运行 full/90/7/178/Stage9 矩阵，没有 tag、Release 或上传。下一步只等待用户单独授权正式发布 stable v1.0.5；发布并核对公开资产等价后，再由用户执行真实 v1.0.4 -> v1.0.5 GUI/升级验收。
+- Stage13 = IN_PROGRESS；S13-T01 = V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED。
+- stable v1.0.5 Release：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.5>；Release ID `384564898`，latest、非 draft、非 prerelease。tag 解引用到产品 source `3b483ef772d6442febfbcdd16ab87c6965839445`，与后续 governance HEAD 严格区分。
+- `PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`：四项匿名公开下载 bytes/SHA256 与冻结候选全等；production RSA-PSS/SHA256、公钥指纹、manifest v1.0.4-only/migration 9、ZIP 618 项/tree hash/禁入项、App/Updater 1.0.5.0 与 Updater subsystem 2 均通过。v1.0.4 Release/资产不变。
+- 本轮仅发布和治理记录，没有生产代码修改；Full/90/7/178/Stage9 矩阵均未运行，NO_FULL 保持。下一步只等待用户正式 v1.0.4 -> v1.0.5 六项真实 GUI/升级回执；通过前 S13-T01 与 Stage13 不关闭。
+
+# 2026-09-08 历史：v1.0.5 最终候选已获技术接受，等待发布授权
 
 # 2026-09-08 历史：S13-T01 收敛为 v1.0.4-only 最终候选
 

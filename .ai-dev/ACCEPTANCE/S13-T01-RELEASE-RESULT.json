@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-09-08T16:41:47+08:00",
+  "result": "PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE_PASS",
+  "release": {
+    "id": 384564898,
+    "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.5",
+    "tag": "v1.0.5",
+    "latest": true,
+    "draft": false,
+    "prerelease": false,
+    "tagObjectSha": "2ac5961be79796ee3c9da140ff13139ee1218730",
+    "sourceCommit": "3b483ef772d6442febfbcdd16ab87c6965839445"
+  },
+  "publicAnonymousAssets": [
+    { "name": "StoreExpiryInspector-1.0.5-win-x64.zip", "bytes": 109428193, "sha256": "D5C7D5DF10C9E3D900C3B064C6C79A5A090E6FC2CBC9D50C218BAB725FDBA53E" },
+    { "name": "StoreExpiryInspector-Setup-1.0.5.exe", "bytes": 75342417, "sha256": "AC1DD32726C9B2D8EDD39CBB386FD24D3F32EAA4CC05435EA68860BB3740DDAC" },
+    { "name": "update-manifest.json", "bytes": 869, "sha256": "BE364995F262701DDF8362B0B8BE2E3260F303FEF5D7D346B4A8659B0AF55F95" },
+    { "name": "update-manifest.sig", "bytes": 384, "sha256": "978E0A66292DB9980AFC4D4F861CED15BF5738A6C4D8855DB364D711844217FC" }
+  ],
+  "signature": {
+    "algorithm": "RSA-PSS/SHA256",
+    "verified": true,
+    "publicKeySpkiSha256": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC"
+  },
+  "manifest": {
+    "version": "1.0.5",
+    "channel": "stable",
+    "minVersion": "1.0.4",
+    "maxVersion": "1.0.4",
+    "migrationCount": 9,
+    "sourceMigration": "20260901155124_AddPolicyAndBaselineFoundation"
+  },
+  "package": {
+    "entries": 618,
+    "treeSha256": "25FC29E568E14AFB2D02241D83D00B958D2F2971E93B5DFB70ADC5334DD38E07",
+    "forbiddenEntries": 0,
+    "unsafePaths": 0,
+    "duplicateEntries": 0,
+    "appFileVersion": "1.0.5.0",
+    "updaterFileVersion": "1.0.5.0",
+    "updaterPeSubsystem": 2
+  },
+  "v104ReleaseUnchanged": true,
+  "productionCodeModified": false,
+  "full": "NO_FULL",
+  "nextState": "V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED"
+}

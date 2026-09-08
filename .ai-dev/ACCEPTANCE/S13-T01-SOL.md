@@ -51,3 +51,12 @@
 - Release App/Updater build 均 0 warning/0 error；EF `NO_MODEL_DRIFT`；migrationCount 9。内置 `--s9-t01-smoke-exit` 使用全新 TEMP/GUID data root，exit 0、创建隔离 app.db、写入 `s9_t01_smoke_ready`。此前两次未传内置 smoke 参数的外部窗口观察被启动更新策略阻断并由测试宿主终止，均未创建数据库，不记产品 smoke 失败。
 - `git diff --check`（source..HEAD 与 worktree）PASS；source/installer 与持久四资产 secret scan 0 命中；最终治理前 worktree clean。本轮没有 full/90/7/178/Stage9 矩阵，没有 production code、schema、dependency 或 migration 修改，没有 Sandbox/TEST_TRANSPORT/proxy/CA，没有 tag/Release/upload。
 - 技术结论：`FINAL_CANDIDATE_TECHNICALLY_ACCEPTED`。S13-T01 = `FINAL_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`；Stage13 = IN_PROGRESS；v1.0.5 = NOT_RELEASED。停止等待用户单独发布授权；发布后公开资产等价复核和用户真实 v1.0.4 -> v1.0.5 GUI/升级通过前不得关闭。
+
+## 2026-09-08 stable v1.0.5 发布与公开资产等价复核
+
+- 发布前 fresh：`HEAD == origin/main == 037f9c63193d3d8bec1270cee31843bbf040acff`、ahead/behind `0/0`、clean；排除 `.ai-dev/**` 后 `3b483ef772d6442febfbcdd16ab87c6965839445..HEAD` 产品 diff 为 0。latest 仍为 stable v1.0.4，v1.0.5 tag/Release 均不存在；四项冻结资产与最终验收 bytes/SHA 全等，production RSA-PSS/SHA256 再验 PASS。
+- stable Release `384564898`：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.5>；latest、`draft=false`、`prerelease=false`。annotated tag object `2ac5961be79796ee3c9da140ff13139ee1218730` 解引用到产品 source `3b483ef772d6442febfbcdd16ab87c6965839445`。
+- 匿名公开下载等价：ZIP 109428193 / `D5C7D5DF10C9E3D900C3B064C6C79A5A090E6FC2CBC9D50C218BAB725FDBA53E`；Setup 75342417 / `AC1DD32726C9B2D8EDD39CBB386FD24D3F32EAA4CC05435EA68860BB3740DDAC`；manifest 869 / `BE364995F262701DDF8362B0B8BE2E3260F303FEF5D7D346B4A8659B0AF55F95`；signature 384 / `978E0A66292DB9980AFC4D4F861CED15BF5738A6C4D8855DB364D711844217FC`。
+- 公开 manifest/signature 使用 production 公钥 RSA-PSS/SHA256 PASS；SPKI SHA256 `565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。manifest 严格 `minVersion=maxVersion=1.0.4`，source migration min/max 为第 9 条，target migrations 9。
+- 公开 ZIP：618 项；tree SHA256 `25FC29E568E14AFB2D02241D83D00B958D2F2971E93B5DFB70ADC5334DD38E07`；禁入项、不安全路径、重复项均 0；App/Updater FileVersion `1.0.5.0`，Updater subsystem `2 / Windows GUI`；Setup `1.0.5`。v1.0.4 Release ID、发布时间及四资产 name/size/digest 均未改变。
+- `PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`。本轮无生产代码修改，无 rebuild/full/90/7/178/Stage9 矩阵；NO_FULL。S13-T01 = `V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED`；Stage13 = IN_PROGRESS。

@@ -1,10 +1,10 @@
 # Stage13｜强制升级与合法跨版本升级链
 
 Stage13 = IN_PROGRESS
-S13-T01 = FINAL_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED
+S13-T01 = V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED
 目标版本：v1.0.5。
 
-candidate / production source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；治理提交不得冒充 candidate source。用户已裁决仅维护 v1.0.4 -> v1.0.5：最终 manifest 固定 `minVersion=maxVersion=1.0.4` 且 source migration 严格为 production migration 9；v1.0.2/v1.0.3 与 TEST_TRANSPORT 不再是 blocker。v1.0.4-only 最终候选已技术接受并持久冻结；Stage13 保持 IN_PROGRESS，当前等待独立发布授权、公开资产等价复核与用户真实 GUI/升级验收。详见 `../ACCEPTANCE/S13-T01-SOL.md`。
+candidate / production source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；治理提交不得冒充 candidate source。stable v1.0.5 已发布，manifest 严格 `minVersion=maxVersion=1.0.4` 且 source migration 为 production migration 9，`PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`。v1.0.2/v1.0.3 与 TEST_TRANSPORT 不再是 blocker；Stage13 保持 IN_PROGRESS，当前只等待用户真实 v1.0.4 -> v1.0.5 GUI/升级验收。详见 `../ACCEPTANCE/S13-T01-SOL.md`。
 
 ## 开工现场（2026-09-07，Asia/Shanghai）
 
@@ -19,16 +19,16 @@ S13-T01 实现并验收：可信新版一经确认即持久化强制升级；仅
 
 Stage9 pending recovery、candidate ACK、rollback、maintenance、schema recovery、Updater recovery 先于普通 Stage13 门禁执行，既有冻结状态机不得被改写或绕过。
 
-## v1.0.5 发布阻断
+## v1.0.5 发布后停止点
 
-最终候选技术门禁已关闭，但发布仍需用户独立授权；发布后还须证明 GitHub 公开资产与冻结候选等价，并由用户使用正式 v1.0.4 完成真实 v1.0.4 -> v1.0.5 GUI/升级验收。上述完成前 S13-T01 与 Stage13 不关闭。v1.0.2/v1.0.3 已由产品裁决移出生产兼容范围，历史环境阻断不记兼容失败。
+stable v1.0.5 与公开资产等价门禁已通过；Release/tag/资产不得改写。用户使用正式 v1.0.4 完成真实 v1.0.4 -> v1.0.5 六项 GUI/升级验收前，S13-T01 与 Stage13 不关闭。v1.0.2/v1.0.3 已由产品裁决移出生产兼容范围，历史环境阻断不记兼容失败。
 
 ## 边界与停止点
 
 - production migration 固定 `9`；默认禁止 migration/ModelSnapshot/业务 SQLite 变更。认为必须新增时，Terra 立即停止交 Sol 裁决。
 - 默认 `NO_FULL`；只跑新专项、focused 与直接相关 S9-T03/T04/T06/upgrade-safety 回归。只有冻结 diff 触及任务卡列明的核心事务/恢复/Schema 范围或出现无法解释的跨模块回归，Sol 才重新裁决是否最终仅跑一次 fresh unfiltered Release full。
 - 自动化仅用 `TEMP/GUID` 隔离 app/data/updater/operationId 与合成数据库。禁止探测、打开、查询、复制、hash 或比较正式数据库、安装根、数据根或备份；`HISTORICAL_TEST_ISOLATION_UNCERTAINTY` 保留。
-- 不修改、覆盖、重建或替换 v1.0.4 Release 资产；本卡不发布 v1.0.5、不创建 S13-T02、不实现 Setup 万能修复。
+- 不修改、覆盖、重建或替换 v1.0.4/v1.0.5 Release 资产；不创建 S13-T02、不实现 Setup 万能修复。
 - 用户已于 2026-09-07 授权实施；从本治理提交创建全新隔离 worktree 与全新 Terra。不得复用 Stage12 或更早 Terra，Sol 不写生产代码。
 
 任务、设计和验收分别见 `../TASKS/S13-T01.md`、`../ANALYSIS/S13-T01-FORCED-UPDATE-DESIGN.md`、`../ACCEPTANCE/S13-T01.md`。

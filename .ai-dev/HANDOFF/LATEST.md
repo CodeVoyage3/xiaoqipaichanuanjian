@@ -1,4 +1,12 @@
-# 2026-09-08：v1.0.5 最终候选技术接受，等待发布授权
+# 2026-09-08：stable v1.0.5 已发布，等待用户 v1.0.4 -> v1.0.5 真实升级
+
+stable v1.0.5 已发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.5>。Release `384564898` 为 latest、非 draft、非 prerelease；annotated tag object `2ac5961be79796ee3c9da140ff13139ee1218730` 解引用到冻结产品 source `3b483ef772d6442febfbcdd16ab87c6965839445`，治理 HEAD 不替代产品 source。
+
+`PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`：四项公开匿名下载 bytes/SHA256 与冻结候选全等；production RSA-PSS/SHA256 PASS，公钥指纹 `565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`；公开 ZIP 618 项、tree SHA256 `25FC29E568E14AFB2D02241D83D00B958D2F2971E93B5DFB70ADC5334DD38E07`、禁入/不安全路径/重复项均 0；App/Updater `1.0.5.0`，Updater subsystem 2，migration 9。v1.0.4 Release/四资产身份未改变。详见 `../ACCEPTANCE/S13-T01-RELEASE-RESULT.json`。
+
+S13-T01 = `V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED`；Stage13 = IN_PROGRESS；NO_FULL。下一步只由用户使用正式 v1.0.4 完成真实升级，确认 modal 阻断主界面、点击更新正常启动、无黑色控制台、自动重启到 v1.0.5、数据保持、再次启动仍为 v1.0.5。v1.0.4 的旧 UI 不要求验证“无稍后提醒”；v1.0.5 新强制升级策略留待其发起的后续正式升级自然验收。
+
+# 2026-09-08 历史：v1.0.5 最终候选技术接受，等待发布授权
 
 最终产品 source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；治理 HEAD 不得替代该身份。全新 v1.0.4-only 最终候选已保存到 `D:\S13-TestAssets\v1.0.5-final\3b483ef7`：ZIP 109428193 bytes / `D5C7D5DF10C9E3D900C3B064C6C79A5A090E6FC2CBC9D50C218BAB725FDBA53E`，Setup 75342417 bytes / `AC1DD32726C9B2D8EDD39CBB386FD24D3F32EAA4CC05435EA68860BB3740DDAC`，manifest 869 bytes / `BE364995F262701DDF8362B0B8BE2E3260F303FEF5D7D346B4A8659B0AF55F95`，signature 384 bytes / `978E0A66292DB9980AFC4D4F861CED15BF5738A6C4D8855DB364D711844217FC`。构建输出与持久副本逐字节一致。
 
