@@ -169,7 +169,7 @@ begin
      not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdKey}}_is1', 'InstallLocation', InstallLocation) or
      (CompareText(DisplayName, '{#AppName}') <> 0) or (CompareText(RemoveBackslashUnlessRoot(ExpandFileName(InstallLocation)), RemoveBackslashUnlessRoot(ExpandFileName(ExistingInstallRoot))) <> 0) or
      not IsSafeExistingUninstall(ExistingInstallRoot, UninstallCommand) or not IsOrdinaryInstallTree(ExistingInstallRoot) or
-     not GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', AppVersion) or (CompareText(DisplayVersion + '.0', AppVersion) <> 0)) then
+     not GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', AppVersion)) then
   begin
     SuppressibleMsgBox('已安装程序树无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
     Result := False;

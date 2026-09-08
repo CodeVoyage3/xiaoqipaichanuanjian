@@ -190,7 +190,7 @@ public partial class App : System.Windows.Application
 #if S9T07_TEST
         if (RuntimeDataRoot.IsTestUpdateInstall)
         {
-            InitializeTrayAndReminderScheduler();
+            InitializeDesktopRuntime();
             Dispatcher.BeginInvoke(RuntimeDataRoot.IsS11PreReleaseInstall ? RunS11PreReleaseInstall : RunS9T07TestInstall);
             return;
         }
@@ -204,7 +204,7 @@ public partial class App : System.Windows.Application
         }
 
         Dispatcher.BeginInvoke(
-            InitializeTrayAndReminderScheduler,
+            InitializeDesktopRuntime,
             DispatcherPriority.ApplicationIdle);
     }
 
@@ -344,7 +344,7 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 
-    private void InitializeTrayAndReminderScheduler()
+    private void InitializeDesktopRuntime()
     {
         if (MainWindow is not UI.MainWindow mainWindow || _logger is null)
         {
@@ -362,23 +362,33 @@ public partial class App : System.Windows.Application
             mainWindow.ReminderTimeChanged += ReminderTimeChanged;
         }
 
+        InitializeTray(mainWindow, _logger);
         StartUpdateCheck(mainWindow);
+        InitializeReminderScheduler(mainWindow, _logger);
+    }
 
-        WindowsTrayIcon trayIcon;
+    private void InitializeTray(UI.MainWindow mainWindow, LocalFileLogger logger)
+    {
         try
         {
-            trayIcon = new WindowsTrayIcon(mainWindow, ShowMainWindow, ExitApplication);
+            _trayIcon = new WindowsTrayIcon(mainWindow, ShowMainWindow, ExitApplication);
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
         }
         catch (Exception exception)
         {
-            _logger.TryWrite(
+            _trayIcon?.Dispose();
+            _trayIcon = null;
+            logger.TryWrite(
                 "error",
                 "tray_icon_creation_failed",
                 "系统托盘图标创建失败，关闭主窗口将正常退出应用。",
                 exception.ToString());
-            return;
         }
+    }
 
+    private void InitializeReminderScheduler(UI.MainWindow mainWindow, LocalFileLogger logger)
+    {
+        DailyReminderScheduler? scheduler = null;
         try
         {
             int reminderMinuteOfDay;
@@ -392,8 +402,8 @@ public partial class App : System.Windows.Application
             var coordinator = new DailyReminderRuntimeCoordinator(
                 new WindowsMessageBoxReminderChannel(
                     () => mainWindow.IsVisible ? mainWindow : null),
-                _logger);
-            _reminderScheduler = new DailyReminderScheduler(
+                logger);
+            scheduler = new DailyReminderScheduler(
                 reminderMinuteOfDay,
                 localNow =>
                 {
@@ -414,27 +424,20 @@ public partial class App : System.Windows.Application
                             ReminderRecorded: false);
                     }
                 },
-                _logger);
-            _trayIcon = trayIcon;
-            ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            _reminderScheduler.Start();
+                logger);
+            scheduler.Start();
+            _reminderScheduler = scheduler;
         }
         catch (Exception exception)
         {
-            trayIcon.Dispose();
-            _trayIcon = null;
-            _reminderScheduler?.Dispose();
+            scheduler?.Dispose();
             _reminderScheduler = null;
-            // If scheduler startup failed after the tray path selected explicit
-            // shutdown, restore the ordinary close behavior before returning.
-            ShutdownMode = ShutdownMode.OnLastWindowClose;
-            _logger.TryWrite(
+            logger.TryWrite(
                 "error",
                 "daily_reminder_runtime_failed",
-                "每日集中提醒运行时初始化失败，关闭主窗口将正常退出应用。",
+                "每日集中提醒运行时初始化失败，托盘和主界面继续运行。",
                 exception.ToString());
         }
-
     }
 
     private void StartUpdateCheck(UI.MainWindow mainWindow)

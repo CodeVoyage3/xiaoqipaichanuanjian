@@ -152,7 +152,6 @@ public partial class MainWindow : Window
     {
         _updateDiagnostics?.Add("gui-cancel", new { source, tokenId = _updatePackageCancellation.GetHashCode() });
         _updatePackageCancellation.Cancel();
-        try { _updateWorker?.GetAwaiter().GetResult(); } catch (OperationCanceledException) { } catch { }
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)

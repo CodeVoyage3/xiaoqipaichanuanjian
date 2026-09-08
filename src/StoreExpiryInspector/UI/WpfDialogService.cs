@@ -32,17 +32,22 @@ internal static class WpfDialogService
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
         var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
-        var cancel = new Button { Content = "取消更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "SecondaryButtonStyle") };
-        later.Click += (_, _) => { model.DismissCommand.Execute(null); dialog.Close(); };
+        var cancel = new Button { Content = "取消更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Visibility = Visibility.Collapsed, Style = FindStyle(owner, "SecondaryButtonStyle") };
+        later.Click += (_, _) =>
+        {
+            dialog.Close();
+            model.DismissCommand.Execute(null);
+            Show(owner, "稍后提醒", "当前版本暂时可以继续使用，请尽快完成升级。旧版本后续可能停止支持，届时可能无法继续使用软件。", "知道了", WpfDialogKind.Information, showCancel: false);
+        };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
         cancel.Click += (_, _) => model.CancelCommand.Execute(null);
         System.ComponentModel.PropertyChangedEventHandler changed = (_, _) =>
         {
-            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; bytes.Text = model.ProgressText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
+            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; bytes.Text = model.ProgressText; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.IsBusy ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
         };
         model.PropertyChanged += changed;
         dialog.Closed += (_, _) => { model.PropertyChanged -= changed; model.DialogClosed(); };
-        buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.ShowDialog();
+        buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => later.Focus(); dialog.ShowDialog();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {
