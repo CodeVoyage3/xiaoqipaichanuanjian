@@ -1,3 +1,13 @@
+# 2026-09-08：v1.0.4 -> v1.0.5 真实升级失败，normal-launch hotfix 技术接受
+
+真实升级回执：更新提示、下载、安装程序启动、安装完成均 PASS；安装后自动启动新版 FAIL，用户手动启动 v1.0.5 PASS。事故限定为 same-schema 成功路径在 `Committed` 后直接启动并标记 `Completed`，未复用既有 `NormalLaunchHandshake`。
+
+Terra 在隔离分支提交 `a66db7e829b7508da439ef8f6a70d11954e574a8` 与安全补丁 `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`：same-schema 路径现执行 intent/token、进程身份、candidate tree、Loaded/ACK 与超时清理；只有完整绑定验证通过的 same-schema intent 才不作为 schema evidence，畸形、错绑或 schema-bound evidence 继续 fail-closed。未新增协议文件、字段、状态、migration 或依赖。
+
+Sol 独立门禁：专项 `43/43`、相邻高风险 `8/8`；App/Updater Release build 均 `0 warning / 0 error`；EF `NO_MODEL_DRIFT`；migration 9；App/Updater PE subsystem 2；`git diff --check`、限定 secret scan、schema/migration 与禁改范围检查均 PASS。`NO_FULL`；全部动态证据仅使用隔离 worktree 与 TEMP/GUID，未访问正式安装或正式数据库。
+
+S13-T01 = `REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED`；Stage13 = IN_PROGRESS。未生成 v1.0.6 候选，未 push、tag、Release，未创建 S13-T02/Stage14；下一步须另获候选授权，最终仍由用户执行真实 v1.0.5 -> v1.0.6 GUI/升级验收。
+
 # 2026-09-08：stable v1.0.5 已发布，等待用户 v1.0.4 -> v1.0.5 真实升级
 
 stable v1.0.5 已发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.5>。Release `384564898` 为 latest、非 draft、非 prerelease；annotated tag object `2ac5961be79796ee3c9da140ff13139ee1218730` 解引用到冻结产品 source `3b483ef772d6442febfbcdd16ab87c6965839445`，治理 HEAD 不替代产品 source。

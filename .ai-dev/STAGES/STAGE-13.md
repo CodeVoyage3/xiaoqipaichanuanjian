@@ -1,10 +1,17 @@
 # Stage13｜强制升级与合法跨版本升级链
 
 Stage13 = IN_PROGRESS
-S13-T01 = V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED
-目标版本：v1.0.5。
+S13-T01 = REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED
+当前 hotfix 目标版本：v1.0.6；v1.0.5 仍为已发布 stable。
 
-candidate / production source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；治理提交不得冒充 candidate source。stable v1.0.5 已发布，manifest 严格 `minVersion=maxVersion=1.0.4` 且 source migration 为 production migration 9，`PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`。v1.0.2/v1.0.3 与 TEST_TRANSPORT 不再是 blocker；Stage13 保持 IN_PROGRESS，当前只等待用户真实 v1.0.4 -> v1.0.5 GUI/升级验收。详见 `../ACCEPTANCE/S13-T01-SOL.md`。
+v1.0.5 production source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；治理提交不得冒充产品 source。真实 v1.0.4 -> v1.0.5 已暴露安装后自动启动失败；same-schema normal-launch 最小修复已由 Terra 提交并经 Sol 技术接受。v1.0.6 候选、发布及真实 v1.0.5 -> v1.0.6 验收均未授权，详见 `../ACCEPTANCE/S13-T01-SOL.md`。
+
+## 2026-09-08 normal-launch hotfix 技术接受
+
+- 实现提交：`a66db7e829b7508da439ef8f6a70d11954e574a8`、`a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`。
+- same-schema `Committed` 路径复用既有 intent/token、进程身份、candidate tree、Loaded/ACK 与超时清理；schema evidence 区分仍 fail-closed。
+- Sol：专项 `43/43`、相邻高风险 `8/8`、双 Release build、EF/migration 9、PE subsystem 2、diff/secret/scope 门禁 PASS。
+- `NO_FULL`；仅隔离 TEMP/GUID；无候选、push、tag、Release、S13-T02 或 Stage14。
 
 ## 开工现场（2026-09-07，Asia/Shanghai）
 

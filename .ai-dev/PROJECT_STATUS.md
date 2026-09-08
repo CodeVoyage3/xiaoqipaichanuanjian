@@ -1,3 +1,10 @@
+# 2026-09-08 当前：v1.0.5 normal-launch hotfix 技术接受，等待 v1.0.6 候选授权
+
+- Stage13 = IN_PROGRESS；S13-T01 = REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED。
+- 真实 v1.0.4 -> v1.0.5：提示、下载、安装与手动启动新版 PASS；安装后自动启动新版 FAIL。根因是 same-schema `Committed` 成功路径未复用既有 `NormalLaunchHandshake`。
+- Terra 提交 `a66db7e829b7508da439ef8f6a70d11954e574a8`、`a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`；Sol 独立专项 `43/43`、相邻高风险 `8/8`，双项目 Release build、EF/migration 9、PE subsystem 2、diff/secret/scope 门禁均 PASS。
+- `NO_FULL`；未访问正式安装/数据库，未生成候选，未 push/tag/Release，未创建 S13-T02/Stage14。下一步只等待 v1.0.6 hotfix candidate 的独立授权。
+
 # 2026-09-08 当前：stable v1.0.5 已发布，等待用户真实升级
 
 - Stage13 = IN_PROGRESS；S13-T01 = V105_RELEASED / WAITING_USER_V104_TO_V105_UPGRADE / NOT_ACCEPTED。

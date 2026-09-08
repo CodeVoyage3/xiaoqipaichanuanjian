@@ -1,6 +1,16 @@
 # S13-T01 Sol 独立技术验收（2026-09-07）
 
-结论：`IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
+结论：`REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED`。
+
+## 2026-09-08 v1.0.4 -> v1.0.5 事故与 normal-launch hotfix
+
+用户真实升级回执为：更新提示、下载、安装程序启动、安装完成均 PASS；安装后自动启动新版 FAIL；手动启动 v1.0.5 PASS。该回执不等同于升级成功，也不关闭 S13-T01。
+
+Terra 在 fresh 隔离分支提交 `a66db7e829b7508da439ef8f6a70d11954e574a8`，使 same-schema `Committed` 成功路径复用既有 `NormalLaunchHandshake`。Sol 全 diff 复核发现首次实现会把 `normal-launch.json` 一概移出 schema evidence，退回后由同一 Terra 以 `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355` 修复：只有 operation/data root/app path/candidate tree/role/phase 完整绑定的 same-schema intent 才可排除；畸形、错绑或 schema-bound evidence 继续 fail-closed。
+
+最终 diff 共 8 个文件；未新增协议文件、字段、状态、migration 或依赖。Sol fresh 独立结果：专项 `43/43`，相邻高风险 `8/8`；App/Updater Release build 均 `0 warning / 0 error`；EF `NO_MODEL_DRIFT`；migration 9，末条 `20260901155124_AddPolicyAndBaselineFoundation`；App/Updater PE subsystem 2；`git diff --check`、限定 secret scan、schema/migration 与禁改范围检查均 PASS。工作树 clean，分支未 push。
+
+`NO_FULL`。全部动态验证仅使用隔离 worktree 与 TEMP/GUID，未访问正式安装、正式数据库、正式数据根或备份。未生成 v1.0.6 候选，未 tag/Release，未创建 S13-T02/Stage14。下一步必须另获候选授权，并由用户完成真实 v1.0.5 -> v1.0.6 GUI/升级验收。
 
 生产实现已在隔离分支 `codex/s13-t01-terra` 提交至 `3b483ef772d6442febfbcdd16ab87c6965839445`，未 push、未 tag、未发布。Sol 完整 diff 复核后发现并退回的新阻断均由新的 Terra 修复：真实 MainWindow/Stage9 terminal 后的数据库维护时序、强制启动窗第三按钮、RequiredVersion 单调保护，以及 authoritative higher 已可信验签后路径查询失败仍必须先 durable 强制。
 
