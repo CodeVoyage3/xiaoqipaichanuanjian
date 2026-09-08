@@ -1,3 +1,18 @@
+# S13-T01 v1.0.6 public release acceptance (2026-09-08)
+
+Status: `V106_RELEASED / WAITING_USER_MANUAL_BRIDGE_ACCEPTANCE / NOT_ACCEPTED`; Stage13 remains `IN_PROGRESS`.
+
+Release ID `384770577` is current latest stable `v1.0.6`, with `draft=false` and `prerelease=false`. Annotated tag `v1.0.6` peels to final product source `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`.
+
+`PUBLIC_V106_RELEASE_ASSET_EQUIVALENCE = PASS`: ZIP `63D0BC0A1AEE22965393E21333C9FFA10BBAE53AFAC0C1C2591899EA60FAD100`; Setup `65E2689B57BB7918B589539E3E677B54A6E822C3B0EA384769A820FFA50FFA73`; manifest `6D6508FA2B25B9585DCF3741DCE57018D10B825DFAB2690A639689C5C64BF923`; signature `6555846A4598B1660870ED74F06D5D8F3518A8BF7204EE20373F38CB781709E4`. Fresh public downloads match the frozen corrected candidate.
+
+v1.0.6 remains `HOTFIX / MANUAL_BRIDGE_RELEASE`. v1.0.5 -> v1.0.6 online update is `NOT_VERIFIED`; the next formal online-upgrade acceptance remains v1.0.6 -> v1.0.7.
+
+The only remaining acceptance is user execution of the official v1.0.6 Setup over the existing v1.0.5 installation, without uninstall by default, followed by confirmation of the main UI, tray, original data and normal operation. S13-T01 and Stage13 remain open until that receipt is accepted.
+
+No production code, Release body, tag or asset changed. No Full, 43/43, 8/8, Release build, EF or migration rerun.
+
+
 # S13-T01 product decision closeout (2026-09-08)
 
 Status: `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`.

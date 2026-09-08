@@ -1,3 +1,15 @@
+# 2026-09-08: v1.0.6 released; waiting for user manual bridge acceptance
+
+Stage13 = `IN_PROGRESS`; S13-T01 = `V106_RELEASED / WAITING_USER_MANUAL_BRIDGE_ACCEPTANCE / NOT_ACCEPTED`.
+
+GitHub Release `v1.0.6` ID `384770577` is the current latest stable release (`draft=false`, `prerelease=false`). Its annotated tag peels to final product source `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`.
+`PUBLIC_V106_RELEASE_ASSET_EQUIVALENCE = PASS`: fresh public downloads of ZIP, Setup, manifest and signature match the frozen corrected candidate SHA256 values.
+v1.0.6 remains `HOTFIX / MANUAL_BRIDGE_RELEASE`. The v1.0.5 -> v1.0.6 online update is `NOT_VERIFIED` and is not a conclusion of this release; the next formal online-upgrade acceptance remains v1.0.6 -> v1.0.7.
+The only remaining acceptance is user execution of the official v1.0.6 Setup over the existing v1.0.5 installation, without uninstall by default, followed by confirmation of the main UI, tray, original data and normal operation.
+No production code or Release asset changed. No Full, 43/43, 8/8, Release build, EF or migration rerun.
+
+
+
 # 2026-09-08: v1.0.6 product decision - manual bridge release candidate accepted
 
 S13-T01 = `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`; Stage13 remains IN_PROGRESS.

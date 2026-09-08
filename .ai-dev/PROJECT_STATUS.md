@@ -1,3 +1,14 @@
+# 2026-09-08 current: v1.0.6 released; user manual bridge acceptance pending
+
+- Stage13 = `IN_PROGRESS`; S13-T01 = `V106_RELEASED / WAITING_USER_MANUAL_BRIDGE_ACCEPTANCE / NOT_ACCEPTED`.
+- Release ID `384770577`; latest stable = `v1.0.6`; `draft=false`; `prerelease=false`; tag peels to product source `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`.
+- `PUBLIC_V106_RELEASE_ASSET_EQUIVALENCE = PASS`: all four public asset SHA256 values match the frozen corrected candidate.
+- v1.0.6 = `HOTFIX / MANUAL_BRIDGE_RELEASE`. v1.0.5 -> v1.0.6 online update = `NOT_VERIFIED`; next formal online-upgrade acceptance = v1.0.6 -> v1.0.7.
+- Only remaining acceptance: close v1.0.5, run the official v1.0.6 Setup directly without uninstall by default, then confirm the main UI, tray, original data and normal use.
+- No production code, tag, Release or asset change. No rebuild or test rerun; Full = `NOT_RUN`.
+
+
+
 # 2026-09-08 current: v1.0.6 manual bridge release candidate technically accepted
 
 - Stage13 = IN_PROGRESS; S13-T01 = `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`.
