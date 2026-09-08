@@ -1,3 +1,14 @@
+# 2026-09-08：Stage14 / S14-T01 简化在线更新治理冻结
+
+fresh fetch 后 `main HEAD == origin/main == 747fb69e316bbf3e428e6985edacec3cc8d8c65b`，ahead/behind `0/0`。GitHub latest stable 仍为 v1.0.4（Release ID `383891004`），远端仅保留 v1.0.4 tag；v1.0.5/v1.0.6 Release/tags 均不存在。v1.0.4 是唯一当前可信稳定产品基线。
+
+Stage14 = `IN_PROGRESS / GOVERNANCE_FROZEN / IMPLEMENTATION_NOT_AUTHORIZED`；S14-T01 = `GOVERNANCE_FROZEN / READY_FOR_IMPLEMENTATION_AUTHORIZATION / NOT_IMPLEMENTED`。
+
+最小范围冻结为：主窗和托盘优先、现有 5 秒超时检查在启动后后台异步执行、UI 线程不等待更新任务、立即更新/稍后提醒及固定二次告知、托盘与每日提醒失败域拆分、安装器容忍 DisplayVersion/EXE 版本不一致、same-schema `Committed` 复用既有 NormalLaunchHandshake 后再 Completed。禁止新升级状态机、强制状态/24小时宽限/AutoContinue/业务锁死/断网退出/路径图/自动连跳、新 migration/依赖/门禁；不得恢复或 cherry-pick 废弃 v1.0.5/v1.0.6。
+
+主工作树原有 1 个修改测试文件与 4 个未跟踪用户文件均未触碰。未创建 Terra，未写生产代码，未 build/测试/Full，未访问正式数据，未生成候选或发布。当前已到“可授权实施”停止点，但实施仍未授权。详见 `../STAGES/STAGE-14.md`、`../TASKS/S14-T01.md`、`../ANALYSIS/S14-T01-SIMPLIFIED-ONLINE-UPDATE-DESIGN.md`、`../ACCEPTANCE/S14-T01.md`。
+
+
 # 2026-09-08：已回退至 v1.0.4，Stage13 收口
 
 Stage13 = `CLOSED / SUPERSEDED_BY_PRODUCT_DECISION`；S13-T01 = `IMPLEMENTATION_ABANDONED / PRODUCT_TREE_ROLLED_BACK_TO_V104 / CLOSED`。

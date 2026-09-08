@@ -1,3 +1,12 @@
+# 2026-09-08 current：Stage14 / S14-T01 治理冻结，等待实施授权
+
+- fresh fetch：`HEAD == origin/main == 747fb69e316bbf3e428e6985edacec3cc8d8c65b`，ahead/behind `0/0`；GitHub latest stable = v1.0.4（Release ID `383891004`），远端无 v1.0.5/v1.0.6 tags。
+- Stage14 = `IN_PROGRESS / GOVERNANCE_FROZEN / IMPLEMENTATION_NOT_AUTHORIZED`；S14-T01 = `GOVERNANCE_FROZEN / READY_FOR_IMPLEMENTATION_AUTHORIZATION / NOT_IMPLEMENTED`。
+- 新版 v1.0.5 最小范围：主窗/托盘优先、启动后异步有界更新检查、UI 不同步等待、立即更新/稍后提醒与固定二次告知、托盘/提醒解耦、安装器容忍 DisplayVersion/EXE 不一致、same-schema 普通启动复用既有 Loaded/ACK 握手。
+- 不做强制升级、24小时宽限、AutoContinue、业务锁死、断网退出、路径图/自动连跳、新状态机、migration/依赖/协议扩张或额外安全门禁；禁止恢复/cherry-pick 废弃实现。
+- 当前只完成治理文档。未创建 Terra、未写生产代码、未 build/测试/Full、未访问正式数据、未生成候选、未发布。已到可授权实施停止点，等待用户另行授权。
+
+
 # 2026-09-08 current：v1.0.4 restored; Stage13 closed
 
 - Stage13 = `CLOSED / SUPERSEDED_BY_PRODUCT_DECISION`；S13-T01 = `IMPLEMENTATION_ABANDONED / PRODUCT_TREE_ROLLED_BACK_TO_V104 / CLOSED`。
