@@ -1,4 +1,12 @@
-# 2026-09-07 当前：S13-T01 已实现，进入 Sol 技术验收就绪停止点
+# 2026-09-08 当前：S13-T01 等待 TEST_TRANSPORT 入口
+
+- Stage13 = IN_PROGRESS；S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / WAITING_TEST_TRANSPORT_ENTRY / NOT_ACCEPTED。
+- candidate / production source = `3b483ef772d6442febfbcdd16ab87c6965839445`，已作为当前 remote main 的祖先保存；governance main 已 push，精确 SHA 以包含本节的 `origin/main` 为准，不得用治理 SHA替代 candidate source。
+- 持久 compatibility candidate：`D:\S13-TestAssets\v1.0.5-compatibility\3b483ef7`。ZIP 109428212 bytes / `F27E6F14ADE71FE6BABB364EBF023DF29237F14D6FFF04BFF5E88128AED18224`；manifest 869 bytes / `56F84C0078691B7631195285AEDC30CC0C5D9DA5348128A565E9B201FDC33CEC`；signature 384 bytes / `0351C893B55A727A37E1FB899FD357123C381D9E98DA143DD7CBCECCCA5D561A`。
+- production RSA-PSS/SHA256 PASS；App/Updater FileVersion `1.0.5.0`；Updater PE subsystem `2 / Windows GUI`；migrationCount 9。
+- TEST_TRANSPORT 尚未建立，`TEST_TRANSPORT_READY = FAIL / NOT_RUN`；Full = NO_FULL。v1.0.5 未发布、未 tag、未创建 Release。
+
+# 2026-09-07 历史：S13-T01 已实现，进入 Sol 技术验收就绪停止点
 
 - Stage13 = IN_PROGRESS；S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED；隔离分支 HEAD `3b483ef772d6442febfbcdd16ab87c6965839445`，未 push/tag/release。
 - Sol 独立复核与 focused 通过：S13 + S9-T03/T04/T06 主集合 90/90，normal-launch safety 7/7；Release App/Updater 0 warning/0 error；EF NO_MODEL_DRIFT；migrationCount=9；candidate App/Updater 1.0.5.0、PE subsystem 2；diff/secret scan PASS。默认 NO_FULL 保持。
