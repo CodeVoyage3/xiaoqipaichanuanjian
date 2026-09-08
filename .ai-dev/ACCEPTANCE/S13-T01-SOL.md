@@ -1,3 +1,10 @@
+# S13-T01 final superseding decision (2026-09-08)
+
+Status: `IMPLEMENTATION_ABANDONED / PRODUCT_TREE_ROLLED_BACK_TO_V104 / CLOSED`; Stage13 = `CLOSED / SUPERSEDED_BY_PRODUCT_DECISION`.
+
+The v1.0.5/v1.0.6 implementation and all pending manual or online-upgrade acceptance gates are withdrawn by product decision. Their evidence below remains historical only. Product commit `8a0d7368d26a2dc35b50e842e0f1dfb32b119f13` restores every path outside `.ai-dev/**` to the v1.0.4 tree. GitHub v1.0.5/v1.0.6 Releases and remote tags were deleted; v1.0.4 is latest and retained. No Full, tests, build, formal SQLite or formal install/data-root access occurred. See `S13-T01-ROLLBACK-TO-V104.md`.
+
+
 # S13-T01 v1.0.6 public release acceptance (2026-09-08)
 
 Status: `V106_RELEASED / WAITING_USER_MANUAL_BRIDGE_ACCEPTANCE / NOT_ACCEPTED`; Stage13 remains `IN_PROGRESS`.

@@ -1,5 +1,7 @@
 # Stage13｜强制升级与合法跨版本升级链
 
+> 2026-09-08 最终裁决：`Stage13 = CLOSED / SUPERSEDED_BY_PRODUCT_DECISION`。v1.0.5/v1.0.6 实现废弃，产品树已恢复到 v1.0.4；本文件下方强制升级设计与历史状态仅作审计，不再是现行产品要求。后续 v1.0.5 将另行按非强制异步更新规则设计，本轮未创建或实施。详见 `../ACCEPTANCE/S13-T01-ROLLBACK-TO-V104.md`。
+
 Stage13 = IN_PROGRESS
 S13-T01 = REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED
 当前 hotfix 目标版本：v1.0.6；v1.0.5 仍为已发布 stable。

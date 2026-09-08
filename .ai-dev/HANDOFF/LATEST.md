@@ -1,3 +1,13 @@
+# 2026-09-08：已回退至 v1.0.4，Stage13 收口
+
+Stage13 = `CLOSED / SUPERSEDED_BY_PRODUCT_DECISION`；S13-T01 = `IMPLEMENTATION_ABANDONED / PRODUCT_TREE_ROLLED_BACK_TO_V104 / CLOSED`。
+
+v1.0.4 重新认定为最后可信稳定基线。产品恢复提交 `8a0d7368d26a2dc35b50e842e0f1dfb32b119f13` 排除 `.ai-dev/**` 后与 v1.0.4 产品树无差异；v1.0.5/v1.0.6 历史提交保留，未 force push 或改写历史。
+GitHub v1.0.5/v1.0.6 Release 与远端 tags 已删除；fresh 复核 latest 为 v1.0.4（Release ID `383891004`），v1.0.4 Release/tag 保留。
+新版 v1.0.5 仅保留新的产品方向，未创建任务或开始实现：先启动主界面和托盘、后台异步检查、立即更新/稍后提醒、允许继续使用、取消全部强制升级状态机、托盘与每日提醒解耦、安装器兼容 DisplayVersion/EXE 版本不一致、正式在线升级验收后置到发布后。
+`NO_FULL`；未运行测试/build，未访问正式 SQLite/安装根/数据根/备份。详见 `../ACCEPTANCE/S13-T01-ROLLBACK-TO-V104.md`。
+
+
 # 2026-09-08: v1.0.6 released; waiting for user manual bridge acceptance
 
 Stage13 = `IN_PROGRESS`; S13-T01 = `V106_RELEASED / WAITING_USER_MANUAL_BRIDGE_ACCEPTANCE / NOT_ACCEPTED`.

@@ -1,3 +1,12 @@
+# 2026-09-08 current：v1.0.4 restored; Stage13 closed
+
+- Stage13 = `CLOSED / SUPERSEDED_BY_PRODUCT_DECISION`；S13-T01 = `IMPLEMENTATION_ABANDONED / PRODUCT_TREE_ROLLED_BACK_TO_V104 / CLOSED`。
+- v1.0.4 是最后可信稳定基线；产品恢复提交 `8a0d7368d26a2dc35b50e842e0f1dfb32b119f13` 的非治理树与 v1.0.4 一致。
+- v1.0.5/v1.0.6 Release 和远端 tags 已删除；GitHub latest = v1.0.4（Release ID `383891004`）。历史 commits/验收证据保留，不再代表当前产品状态。
+- 后续 v1.0.5 必须按非强制、启动后异步检查、允许稍后使用、托盘与每日提醒解耦、安装版本识别兼容、发布后正式在线升级验收的新规则重新设计；本轮未开工。
+- `NO_FULL`；未运行测试/build，未访问正式 SQLite、安装根、数据根或备份。
+
+
 # 2026-09-08 current: v1.0.6 released; user manual bridge acceptance pending
 
 - Stage13 = `IN_PROGRESS`; S13-T01 = `V106_RELEASED / WAITING_USER_MANUAL_BRIDGE_ACCEPTANCE / NOT_ACCEPTED`.
