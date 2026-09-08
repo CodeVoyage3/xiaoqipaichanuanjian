@@ -1,3 +1,11 @@
+# 2026-09-08：v1.0.5 最终候选技术接受，等待发布授权
+
+最终产品 source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；治理 HEAD 不得替代该身份。全新 v1.0.4-only 最终候选已保存到 `D:\S13-TestAssets\v1.0.5-final\3b483ef7`：ZIP 109428193 bytes / `D5C7D5DF10C9E3D900C3B064C6C79A5A090E6FC2CBC9D50C218BAB725FDBA53E`，Setup 75342417 bytes / `AC1DD32726C9B2D8EDD39CBB386FD24D3F32EAA4CC05435EA68860BB3740DDAC`，manifest 869 bytes / `BE364995F262701DDF8362B0B8BE2E3260F303FEF5D7D346B4A8659B0AF55F95`，signature 384 bytes / `978E0A66292DB9980AFC4D4F861CED15BF5738A6C4D8855DB364D711844217FC`。构建输出与持久副本逐字节一致。
+
+manifest 为 stable `v1.0.5`，严格 `minVersion=maxVersion=1.0.4`，source migration min/max 均为第 9 条 `20260901155124_AddPolicyAndBaselineFoundation`，target migrations 共 9 条。production RSA-PSS/SHA256 PASS，公钥 SPKI SHA256 `565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。App/Updater `1.0.5.0`、Updater subsystem 2、Setup `1.0.5`；ZIP 618 项逐项 identity 匹配、禁入项 0；Release build 0/0、EF NO_MODEL_DRIFT、migration 9、内置 TEMP/GUID smoke、diff-check、secret scan 均 PASS。
+
+S13-T01 = `FINAL_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`；Stage13 = IN_PROGRESS；v1.0.5 = NOT_RELEASED。NO_FULL，未修改生产代码，未 tag/Release/upload。下一步只等待用户单独授权发布；公开资产等价复核后再由用户执行真实 v1.0.4 -> v1.0.5 GUI/升级验收。
+
 # 2026-09-08：产品兼容基线收敛为仅 v1.0.4 -> v1.0.5
 
 用户撤销 v1.0.2/v1.0.3 -> v1.0.5 的生产兼容要求；两版未形成需继续维护的门店升级基线，既有 TEMP/Sandbox/TEST_TRANSPORT 记录仅作历史环境证据，不记 compatibility FAIL，也不再投入代理、CA、Sandbox 或独立账户方案。v1.0.5 正式 manifest 固定 `minVersion=maxVersion=1.0.4`，source migration min/max 仍严格为 production migration 9，除非后续另有产品决策。

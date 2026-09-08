@@ -39,3 +39,15 @@
 - v1.0.5 正式 manifest 固定 `minVersion=maxVersion=1.0.4`；source migration min/max 严格为 production migration 9。现有 1.0.2..1.0.4 compatibility manifest/signature 被此产品决策取代，不得作为最终发布 manifest，其冻结 bytes 与历史验签证据保留。
 - 当前无 Sandbox、mitmproxy 进程或当前用户 mitmproxy CA；主机代理仍为原值 `127.0.0.1:7890`。未修改生产代码，NO_FULL。
 - 下一状态：`IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / V104_ONLY_SOURCE_RANGE_DECIDED / FINAL_CANDIDATE_PENDING / NOT_ACCEPTED`。下一步只准备 v1.0.4-only 最终候选；用户真实 GUI/升级验收与发布收口继续分离。
+
+## 2026-09-08 v1.0.5 最终候选独立技术验收
+
+- fresh：隔离 worktree `HEAD == origin/main == 576372ce84d8aa0dbc4c484d7c06812ddd543788`，ahead/behind `0/0`、clean；`3b483ef772d6442febfbcdd16ab87c6965839445..HEAD` 只有四个治理提交，排除 `.ai-dev/**` 后产品树无差异。GitHub `releases/latest` 302 到 `v1.0.4`，v1.0.4 Release 页面 HTTP 200。
+- 最终 source 固定 `3b483ef772d6442febfbcdd16ab87c6965839445`。全新输出使用现有 Stage9 发布协议、win-x64/self-contained、生产 DPAPI CurrentUser RSA3072 身份及 Inno Setup；没有修改仓库生产源码。首次 publish 因隔离 worktree 缺少 win-x64 restore 资产在生成候选前 fail-closed，定向 restore App/Updater 后在新 GUID 输出成功。
+- 持久目录 `D:\S13-TestAssets\v1.0.5-final\3b483ef7`。ZIP 109428193 bytes / `D5C7D5DF10C9E3D900C3B064C6C79A5A090E6FC2CBC9D50C218BAB725FDBA53E`；Setup 75342417 bytes / `AC1DD32726C9B2D8EDD39CBB386FD24D3F32EAA4CC05435EA68860BB3740DDAC`；manifest 869 bytes / `BE364995F262701DDF8362B0B8BE2E3260F303FEF5D7D346B4A8659B0AF55F95`；signature 384 bytes / `978E0A66292DB9980AFC4D4F861CED15BF5738A6C4D8855DB364D711844217FC`。四资产构建输出与持久副本 bytes/SHA256 全等；目录不含私钥或业务数据。
+- manifest：schema 1、stable、version `1.0.5`、releaseTag `v1.0.5`、rid `win-x64`、`minVersion=maxVersion=1.0.4`；source migration min/max 均为 `20260901155124_AddPolicyAndBaselineFoundation`，target migrations 9。package bytes/SHA 与 ZIP 一致。
+- production RSA-PSS/SHA256 独立验签 PASS；公钥 SPKI SHA256 `565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。签名 SHA 与旧 candidate 不同符合 RSA-PSS 随机性，判断以生产公钥验签为准。
+- App/Updater FileVersion 均 `1.0.5.0`，Updater PE subsystem `2 / Windows GUI`，Setup FileVersion/ProductVersion `1.0.5`。ZIP 618 个文件与 release evidence 逐项 bytes/SHA 全等，package tree SHA256 `25FC29E568E14AFB2D02241D83D00B958D2F2971E93B5DFB70ADC5334DD38E07`，allowlist unexpected 0、禁入项 0、路径/重复项 0。独立审计首轮仅因规则把 `SQLitePCLRaw.*.dll` 误当数据库文件而误报，修正为真实文件扩展匹配后同一候选通过，未重建资产。
+- Release App/Updater build 均 0 warning/0 error；EF `NO_MODEL_DRIFT`；migrationCount 9。内置 `--s9-t01-smoke-exit` 使用全新 TEMP/GUID data root，exit 0、创建隔离 app.db、写入 `s9_t01_smoke_ready`。此前两次未传内置 smoke 参数的外部窗口观察被启动更新策略阻断并由测试宿主终止，均未创建数据库，不记产品 smoke 失败。
+- `git diff --check`（source..HEAD 与 worktree）PASS；source/installer 与持久四资产 secret scan 0 命中；最终治理前 worktree clean。本轮没有 full/90/7/178/Stage9 矩阵，没有 production code、schema、dependency 或 migration 修改，没有 Sandbox/TEST_TRANSPORT/proxy/CA，没有 tag/Release/upload。
+- 技术结论：`FINAL_CANDIDATE_TECHNICALLY_ACCEPTED`。S13-T01 = `FINAL_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`；Stage13 = IN_PROGRESS；v1.0.5 = NOT_RELEASED。停止等待用户单独发布授权；发布后公开资产等价复核和用户真实 v1.0.4 -> v1.0.5 GUI/升级通过前不得关闭。
