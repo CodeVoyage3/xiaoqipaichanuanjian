@@ -52,7 +52,7 @@ public static class PendingUpdateRecovery
         // must perform its durable post-commit completion.  Never let that journal bypass recovery.
         if (hasSchema && schemaElement.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null)) throw new InvalidOperationException("未完成更新记录无效，已停止启动以保护程序和数据。");
         var schema = hasSchema && schemaElement.ValueKind == JsonValueKind.Object;
-        if (!schema && HasSchemaEvidence(directory, document.RootElement.GetProperty("AppPath").GetString()!)) throw new InvalidOperationException("未完成更新记录无效，已停止启动以保护程序和数据。");
+        if (!schema && HasSchemaEvidence(directory)) throw new InvalidOperationException("未完成更新记录无效，已停止启动以保护程序和数据。");
         if (schema)
         {
             UpdateProtocolJson.RequireObject(schemaElement, "Phase", "Snapshot", "SourceMigrations", "TargetMigrations", "LaunchToken", "CandidatePid", "CandidateStartedUtc", "LastError");
@@ -66,7 +66,7 @@ public static class PendingUpdateRecovery
             SchemaUpgradeSnapshots.ValidateMetadata(root, wire.Snapshot!);
             if (!IsValidPhasePair((PendingPhase)value, schemaPhase)) throw new InvalidOperationException("未完成更新记录无效，已停止启动以保护程序和数据。");
         }
-        return (directory, journal, schema ? value is not (10 or 15) : value is not (10 or 14 or 15));
+        return (directory, journal, schema ? value is not (10 or 15) : value is not (9 or 10 or 14 or 15));
         }
     }
 
@@ -87,12 +87,7 @@ public static class PendingUpdateRecovery
 
     private enum PendingPhase { Prepared, MainExitRequested, MainExited, CandidateStaged, OldAppPreserved, SwitchStarted, CandidateActivated, CandidateStarted, WaitingForHealthAck, Committed, Completed, RollbackRequired, RollbackStarted, OldAppRestored, RollbackVerified, RolledBack, FailedNeedsManualRecovery }
 
-    private static bool HasSchemaEvidence(string directory, string appPath)
-    {
-        var normalLaunch = Path.Combine(directory, "normal-launch.json");
-        return new[] { "schema-source.db", "schema-restore.json", "candidate-identity.json", "candidate-authorization.json" }.Any(file => File.Exists(Path.Combine(directory, file))) || (File.Exists(Path.Combine(directory, "health-ack.json")) && !UpdateProtocolJson.IsLegacyHealthAck(Path.Combine(directory, "health-ack.json"))) ||
-            (File.Exists(normalLaunch) && !NormalLaunchHandshake.IsSameSchemaIntent(Path.GetDirectoryName(Path.GetDirectoryName(directory)!)!, Path.GetFileName(directory), appPath));
-    }
+    private static bool HasSchemaEvidence(string directory) => new[] { "schema-source.db", "schema-restore.json", "candidate-identity.json", "candidate-authorization.json", "normal-launch.json" }.Any(file => File.Exists(Path.Combine(directory, file))) || (File.Exists(Path.Combine(directory, "health-ack.json")) && !UpdateProtocolJson.IsLegacyHealthAck(Path.Combine(directory, "health-ack.json")));
 
     private static void EnsureOrdinaryDirectory(string directory)
     {

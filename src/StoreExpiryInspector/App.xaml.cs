@@ -2,7 +2,6 @@ using System.IO;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -29,9 +28,6 @@ public partial class App : System.Windows.Application
     private UpdateCheckRuntime? _updateCheckRuntime;
     private int _updateCheckStarted;
     private UpdateNetworkDiagnostics? _updateDiagnostics;
-    private UpdatePolicyStore? _updatePolicyStore;
-    private UpdatePolicyState? _updatePolicyState;
-    private bool _normalLaunchAcknowledged;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
@@ -142,12 +138,6 @@ public partial class App : System.Windows.Application
             StartUpgradeVerification(operationId, schemaToken, schemaToken is not null && !sourceVerification);
             return;
         }
-        var bypassStartupPolicy = RuntimeDataRoot.IsSmokeRun;
-#if S9T07_TEST
-        bypassStartupPolicy |= RuntimeDataRoot.IsTestUpdateInstall;
-#endif
-        var normalLaunchOperation = RuntimeDataRoot.NormalLaunchOperationId;
-        if (normalLaunchOperation is null && !bypassStartupPolicy && !PassStartupUpdatePolicy()) return;
         try
         {
             DatabaseInitializer.Initialize();
@@ -194,45 +184,9 @@ public partial class App : System.Windows.Application
         {
             MainWindow = new UI.MainWindow(_updateDiagnostics);
         }
-        if (normalLaunchOperation is not null)
-        {
-            MainWindow.IsEnabled = false;
-            MainWindow.Loaded += (_, _) =>
-            {
-                try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, normalLaunchOperation, RuntimeDataRoot.NormalLaunchToken!); _normalLaunchAcknowledged = true; }
-                catch { Shutdown(1); }
-            };
-        }
+        if (RuntimeDataRoot.NormalLaunchOperationId is { } loadedOperation)
+            MainWindow.Loaded += (_, _) => { try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, loadedOperation, RuntimeDataRoot.NormalLaunchToken!); } catch { Shutdown(1); } };
         MainWindow.Show();
-        if (normalLaunchOperation is not null)
-        {
-            Dispatcher.BeginInvoke(() => _ = CompleteNormalLaunchAsync(normalLaunchOperation, bypassStartupPolicy));
-            return;
-        }
-        StartOrdinaryRuntime();
-    }
-
-    private async Task CompleteNormalLaunchAsync(string operationId, bool bypassStartupPolicy)
-    {
-        try
-        {
-            if (!_normalLaunchAcknowledged) throw new InvalidDataException("普通启动加载确认无效。");
-            WaitForNormalLaunchTerminal(operationId);
-            if (MainWindow?.DataContext is not ShellViewModel shell) throw new InvalidDataException("普通启动 Shell 无效。");
-            await shell.StartupLoadTask;
-            if (!bypassStartupPolicy && !await PassStartupUpdatePolicyAsync()) return;
-            MainWindow.IsEnabled = true;
-            StartOrdinaryRuntime();
-        }
-        catch (Exception exception)
-        {
-            _logger?.TryWrite("error", "normal_launch_completion_failed", "普通启动事务未可信完成，业务不会开放。", exception.ToString());
-            Shutdown(1);
-        }
-    }
-
-    private void StartOrdinaryRuntime()
-    {
 #if S9T07_TEST
         if (RuntimeDataRoot.IsTestUpdateInstall)
         {
@@ -400,8 +354,8 @@ public partial class App : System.Windows.Application
         if (mainWindow.DataContext is ShellViewModel shell)
         {
             shell.ConfigureDatabaseProtectionRuntime(
-                () => BeginDatabaseMaintenanceAsync(),
-                resumeScheduler => EndDatabaseMaintenance(resumeScheduler),
+                BeginDatabaseMaintenanceAsync,
+                EndDatabaseMaintenance,
                 ExitApplication);
             if (_updateDiagnostics is null) mainWindow.ConfigureUpdateInstallation(InstallPreparedUpdateAsync);
             mainWindow.Closing += MainWindow_Closing;
@@ -493,159 +447,15 @@ public partial class App : System.Windows.Application
         }
         if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
         var checker = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
-        var resolver = new TrustedUpdatePathResolver(checker, new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics));
-        _updatePolicyStore ??= new UpdatePolicyStore(RuntimeDataRoot.RootDirectory);
-        mainWindow.ConfigureForcedUpdate(() =>
-        {
-            if (_updatePolicyStore is not null && _updatePolicyState is not null)
-                _updatePolicyState = UpdatePolicyGate.EnableAutoContinue(_updatePolicyStore, _updatePolicyState);
-        });
         _updateDiagnostics?.Add("gui-check-start", new { simulatedSourceVersion = currentVersion.ToString(3), threadId = Environment.CurrentManagedThreadId });
         _updateCheckRuntime = new UpdateCheckRuntime(
-            cancellationToken => resolver.CheckAsync(currentVersion, StaticMigrations(), cancellationToken),
+            cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),
             result => Dispatcher.BeginInvoke(() =>
             {
-                if (_explicitExit || mainWindow.IsClosed || _updatePolicyStore is null) return;
-                try
-                {
-                    var decision = UpdatePolicyGate.Evaluate(_updatePolicyStore, result, DateTime.UtcNow);
-                    _updatePolicyState = decision.State;
-                    if (decision.Decision == UpdatePolicyDecision.ForceUpdate && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
-                    {
-                        StopRuntime();
-                        mainWindow.ShowForcedUpdate(result, ExitApplication);
-                    }
-                    else if (decision.Decision == UpdatePolicyDecision.RecheckRequired)
-                    {
-                        StopRuntime();
-                        mainWindow.IsEnabled = false;
-                        WpfDialogService.Show(mainWindow, "必须联网验证版本", "版本状态无法可信确认，软件不会开放业务。请恢复网络后重试或退出软件。", "退出软件", WpfDialogKind.Warning, showCancel: false);
-                        ExitApplication();
-                    }
-                }
-                catch (Exception exception)
-                {
-                    _logger?.TryWrite("error", "update_policy_persistence_failed", "更新策略无法持久化，已停止业务。", exception.ToString());
-                    mainWindow.IsEnabled = false;
-                    WpfDialogService.Show(mainWindow, "更新策略错误", "更新策略无法安全保存，软件不会开放业务。", "退出软件", WpfDialogKind.Error, showCancel: false);
-                    ExitApplication();
-                }
-            }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }), TimeSpan.FromHours(6));
+                if (!_explicitExit && !mainWindow.IsClosed && result.Outcome == UpdateCheckOutcome.UpdateAvailable)
+                    mainWindow.ShowUpdateAvailable(result);
+            }), eventName => _updateDiagnostics?.Add("gui-" + eventName, new { threadId = Environment.CurrentManagedThreadId }));
         _updateCheckRuntime.StartAfter(((ShellViewModel)mainWindow.DataContext).StartupLoadTask);
-    }
-
-    private static void WaitForNormalLaunchTerminal(string operationId)
-    {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(45);
-        while (DateTime.UtcNow < deadline)
-        {
-            var intent = NormalLaunchHandshake.Read(RuntimeDataRoot.RootDirectory, operationId);
-            if (intent.State != NormalLaunchState.Loaded) throw new InvalidDataException("普通启动加载确认无效。");
-            if (HasTrustedNormalLaunchTerminal(operationId, intent)) return;
-            Thread.Sleep(100);
-        }
-        throw new TimeoutException("普通启动事务未在限定时间内完成。");
-    }
-
-    private static bool HasTrustedNormalLaunchTerminal(string operationId, NormalLaunchIntent intent)
-    {
-        var path = Path.Combine(RuntimeDataRoot.RootDirectory, "updates", operationId, "journal.json");
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
-        var journal = document.RootElement;
-        UpdateProtocolJson.RequireObject(journal, "OperationId", "DataRoot", "AppPath", "SourceVersion", "TargetVersion", "Phase", "Schema");
-        var schema = journal.GetProperty("Schema");
-        if (journal.GetProperty("OperationId").GetString() != operationId ||
-            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("DataRoot").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(RuntimeDataRoot.RootDirectory)), StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("AppPath").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("普通启动终态无效。");
-        if (schema.ValueKind == JsonValueKind.Null)
-            return intent.Role == NormalLaunchRole.Candidate && intent.ExpectedOuterPhase == 9 && intent.ExpectedSchemaPhase == -1 && IsExactPhase(journal.GetProperty("Phase"), 10, "Completed");
-        UpdateProtocolJson.RequireObject(schema, "Phase", "Snapshot", "SourceMigrations", "TargetMigrations", "LaunchToken", "CandidatePid", "CandidateStartedUtc", "LastError");
-        if (schema.GetProperty("LaunchToken").GetString() != intent.LaunchToken) throw new InvalidDataException("普通启动终态无效。");
-        var wire = JsonSerializer.Deserialize<SchemaUpdateJournal>(schema.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } }) ?? throw new InvalidDataException("普通启动终态无效。");
-        SchemaUpdateJournal.Validate(wire, operationId, journal.GetProperty("SourceVersion").GetString()!, journal.GetProperty("TargetVersion").GetString()!);
-        var (phase, phaseName, schemaPhase, schemaName) = intent.Role == NormalLaunchRole.Candidate
-            ? (10, "Completed", 8, "CandidateCommitted")
-            : (15, "RolledBack", 16, "RolledBack");
-        return IsExactPhase(journal.GetProperty("Phase"), phase, phaseName) && IsExactPhase(schema.GetProperty("Phase"), schemaPhase, schemaName);
-    }
-
-    private static bool IsExactPhase(JsonElement element, int number, string name) =>
-        element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out var value) && value == number ||
-        element.ValueKind == JsonValueKind.String && element.GetString() == name;
-
-    private bool PassStartupUpdatePolicy() => PassStartupUpdatePolicyAsync().GetAwaiter().GetResult();
-
-    private async Task<bool> PassStartupUpdatePolicyAsync()
-    {
-        if (!GitHubReleaseUpdateChecker.TryGetCurrentVersion(out var currentVersion))
-        {
-            WpfDialogService.ShowStartupUpdateGate("版本验证失败", "无法确认当前程序版本，软件不会开放业务。", false);
-            Shutdown(1); return false;
-        }
-        if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
-        _updatePolicyStore = new UpdatePolicyStore(RuntimeDataRoot.RootDirectory);
-        var resolver = new TrustedUpdatePathResolver(new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics), new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics));
-        while (true)
-        {
-            UpdateCheckResult result;
-            try { result = resolver.CheckAsync(currentVersion, StaticMigrations(), CancellationToken.None).GetAwaiter().GetResult(); }
-            catch (Exception exception) { _logger?.TryWrite("error", "startup_update_check_failed", "启动版本验证异常，已阻断业务。", exception.ToString()); result = UpdateCheckResult.From(UpdateCheckOutcome.SecurityFailure, currentVersion); }
-            try
-            {
-                var decision = UpdatePolicyGate.Evaluate(_updatePolicyStore, result, DateTime.UtcNow);
-                _updatePolicyState = decision.State;
-                if (decision.Decision == UpdatePolicyDecision.AllowBusiness) return true;
-                var canUpdate = decision.Decision == UpdatePolicyDecision.ForceUpdate && result.Outcome == UpdateCheckOutcome.UpdateAvailable && result.Release is not null;
-                if (decision.State.AutoContinue && canUpdate && await PrepareStartupUpdateAsync(result, currentVersion)) return false;
-                var action = WpfDialogService.ShowStartupUpdateGate(canUpdate ? "必须更新" : "必须联网验证版本", canUpdate ? "必须更新后才能继续使用。" : "版本状态无法可信确认，软件不会开放业务。请恢复网络后重试或退出软件。", canUpdate);
-                if (action == StartupUpdateGateAction.Exit) { Shutdown(); return false; }
-                if (action == StartupUpdateGateAction.Update && await PrepareStartupUpdateAsync(result, currentVersion)) return false;
-            }
-            catch (Exception exception)
-            {
-                _logger?.TryWrite("error", "startup_update_policy_failed", "更新策略无法持久化，已停止业务。", exception.ToString());
-                WpfDialogService.ShowStartupUpdateGate("更新策略错误", "更新策略无法安全保存，软件不会开放业务。", false);
-                Shutdown(1); return false;
-            }
-        }
-    }
-
-    private async Task<bool> PrepareStartupUpdateAsync(UpdateCheckResult result, Version currentVersion)
-    {
-        var acquiredMaintenance = false;
-        try
-        {
-            if (_updatePolicyStore is null || _updatePolicyState is null || result.Release is null) return false;
-            _updatePolicyState = UpdatePolicyGate.EnableAutoContinue(_updatePolicyStore, _updatePolicyState);
-            var downloader = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options, diagnostics: _updateDiagnostics);
-            var package = downloader.PrepareAsync(result.Release, currentVersion, null, CancellationToken.None).GetAwaiter().GetResult();
-            if (package.Outcome != UpdatePackageOutcome.Verified || package.Package is null) return false;
-            if (MainWindow?.DataContext is ShellViewModel)
-            {
-                if (!await BeginDatabaseMaintenanceAsync(keepWindowBlocked: true)) return false;
-                acquiredMaintenance = true;
-            }
-            var prepared = await Task.Run(() =>
-            {
-                using var parent = Process.GetCurrentProcess();
-                return new UpdateInstallationPreparer(downloader).Prepare(package.Package, parent, CancellationToken.None);
-            });
-            if (Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) is null) return false;
-            _explicitExit = true;
-            StopRuntime();
-            MainWindow?.Close();
-            Shutdown();
-            return true;
-        }
-        catch (Exception exception)
-        {
-            _logger?.TryWrite("error", "startup_forced_update_prepare_failed", "强制更新准备失败，仍保持阻断。", exception.ToString());
-            return false;
-        }
-        finally
-        {
-            if (acquiredMaintenance && !_explicitExit) EndDatabaseMaintenance(true, keepWindowBlocked: true);
-        }
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -846,7 +656,7 @@ public partial class App : System.Windows.Application
         _trayIcon = null;
     }
 
-    private async Task<bool> BeginDatabaseMaintenanceAsync(bool keepWindowBlocked = false)
+    private async Task<bool> BeginDatabaseMaintenanceAsync()
     {
         if (_databaseMaintenanceLease is not null ||
             MainWindow?.DataContext is not ShellViewModel shell)
@@ -859,7 +669,7 @@ public partial class App : System.Windows.Application
         // workers. This preserves the existing Stage 4 save contract.
         if (!await shell.Detail.WaitForStableSaveAsync())
         {
-            if (!keepWindowBlocked) MainWindow.IsEnabled = true;
+            MainWindow.IsEnabled = true;
             return false;
         }
 
@@ -874,7 +684,7 @@ public partial class App : System.Windows.Application
                 {
                     _reminderScheduler?.Start();
                 }
-                if (!keepWindowBlocked) MainWindow.IsEnabled = true;
+                MainWindow.IsEnabled = true;
 
                 return false;
             }
@@ -888,13 +698,13 @@ public partial class App : System.Windows.Application
             {
                 _reminderScheduler?.Start();
             }
-            if (!keepWindowBlocked) MainWindow.IsEnabled = true;
+            MainWindow.IsEnabled = true;
 
             throw;
         }
     }
 
-    private void EndDatabaseMaintenance(bool resumeScheduler, bool keepWindowBlocked = false)
+    private void EndDatabaseMaintenance(bool resumeScheduler)
     {
         var lease = _databaseMaintenanceLease;
         _databaseMaintenanceLease = null;
@@ -903,6 +713,6 @@ public partial class App : System.Windows.Application
         {
             _reminderScheduler?.Start();
         }
-        if (!_explicitExit && !keepWindowBlocked && MainWindow is not null) MainWindow.IsEnabled = true;
+        if (!_explicitExit && MainWindow is not null) MainWindow.IsEnabled = true;
     }
 }

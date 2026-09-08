@@ -5,18 +5,16 @@ public sealed class UpdateCheckRuntime : IDisposable
     private readonly Func<CancellationToken, Task<UpdateCheckResult>> _check;
     private readonly Action<UpdateCheckResult> _completed;
     private readonly Action<string>? _diagnostic;
-    private readonly TimeSpan? _interval;
     private readonly CancellationTokenSource _cancellation = new();
     private int _started;
     private bool _disposed;
     private int _disposeStarted;
 
-    public UpdateCheckRuntime(Func<CancellationToken, Task<UpdateCheckResult>> check, Action<UpdateCheckResult> completed, Action<string>? diagnostic = null, TimeSpan? interval = null)
+    public UpdateCheckRuntime(Func<CancellationToken, Task<UpdateCheckResult>> check, Action<UpdateCheckResult> completed, Action<string>? diagnostic = null)
     {
         _check = check;
         _completed = completed;
         _diagnostic = diagnostic;
-        _interval = interval;
         _diagnostic?.Invoke("check-cts-created");
     }
 
@@ -37,13 +35,8 @@ public sealed class UpdateCheckRuntime : IDisposable
         try
         {
             await coreReady.WaitAsync(_cancellation.Token);
-            do
-            {
-                var result = await _check(_cancellation.Token);
-                if (!_disposed && !_cancellation.IsCancellationRequested) _completed(result);
-                if (_interval is null) break;
-                await Task.Delay(_interval.Value, _cancellation.Token);
-            } while (!_disposed && !_cancellation.IsCancellationRequested);
+            var result = await _check(_cancellation.Token);
+            if (!_disposed && !_cancellation.IsCancellationRequested) _completed(result);
         }
         catch (OperationCanceledException) when (_cancellation.IsCancellationRequested) { }
         catch { }

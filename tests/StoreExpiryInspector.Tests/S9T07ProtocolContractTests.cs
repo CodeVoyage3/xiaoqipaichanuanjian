@@ -63,26 +63,6 @@ public sealed class S9T07ProtocolContractTests
         });
     }
 
-    [Theory]
-    [InlineData(-1, false)]
-    [InlineData(8, true)]
-    public void PendingDistinguishesSameSchemaFromSchemaBoundNormalLaunchEvidence(int expectedSchemaPhase, bool rejected)
-    {
-        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString(); var directory = Path.Combine(root, "updates", operation);
-        Directory.CreateDirectory(directory);
-        try
-        {
-            File.WriteAllText(Path.Combine(directory, "journal.json"), CreateLegacyJournal(10, false, operation, root));
-            using var process = Process.GetCurrentProcess();
-            NormalLaunchHandshake.Write(root, new NormalLaunchIntent(operation, Guid.NewGuid().ToString(), NormalLaunchRole.Candidate, new string('A', 64), 9, expectedSchemaPhase, NormalLaunchState.Loaded, process.Id, process.StartTime.ToUniversalTime(), DateTimeOffset.UtcNow));
-            if (rejected)
-                Assert.Throws<InvalidOperationException>(() => PendingUpdateRecovery.TryResume(root));
-            else
-                Assert.False(PendingUpdateRecovery.TryResume(root));
-        }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
-    }
-
     [Fact]
     public void PendingRejectsSchemaAckWhenSchemaWasRemoved()
     {
@@ -170,9 +150,9 @@ public sealed class S9T07ProtocolContractTests
         Schema = new { Phase = schema, Snapshot = new { OperationId = Guid.NewGuid().ToString(), SourceVersion = "1.0.0", DataRootIdentity = "id", SnapshotPath = "C:\\temp\\snapshot", SourceSha256 = new string('A', 64), SnapshotSha256 = new string('A', 64), LogicalFingerprint = new string('A', 64), SourceMigrations = new[] { "20260901155124_Test" }, CreatedUtc = "2026-09-05T00:00:00Z" }, SourceMigrations = new[] { "20260901155124_Test" }, TargetMigrations = new[] { "20260901155124_Test", "20260905120000_Test" }, LaunchToken = Guid.NewGuid().ToString(), CandidatePid = 0, CandidateStartedUtc = (string?)null, LastError = (string?)null }
     });
 
-    private static string CreateLegacyJournal(int phase, bool schema, string? operationId = null, string? dataRoot = null) => JsonSerializer.Serialize(new
+    private static string CreateLegacyJournal(int phase, bool schema) => JsonSerializer.Serialize(new
     {
-        OperationId = operationId ?? Guid.NewGuid().ToString(), ProductId = "StoreExpiryInspector", InstallRoot = "C:\\temp\\install", DataRoot = dataRoot ?? "C:\\temp\\data", AppPath = "C:\\temp\\install\\app", StagingPath = "C:\\temp\\install\\stage", OldPath = "C:\\temp\\install\\old", PackageSha256 = new string('A', 64), SourceVersion = "1.0.0", TargetVersion = "1.0.2", ParentPid = 0, ParentStartedUtc = "2026-09-05T00:00:00Z", Phase = phase, OldTree = new { Files = Array.Empty<string>(), Hash = new string('A', 64) }, CandidateTree = new { Files = Array.Empty<string>(), Hash = new string('A', 64) }, CreatedUtc = "2026-09-05T00:00:00Z", UpdatedUtc = "2026-09-05T00:00:00Z", CandidatePid = 0, CandidateStartedUtc = (string?)null, LastError = (string?)null, Schema = (object?)null
+        OperationId = Guid.NewGuid().ToString(), ProductId = "StoreExpiryInspector", InstallRoot = "C:\\temp\\install", DataRoot = "C:\\temp\\data", AppPath = "C:\\temp\\install\\app", StagingPath = "C:\\temp\\install\\stage", OldPath = "C:\\temp\\install\\old", PackageSha256 = new string('A', 64), SourceVersion = "1.0.0", TargetVersion = "1.0.2", ParentPid = 0, ParentStartedUtc = "2026-09-05T00:00:00Z", Phase = phase, OldTree = new { Files = Array.Empty<string>(), Hash = new string('A', 64) }, CandidateTree = new { Files = Array.Empty<string>(), Hash = new string('A', 64) }, CreatedUtc = "2026-09-05T00:00:00Z", UpdatedUtc = "2026-09-05T00:00:00Z", CandidatePid = 0, CandidateStartedUtc = (string?)null, LastError = (string?)null, Schema = (object?)null
     }).Replace(",\"Schema\":null", schema ? ",\"Schema\":null" : string.Empty, StringComparison.Ordinal);
 
     private static void WithJournal(string json, Action<string> action)

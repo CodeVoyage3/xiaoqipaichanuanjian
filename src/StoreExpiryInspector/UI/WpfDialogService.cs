@@ -8,8 +8,6 @@ using StoreExpiryInspector.Application.Tasks;
 
 namespace StoreExpiryInspector.UI;
 
-internal enum StartupUpdateGateAction { Exit, Retry, Update }
-
 internal enum WpfDialogKind
 {
     Information,
@@ -20,31 +18,6 @@ internal enum WpfDialogKind
 
 internal static class WpfDialogService
 {
-    public static StartupUpdateGateAction ShowStartupUpdateGate(string title, string message, bool canUpdate)
-    {
-        var dialog = new Window { Title = title, Width = 460, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterScreen, ShowInTaskbar = true };
-        var panel = new StackPanel { Margin = new Thickness(24) };
-        panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, FontSize = 15 });
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
-        var exit = new Button { Content = "退出软件", Width = 88, IsCancel = true };
-        exit.Click += (_, _) => dialog.DialogResult = false;
-        if (canUpdate)
-        {
-            var update = new Button { Content = "立即更新", Width = 88, Margin = new Thickness(8, 0, 0, 0) };
-            update.Click += (_, _) => { dialog.Tag = StartupUpdateGateAction.Update; dialog.DialogResult = true; };
-            buttons.Children.Add(update);
-        }
-        else
-        {
-            var retry = new Button { Content = "重试", Width = 88, Margin = new Thickness(8, 0, 0, 0) };
-            retry.Click += (_, _) => { dialog.Tag = StartupUpdateGateAction.Retry; dialog.DialogResult = true; };
-            buttons.Children.Add(retry);
-        }
-        buttons.Children.Add(exit); panel.Children.Add(buttons); dialog.Content = panel;
-        dialog.Closing += (_, args) => { if (dialog.DialogResult is null) { args.Cancel = true; dialog.DialogResult = false; } };
-        dialog.ShowDialog();
-        return dialog.Tag is StartupUpdateGateAction action ? action : StartupUpdateGateAction.Exit;
-    }
     public static void ShowUpdateAvailable(Window owner, UpdateNotificationViewModel model)
     {
         var dialog = new Window { Owner = owner, Title = "发现新版本", Width = 460, MaxHeight = 420, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
@@ -70,31 +43,6 @@ internal static class WpfDialogService
         model.PropertyChanged += changed;
         dialog.Closed += (_, _) => { model.PropertyChanged -= changed; model.DialogClosed(); };
         buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => { cancel.IsEnabled = false; later.Focus(); }; dialog.ShowDialog();
-    }
-    public static void ShowForcedUpdate(Window owner, UpdateNotificationViewModel model, Action exit)
-    {
-        var exiting = false;
-        void Exit()
-        {
-            if (exiting) return;
-            exiting = true;
-            exit();
-        }
-        var dialog = new Window { Owner = owner, Title = "必须更新", Width = 460, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
-        var panel = new StackPanel { Margin = new Thickness(24) };
-        panel.Children.Add(new TextBlock { Text = "必须更新后才能继续使用", FontSize = 18, FontWeight = FontWeights.SemiBold });
-        panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
-        var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap };
-        panel.Children.Add(status);
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
-        var quit = new Button { Content = "退出软件", Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
-        var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
-        quit.Click += (_, _) => Exit();
-        update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
-        dialog.Closing += (_, eventArgs) => { if (!exiting && dialog.DialogResult is null) { eventArgs.Cancel = true; Exit(); } };
-        System.ComponentModel.PropertyChangedEventHandler changed = (_, _) => dialog.Dispatcher.BeginInvoke(() => { status.Text = model.StatusText; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); });
-        model.PropertyChanged += changed; dialog.Closed += (_, _) => model.PropertyChanged -= changed;
-        buttons.Children.Add(quit); buttons.Children.Add(update); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => update.Focus(); dialog.ShowDialog();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
     {
