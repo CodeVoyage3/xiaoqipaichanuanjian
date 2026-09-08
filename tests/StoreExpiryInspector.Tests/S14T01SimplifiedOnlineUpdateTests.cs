@@ -13,6 +13,7 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
     {
         var root = FindRoot();
         var app = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "App.xaml.cs"));
+        var project = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "StoreExpiryInspector.csproj"));
         var mainWindow = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs"));
         var dialogs = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs"));
         var installer = File.ReadAllText(Path.Combine(root, "installer", "StoreExpiryInspector.iss"));
@@ -30,9 +31,11 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
         Assert.Contains("当前版本暂时可以继续使用，请尽快完成升级。旧版本后续可能停止支持，届时可能无法继续使用软件。", dialogs, StringComparison.Ordinal);
         Assert.DoesNotContain("CompareText(DisplayVersion + '.0', AppVersion)", installer, StringComparison.Ordinal);
         Assert.Contains("GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\\StoreExpiryInspector.exe', AppVersion)", installer, StringComparison.Ordinal);
-        Assert.Contains("<Version>1.0.5</Version>", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "StoreExpiryInspector.csproj")), StringComparison.Ordinal);
+        Assert.Contains("<Version>1.0.5</Version>", project, StringComparison.Ordinal);
+        Assert.Contains("Version=$(Version)", project, StringComparison.Ordinal);
         Assert.Contains("$sourceVersion = '1.0.4'", release, StringComparison.Ordinal);
         Assert.Contains("$version -ne '1.0.5'", release, StringComparison.Ordinal);
+        Assert.Contains("Updater FileVersion does not match the candidate version", release, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -154,6 +157,23 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
         }
     }
 
+    [Fact]
+    public async Task LegacyV104OrdinaryLaunchContractShowsMainAndTrayWithoutNormalLaunchToken()
+    {
+        await AssertOrdinaryRuntime(null, "tray-ready", "reminder-ready", trayKeepsProcessAlive: true);
+    }
+
+    [Theory]
+    [InlineData("tray", "tray-failed", "reminder-ready", "tray_icon_creation_failed", false)]
+    [InlineData("reminder", "tray-ready", "reminder-failed", "daily_reminder_runtime_failed", true)]
+    public async Task TrayAndReminderRuntimeFailuresStayIndependent(
+        string failure,
+        string firstState,
+        string secondState,
+        string logEvent,
+        bool trayKeepsProcessAlive) =>
+        await AssertOrdinaryRuntime(failure, firstState, secondState, trayKeepsProcessAlive, logEvent);
+
     private static JournalFixture CreateJournal(int phase)
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -199,6 +219,75 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
         }));
     }
 
+    private static async Task AssertOrdinaryRuntime(
+        string? failure,
+        string firstState,
+        string secondState,
+        bool trayKeepsProcessAlive,
+        string? logEvent = null)
+    {
+        var installRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var dataRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var appPath = Path.Combine(installRoot, "app");
+        var marker = Path.Combine(installRoot, "desktop-runtime.marker");
+        Process? process = null;
+        try
+        {
+            CopyDirectory(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "bin", "Release", "net10.0-windows", "s9t07test", "net10.0-windows"), appPath);
+            var operationId = Guid.NewGuid().ToString();
+            var start = new ProcessStartInfo(Path.Combine(appPath, "StoreExpiryInspector.exe")) { UseShellExecute = false };
+            start.ArgumentList.Add("--data-root");
+            start.ArgumentList.Add(dataRoot);
+            start.ArgumentList.Add("--allow-existing-isolated-data-root");
+            start.Environment["S9_T05_NORMAL_LAUNCH"] = "1";
+            start.Environment["S9_T05_OPERATION_ID"] = operationId;
+            start.Environment["S9_T07_NORMAL_OPERATION"] = operationId;
+            start.Environment["S14_T01_DESKTOP_RUNTIME_MARKER"] = marker;
+            if (failure is not null) start.Environment["S14_T01_FAIL_" + failure.ToUpperInvariant()] = "1";
+            Assert.DoesNotContain(start.ArgumentList, argument => argument == "--s9-t07-normal-launch");
+
+            process = Process.Start(start)!;
+            await WaitForMainWindow(process, TimeSpan.FromSeconds(30));
+            await WaitForText(marker, firstState, TimeSpan.FromSeconds(10));
+            await WaitForText(marker, secondState, TimeSpan.FromSeconds(10));
+            Assert.NotEqual(IntPtr.Zero, process.MainWindowHandle);
+            Assert.False(File.Exists(Path.Combine(dataRoot, "updates", operationId, "normal-launch.json")));
+            if (logEvent is not null) await WaitForLog(dataRoot, logEvent, TimeSpan.FromSeconds(10));
+
+            Assert.True(process.CloseMainWindow());
+            if (trayKeepsProcessAlive)
+            {
+                await Task.Delay(1000);
+                process.Refresh();
+                Assert.False(process.HasExited);
+            }
+            else
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                await process.WaitForExitAsync(timeout.Token);
+                Assert.True(process.HasExited);
+            }
+        }
+        finally
+        {
+            if (process is not null)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill(true);
+                        await process.WaitForExitAsync();
+                    }
+                }
+                finally { process.Dispose(); }
+            }
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            Delete(dataRoot);
+            Delete(installRoot);
+        }
+    }
+
     private static string FindRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
@@ -226,6 +315,36 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target);
         }
+    }
+
+    private static async Task WaitForMainWindow(Process process, TimeSpan timeout)
+    {
+        for (var until = DateTime.UtcNow + timeout; DateTime.UtcNow < until; await Task.Delay(100))
+        {
+            process.Refresh();
+            if (process.HasExited) throw new InvalidOperationException($"Candidate exited before showing its main window: {process.ExitCode}");
+            if (process.MainWindowHandle != IntPtr.Zero) return;
+        }
+        throw new TimeoutException("Candidate main window was not shown.");
+    }
+
+    private static async Task WaitForText(string path, string expected, TimeSpan timeout)
+    {
+        for (var until = DateTime.UtcNow + timeout; DateTime.UtcNow < until; await Task.Delay(100))
+            if (File.Exists(path) && File.ReadAllText(path).Contains(expected, StringComparison.Ordinal)) return;
+        throw new TimeoutException($"Runtime marker did not contain {expected}.");
+    }
+
+    private static async Task WaitForLog(string dataRoot, string expected, TimeSpan timeout)
+    {
+        var logRoot = Path.Combine(dataRoot, "logs");
+        for (var until = DateTime.UtcNow + timeout; DateTime.UtcNow < until; await Task.Delay(100))
+        {
+            if (!Directory.Exists(logRoot)) continue;
+            foreach (var file in Directory.EnumerateFiles(logRoot, "app-*.log"))
+                if (File.ReadAllText(file).Contains(expected, StringComparison.Ordinal)) return;
+        }
+        throw new TimeoutException($"Runtime log did not contain {expected}.");
     }
 
     private sealed record JournalFixture(string Root, string OperationId, string OperationDirectory, string AppPath, string TreeHash);

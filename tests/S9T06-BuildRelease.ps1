@@ -30,7 +30,8 @@ New-Item -ItemType Directory -Path $assets | Out-Null
 dotnet publish (Join-Path $repo 'src\StoreExpiryInspector\StoreExpiryInspector.csproj') -c Release --no-restore -p:PublishProfile=WinX64 -p:DebugType=None -p:DebugSymbols=false -o $publish
 if ($LASTEXITCODE -ne 0) { throw 'publish failed.' }
 $app = Join-Path $publish 'StoreExpiryInspector.exe'
-if (-not (Test-Path -LiteralPath $app) -or -not (Test-Path -LiteralPath (Join-Path $publish 'Updater\StoreExpiryInspector.Updater.exe'))) { throw 'Fresh publish is missing its application or independent Updater.' }
+$updater = Join-Path $publish 'Updater\StoreExpiryInspector.Updater.exe'
+if (-not (Test-Path -LiteralPath $app) -or -not (Test-Path -LiteralPath $updater)) { throw 'Fresh publish is missing its application or independent Updater.' }
 $fileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($app).FileVersion
 $payloadVersion = [Version]::Parse($fileVersion)
 if ($payloadVersion.Revision -ne 0) { throw 'Payload FileVersion is not a supported release version.' }
@@ -39,6 +40,8 @@ $zip = Join-Path $assets "StoreExpiryInspector-$version-win-x64.zip"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory($publish, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
 $archive = [IO.Compression.ZipFile]::OpenRead($zip)
+$updaterFileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($updater).FileVersion
+if ([Version]::Parse($updaterFileVersion) -ne [Version]::Parse("$version.0")) { throw 'Independent Updater FileVersion does not match the candidate version.' }
 try {
     $names = @($archive.Entries | ForEach-Object { $_.FullName })
     $unexpected = $names | Where-Object {
@@ -88,5 +91,5 @@ $releasePaths = @(Get-ChildItem -LiteralPath $publish,$assets -File -Recurse | S
 Assert-NoSecretMarker @($sourcePaths + $releasePaths)
 $assetRows = Get-ChildItem -LiteralPath $assets -File | Sort-Object Name | ForEach-Object { [ordered]@{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } }
 if (@($assetRows).Count -ne 4) { throw 'Release assets must contain exactly four files.' }
-[ordered]@{ sourceCommit = $commit; version = $version; fileVersion = $fileVersion; migrationIds = $migrations; packageTreeSha256 = $treeHash; packageTree = $tree; assets = $assetRows } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'release-evidence.json') -Encoding utf8
+[ordered]@{ sourceCommit = $commit; version = $version; fileVersion = $fileVersion; updaterFileVersion = $updaterFileVersion; migrationIds = $migrations; packageTreeSha256 = $treeHash; packageTree = $tree; assets = $assetRows } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'release-evidence.json') -Encoding utf8
 Get-Content -Raw (Join-Path $output 'release-evidence.json')

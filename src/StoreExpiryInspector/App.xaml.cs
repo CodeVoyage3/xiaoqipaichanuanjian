@@ -371,13 +371,22 @@ public partial class App : System.Windows.Application
     {
         try
         {
+#if S9T07_TEST
+            if (Environment.GetEnvironmentVariable("S14_T01_FAIL_TRAY") == "1") throw new InvalidOperationException("S14-T01 simulated tray failure.");
+#endif
             _trayIcon = new WindowsTrayIcon(mainWindow, ShowMainWindow, ExitApplication);
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
+#if S9T07_TEST
+            DesktopRuntimeMarker("tray-ready");
+#endif
         }
         catch (Exception exception)
         {
             _trayIcon?.Dispose();
             _trayIcon = null;
+#if S9T07_TEST
+            DesktopRuntimeMarker("tray-failed");
+#endif
             logger.TryWrite(
                 "error",
                 "tray_icon_creation_failed",
@@ -391,6 +400,9 @@ public partial class App : System.Windows.Application
         DailyReminderScheduler? scheduler = null;
         try
         {
+#if S9T07_TEST
+            if (Environment.GetEnvironmentVariable("S14_T01_FAIL_REMINDER") == "1") throw new InvalidOperationException("S14-T01 simulated reminder failure.");
+#endif
             int reminderMinuteOfDay;
             using (var context = DatabaseInitializer.CreateContext())
             {
@@ -427,11 +439,17 @@ public partial class App : System.Windows.Application
                 logger);
             scheduler.Start();
             _reminderScheduler = scheduler;
+#if S9T07_TEST
+            DesktopRuntimeMarker("reminder-ready");
+#endif
         }
         catch (Exception exception)
         {
             scheduler?.Dispose();
             _reminderScheduler = null;
+#if S9T07_TEST
+            DesktopRuntimeMarker("reminder-failed");
+#endif
             logger.TryWrite(
                 "error",
                 "daily_reminder_runtime_failed",
@@ -632,6 +650,14 @@ public partial class App : System.Windows.Application
 
     private static void PreReleaseTestMarker(string value) =>
         File.WriteAllText(RequiredTestPath("S11_PRE_RELEASE_MARKER"), value);
+    private static void DesktopRuntimeMarker(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("S14_T01_DESKTOP_RUNTIME_MARKER")))
+            File.AppendAllText(
+                RequiredTestPath("S14_T01_DESKTOP_RUNTIME_MARKER"),
+                value + Environment.NewLine);
+    }
+
 
     private static string RequiredTestPath(string name)
     {
