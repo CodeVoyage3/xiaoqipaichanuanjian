@@ -1,12 +1,12 @@
 # 2026-09-08：Stage14 / S14-T01 简化在线更新治理冻结
 
-fresh fetch 后 `main HEAD == origin/main == 747fb69e316bbf3e428e6985edacec3cc8d8c65b`，ahead/behind `0/0`。GitHub latest stable 仍为 v1.0.4（Release ID `383891004`），远端仅保留 v1.0.4 tag；v1.0.5/v1.0.6 Release/tags 均不存在。v1.0.4 是唯一当前可信稳定产品基线。
+上一轮 Stage14 治理提交 `3548c9cb239aeccf064e0003b079eaac22d198e8` 已普通 fast-forward push；本轮修正开工 fresh 现场为 `main HEAD == origin/main == 3548c9cb239aeccf064e0003b079eaac22d198e8`，ahead/behind `0/0`。本次 docs-only 修正也只允许普通 fast-forward push；push 后当前 `main == origin/main`、ahead/behind `0/0`，最终 SHA 以本轮 fresh Git 回执为准。GitHub latest stable 仍为 v1.0.4（Release ID `383891004`），远端仅保留 v1.0.4 tag；v1.0.5/v1.0.6 Release/tags 均不存在。v1.0.4 是唯一当前可信稳定产品基线。此前 `747fb69e316bbf3e428e6985edacec3cc8d8c65b` 仅为上一轮治理创建前的当时现场，不代表当前状态。
 
 Stage14 = `IN_PROGRESS / GOVERNANCE_FROZEN / IMPLEMENTATION_NOT_AUTHORIZED`；S14-T01 = `GOVERNANCE_FROZEN / READY_FOR_IMPLEMENTATION_AUTHORIZATION / NOT_IMPLEMENTED`。
 
-最小范围冻结为：主窗和托盘优先、现有 5 秒超时检查在启动后后台异步执行、UI 线程不等待更新任务、立即更新/稍后提醒及固定二次告知、托盘与每日提醒失败域拆分、安装器容忍 DisplayVersion/EXE 版本不一致、same-schema `Committed` 复用既有 NormalLaunchHandshake 后再 Completed。禁止新升级状态机、强制状态/24小时宽限/AutoContinue/业务锁死/断网退出/路径图/自动连跳、新 migration/依赖/门禁；不得恢复或 cherry-pick 废弃 v1.0.5/v1.0.6。
+最小范围冻结为：主窗和托盘优先、现有 5 秒超时检查在启动后后台异步执行、UI 线程不等待更新任务、立即更新/稍后提醒及固定二次告知、托盘与每日提醒失败域拆分、安装器容忍 DisplayVersion/EXE 版本不一致。正式 `v1.0.4 -> 新 v1.0.5` 由安装目录中的旧 v1.0.4 Updater 执行，真正验收责任是新 v1.0.5 App 兼容旧启动方式并可靠显示主窗/托盘；包内新 Updater 无法反向修复该事务。新版 Updater 的 same-schema Loaded/ACK/Completed 收口只供 `v1.0.5 -> 后续版本` 使用并单独验收。禁止新升级状态机、强制状态/24小时宽限/AutoContinue/业务锁死/断网退出/路径图/自动连跳、新 migration/依赖/门禁；不得恢复或 cherry-pick 废弃 v1.0.5/v1.0.6。
 
-主工作树原有 1 个修改测试文件与 4 个未跟踪用户文件均未触碰。未创建 Terra，未写生产代码，未 build/测试/Full，未访问正式数据，未生成候选或发布。当前已到“可授权实施”停止点，但实施仍未授权。详见 `../STAGES/STAGE-14.md`、`../TASKS/S14-T01.md`、`../ANALYSIS/S14-T01-SIMPLIFIED-ONLINE-UPDATE-DESIGN.md`、`../ACCEPTANCE/S14-T01.md`。
+主工作树原有 1 个修改测试文件与 4 个未跟踪用户文件均未触碰。治理已推送；未创建 Terra，未写生产代码，未 build/测试/Full，未访问正式数据，未生成候选或发布。当前仍在“可授权实施”停止点，但实施仍未授权。详见 `../STAGES/STAGE-14.md`、`../TASKS/S14-T01.md`、`../ANALYSIS/S14-T01-SIMPLIFIED-ONLINE-UPDATE-DESIGN.md`、`../ACCEPTANCE/S14-T01.md`。
 
 
 # 2026-09-08：已回退至 v1.0.4，Stage13 收口
