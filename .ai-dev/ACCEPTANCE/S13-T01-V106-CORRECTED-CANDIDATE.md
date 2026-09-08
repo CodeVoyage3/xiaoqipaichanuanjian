@@ -1,3 +1,13 @@
+# Product decision addendum (2026-09-08)
+
+Status: `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`.
+
+The corrected candidate and all asset identities below remain unchanged. The official v1.0.4/v1.0.5 online paths are removed as v1.0.6 release prerequisites and are not candidate failures: those transactions execute the already-installed source Updater, which target v1.0.6 cannot back-fix before it runs.
+
+v1.0.6 is `HOTFIX / MANUAL_BRIDGE_RELEASE` and is to be installed through the official Setup with existing preflight/fail-closed behavior and DataRoot preservation. Do not claim `v1.0.5 -> v1.0.6 ONLINE UPDATE VERIFIED`; the next formal online validation is `v1.0.6 -> v1.0.7`.
+No production code or candidate bytes changed. No rebuild, focused rerun or Full occurred. No tag, Release or publication occurred.
+
+
 # S13-T01 v1.0.6 corrected final candidate
 
 Date: 2026-09-08 Asia/Shanghai

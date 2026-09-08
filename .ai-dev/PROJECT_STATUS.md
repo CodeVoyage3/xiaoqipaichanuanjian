@@ -1,3 +1,12 @@
+# 2026-09-08 current: v1.0.6 manual bridge release candidate technically accepted
+
+- Stage13 = IN_PROGRESS; S13-T01 = `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`.
+- The official v1.0.4/v1.0.5 online paths are removed as v1.0.6 release gates, not recorded as candidate failures. The source installation runs its own old Updater, which the target v1.0.6 candidate cannot retroactively repair.
+- v1.0.6 is `HOTFIX / MANUAL_BRIDGE_RELEASE`: use the official Setup as the safe bridge, retain preflight/fail-closed behavior and preserve the independent DataRoot. User Setup installation acceptance remains pending.
+- The corrected candidate remains the sole candidate with unchanged frozen assets and valid static technical acceptance. The next formal online-upgrade acceptance is `v1.0.6 -> v1.0.7`; `v1.0.5 -> v1.0.6 ONLINE UPDATE VERIFIED` must not be claimed.
+- No production code change, rebuild, focused rerun or Full. No push/tag/Release. Separate release authorization is now the next boundary.
+
+
 # 2026-09-08: v1.0.6 corrected candidate statically accepted; official dual-source transactions not run
 
 The corrected candidate was generated from final product source `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355` and frozen. Its source versions are 1.0.4..1.0.5, source migration is strictly 9..9, and target migration count is 9. Production signature, ZIP tree/path/prohibited-entry and version gates PASS. Official clients cannot consume the unpublished candidate through a production entry, while the official Updater cannot use its production path without the current user's formal HKCU/%LOCALAPPDATA% identities. Test mappings are not official-path evidence. Both source paths are NOT_RUN and the normal-launch bug is not proven fixed by the v1.0.5 source path.

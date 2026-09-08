@@ -1,3 +1,13 @@
+# 2026-09-08: v1.0.6 product decision - manual bridge release candidate accepted
+
+S13-T01 = `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`; Stage13 remains IN_PROGRESS.
+
+The blocked official v1.0.4/v1.0.5 online transactions are no longer v1.0.6 release prerequisites and are not candidate failures. Each transaction is owned by the already-installed source Updater; the target candidate cannot back-fix the v1.0.5 Updater that commits and completes immediately after starting the normal application without waiting for readiness.
+The corrected candidate and all frozen asset identities remain unchanged and statically accepted. v1.0.6 is now `HOTFIX / MANUAL_BRIDGE_RELEASE`: close v1.0.5, run the official v1.0.6 Setup over the detected installation, require existing preflight/fail-closed checks, preserve the separate DataRoot, then verify App UI, tray, data and normal use.
+Do not claim `v1.0.5 -> v1.0.6 ONLINE UPDATE VERIFIED`. The next formal online-upgrade acceptance is deferred to `v1.0.6 -> v1.0.7`.
+No production code, candidate bytes, build or test result changed; NO_FULL. No push/tag/Release. Release and user Setup installation acceptance are still required before S13-T01 or Stage13 can close.
+
+
 # 2026-09-08: v1.0.6 corrected candidate frozen; official dual-source path blocked
 
 Final product source remains `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`; no production code changed. The corrected candidate is frozen at `D:\\S13-TestAssets\\v1.0.6-corrected-final\\a8983ed6`: ZIP `63D0BC...FAD100`, Setup `65E268...FFA73`, manifest `6D6508...BF923`, signature `655584...709E4`. Contract is target 1.0.6, source versions 1.0.4..1.0.5, source migration 9..9, target migration count 9. Production RSA-PSS/SHA256, ZIP tree/path/prohibited-entry checks, versions and Updater GUI subsystem all PASS. The old candidate remains `REJECTED / SUPERSEDED_BY_CORRECTED_MIGRATION_CONTRACT`.

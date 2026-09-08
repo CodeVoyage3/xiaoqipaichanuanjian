@@ -1,3 +1,16 @@
+# S13-T01 product decision closeout (2026-09-08)
+
+Status: `V106_MANUAL_BRIDGE_RELEASE_CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING / NOT_ACCEPTED`.
+
+The official v1.0.4->v1.0.6 and v1.0.5->v1.0.6 online transactions are no longer release prerequisites. This is not a corrected-candidate or hotfix failure: the source version copies and executes its own installed Updater, and v1.0.6 cannot retroactively replace that v1.0.5 transaction owner before the transaction starts. The v1.0.5 Updater can reach candidate ACK and `Committed`, call `StartNormalApplication`, then mark `Completed` without waiting for normal-launch readiness.
+
+v1.0.6 is accepted only as `HOTFIX / MANUAL_BRIDGE_RELEASE`. The official Setup must detect the existing installation, run existing compatibility/preflight checks, fail closed if unsafe, overwrite only the program installation tree, preserve the separate DataRoot and start v1.0.6. Final user acceptance must confirm the main UI, tray, retained data and normal operation; uninstalling v1.0.5 first is not required by default.
+
+The corrected candidate remains the sole v1.0.6 release candidate; its frozen ZIP, Setup, manifest and signature are unchanged, and its static technical acceptance remains valid. No production code, candidate build or test evidence changed; 43/43, 8/8, Release 0/0, EF NO_MODEL_DRIFT and migrationCount 9 were not rerun; Full remains NOT_RUN.
+
+Never claim `v1.0.5 -> v1.0.6 ONLINE UPDATE VERIFIED`. Formal online-upgrade acceptance is deferred to `v1.0.6 -> v1.0.7`. S13-T01 and Stage13 remain open until the authorized v1.0.6 release and user Setup installation acceptance complete. No tag, Release or publication is authorized by this decision.
+
+
 # S13-T01 latest Sol decision (2026-09-08)
 
 Status: `V106_CORRECTED_CANDIDATE_STATICALLY_ACCEPTED / OFFICIAL_DUAL_SOURCE_TRANSACTION_BLOCKED / RELEASE_AUTHORIZATION_NOT_REACHED / NOT_ACCEPTED`.
