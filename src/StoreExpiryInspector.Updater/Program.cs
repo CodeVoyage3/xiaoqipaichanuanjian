@@ -102,8 +102,7 @@ internal static class UpdateTransaction
                     return await Advance(journalPath, journal with { Phase = UpdatePhase.RollbackRequired });
                 case UpdatePhase.Committed:
                     TryDeleteOperationPackage(journal);
-                    StartNormalApplication(journal);
-                    return await Advance(journalPath, journal with { Phase = UpdatePhase.Completed });
+                    return await CompleteNormalLaunch(journalPath, journal, null, NormalLaunchRole.Candidate, UpdatePhase.Completed, null);
                 case UpdatePhase.RollbackRequired: return await Advance(journalPath, journal with { Phase = UpdatePhase.RollbackStarted });
                 case UpdatePhase.RollbackStarted:
                     StopCandidate(journal);
@@ -308,11 +307,11 @@ internal static class UpdateTransaction
         Require(TreeFingerprint.Create(journal.AppPath), journal.OldTree);
     }
 
-    private static async Task<int> CompleteNormalLaunch(string path, UpdateJournal journal, SchemaUpdateJournal schema, NormalLaunchRole role, UpdatePhase terminal, SchemaPhase terminalSchema)
+    private static async Task<int> CompleteNormalLaunch(string path, UpdateJournal journal, SchemaUpdateJournal? schema, NormalLaunchRole role, UpdatePhase terminal, SchemaPhase? terminalSchema)
     {
         var expectedTree = role == NormalLaunchRole.Candidate ? journal.CandidateTree : journal.OldTree;
         var acknowledgement = role == NormalLaunchRole.Old
-            ? journal with { TargetVersion = journal.SourceVersion, Schema = schema with { TargetMigrations = schema.SourceMigrations } }
+            ? journal with { TargetVersion = journal.SourceVersion, Schema = schema! with { TargetMigrations = schema.SourceMigrations } }
             : journal;
         var executable = Path.Combine(journal.AppPath, "StoreExpiryInspector.exe");
         NormalLaunchIntent? intent = null; Process? normal = null; var intentValidated = false;
@@ -322,11 +321,11 @@ internal static class UpdateTransaction
             var intentCreated = !File.Exists(intentPath);
             if (intentCreated)
             {
-                intent = new NormalLaunchIntent(journal.OperationId, schema.LaunchToken, role, expectedTree.Hash, (int)journal.Phase, (int)schema.Phase, NormalLaunchState.Pending, 0, null, DateTimeOffset.UtcNow);
+                intent = new NormalLaunchIntent(journal.OperationId, schema?.LaunchToken ?? Guid.NewGuid().ToString(), role, expectedTree.Hash, (int)journal.Phase, schema is null ? -1 : (int)schema.Phase, NormalLaunchState.Pending, 0, null, DateTimeOffset.UtcNow);
                 NormalLaunchHandshake.Write(journal.DataRoot, intent);
             }
             else intent = NormalLaunchHandshake.Read(journal.DataRoot, journal.OperationId);
-            if (intent.LaunchToken != schema.LaunchToken || intent.Role != role || intent.ExpectedTreeHash != expectedTree.Hash || intent.ExpectedOuterPhase != (int)journal.Phase || intent.ExpectedSchemaPhase != (int)schema.Phase) throw new InvalidDataException("Normal launch intent does not match the durable transaction.");
+            if (schema is not null && intent.LaunchToken != schema.LaunchToken || intent.Role != role || intent.ExpectedTreeHash != expectedTree.Hash || intent.ExpectedOuterPhase != (int)journal.Phase || intent.ExpectedSchemaPhase != (schema is null ? -1 : (int)schema.Phase)) throw new InvalidDataException("Normal launch intent does not match the durable transaction.");
             intentValidated = true;
             Require(TreeFingerprint.Create(journal.AppPath), expectedTree);
             if (!HasValidAck(acknowledgement) || !WaitForCandidateExit(journal, TimeSpan.FromMilliseconds(1))) throw new InvalidDataException("Health acknowledgement was not revalidated before normal launch.");
@@ -336,9 +335,12 @@ internal static class UpdateTransaction
                 hadAuthorizedIdentity |= intent.State is NormalLaunchState.Identified or NormalLaunchState.Loaded;
                 if (intent.State == NormalLaunchState.Loaded && NormalLaunchHandshake.IsLive(intent, executable))
                 {
-                    var migrations = UpgradeHealthAck.VerifyDatabase(Path.Combine(journal.DataRoot, "data", "app.db"), includeWal: true);
-                    if (!migrations.SequenceEqual(role == NormalLaunchRole.Candidate ? schema.TargetMigrations : schema.SourceMigrations, StringComparer.Ordinal)) throw new InvalidDataException("Normal application database state is invalid.");
-                    return await Advance(path, journal with { Phase = terminal, Schema = schema with { Phase = terminalSchema } });
+                    if (schema is not null)
+                    {
+                        var migrations = UpgradeHealthAck.VerifyDatabase(Path.Combine(journal.DataRoot, "data", "app.db"), includeWal: true);
+                        if (!migrations.SequenceEqual(role == NormalLaunchRole.Candidate ? schema.TargetMigrations : schema.SourceMigrations, StringComparer.Ordinal)) throw new InvalidDataException("Normal application database state is invalid.");
+                    }
+                    return await Advance(path, journal with { Phase = terminal, Schema = schema is null ? null : schema with { Phase = terminalSchema!.Value } });
                 }
                 if (intent.State == NormalLaunchState.Identified && NormalLaunchHandshake.IsLive(intent, executable))
                 {
@@ -365,9 +367,12 @@ internal static class UpdateTransaction
                     if (intent.State != NormalLaunchState.Pending) continue;
                 }
                 if (intent.State != NormalLaunchState.Pending) NormalLaunchHandshake.Write(journal.DataRoot, intent = intent with { State = NormalLaunchState.Pending, Pid = 0, StartedUtc = null, UpdatedUtc = DateTimeOffset.UtcNow });
-                var preLaunchMigrations = UpgradeHealthAck.VerifyDatabase(Path.Combine(journal.DataRoot, "data", "app.db"), includeWal: true);
-                if (!preLaunchMigrations.SequenceEqual(role == NormalLaunchRole.Candidate ? schema.TargetMigrations : schema.SourceMigrations, StringComparer.Ordinal)) throw new InvalidDataException("Normal application database state is invalid.");
-                if (role == NormalLaunchRole.Old && !hadAuthorizedIdentity) SchemaUpgradeSnapshots.VerifyCurrentSource(journal.DataRoot, schema.Snapshot!);
+                if (schema is not null)
+                {
+                    var preLaunchMigrations = UpgradeHealthAck.VerifyDatabase(Path.Combine(journal.DataRoot, "data", "app.db"), includeWal: true);
+                    if (!preLaunchMigrations.SequenceEqual(role == NormalLaunchRole.Candidate ? schema.TargetMigrations : schema.SourceMigrations, StringComparer.Ordinal)) throw new InvalidDataException("Normal application database state is invalid.");
+                    if (role == NormalLaunchRole.Old && !hadAuthorizedIdentity) SchemaUpgradeSnapshots.VerifyCurrentSource(journal.DataRoot, schema.Snapshot!);
+                }
                 normal = StartNormalApplication(journal, intent.LaunchToken); started = true;
                 for (var until = DateTime.UtcNow + NormalLaunchTimeout(); DateTime.UtcNow < until; Thread.Sleep(100))
                 {
@@ -493,7 +498,7 @@ internal static class UpdateTransaction
     private static bool HasSchemaEvidence(string journalPath)
     {
         var operation = Path.GetDirectoryName(journalPath)!;
-        return new[] { "schema-source.db", "schema-restore.json", "candidate-identity.json", "candidate-authorization.json", "normal-launch.json" }.Any(file => File.Exists(Path.Combine(operation, file))) || (File.Exists(Path.Combine(operation, "health-ack.json")) && !UpdateProtocolJson.IsLegacyHealthAck(Path.Combine(operation, "health-ack.json")));
+        return new[] { "schema-source.db", "schema-restore.json", "candidate-identity.json", "candidate-authorization.json" }.Any(file => File.Exists(Path.Combine(operation, file))) || (File.Exists(Path.Combine(operation, "health-ack.json")) && !UpdateProtocolJson.IsLegacyHealthAck(Path.Combine(operation, "health-ack.json")));
     }
     private static bool IsValidPhasePair(UpdatePhase outer, SchemaPhase schema) => outer switch
     {

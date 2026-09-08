@@ -52,7 +52,6 @@ public sealed class S9T07ProtocolContractTests
 
     [Theory]
     [InlineData("schema-source.db")]
-    [InlineData("normal-launch.json")]
     public void PendingRejectsSchemaEvidenceWhenSchemaWasRemoved(string evidence)
     {
         WithJournal(CreateLegacyJournal(10, false), root =>

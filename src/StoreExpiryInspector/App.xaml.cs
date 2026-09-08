@@ -554,11 +554,13 @@ public partial class App : System.Windows.Application
         var journal = document.RootElement;
         UpdateProtocolJson.RequireObject(journal, "OperationId", "DataRoot", "AppPath", "SourceVersion", "TargetVersion", "Phase", "Schema");
         var schema = journal.GetProperty("Schema");
-        UpdateProtocolJson.RequireObject(schema, "Phase", "Snapshot", "SourceMigrations", "TargetMigrations", "LaunchToken", "CandidatePid", "CandidateStartedUtc", "LastError");
         if (journal.GetProperty("OperationId").GetString() != operationId ||
             !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("DataRoot").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(RuntimeDataRoot.RootDirectory)), StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("AppPath").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)), StringComparison.OrdinalIgnoreCase) ||
-            schema.GetProperty("LaunchToken").GetString() != intent.LaunchToken) throw new InvalidDataException("普通启动终态无效。");
+            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(journal.GetProperty("AppPath").GetString()!)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("普通启动终态无效。");
+        if (schema.ValueKind == JsonValueKind.Null)
+            return intent.Role == NormalLaunchRole.Candidate && intent.ExpectedOuterPhase == 9 && intent.ExpectedSchemaPhase == -1 && IsExactPhase(journal.GetProperty("Phase"), 10, "Completed");
+        UpdateProtocolJson.RequireObject(schema, "Phase", "Snapshot", "SourceMigrations", "TargetMigrations", "LaunchToken", "CandidatePid", "CandidateStartedUtc", "LastError");
+        if (schema.GetProperty("LaunchToken").GetString() != intent.LaunchToken) throw new InvalidDataException("普通启动终态无效。");
         var wire = JsonSerializer.Deserialize<SchemaUpdateJournal>(schema.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } }) ?? throw new InvalidDataException("普通启动终态无效。");
         SchemaUpdateJournal.Validate(wire, operationId, journal.GetProperty("SourceVersion").GetString()!, journal.GetProperty("TargetVersion").GetString()!);
         var (phase, phaseName, schemaPhase, schemaName) = intent.Role == NormalLaunchRole.Candidate

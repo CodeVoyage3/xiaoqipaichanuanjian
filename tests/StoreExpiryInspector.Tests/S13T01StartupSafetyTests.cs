@@ -14,6 +14,7 @@ public sealed class S13T01StartupSafetyTests
         var prepare = app[prepareStart..app.IndexOf("private void MainWindow_Closing", prepareStart, StringComparison.Ordinal)];
         Assert.True(normal.IndexOf("WaitForNormalLaunchTerminal", StringComparison.Ordinal) < normal.IndexOf("await shell.StartupLoadTask", StringComparison.Ordinal));
         Assert.True(normal.IndexOf("await shell.StartupLoadTask", StringComparison.Ordinal) < normal.IndexOf("PassStartupUpdatePolicyAsync", StringComparison.Ordinal));
+        Assert.Contains("StartOrdinaryRuntime();", normal, StringComparison.Ordinal);
         Assert.True(prepare.IndexOf("await BeginDatabaseMaintenanceAsync(keepWindowBlocked: true)", StringComparison.Ordinal) < prepare.IndexOf("new UpdateInstallationPreparer", StringComparison.Ordinal));
         Assert.Contains("EndDatabaseMaintenance(true, keepWindowBlocked: true)", prepare, StringComparison.Ordinal);
     }

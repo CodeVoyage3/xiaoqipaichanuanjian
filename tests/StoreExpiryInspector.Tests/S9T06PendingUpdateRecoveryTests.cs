@@ -20,14 +20,14 @@ public sealed class S9T06PendingUpdateRecoveryTests
     }
 
     [Theory]
-    [InlineData(9)]
-    [InlineData(10)]
-    [InlineData(14)]
-    [InlineData(15)]
-    public void AcknowledgedOrTerminalJournalDoesNotLaunchRecovery(int phase) => WithRoot(root =>
+    [InlineData(9, true)]
+    [InlineData(10, false)]
+    [InlineData(14, false)]
+    [InlineData(15, false)]
+    public void SameSchemaJournalRecoveryMatchesPhase(int phase, bool pending) => WithRoot(root =>
     {
         Journal(root, phase);
-        Assert.False(PendingUpdateRecovery.TryResume(root));
+        if (pending) Assert.Throws<InvalidOperationException>(() => PendingUpdateRecovery.TryResume(root)); else Assert.False(PendingUpdateRecovery.TryResume(root));
     });
 
     [Fact]
