@@ -1,10 +1,10 @@
 # Stage13｜强制升级与合法跨版本升级链
 
 Stage13 = IN_PROGRESS
-S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / WAITING_TEST_TRANSPORT_ENTRY / NOT_ACCEPTED
+S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / V104_ONLY_SOURCE_RANGE_DECIDED / FINAL_CANDIDATE_PENDING / NOT_ACCEPTED
 目标版本：v1.0.5。
 
-candidate / production source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；当前 governance main 为包含本节的 `origin/main`，其最终精确 SHA 以 push 回执为准。治理提交不得冒充 v1.0.5 candidate source。独立 focused/build/EF/migration/candidate identity 门禁通过；TEST_TRANSPORT 与三源公开旧客户端到 v1.0.5 的 production-signed 全链仍是 Release blocker，因此不关闭本卡或阶段。详见 `../ACCEPTANCE/S13-T01-SOL.md`。
+candidate / production source 为 `3b483ef772d6442febfbcdd16ab87c6965839445`；当前 governance main 为包含本节的 `origin/main`，治理提交不得冒充 candidate source。用户已裁决仅维护 v1.0.4 -> v1.0.5：正式 manifest 固定 `minVersion=maxVersion=1.0.4` 且 source migration 严格为 production migration 9；v1.0.2/v1.0.3 与 TEST_TRANSPORT 不再是 blocker。现有宽范围 compatibility manifest/signature 仅留历史证据，不得发布。当前只待 v1.0.4-only 最终候选、用户真实 GUI/升级验收及后续独立发布授权。详见 `../ACCEPTANCE/S13-T01-SOL.md`。
 
 ## 开工现场（2026-09-07，Asia/Shanghai）
 

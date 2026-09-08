@@ -1,3 +1,9 @@
+# 2026-09-08：产品兼容基线收敛为仅 v1.0.4 -> v1.0.5
+
+用户撤销 v1.0.2/v1.0.3 -> v1.0.5 的生产兼容要求；两版未形成需继续维护的门店升级基线，既有 TEMP/Sandbox/TEST_TRANSPORT 记录仅作历史环境证据，不记 compatibility FAIL，也不再投入代理、CA、Sandbox 或独立账户方案。v1.0.5 正式 manifest 固定 `minVersion=maxVersion=1.0.4`，source migration min/max 仍严格为 production migration 9，除非后续另有产品决策。
+
+现有 source `3b483ef772d6442febfbcdd16ab87c6965839445` 的 1.0.2..1.0.4 compatibility manifest/signature 已被本产品决策取代，不得作为最终发布 manifest；其冻结 bytes 与证据保留。下一步只准备 v1.0.4-only 最终候选，再由用户验收真实 v1.0.4 -> v1.0.5 GUI/升级，发布仍需独立授权。S13-T01 = `IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / V104_ONLY_SOURCE_RANGE_DECIDED / FINAL_CANDIDATE_PENDING / NOT_ACCEPTED`；Stage13 = IN_PROGRESS；NO_FULL。
+
 # 2026-09-08：v1.0.5 compatibility candidate 已重建并持久冻结
 
 旧 TEMP candidate 已被系统清理，记为 `LOST_BY_TEMP_CLEANUP / SUPERSEDED`，不记安全或兼容失败。新 candidate 从生产 source `3b483ef772d6442febfbcdd16ab87c6965839445` 重建并保存于 `D:\S13-TestAssets\v1.0.5-compatibility\3b483ef7`：ZIP 109428212 bytes / `F27E6F14ADE71FE6BABB364EBF023DF29237F14D6FFF04BFF5E88128AED18224`，manifest 869 bytes / `56F84C0078691B7631195285AEDC30CC0C5D9DA5348128A565E9B201FDC33CEC`，signature 384 bytes / `0351C893B55A727A37E1FB899FD357123C381D9E98DA143DD7CBCECCCA5D561A`。production RSA-PSS/SHA256 PASS；App/Updater 1.0.5.0，Updater subsystem 2，migrationCount 9，source `1.0.2..1.0.4` 且 migration min/max 严格为现有第9条；构建输出与持久副本全等。

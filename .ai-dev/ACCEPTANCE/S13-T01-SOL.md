@@ -32,3 +32,10 @@
 - signature：384 bytes，SHA256 `0351C893B55A727A37E1FB899FD357123C381D9E98DA143DD7CBCECCCA5D561A`；production RSA-PSS/SHA256 PASS，公钥指纹 `565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。
 - App/Updater FileVersion 均为 `1.0.5.0`；Updater PE subsystem `2 / Windows GUI`。构建输出与持久副本 bytes/SHA256 全等；持久目录只含三项公开型资产及无 secret 的 `validation-receipt.json`，不含私钥或业务数据。
 - 本轮未修改生产代码，未运行 full/90/90/7/7/178/Stage9 矩阵，未发布、tag 或创建 Release。下一状态：`IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / WAITING_TEST_TRANSPORT_ENTRY / NOT_ACCEPTED`。
+
+## 2026-09-08 产品兼容范围裁决
+
+- 用户撤销 v1.0.2/v1.0.3 -> v1.0.5 生产兼容要求；两版未形成需维护的门店升级基线。既有 TEMP/Sandbox/TEST_TRANSPORT 记录保留为历史环境证据，不记 compatibility FAIL，不再继续代理、CA、Sandbox、VM 或独立账户工作。
+- v1.0.5 正式 manifest 固定 `minVersion=maxVersion=1.0.4`；source migration min/max 严格为 production migration 9。现有 1.0.2..1.0.4 compatibility manifest/signature 被此产品决策取代，不得作为最终发布 manifest，其冻结 bytes 与历史验签证据保留。
+- 当前无 Sandbox、mitmproxy 进程或当前用户 mitmproxy CA；主机代理仍为原值 `127.0.0.1:7890`。未修改生产代码，NO_FULL。
+- 下一状态：`IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / V104_ONLY_SOURCE_RANGE_DECIDED / FINAL_CANDIDATE_PENDING / NOT_ACCEPTED`。下一步只准备 v1.0.4-only 最终候选；用户真实 GUI/升级验收与发布收口继续分离。

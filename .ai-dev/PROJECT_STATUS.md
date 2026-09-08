@@ -1,4 +1,12 @@
-# 2026-09-08 当前：S13-T01 等待 TEST_TRANSPORT 入口
+# 2026-09-08 当前：S13-T01 收敛为 v1.0.4-only 最终候选
+
+- Stage13 = IN_PROGRESS；S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / V104_ONLY_SOURCE_RANGE_DECIDED / FINAL_CANDIDATE_PENDING / NOT_ACCEPTED。
+- 用户撤销 v1.0.2/v1.0.3 -> v1.0.5 生产兼容要求；两版不再是发布 blocker。既有相关 TEMP/Sandbox/TEST_TRANSPORT 记录保留为历史环境证据，不记 compatibility FAIL，不再继续代理、CA、Sandbox、VM 或独立账户工作。
+- v1.0.5 正式 manifest source range 固定 `minVersion=maxVersion=1.0.4`；source migration min/max 继续严格为 production migration 9。
+- production/candidate source 仍为 `3b483ef772d6442febfbcdd16ab87c6965839445`。现有持久 candidate 的 1.0.2..1.0.4 manifest/signature 被本产品决策取代，不得用于最终发布；冻结 bytes 与历史验签证据保留。
+- 下一步仅准备 v1.0.4-only 最终候选；随后用户真实验收 v1.0.4 -> v1.0.5 GUI/升级。发布另需授权；Full = NO_FULL。
+
+# 2026-09-08 历史：S13-T01 等待 TEST_TRANSPORT 入口
 
 - Stage13 = IN_PROGRESS；S13-T01 = IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / WAITING_TEST_TRANSPORT_ENTRY / NOT_ACCEPTED。
 - candidate / production source = `3b483ef772d6442febfbcdd16ab87c6965839445`，已作为当前 remote main 的祖先保存；governance main 已 push，精确 SHA 以包含本节的 `origin/main` 为准，不得用治理 SHA替代 candidate source。
