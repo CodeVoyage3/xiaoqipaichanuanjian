@@ -22,3 +22,13 @@
 因此本轮只到 `SOL_TECHNICAL_ACCEPTANCE_READY`：生产功能与测试基础已实现并通过当前独立门禁，但 S13-T01 不标 `ACCEPTED/CLOSED`，v1.0.5 manifest 不批准 `minVersion=1.0.2/maxVersion=1.0.4`，也不允许发布。后续必须另获候选生成/签名与三源专项授权；不得创建 S13-T02 代替本 blocker。
 
 `HISTORICAL_TEST_ISOLATION_UNCERTAINTY` 保留。
+
+## 2026-09-08 compatibility candidate 重建与持久冻结
+
+- 旧 TEMP/GUID compatibility candidate：`LOST_BY_TEMP_CLEANUP / SUPERSEDED`。这是存储生命周期事件，不是生产安全失败或 compatibility FAIL。
+- 新 candidate：`V105_COMPATIBILITY_CANDIDATE_REBUILT_AND_FROZEN`；生产 source 固定为 `3b483ef772d6442febfbcdd16ab87c6965839445`，持久目录 `D:\S13-TestAssets\v1.0.5-compatibility\3b483ef7`。
+- ZIP：109428212 bytes，SHA256 `F27E6F14ADE71FE6BABB364EBF023DF29237F14D6FFF04BFF5E88128AED18224`；package tree SHA256 `AD3451BD8789F253EED4738823B1BD7FAA97B0627AE08E74D4E17DFE390D5166`；618 entries，禁入项 0。
+- manifest：869 bytes，SHA256 `56F84C0078691B7631195285AEDC30CC0C5D9DA5348128A565E9B201FDC33CEC`；source version `1.0.2..1.0.4`，source migration min/max 均为 `20260901155124_AddPolicyAndBaselineFoundation`，target migrations 9。
+- signature：384 bytes，SHA256 `0351C893B55A727A37E1FB899FD357123C381D9E98DA143DD7CBCECCCA5D561A`；production RSA-PSS/SHA256 PASS，公钥指纹 `565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。
+- App/Updater FileVersion 均为 `1.0.5.0`；Updater PE subsystem `2 / Windows GUI`。构建输出与持久副本 bytes/SHA256 全等；持久目录只含三项公开型资产及无 secret 的 `validation-receipt.json`，不含私钥或业务数据。
+- 本轮未修改生产代码，未运行 full/90/90/7/7/178/Stage9 矩阵，未发布、tag 或创建 Release。下一状态：`IMPLEMENTED / SOL_TECHNICAL_ACCEPTANCE_READY / WAITING_TEST_TRANSPORT_ENTRY / NOT_ACCEPTED`。
