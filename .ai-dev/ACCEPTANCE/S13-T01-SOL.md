@@ -1,3 +1,15 @@
+# S13-T01 latest Sol decision (2026-09-08)
+
+Status: `V106_CORRECTED_CANDIDATE_STATICALLY_ACCEPTED / OFFICIAL_DUAL_SOURCE_TRANSACTION_BLOCKED / RELEASE_AUTHORIZATION_NOT_REACHED / NOT_ACCEPTED`.
+
+## v1.0.6 corrected final candidate
+
+A new independent candidate was generated from final product source `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355` and frozen at `D:\\S13-TestAssets\\v1.0.6-corrected-final\\a8983ed6`. Manifest source versions are 1.0.4..1.0.5 and source migration min/max are both migration 9; target migration count is 9. Production RSA-PSS/SHA256, manifest/package identity, ZIP 618-entry tree, unsafe/duplicate/prohibited-entry checks, App/Updater/Setup versions and Updater subsystem 2 all PASS. See `S13-T01-V106-CORRECTED-CANDIDATE.md`.
+
+The prior candidate remains `REJECTED / SUPERSEDED_BY_CORRECTED_MIGRATION_CONTRACT`. No production code, Schema or migration changed; existing 43/43, 8/8, Release build 0/0 and EF NO_MODEL_DRIFT remain valid. Full was not run.
+
+Official clients only consume GitHub public Releases; the unpublished v1.0.6 has no production transport entry. The official Updater also validates the current user's fixed HKCU install identity and formal `%LOCALAPPDATA%` data root, while TEMP/GUID is test mapping only. With fake Release forbidden and no separate authorization for Sandbox/VM/HTTPS proxy/CA, v1.0.4->v1.0.6 and v1.0.5->v1.0.6 are both NOT_RUN. The normal-launch bug is not yet proven fixed by the official v1.0.5 source path, and the release-authorization boundary is not reached.
+
 # S13-T01 Sol 独立技术验收（2026-09-07）
 
 结论：`REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED`。

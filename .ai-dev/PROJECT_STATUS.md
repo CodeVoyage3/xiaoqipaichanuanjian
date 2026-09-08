@@ -1,3 +1,9 @@
+# 2026-09-08: v1.0.6 corrected candidate statically accepted; official dual-source transactions not run
+
+The corrected candidate was generated from final product source `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355` and frozen. Its source versions are 1.0.4..1.0.5, source migration is strictly 9..9, and target migration count is 9. Production signature, ZIP tree/path/prohibited-entry and version gates PASS. Official clients cannot consume the unpublished candidate through a production entry, while the official Updater cannot use its production path without the current user's formal HKCU/%LOCALAPPDATA% identities. Test mappings are not official-path evidence. Both source paths are NOT_RUN and the normal-launch bug is not proven fixed by the v1.0.5 source path.
+
+S13-T01 = `V106_CORRECTED_CANDIDATE_STATICALLY_ACCEPTED / OFFICIAL_DUAL_SOURCE_TRANSACTION_BLOCKED / RELEASE_AUTHORIZATION_NOT_REACHED / NOT_ACCEPTED`; Stage13 = IN_PROGRESS. NO_FULL; no production code, Schema/migration, formal data or public Release change; no push/tag/Release.
+
 # 2026-09-08 当前：v1.0.5 normal-launch hotfix 技术接受，等待 v1.0.6 候选授权
 
 - Stage13 = IN_PROGRESS；S13-T01 = REAL_V104_TO_V105_GUI_FAILED / NORMAL_LAUNCH_FIX_TECHNICALLY_ACCEPTED / V106_HOTFIX_CANDIDATE_PENDING / NOT_ACCEPTED。

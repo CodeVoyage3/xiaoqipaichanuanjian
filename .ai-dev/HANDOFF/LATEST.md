@@ -1,3 +1,9 @@
+# 2026-09-08: v1.0.6 corrected candidate frozen; official dual-source path blocked
+
+Final product source remains `a8983ed6fe3d7f6a76bf2545e09b6e64d2d3a355`; no production code changed. The corrected candidate is frozen at `D:\\S13-TestAssets\\v1.0.6-corrected-final\\a8983ed6`: ZIP `63D0BC...FAD100`, Setup `65E268...FFA73`, manifest `6D6508...BF923`, signature `655584...709E4`. Contract is target 1.0.6, source versions 1.0.4..1.0.5, source migration 9..9, target migration count 9. Production RSA-PSS/SHA256, ZIP tree/path/prohibited-entry checks, versions and Updater GUI subsystem all PASS. The old candidate remains `REJECTED / SUPERSEDED_BY_CORRECTED_MIGRATION_CONTRACT`.
+
+Official clients have no production transport to an unpublished candidate, and the official Updater requires the current user's formal HKCU/%LOCALAPPDATA% identities. TEMP/GUID entries are test mappings only. A fake Release is forbidden and Sandbox/VM/CA/proxy was not separately authorized, so both official-client transaction paths are NOT_RUN and the v1.0.5 normal-launch bug is not yet proven fixed. S13-T01 = `V106_CORRECTED_CANDIDATE_STATICALLY_ACCEPTED / OFFICIAL_DUAL_SOURCE_TRANSACTION_BLOCKED / RELEASE_AUTHORIZATION_NOT_REACHED / NOT_ACCEPTED`; NO_FULL; no push/tag/Release. See `../ACCEPTANCE/S13-T01-V106-CORRECTED-CANDIDATE.md`.
+
 # 2026-09-08：v1.0.4 -> v1.0.5 真实升级失败，normal-launch hotfix 技术接受
 
 真实升级回执：更新提示、下载、安装程序启动、安装完成均 PASS；安装后自动启动新版 FAIL，用户手动启动 v1.0.5 PASS。事故限定为 same-schema 成功路径在 `Committed` 后直接启动并标记 `Completed`，未复用既有 `NormalLaunchHandshake`。
