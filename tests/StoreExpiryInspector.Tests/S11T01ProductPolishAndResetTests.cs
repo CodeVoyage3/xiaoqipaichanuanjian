@@ -191,7 +191,7 @@ public sealed class S11T01ProductPolishAndResetTests
         var resetUseCase = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "Application", "ResetBusinessDataUseCase.cs"));
         var iconPath = Path.Combine(root, "src", "StoreExpiryInspector", "Assets", "StoreExpiryInspector.ico");
 
-        Assert.Contains("<Version>1.0.5</Version>", project, StringComparison.Ordinal);
+        Assert.Contains("<Version>1.0.6</Version>", project, StringComparison.Ordinal);
         Assert.Contains("<ApplicationIcon>Assets\\StoreExpiryInspector.ico</ApplicationIcon>", project, StringComparison.Ordinal);
         Assert.Contains("Icon=\"/StoreExpiryInspector;component/Assets/StoreExpiryInspector.ico\"", window, StringComparison.Ordinal);
         Assert.Equal(5, Count(window, "Style=\"{StaticResource DashboardMetricTextStyle}\""));

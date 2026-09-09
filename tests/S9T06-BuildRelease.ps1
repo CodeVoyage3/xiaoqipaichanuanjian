@@ -21,7 +21,8 @@ $keyRules = (Get-Acl -LiteralPath $keyPath).GetAccessRules($true, $true, [Securi
 if (-not ($keyRules | Where-Object { $_.IdentityReference -eq $currentUser }) -or ($keyRules | Where-Object { $_.IdentityReference -ne $currentUser })) { throw 'Signing identity ACL is not exclusive to the current user.' }
 if ((git -C $repo status --porcelain).Count -ne 0) { throw 'A production release requires a clean source checkout.' }
 $commit = (git -C $repo rev-parse HEAD).Trim()
-$sourceVersion = '1.0.4'
+$sourceMinVersion = '1.0.4'
+$sourceMaxVersion = '1.0.5'
 $migrations = @('20260826123739_InitialCreate','20260826130822_AddTasksAndDrafts','20260826135612_AddInspectionHistory','20260826142429_AddInventoryAdjustments','20260826152131_AddImportPersistence','20260826155455_AddBackupMetadata','20260826162033_AddSettingsAndAppState','20260826170403_AddLifecycleEvents','20260901155124_AddPolicyAndBaselineFoundation')
 New-Item -ItemType Directory -Path $output | Out-Null
 $publish = Join-Path $output 'publish'
@@ -52,8 +53,8 @@ try {
 }
 finally { $archive.Dispose() }
 $zipHash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-$manifestObject = [ordered]@{ schemaVersion = 1; version = $version; releaseTag = "v$version"; repository = 'CodeVoyage3/xiaoqipaichanuanjian'; channel = 'stable'; rid = 'win-x64'; minimumProtocolVersion = 1; package = [ordered]@{ fileName = [IO.Path]::GetFileName($zip); bytes = (Get-Item -LiteralPath $zip).Length; sha256 = $zipHash }; targetMigrations = $migrations; source = [ordered]@{ minVersion = $sourceVersion; maxVersion = $sourceVersion; minMigration = $migrations[0]; maxMigration = $migrations[-1] } }
-if ($version -ne '1.0.5' -or $manifestObject.source.minVersion -ne '1.0.4' -or $manifestObject.source.maxVersion -ne '1.0.4' -or @($manifestObject.targetMigrations).Count -ne 9) { throw 'Release manifest version contract is not frozen for v1.0.4 to v1.0.5.' }
+$manifestObject = [ordered]@{ schemaVersion = 1; version = $version; releaseTag = "v$version"; repository = 'CodeVoyage3/xiaoqipaichanuanjian'; channel = 'stable'; rid = 'win-x64'; minimumProtocolVersion = 1; package = [ordered]@{ fileName = [IO.Path]::GetFileName($zip); bytes = (Get-Item -LiteralPath $zip).Length; sha256 = $zipHash }; targetMigrations = $migrations; source = [ordered]@{ minVersion = $sourceMinVersion; maxVersion = $sourceMaxVersion; minMigration = $migrations[-1]; maxMigration = $migrations[-1] } }
+if ($version -ne '1.0.6' -or $manifestObject.source.minVersion -ne '1.0.4' -or $manifestObject.source.maxVersion -ne '1.0.5' -or $manifestObject.source.minMigration -ne $migrations[-1] -or $manifestObject.source.maxMigration -ne $migrations[-1] -or @($manifestObject.targetMigrations).Count -ne 9) { throw 'Release manifest version contract is not frozen for v1.0.4..v1.0.5 to v1.0.6.' }
 $manifest = Join-Path $assets 'update-manifest.json'
 $manifestBytes = [Text.UTF8Encoding]::new($false).GetBytes(($manifestObject | ConvertTo-Json -Depth 5 -Compress))
 [IO.File]::WriteAllBytes($manifest, $manifestBytes)
