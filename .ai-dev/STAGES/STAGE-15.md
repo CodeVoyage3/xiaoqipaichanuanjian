@@ -2,7 +2,7 @@
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage15 = `IN_PROGRESS / S15_T01_IMPLEMENTED / READY_FOR_REVIEW`
+Stage15 = `IN_PROGRESS / S15_T01_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`
 
 唯一任务：`S15-T01｜在线更新进度界面简化`。
 
@@ -27,3 +27,10 @@ Stage15 = `IN_PROGRESS / S15_T01_IMPLEMENTED / READY_FOR_REVIEW`
 - Terra 隔离提交：`2fce2c999c06302622fd3b77623109c7e0ecd5ba`，未 push/tag/Release。
 - 最小专项 `6/6`；Release App build `0 error`，仅 3 个无法获取 NuGet 漏洞元数据的 `NU1900` 网络警告。
 - `NO_FULL`；无更新底层协议、Updater/journal/rollback、manifest/signature、SQLite/migration、导航或业务 UI 变化。
+
+## 技术评审与集成
+
+- Sol 已独立读取并审查真实 Terra diff；技术审查 `PASS`，无返修项。
+- Terra 实现已无冲突 cherry-pick 为 integration commit `46890b83e15b5a971a6dc6e8418c85de6b841d5a`；六个实现文件与 Terra 提交逐文件等价。
+- 原专项 `6/6 PASS`、原 Release build `0 error` 均继承且未重跑；`NU1900 ×3` 为网络漏洞元数据警告，非 blocker；`FULL = NOT_RUN / NO_FULL`。
+- GUI 最终验收尚未执行。保留 `origin/codex/s15-t01-terra`，直到 Stage15 最终 `CLOSED`。

@@ -1,3 +1,12 @@
+# 2026-09-09：S15-T01 技术接受并集成，等待用户 GUI 验收
+
+Sol 已独立读取并审查真实 Terra diff，技术审查 `PASS`、无返修项。Terra `2fce2c999c06302622fd3b77623109c7e0ecd5ba` 已从 fresh `origin/main@9747588fbf7856a1da784e73250c5f4c3058452a` 无冲突 cherry-pick 为 integration commit `46890b83e15b5a971a6dc6e8418c85de6b841d5a`；六个实现文件逐文件等价，Terra 原提交未 amend/rebase/squash，`origin/codex/s15-t01-terra` 保留。
+
+Stage15 = `IN_PROGRESS / S15_T01_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`；S15-T01 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。
+
+原专项 `6/6 PASS`、原 Release build `0 error` 均为 `INHERITED / NOT_RERUN`；`NU1900 ×3` 是网络漏洞元数据警告、非 blocker；`FULL = NOT_RUN / NO_FULL`。GUI 最终验收尚未执行。不 tag、不 Release、不发布 v1.0.6、不创建 S15-T02。
+
+
 # 2026-09-09：S15-T01 已实现，专项与 Release build 通过
 
 Terra 在全新隔离 worktree 提交 `2fce2c999c06302622fd3b77623109c7e0ecd5ba`，未 push/tag/Release。Stage15 = `IN_PROGRESS / S15_T01_IMPLEMENTED / READY_FOR_REVIEW`；S15-T01 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。
