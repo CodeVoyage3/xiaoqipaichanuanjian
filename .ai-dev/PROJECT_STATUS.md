@@ -1,3 +1,12 @@
+# 2026-09-09 current：S15-T02 已实现，等待 Sol 技术评审
+
+- Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW`；S15-T02 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。
+- Terra `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00` 已从 fresh `origin/main@1ddb809bff6c21d816b21ddc63397608c5204dfe` 提交并普通 push 到 `origin/codex/s15-t02-terra`；远端 SHA 相同，worktree clean，未合并 main。
+- 5 个修改文件仅覆盖 1000 字符截断、ViewModel 完整 ReleaseNotes、真实窗口初始态滚动区及直接测试；控制字符清理、metadata 256KB 上限、DiagnosticBanner 禁止项、三阶段和取消边界均保持。
+- 精确专项 `10/10 PASS`；Release App build `0 warning / 0 error`，本次无 `NU1900`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`；scope check `PASS`。
+- 一次过宽 S9T03 类组合过滤为 `29/30`，唯一未过为既有 synthetic WPF core-ready 27 秒超时；非本卡门禁，之后精确专项全部通过。下一步只等待 Sol 独立技术评审，不自判技术/GUI 通过。
+
+
 # 2026-09-09 current：S15-T01 已关闭，S15-T02 治理冻结并授权实施
 
 - Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_CURRENT`。

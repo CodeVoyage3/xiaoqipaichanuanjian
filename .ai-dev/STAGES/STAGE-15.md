@@ -2,7 +2,7 @@
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_CURRENT`
+Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW`
 
 当前唯一任务：`S15-T02｜更新提示恢复完整门店版更新说明`。
 
@@ -45,3 +45,11 @@ Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_CURRENT`
 - 允许移除 `SanitizeNotes` 的 1000 字符截断；保留控制字符清理和 GitHub metadata 整体 256KB 安全上限，不改变请求、版本、网络错误或更新底层语义。
 - 从下一次正式版本开始，Release Body 本身必须完整记录门店实际可感知的新增、优化与修复，不写开发过程、内部治理证据或仅开发者需要的技术术语。
 - 实施只做直接专项与必要 Release App build，`FULL = NO_FULL`；技术接受后，用户只重验“发现新版本”屏，不重复验 S15-T01 三阶段。
+
+## S15-T02 实现结果
+
+- Terra：`0afddbdd5cb42f1f7f9d02ca84d1267842a30e00`；远端分支 `origin/codex/s15-t02-terra` 指向同一 SHA，隔离 worktree clean，尚未合并 main。
+- 修改文件：`GitHubReleaseUpdateChecker.cs`、`UpdateNotificationViewModel.cs`、`WpfDialogService.cs`、`S9T03UpdateCheckTests.cs`、`S15T01UpdateProgressUiTests.cs`。
+- 完整 ReleaseNotes 保留现有控制字符清理与 metadata 256KB 上限；初始窗口显示固定 `MaxHeight` 滚动区，空白时无区域，进入进度态后隐藏；不恢复 DiagnosticBanner。
+- 精确专项 `10/10 PASS`；Release App build `0 warning / 0 error`，无 `NU1900`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`；scope check `PASS`。
+- S15-T02 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。当前只等待 Sol 独立技术评审；不自判技术或 GUI 通过。

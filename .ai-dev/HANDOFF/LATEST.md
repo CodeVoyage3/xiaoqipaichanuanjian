@@ -1,3 +1,12 @@
+# 2026-09-09：S15-T02 已实现并推送独立评审分支
+
+S15-T02 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`；Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW`。全新 Terra 从 fresh `origin/main@1ddb809bff6c21d816b21ddc63397608c5204dfe` 在隔离 worktree 提交 `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00`，并普通 push 到 `origin/codex/s15-t02-terra`；远端 SHA 相同，worktree clean，尚未合并 main。
+
+修改严格为 5 文件：`GitHubReleaseUpdateChecker.cs`、`UpdateNotificationViewModel.cs`、`WpfDialogService.cs`、`S9T03UpdateCheckTests.cs`、`S15T01UpdateProgressUiTests.cs`。实现仅移除 ReleaseNotes 的 1000 字符截断、直接只读暴露完整正文，并在真实更新窗口加入初始态可见的固定 `MaxHeight` 滚动区；空白说明不创建区域，进入更新进度后隐藏，不恢复 DiagnosticBanner。metadata 256KB 上限、控制字符清理及 S15-T01 三阶段/取消边界保持原样。
+
+精确专项 `10/10 PASS`；Release App build `0 warning / 0 error`，本次无 `NU1900`；`FULL = NOT_RUN / NO_FULL`，正式数据库访问 `NO`，scope check `PASS`。过程中过宽的 S9T03 类组合过滤曾为 `29/30`，唯一未过为既有 synthetic WPF core-ready 27 秒超时；未把该运行作为本卡门禁，随后只执行精确专项并全部通过。当前停止等待 Sol 独立技术评审；不自判技术/GUI 通过，不合并实现，不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。
+
+
 # 2026-09-09：S15-T01 GUI 验收关闭，S15-T02 治理冻结并授权实施
 
 用户已明确回执 `S15-T01 GUI 验收通过`。S15-T01 = `GUI_ACCEPTED / CLOSED`；人工确认初始更新窗口简化、下载百分比/进度界面、更新中/安装中显示及稍后提醒流程均正确。既有技术证据继续继承：technical review `PASS`、targeted `6/6 PASS`、Release build `PASS / 0 error`，`NU1900 ×3 = network metadata warning / NON_BLOCKER`，`FULL = NOT_RUN / NO_FULL`；本轮未重跑测试、build 或 GUI。
