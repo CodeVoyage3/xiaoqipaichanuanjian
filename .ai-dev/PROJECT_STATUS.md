@@ -1,3 +1,12 @@
+# 2026-09-10 current：v1.0.7 RELEASED / Stage17 CLOSED
+
+- 用户 GUI A/B/C 均 `PASS`；annotated tag `v1.0.7` 精确指向产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`。
+- GitHub Release <https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.7>，ID `385663956`；公网匿名 fresh 下载四项资产 bytes/SHA256 全等，production RSA-PSS/SHA256 复验 `PASS`。
+- 同一冻结 Setup 已上传夸克正式 `门店效期排查软件/v1.0.7`，重新读取为 `75340490` bytes；正式分享 <https://pan.quark.cn/s/fb380ba2b338>。
+- Gitee `master/latest.json` commit `ba957a0e024633ef2177ca44c994672142149951`；固定 Raw 匿名 HTTP `200` 且三字段精确一致。
+- Stage17 = `CLOSED`；S17-T01 = `GUI_ACCEPTED / RELEASED / CLOSED`。`FULL = NOT_RUN / NO_FULL`；Stage16 与正式 dirty 五项现场未触碰。
+
+
 # 2026-09-09 current：S17-T01 QUARK_PREFLIGHT_PASSED
 
 - 用户已确认 `QUARK_SKILL_WINDOWS_PERSISTENCE = PASS`；本轮未重新安装或重新授权，直接使用现有 Node CLI 完成真实 Setup 大文件预检。

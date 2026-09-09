@@ -1,3 +1,12 @@
+# 2026-09-10：v1.0.7 正式发布完成，Stage17 CLOSED
+
+用户 GUI A/B/C 均 `PASS`。正式发布使用产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`；annotated tag `v1.0.7` 精确指向该 source。GitHub Release <https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.7>，ID `385663956`；公网匿名 fresh 下载四项资产 bytes/SHA256 与冻结候选逐项全等，production signature 复验 `PASS`。
+
+夸克真实 Setup 预检 `PASS`；同一冻结 Setup 已上传 `门店效期排查软件/v1.0.7/StoreExpiryInspector-Setup-1.0.7.exe`，重新读取为 `75340490` bytes，正式永久公开分享 <https://pan.quark.cn/s/fb380ba2b338>。Gitee `master/latest.json` 已由 SSH commit `ba957a0e024633ef2177ca44c994672142149951` 发布；固定 Raw 匿名 HTTP `200` 且三字段精确一致。
+
+Stage17 = `CLOSED`；S17-T01 = `GUI_ACCEPTED / RELEASED / CLOSED`。`FULL = NOT_RUN / NO_FULL`；Stage16、正式 dirty 五项现场、Schema/migration、Updater 与 GitHub 签名/manifest/SHA256/rollback 安全协议未修改。
+
+
 # 2026-09-09：S17-T01 夸克真实 Setup 预检通过，环境阻塞解除
 
 用户已确认 `QUARK_SKILL_WINDOWS_PERSISTENCE = PASS`。本轮未重新安装或重新授权，直接使用用户级 Skill 的现有 Node CLI 完成发布前真实大文件预检：在 `门店效期排查软件/发布验证/v1.0.7-candidate` 上传同一冻结 `StoreExpiryInspector-Setup-1.0.7.exe`，重新读取确认文件名与 `75340490` bytes 一致，并生成独立公开分享链接 <https://pan.quark.cn/s/bb99b4a8ac80>。
