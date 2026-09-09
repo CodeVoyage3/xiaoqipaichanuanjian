@@ -1,3 +1,12 @@
+# 2026-09-09：门店效期排查软件 v1.0.6 正式发布
+
+GitHub stable/latest Release `v1.0.6` 已正式发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.6>。Release ID `385388292`，`draft=false`、`prerelease=false`；annotated tag object `2dfb272a2590902f67665a1c96368897bacfab76` 解引用到精确产品 source `93affffaa98b17e61ecd79970b450937a5c15380`，不指向后续治理提交。
+
+发布后从 GitHub 公网 fresh 下载四项资产，bytes/SHA256 与冻结候选逐项全等：ZIP 109412006 bytes / `80827A771FCF287E28BD3A4FDAE488216FCB2D42D357B7A557C91A8C893A85EE`；Setup 75334222 bytes / `830E0A27779EBECA5E2DFFCD61B8FD297F3F679D785FF5586176B1F5ED63FFB3`；manifest 869 bytes / `D8EDC896CB4B88BFFED84AD9502002F76BB17148B593E647418ACE9AB07015BE`；signature 384 bytes / `E9C277D92E3321A87A95A20878F260CB58EA1D08FF344E073B9FE8C62E94568E`。`PUBLIC_V106_RELEASE_ASSET_EQUIVALENCE = PASS`，公开 manifest production signature 验证 `PASS`。
+
+manifest 合同为 target `1.0.6`、source `1.0.4..1.0.5`、migrationCount `9`；支持 `v1.0.4 -> v1.0.6` 与 `v1.0.5 -> v1.0.6`。本轮未重建、重新 ZIP、重签或替换候选，`FULL = NOT_RUN / NO_FULL`，正式数据库访问 `NO`。Stage15 继续 `CLOSED`，S15-T01/S15-T02 继续 `GUI_ACCEPTED / CLOSED`；Stage16 未启动。
+
+
 # 2026-09-09：S15-T02 GUI 验收通过，Stage15 正式关闭
 
 用户已明确回执 `S15-T02 GUI 验收通过`：确认“本次更新”区域、完整门店版更新说明、长内容滚动、窗口尺寸、当前/最新版本及“稍后提醒 / 立即更新”均正常。

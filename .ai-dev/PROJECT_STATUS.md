@@ -1,3 +1,12 @@
+# 2026-09-09 current：v1.0.6 已正式发布
+
+- GitHub stable/latest = `v1.0.6`；Release ID `385388292`，`draft=false`、`prerelease=false`。
+- annotated tag object `2dfb272a2590902f67665a1c96368897bacfab76` 解引用到产品 source `93affffaa98b17e61ecd79970b450937a5c15380`；tag 不指向治理提交。
+- `PUBLIC_V106_RELEASE_ASSET_EQUIVALENCE = PASS`：公网 fresh 下载 ZIP 109412006 bytes / `80827A771FCF287E28BD3A4FDAE488216FCB2D42D357B7A557C91A8C893A85EE`；Setup 75334222 bytes / `830E0A27779EBECA5E2DFFCD61B8FD297F3F679D785FF5586176B1F5ED63FFB3`；manifest 869 bytes / `D8EDC896CB4B88BFFED84AD9502002F76BB17148B593E647418ACE9AB07015BE`；signature 384 bytes / `E9C277D92E3321A87A95A20878F260CB58EA1D08FF344E073B9FE8C62E94568E`，均与冻结候选全等。
+- 公开 production signature 验证 `PASS`；manifest target `1.0.6`、source `1.0.4..1.0.5`、migrationCount `9`，支持 `v1.0.4 -> v1.0.6` 与 `v1.0.5 -> v1.0.6`。
+- 未重建、重签或替换候选；`FULL = NOT_RUN / NO_FULL`，正式数据库访问 `NO`。Stage15 保持 `CLOSED`，S15-T01/S15-T02 保持 `GUI_ACCEPTED / CLOSED`；Stage16 未启动。
+
+
 # 2026-09-09 current：Stage15 已关闭
 
 - S15-T01 = `GUI_ACCEPTED / CLOSED`；S15-T02 = `GUI_ACCEPTED / CLOSED`；Stage15 = `CLOSED`。
