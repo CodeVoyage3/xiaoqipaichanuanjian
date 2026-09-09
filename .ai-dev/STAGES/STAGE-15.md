@@ -2,7 +2,7 @@
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW`
+Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`
 
 当前唯一任务：`S15-T02｜更新提示恢复完整门店版更新说明`。
 
@@ -52,4 +52,12 @@ Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW
 - 修改文件：`GitHubReleaseUpdateChecker.cs`、`UpdateNotificationViewModel.cs`、`WpfDialogService.cs`、`S9T03UpdateCheckTests.cs`、`S15T01UpdateProgressUiTests.cs`。
 - 完整 ReleaseNotes 保留现有控制字符清理与 metadata 256KB 上限；初始窗口显示固定 `MaxHeight` 滚动区，空白时无区域，进入进度态后隐藏；不恢复 DiagnosticBanner。
 - 精确专项 `10/10 PASS`；Release App build `0 warning / 0 error`，无 `NU1900`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`；scope check `PASS`。
-- S15-T02 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。当前只等待 Sol 独立技术评审；不自判技术或 GUI 通过。
+- Terra 实现阶段状态为 `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`，当时等待 Sol 独立技术评审。
+
+## S15-T02 技术接受与集成
+
+- Sol 独立真实 diff 审查：`PASS / REWORK 0`。
+- Terra `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00` 已从 fresh `origin/main@7308d8ff35503b6ebefc699bca3a2f6baacf50f3` 无冲突 cherry-pick 为 `f3cb2451442e5dba540796743f038072be7fd32c`；生产代码与 Terra 等价。
+- targeted：`INHERITED 10/10 PASS / NOT_RERUN`；Release build：`INHERITED 0 warning / 0 error / NOT_RERUN`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`。
+- 过宽 S9T03 `29/30` 的 synthetic WPF core-ready 27 秒超时继续为 `NON_BLOCKER`，未追加测试。
+- S15-T02 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。GUI 尚未执行；`origin/codex/s15-t02-terra` 保留至 Stage15 `CLOSED`。

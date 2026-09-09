@@ -1,3 +1,12 @@
+# 2026-09-09 current：S15-T02 技术接受，等待用户 GUI 验收
+
+- Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`；S15-T02 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。
+- Sol 独立真实 diff 审查 `PASS`，返修项 `0`。Terra `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00` 已无冲突集成为 `f3cb2451442e5dba540796743f038072be7fd32c`，生产代码与 Terra 等价。
+- targeted：`INHERITED 10/10 PASS / NOT_RERUN`；Release build：`INHERITED 0 warning / 0 error / NOT_RERUN`；Full：`NOT_RUN / NO_FULL`；正式数据库访问 `NO`。
+- 过宽 S9T03 `29/30` 的 synthetic WPF core-ready 27 秒超时保留为 `NON_BLOCKER`，本轮不追加测试。`origin/codex/s15-t02-terra` 保留。
+- GUI 尚未执行；下一步只等待用户验收“发现新版本”屏，不重复 S15-T01 三阶段，不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。
+
+
 # 2026-09-09 current：S15-T02 已实现，等待 Sol 技术评审
 
 - Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW`；S15-T02 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。

@@ -1,3 +1,12 @@
+# 2026-09-09：S15-T02 技术接受并集成，等待用户 GUI 验收
+
+Sol 已独立读取并审查真实 Terra diff：`TECHNICAL_REVIEW = PASS`，`REWORK = 0`。Terra `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00` 已从 fresh `origin/main@7308d8ff35503b6ebefc699bca3a2f6baacf50f3` 无冲突 cherry-pick 为 integration commit `f3cb2451442e5dba540796743f038072be7fd32c`；三个生产文件与 Terra 实现等价，原提交未 amend/squash/rebase。`origin/codex/s15-t02-terra` 保留至 Stage15 `CLOSED`。
+
+S15-T02 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`；Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。targeted = `INHERITED 10/10 PASS / NOT_RERUN`；Release build = `INHERITED 0 warning / 0 error / NOT_RERUN`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`。此前一次过宽 S9T03 `29/30` 的 synthetic WPF core-ready 27 秒超时保留为 `NON_BLOCKER`，本轮未追加测试。
+
+GUI 尚未执行。下一步只等待用户验收“发现新版本”一屏的完整更新说明、滚动、版本、按钮和窗口尺寸；不重复要求 S15-T01 三阶段，不自判 GUI 通过，不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。
+
+
 # 2026-09-09：S15-T02 已实现并推送独立评审分支
 
 S15-T02 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`；Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_IMPLEMENTED / READY_FOR_REVIEW`。全新 Terra 从 fresh `origin/main@1ddb809bff6c21d816b21ddc63397608c5204dfe` 在隔离 worktree 提交 `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00`，并普通 push 到 `origin/codex/s15-t02-terra`；远端 SHA 相同，worktree clean，尚未合并 main。
