@@ -1,3 +1,12 @@
+# 2026-09-09：S17-T01 GUI 验收通过，正式发布已授权
+
+用户本人已确认 A GitHub 正常通道、B Gitee 手动兜底、C 双通道失败三个 GUI 场景全部 `PASS`。S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED`；Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED`。
+
+发版前版本显示门禁 `PASS`：精确产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 的真实 Release App AssemblyVersion/FileVersion 均为 `1.0.7.0`，ProductVersion 为 `1.0.7+ee83b0c...`；左下角直接读取入口程序集三段版本，隔离启动真实主窗口稳定。GUI 截图中的 `v1.0.0` 来自一次性 acceptance harness 自身作为入口程序集，不是生产候选缺陷。
+
+发布必须继续依次通过：唯一候选四资产冻结与 production signature、夸克真实 Setup 大文件预检、annotated tag 精确指向产品 source、GitHub 公网资产逐项全等、同一 Setup 正式夸克上传、Gitee `latest.json` 与匿名 Raw 验证。任一步失败即停止。`FULL = NOT_RUN / NO_FULL`；Stage16、正式数据库及正式 dirty 五项现场继续冻结。
+
+
 # 2026-09-09：S17-T01 技术验收就绪，等待用户 GUI 验收
 
 Terra 从 fresh `origin/main@bf67e90cc9e631cb3b125f3a7a6f51c95ef509a4` 在独立 clean worktree 完成 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`；Sol 已完成完整 diff、安全边界与独立门禁复核，并将该提交普通快进纳入 `origin/main`。S17-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage17 等待用户 GUI 验收。

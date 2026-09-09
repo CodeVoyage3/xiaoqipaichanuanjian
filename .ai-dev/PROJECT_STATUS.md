@@ -1,3 +1,10 @@
+# 2026-09-09 current：S17-T01 GUI_ACCEPTED / RELEASE_AUTHORIZED
+
+- 用户 GUI A/B/C 三场景全部 `PASS`；S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED`，Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED`。
+- 发版前真实候选版本显示门禁 `PASS`：AssemblyVersion/FileVersion `1.0.7.0`、ProductVersion `1.0.7+ee83b0c...`；真实 App 以 TEMP/GUID 隔离启动稳定。harness 的 `v1.0.0` 是 harness 入口程序集版本，不是生产缺陷。
+- 正式发布源固定为 `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`；外部发布各门禁尚须顺序执行。`FULL = NOT_RUN / NO_FULL`；Stage16 与正式 dirty 五项现场未触碰。
+
+
 # 2026-09-09 current：S17-T01 技术验收就绪，等待用户 GUI 验收
 
 - Terra source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 已经 Sol 独立 diff/安全审查并普通快进纳入 `origin/main`。
