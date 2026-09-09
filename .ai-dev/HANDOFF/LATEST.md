@@ -1,3 +1,12 @@
+# 2026-09-09：S14-T01 / Stage14 正式关闭
+
+用户已完成正式 v1.0.4 -> 新 v1.0.5 真实在线升级验收：在线升级成功、安装完成后 v1.0.5 自动启动成功、主界面与系统托盘正常出现、原数据正常。`REAL_V104_TO_NEW_V105_ONLINE_UPDATE_VERIFIED = PASS`。
+
+S14-T01 = `V105_RELEASED / REAL_V104_TO_V105_ONLINE_UPDATE_VERIFIED / CLOSED`；Stage14 = `CLOSED`。`PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`、`NO_FULL` 继续保留；`163/164` 唯一缺项继续为 `S9_T07_REAL_OLD_PUBLISH = NOT_RUN / TEST_FIXTURE_UNAVAILABLE / NON_BLOCKER`。
+
+本轮仅做 docs-only 治理收口：未修改生产代码，未重跑测试/build/Full，未访问正式 SQLite，未创建 S14-T02 或 Stage15。
+
+
 # 2026-09-09：新版 v1.0.5 已发布，等待用户真实在线升级
 
 S14-T01 = `V105_RELEASED / WAITING_USER_REAL_V104_TO_V105_UPGRADE / NOT_ACCEPTED`；Stage14 = `IN_PROGRESS`。
