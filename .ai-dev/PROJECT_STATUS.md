@@ -1,3 +1,10 @@
+# 2026-09-09 current：S17-T01 RELEASE_BLOCKED_ENVIRONMENT
+
+- GUI A/B/C 与真实候选版本显示均 `PASS`；唯一四资产已从 `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 冻结，production signature `PASS`。
+- 夸克预检在云端命令前被环境阻断：缺少 Bash，WSL 无发行版，无法执行 Skill 强制的 `bash scripts/install.sh`。未绕过；未 tag/Release、未夸克上传、未改 Gitee 正式 metadata。
+- Stage17 = `IN_PROGRESS / RELEASE_BLOCKED_ENVIRONMENT`；S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED / RELEASE_BLOCKED_ENVIRONMENT`。`FULL = NOT_RUN / NO_FULL`；Stage16 与正式 dirty 现场未触碰。
+
+
 # 2026-09-09 current：S17-T01 GUI_ACCEPTED / RELEASE_AUTHORIZED
 
 - 用户 GUI A/B/C 三场景全部 `PASS`；S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED`，Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED`。

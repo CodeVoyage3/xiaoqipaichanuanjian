@@ -2,7 +2,7 @@
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED`
+Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED / RELEASE_BLOCKED_ENVIRONMENT`
 
 当前唯一任务：`S17-T01｜v1.0.7 国内备用版本检测与夸克手动下载兜底`。
 
@@ -28,5 +28,6 @@ Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED`
 - Release App/Updater build 均 `0 warning / 0 error`；EF 无漂移；migration `9`；App/Updater FileVersion 均 `1.0.7.0`。
 - 用户 GUI A/B/C 三场景均 `PASS`，S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED`。
 - 真实 Release App 入口程序集、FileVersion 均为 `1.0.7.0`，ProductVersion 为 `1.0.7+ee83b0c...`；左下角读取入口程序集三段版本，隔离真实 App 启动稳定。一次性 harness 的 `v1.0.0` 来自 harness 自身入口程序集，不是生产缺陷。
+- 唯一候选四资产已从精确产品 source 冻结且 production signature `PASS`；夸克预检在任何云端命令前因执行环境无可用 Bash、WSL 无发行版而阻断。未绕过 Skill，未创建 tag/Release，未进行夸克或 Gitee 正式写入。
 
 任务与验收见 `../TASKS/S17-T01.md` 与 `../ACCEPTANCE/S17-T01.md`。
