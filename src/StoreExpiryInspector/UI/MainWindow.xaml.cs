@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private readonly SignedUpdatePackageDownloader _updateDownloader;
     private readonly UpdateNetworkDiagnostics? _updateDiagnostics;
     private Task<UpdatePackageResult>? _updateWorker;
-    private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>>? _installPreparedUpdate;
+    private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Action, Task<UpdatePackageResult>>? _installPreparedUpdate;
     internal bool IsClosed { get; private set; }
 
     public event Action<int>? ReminderTimeChanged;
@@ -81,7 +81,7 @@ public partial class MainWindow : Window
         Closed += (_, _) => { _updateDiagnostics?.Add("gui-window-closed", new { threadId = Environment.CurrentManagedThreadId }); IsClosed = true; StopUpdatePreparation("window-closed"); };
     }
 
-    internal void ConfigureUpdateInstallation(Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Task<UpdatePackageResult>> installPreparedUpdate) =>
+    internal void ConfigureUpdateInstallation(Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Action, Task<UpdatePackageResult>> installPreparedUpdate) =>
         _installPreparedUpdate = installPreparedUpdate;
 
     internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
@@ -95,7 +95,6 @@ public partial class MainWindow : Window
             result,
             dismiss: () => _updateDiagnostics?.Add("gui-dismiss", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }),
             requestUpdate: () => _ = PrepareUpdateAsync(result, model!),
-            diagnosticBanner: _updateDiagnostics?.Banner,
             dialogClosed: () => _updateDiagnostics?.Add("gui-dialog-closed", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }));
         (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
         return true;
@@ -137,8 +136,8 @@ public partial class MainWindow : Window
                 if (!IsClosed) model.Complete(prepared);
                 return;
             }
-            model.Report(new UpdatePackageProgress("更新包已重验，正在进入维护状态。", 0, 0));
-            var installation = await _installPreparedUpdate(prepared.Package, _updateDownloader);
+            model.BeginUpdating();
+            var installation = await _installPreparedUpdate(prepared.Package, _updateDownloader, model.BeginInstalling);
             if (!IsClosed) model.Complete(installation);
         }
         catch (OperationCanceledException) { _updateDiagnostics?.Add("gui-prepare-cancelled", new { operationId }); if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }

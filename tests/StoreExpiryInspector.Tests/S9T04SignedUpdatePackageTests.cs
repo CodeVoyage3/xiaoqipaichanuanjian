@@ -41,9 +41,9 @@ public sealed class S9T04SignedUpdatePackageTests
         var model = new UpdateNotificationViewModel(result, () => { }, () => { });
         model.CancelRequested += () => cancelled++;
         model.Begin(); model.Report(new("正在下载更新包", 40, 100));
-        Assert.True(model.IsBusy); Assert.Equal("40 / 100 字节（40%）", model.ProgressText); Assert.True(model.CancelCommand.CanExecute(null));
+        Assert.True(model.IsBusy); Assert.Equal("下载中 40%", model.StatusText); Assert.True(model.CancelCommand.CanExecute(null));
         model.CancelCommand.Execute(null); model.Complete(new(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); model.Begin();
-        Assert.Equal(1, cancelled); Assert.True(model.IsBusy); Assert.Equal(0, model.ReceivedBytes); Assert.False(model.CancelCommand.CanExecute(null) == false);
+        Assert.Equal(1, cancelled); Assert.True(model.IsBusy); Assert.True(model.IsUpdating); Assert.False(model.CancelCommand.CanExecute(null));
     }
     [Fact]
     public async Task UnconfiguredProductionKeyFailsBeforeAnyRequest()
