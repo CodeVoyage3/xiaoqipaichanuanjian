@@ -1,3 +1,12 @@
+# 2026-09-09 current：S15-T01 已关闭，S15-T02 治理冻结并授权实施
+
+- Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_CURRENT`。
+- S15-T01 = `GUI_ACCEPTED / CLOSED`；用户确认初始更新窗口、下载百分比/进度、更新中/安装中和稍后提醒流程正确。technical review `PASS`、targeted `6/6 PASS`、Release build `PASS / 0 error`、`NU1900 ×3 = NON_BLOCKER`、`FULL = NOT_RUN / NO_FULL` 均继承，本轮未重跑。
+- S15-T02 = `GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED`；唯一目标是恢复展示完整门店版 ReleaseNotes，长内容固定最大高度并内部滚动，空白时整个区域隐藏。
+- 客户端只展示经过现有安全字符清理的完整 GitHub Release Body，不摘要、不删减、不按关键词过滤、不改写、不重复显示 DiagnosticBanner；正式 Release Body 由发布治理负责写成完整、门店可理解的说明。
+- 实施只允许取消 ReleaseNotes 的 1000 字符截断并最小恢复 ViewModel/窗口展示；保留 metadata 256KB 上限及所有既有更新语义。当前仅治理，无生产代码变化；不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。
+
+
 # 2026-09-09 current：S15-T01 技术接受，等待用户 GUI 验收
 
 - Stage15 = `IN_PROGRESS / S15_T01_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`；S15-T01 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。

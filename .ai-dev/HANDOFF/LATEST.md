@@ -1,3 +1,12 @@
+# 2026-09-09：S15-T01 GUI 验收关闭，S15-T02 治理冻结并授权实施
+
+用户已明确回执 `S15-T01 GUI 验收通过`。S15-T01 = `GUI_ACCEPTED / CLOSED`；人工确认初始更新窗口简化、下载百分比/进度界面、更新中/安装中显示及稍后提醒流程均正确。既有技术证据继续继承：technical review `PASS`、targeted `6/6 PASS`、Release build `PASS / 0 error`，`NU1900 ×3 = network metadata warning / NON_BLOCKER`，`FULL = NOT_RUN / NO_FULL`；本轮未重跑测试、build 或 GUI。
+
+Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_CURRENT`；新增唯一当前任务 `S15-T02｜更新提示恢复完整门店版更新说明`，状态为 `GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED`。发现新版窗口恢复展示经过现有安全字符清理的完整 GitHub Release Body，固定最大高度并内部滚动；空白说明时整个区域隐藏。客户端不摘要、不删减、不按技术词过滤或改写内容，也不重复显示 DiagnosticBanner。
+
+S15-T02 唯一必要底层调整为移除 `GitHubReleaseUpdateChecker.SanitizeNotes` 的 `.Take(1000)`，保留控制字符清理与 GitHub metadata 整体 256KB 上限；其余更新、协议、数据库及业务逻辑均冻结。下一次正式 Release Body 必须由发布治理直接写成完整、门店可理解的更新说明。当前仅完成治理，不改生产代码、不运行测试/build/Full、不访问正式数据库，不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。
+
+
 # 2026-09-09：S15-T01 技术接受并集成，等待用户 GUI 验收
 
 Sol 已独立读取并审查真实 Terra diff，技术审查 `PASS`、无返修项。Terra `2fce2c999c06302622fd3b77623109c7e0ecd5ba` 已从 fresh `origin/main@9747588fbf7856a1da784e73250c5f4c3058452a` 无冲突 cherry-pick 为 integration commit `46890b83e15b5a971a6dc6e8418c85de6b841d5a`；六个实现文件逐文件等价，Terra 原提交未 amend/rebase/squash，`origin/codex/s15-t01-terra` 保留。

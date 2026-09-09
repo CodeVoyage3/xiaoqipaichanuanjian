@@ -1,12 +1,12 @@
-# Stage15｜在线更新进度界面简化
+# Stage15｜在线更新界面优化
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage15 = `IN_PROGRESS / S15_T01_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`
+Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_CURRENT`
 
-唯一任务：`S15-T01｜在线更新进度界面简化`。
+当前唯一任务：`S15-T02｜更新提示恢复完整门店版更新说明`。
 
-## 冻结范围
+## S15-T01 已关闭范围
 
 - 初始界面只显示“发现新版本”、当前版本、最新版本、“稍后提醒 / 立即更新”；不显示取消更新、Release Body 或技术状态。
 - 点击“立即更新”后，门店可见状态仅为“下载中 / 更新中 / 安装中”。下载只显示整数百分比和正常进度条；更新中使用不确定进度；交给独立 Updater 前显示安装中。
@@ -18,9 +18,9 @@ Stage15 = `IN_PROGRESS / S15_T01_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTA
 - 不改左侧导航及其他业务 UI，不改非强制更新规则、检查频率、NormalLaunchHandshake、Updater phase/journal/rollback、manifest/signature、SQLite/migration/ModelSnapshot、托盘或每日提醒。
 - 不新增状态机、依赖、后台服务、协议字段或数据库字段。
 - 默认 `NO_FULL`；只运行直接相关专项与必要 Release build。动态测试不得访问正式 SQLite、正式安装根、数据根或备份。
-- 完成实现、最小专项和必要 Release build 后停止；不 tag、不 Release、不发布 v1.0.6、不创建 S15-T02。
+- 不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。
 
-任务与验收见 `../TASKS/S15-T01.md`、`../ACCEPTANCE/S15-T01.md`。
+任务与验收见 `../TASKS/S15-T01.md`、`../ACCEPTANCE/S15-T01.md`、`../TASKS/S15-T02.md`、`../ACCEPTANCE/S15-T02.md`。
 
 ## 当前执行结果
 
@@ -33,4 +33,15 @@ Stage15 = `IN_PROGRESS / S15_T01_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTA
 - Sol 已独立读取并审查真实 Terra diff；技术审查 `PASS`，无返修项。
 - Terra 实现已无冲突 cherry-pick 为 integration commit `46890b83e15b5a971a6dc6e8418c85de6b841d5a`；六个实现文件与 Terra 提交逐文件等价。
 - 原专项 `6/6 PASS`、原 Release build `0 error` 均继承且未重跑；`NU1900 ×3` 为网络漏洞元数据警告，非 blocker；`FULL = NOT_RUN / NO_FULL`。
-- GUI 最终验收尚未执行。保留 `origin/codex/s15-t01-terra`，直到 Stage15 最终 `CLOSED`。
+- 用户已明确回执 `S15-T01 GUI 验收通过`：初始更新窗口简化、下载百分比/进度、更新中/安装中显示及稍后提醒流程均正确。
+- S15-T01 = `GUI_ACCEPTED / CLOSED`；既有技术证据继承，本轮未重跑测试、build 或 GUI。
+
+## S15-T02 治理冻结
+
+- S15-T02 = `GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED`。
+- 发现新版窗口保持 S15-T01 已验收结构，并增加“本次更新”区域，完整展示经过现有安全字符清理的 GitHub Release Body。
+- 客户端不限制条数、不摘要、不删除、不按关键词过滤、不改写 Release 内容；空或仅空白时隐藏标题和内容区，不重复显示 DiagnosticBanner。
+- 更新说明区使用固定最大高度和内部滚动，避免长说明无限撑高窗口。
+- 允许移除 `SanitizeNotes` 的 1000 字符截断；保留控制字符清理和 GitHub metadata 整体 256KB 安全上限，不改变请求、版本、网络错误或更新底层语义。
+- 从下一次正式版本开始，Release Body 本身必须完整记录门店实际可感知的新增、优化与修复，不写开发过程、内部治理证据或仅开发者需要的技术术语。
+- 实施只做直接专项与必要 Release App build，`FULL = NO_FULL`；技术接受后，用户只重验“发现新版本”屏，不重复验 S15-T01 三阶段。
