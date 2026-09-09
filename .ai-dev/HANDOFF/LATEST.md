@@ -1,3 +1,12 @@
+# 2026-09-09：S17-T01 技术验收就绪，等待用户 GUI 验收
+
+Terra 从 fresh `origin/main@bf67e90cc9e631cb3b125f3a7a6f51c95ef509a4` 在独立 clean worktree 完成 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`；Sol 已完成完整 diff、安全边界与独立门禁复核，并将该提交普通快进纳入 `origin/main`。S17-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage17 等待用户 GUI 验收。
+
+Sol fresh 证据：S17 `27/27 PASS`；S9T04/S14T01/S15T01/S17 `56/56 PASS`；S9T03 非 STA/WPF `21/21 PASS`；Release App/Updater 均 `0 warning / 0 error`；FileVersion 均 `1.0.7.0`；EF 无漂移；migration `9`；禁止路径无 diff。S9T03 单一 synthetic WPF core-ready 用例在候选与治理基线均约 26 秒同样超时，记录为 `BASELINE_REPRODUCED / NON_BLOCKER`，不冒充 PASS。首次独立组合运行因测试工程标准 App 输出复制顺序产生 6 个 SHA 不一致，按正确构建顺序同步测试程序集后 `56/56 PASS`，不是产品失败。
+
+代码审查确认：GitHub 主通道及 `CheckedRelease`/签名/manifest/SHA/rollback/Updater 协议未变；仅 `NetworkUnavailable`/`RateLimited` 触发固定 Gitee Raw；metadata 限制与夸克域名 allowlist 生效；手动按钮只打开默认浏览器。`FULL = NOT_RUN / NO_FULL`，正式数据库访问 `NO`，Stage16 与正式 dirty 五项现场未触碰。禁止 tag/Release、夸克正式上传及 Gitee 正式 1.0.7 写入；下一步仅用户最小 GUI 验收。
+
+
 # 2026-09-09：S17-T01 治理冻结，批准派发独立 Terra
 
 fresh fetch 确认 `HEAD == origin/main == a6a47f2a255f3eaad5687a7700d72818d0ee5898`、ahead/behind `0/0`；stable/latest 仍为 v1.0.6，Stage15 `CLOSED`，Stage16 未启动且继续预留“未来效期风险总览”。正式主工作区原 1 个修改测试文件与 4 个未跟踪用户文件保持未触碰。

@@ -1,3 +1,12 @@
+# 2026-09-09 current：S17-T01 技术验收就绪，等待用户 GUI 验收
+
+- Terra source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 已经 Sol 独立 diff/安全审查并普通快进纳入 `origin/main`。
+- S17-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage17 = `IN_PROGRESS / WAITING_USER_GUI_ACCEPTANCE`。
+- Sol fresh：S17 `27/27 PASS`；S9T04/S14T01/S15T01/S17 `56/56 PASS`；S9T03 非 STA/WPF `21/21 PASS`；Release App/Updater `0 warning / 0 error`；FileVersion `1.0.7.0`；EF 无漂移；migration `9`；禁止路径无 diff。
+- S9T03 单一 synthetic WPF core-ready 用例在候选与基线均约 26 秒同错超时，保留为 `BASELINE_REPRODUCED / NON_BLOCKER`，不冒充 PASS。`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`。
+- GitHub 主更新和安全协议保持；Gitee 仅指定网络失败触发，且只提供受限夸克人工下载入口。Stage16、正式 dirty 五项现场、Gitee 正式 metadata 与夸克正式目录未修改；未 tag/Release。下一步只等待用户最小 GUI 验收。
+
+
 # 2026-09-09 current：S17-T01 治理冻结，实施派发获批
 
 - fresh fetch：`HEAD == origin/main == a6a47f2a255f3eaad5687a7700d72818d0ee5898`，ahead/behind `0/0`；GitHub stable/latest 仍为 v1.0.6。
