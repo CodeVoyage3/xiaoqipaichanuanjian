@@ -119,5 +119,5 @@ public sealed class GitHubReleaseUpdateChecker
     private static bool IsFalse(JsonElement root, string name) =>
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.False;
 
-    private static string? SanitizeNotes(string? value) => string.IsNullOrEmpty(value) ? null : new string(value.Where(character => !char.IsControl(character) || character is '\n' or '\r' or '\t').Take(1000).ToArray());
+    private static string? SanitizeNotes(string? value) => string.IsNullOrEmpty(value) ? null : new string(value.Where(character => !char.IsControl(character) || character is '\n' or '\r' or '\t').ToArray());
 }

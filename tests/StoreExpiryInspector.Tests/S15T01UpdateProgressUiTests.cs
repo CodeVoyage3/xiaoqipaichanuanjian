@@ -7,7 +7,7 @@ namespace StoreExpiryInspector.Tests;
 public sealed class S15T01UpdateProgressUiTests
 {
     [Fact]
-    public void InitialPromptHasOnlyVersionsAndTheTwoActions()
+    public void InitialPromptShowsFullReleaseNotesAndTheTwoActions()
     {
         var root = FindRoot();
         var dialog = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs"));
@@ -18,12 +18,42 @@ public sealed class S15T01UpdateProgressUiTests
         Assert.Equal(string.Empty, model.StatusText);
         Assert.Equal("当前版本：v1.0.5", model.CurrentVersionText);
         Assert.Equal("最新版本：v1.0.6", model.LatestVersionText);
-        Assert.DoesNotContain("ReleaseNotes", dialog, StringComparison.Ordinal);
+        Assert.Equal("long release body", model.ReleaseNotes);
+        Assert.True(model.HasReleaseNotes);
+        Assert.Contains("本次更新", dialog, StringComparison.Ordinal);
+        Assert.Contains("new ScrollViewer", dialog, StringComparison.Ordinal);
+        Assert.Contains("MaxHeight = 220", dialog, StringComparison.Ordinal);
+        Assert.Contains("Text = model.ReleaseNotes", dialog, StringComparison.Ordinal);
         Assert.DoesNotContain("DiagnosticBanner", dialog, StringComparison.Ordinal);
         Assert.Contains("Visibility = Visibility.Collapsed", dialog, StringComparison.Ordinal);
         Assert.Contains("later.Visibility = update.Visibility = model.IsBusy", dialog, StringComparison.Ordinal);
         Assert.Contains("cancel.Visibility = model.CanCancel", dialog, StringComparison.Ordinal);
         Assert.Contains("if (!model.IsBusy) showLaterReminder = true", dialog, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   \t\r\n")]
+    public void EmptyReleaseNotesHideTheEntireNotesRegion(string? releaseNotes)
+    {
+        var model = new UpdateNotificationViewModel(new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 5), new Version(1, 0, 6), releaseNotes), () => { }, () => { });
+        var dialog = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs"));
+
+        Assert.False(model.HasReleaseNotes);
+        Assert.Contains("if (model.IsInitial && model.HasReleaseNotes)", dialog, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReleaseNotesRegionCollapsesWhenProgressBegins()
+    {
+        var model = new UpdateNotificationViewModel(new(UpdateCheckOutcome.UpdateAvailable, new Version(1, 0, 5), new Version(1, 0, 6), "完整更新说明"), () => { }, () => { });
+        var dialog = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs"));
+
+        Assert.True(model.IsInitial);
+        model.Begin();
+        Assert.False(model.IsInitial);
+        Assert.Contains("notes?.Visibility = model.IsInitial ? Visibility.Visible : Visibility.Collapsed", dialog, StringComparison.Ordinal);
     }
 
     [Fact]

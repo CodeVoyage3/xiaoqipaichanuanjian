@@ -24,6 +24,14 @@ internal static class WpfDialogService
         var panel = new StackPanel { Margin = new Thickness(24) };
         panel.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
+        StackPanel? notes = null;
+        if (model.IsInitial && model.HasReleaseNotes)
+        {
+            notes = new StackPanel();
+            notes.Children.Add(new TextBlock { Text = "本次更新", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 0) });
+            notes.Children.Add(new ScrollViewer { MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = new TextBlock { Text = model.ReleaseNotes, TextWrapping = TextWrapping.Wrap } });
+            panel.Children.Add(notes);
+        }
         var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
         var progress = new ProgressBar { Height = 8, Margin = new Thickness(0, 8, 0, 0), Minimum = 0, Maximum = 100, Visibility = Visibility.Collapsed };
         panel.Children.Add(status); panel.Children.Add(progress);
@@ -37,7 +45,7 @@ internal static class WpfDialogService
         cancel.Click += (_, _) => model.CancelCommand.Execute(null);
         System.ComponentModel.PropertyChangedEventHandler changed = (_, _) =>
         {
-            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; status.Visibility = model.IsInitial ? Visibility.Collapsed : Visibility.Visible; progress.Visibility = model.IsDownloading || model.IsUpdating ? Visibility.Visible : Visibility.Collapsed; progress.IsIndeterminate = model.IsProgressIndeterminate; progress.Value = model.DownloadPercent; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.CanCancel ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
+            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; status.Visibility = model.IsInitial ? Visibility.Collapsed : Visibility.Visible; progress.Visibility = model.IsDownloading || model.IsUpdating ? Visibility.Visible : Visibility.Collapsed; progress.IsIndeterminate = model.IsProgressIndeterminate; progress.Value = model.DownloadPercent; notes?.Visibility = model.IsInitial ? Visibility.Visible : Visibility.Collapsed; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.CanCancel ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
         };
         model.PropertyChanged += changed;
         dialog.Closing += (_, e) =>

@@ -19,6 +19,7 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     {
         CurrentVersionText = $"当前版本：v{result.CurrentVersion.ToString(3)}";
         LatestVersionText = $"最新版本：v{result.LatestVersion?.ToString(3)}";
+        ReleaseNotes = result.ReleaseNotes;
         _dialogClosed = dialogClosed;
         DismissCommand = new RelayCommand(_ => dismiss());
         _update = new RelayCommand(_ => requestUpdate(), _ => !IsBusy);
@@ -29,6 +30,8 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
 
     public string CurrentVersionText { get; }
     public string LatestVersionText { get; }
+    public string? ReleaseNotes { get; }
+    public bool HasReleaseNotes => !string.IsNullOrWhiteSpace(ReleaseNotes);
     public ICommand DismissCommand { get; }
     public ICommand UpdateRequestedCommand { get; }
     public ICommand CancelCommand { get; }
