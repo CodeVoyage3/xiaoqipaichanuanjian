@@ -1,3 +1,12 @@
+# 2026-09-09 current：Stage15 / S15-T01 在线更新进度界面简化已授权
+
+- fresh fetch：`main == origin/main == 7cfbcd340aec97c55da880002779177c5a27834e`，ahead/behind `0/0`；Stage14/S14-T01 已关闭，stable/latest = `v1.0.5`。
+- Stage15 = `IN_PROGRESS / GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED`；S15-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED`。
+- 唯一范围：发现新版初始界面精简为版本与“稍后提醒 / 立即更新”；点击后只显示“下载中 / 更新中 / 安装中”；下载仅百分比；取消只复用安全下载阶段；稍后提醒二次告知保持原样。
+- 禁止导航/业务 UI、更新底层/协议、SQLite/migration、托盘/提醒扩围；不访问正式数据。默认 `NO_FULL`，只跑最小专项和必要 Release build。
+- 治理普通 push 同频后，从该基线创建全新隔离 worktree 和全新 Terra；完成实现与门禁后停止。不 tag、不 Release、不发布 v1.0.6、不创建 S15-T02。
+
+
 # 2026-09-09 current：S14-T01 / Stage14 已关闭
 
 - 用户正式 v1.0.4 -> 新 v1.0.5 真实在线升级验收通过：在线升级、安装后自动启动、主界面、系统托盘及原数据均正常。`REAL_V104_TO_NEW_V105_ONLINE_UPDATE_VERIFIED = PASS`。
