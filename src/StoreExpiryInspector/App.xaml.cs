@@ -467,7 +467,9 @@ public partial class App : System.Windows.Application
             return;
         }
         if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
-        var checker = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
+        var github = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
+        var gitee = new GiteeManualUpdateChecker();
+        var checker = new GiteeFallbackUpdateChecker(github.CheckAsync, gitee.CheckAsync);
         _updateDiagnostics?.Add("gui-check-start", new { simulatedSourceVersion = currentVersion.ToString(3), threadId = Environment.CurrentManagedThreadId });
         _updateCheckRuntime = new UpdateCheckRuntime(
             cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),

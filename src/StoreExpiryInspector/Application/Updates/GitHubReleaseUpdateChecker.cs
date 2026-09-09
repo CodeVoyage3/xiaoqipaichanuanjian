@@ -14,7 +14,7 @@ public enum UpdateCheckOutcome
     NetworkUnavailable, RateLimited, InvalidRemoteMetadata, Cancelled
 }
 
-public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null, CheckedRelease? Release = null)
+public sealed record UpdateCheckResult(UpdateCheckOutcome Outcome, Version CurrentVersion, Version? LatestVersion = null, string? ReleaseNotes = null, CheckedRelease? Release = null, Uri? ManualDownloadUrl = null)
 {
     public static UpdateCheckResult From(UpdateCheckOutcome outcome, Version current) => new(outcome, current);
 }

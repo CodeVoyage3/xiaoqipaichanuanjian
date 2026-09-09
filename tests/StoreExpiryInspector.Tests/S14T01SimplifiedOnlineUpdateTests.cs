@@ -31,7 +31,7 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
         Assert.Contains("当前版本暂时可以继续使用，请尽快完成升级。旧版本后续可能停止支持，届时可能无法继续使用软件。", dialogs, StringComparison.Ordinal);
         Assert.DoesNotContain("CompareText(DisplayVersion + '.0', AppVersion)", installer, StringComparison.Ordinal);
         Assert.Contains("GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\\StoreExpiryInspector.exe', AppVersion)", installer, StringComparison.Ordinal);
-        Assert.Contains("<Version>1.0.6</Version>", project, StringComparison.Ordinal);
+        Assert.Contains("<Version>1.0.7</Version>", project, StringComparison.Ordinal);
         Assert.Contains("Version=$(Version)", project, StringComparison.Ordinal);
         Assert.Contains("$sourceMinVersion = '1.0.4'", release, StringComparison.Ordinal);
         Assert.Contains("$sourceMaxVersion = '1.0.5'", release, StringComparison.Ordinal);

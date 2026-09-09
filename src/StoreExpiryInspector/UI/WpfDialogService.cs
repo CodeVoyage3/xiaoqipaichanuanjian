@@ -37,7 +37,7 @@ internal static class WpfDialogService
         panel.Children.Add(status); panel.Children.Add(progress);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
-        var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
+        var update = new Button { Content = new TextBlock { Text = model.PrimaryActionText, Foreground = Brushes.White }, Width = 104, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
         var cancel = new Button { Content = "取消更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Visibility = Visibility.Collapsed, Style = FindStyle(owner, "SecondaryButtonStyle") };
         var showLaterReminder = false;
         later.Click += (_, _) => { if (!model.IsBusy) { showLaterReminder = true; dialog.Close(); } };

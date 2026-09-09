@@ -8,6 +8,7 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     private readonly Action? _dialogClosed;
     private readonly RelayCommand _update;
     private readonly RelayCommand _cancel;
+    private readonly bool _isManualDownload;
     private bool _isBusy;
     private bool _isDownloading;
     private bool _isUpdating;
@@ -20,6 +21,7 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
         CurrentVersionText = $"当前版本：v{result.CurrentVersion.ToString(3)}";
         LatestVersionText = $"最新版本：v{result.LatestVersion?.ToString(3)}";
         ReleaseNotes = result.ReleaseNotes;
+        _isManualDownload = result.ManualDownloadUrl is not null;
         _dialogClosed = dialogClosed;
         DismissCommand = new RelayCommand(_ => dismiss());
         _update = new RelayCommand(_ => requestUpdate(), _ => !IsBusy);
@@ -31,6 +33,8 @@ public sealed class UpdateNotificationViewModel : ViewModelBase
     public string CurrentVersionText { get; }
     public string LatestVersionText { get; }
     public string? ReleaseNotes { get; }
+    public bool IsManualDownload => _isManualDownload;
+    public string PrimaryActionText => IsManualDownload ? "下载最新版" : "立即更新";
     public bool HasReleaseNotes => !string.IsNullOrWhiteSpace(ReleaseNotes);
     public ICommand DismissCommand { get; }
     public ICommand UpdateRequestedCommand { get; }

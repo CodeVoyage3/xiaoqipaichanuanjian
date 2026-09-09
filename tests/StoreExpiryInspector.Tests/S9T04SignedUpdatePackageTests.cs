@@ -72,13 +72,13 @@ public sealed class S9T04SignedUpdatePackageTests
     [Theory]
     [InlineData("1.0.4")]
     [InlineData("1.0.5")]
-    public async Task V106SignedSameSchemaPackageAcceptsAuthorizedSourceVersion(string currentVersion)
+    public async Task V107SignedSameSchemaPackageAcceptsAuthorizedSourceVersion(string currentVersion)
     {
         var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorT04", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
         try
         {
             var (_, package) = await CreateVerifiedPackageAsync(root, "1.0.5", currentVersion, "1.0.4");
-            Assert.Equal(new Version(1, 0, 6), package.Version);
+            Assert.Equal(new Version(1, 0, 7), package.Version);
             Assert.Equal(9, package.TargetMigrations.Count);
             Assert.Equal("20260901155124_AddPolicyAndBaselineFoundation", package.SourceMinMigration);
             Assert.Equal(package.SourceMinMigration, package.SourceMaxMigration);
@@ -164,8 +164,8 @@ public sealed class S9T04SignedUpdatePackageTests
         {
             var app = Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe");
             var production = Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "bin", "Release", "net10.0-windows");
-            Assert.Equal("1.0.6", Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3));
-            Assert.Equal("1.0.6", AssemblyName.GetAssemblyName(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")).Version!.ToString(3));
+            Assert.Equal("1.0.7", Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3));
+            Assert.Equal("1.0.7", AssemblyName.GetAssemblyName(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")).Version!.ToString(3));
             Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.exe")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(app))));
             Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.dll")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")))));
             zip.CreateEntryFromFile(app, "StoreExpiryInspector.exe");

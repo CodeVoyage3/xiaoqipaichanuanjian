@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Markup;
 using System.Windows.Threading;
+using System.Diagnostics;
 using Microsoft.Win32;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Backups;
@@ -94,7 +95,7 @@ public partial class MainWindow : Window
         model = new UpdateNotificationViewModel(
             result,
             dismiss: () => _updateDiagnostics?.Add("gui-dismiss", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }),
-            requestUpdate: () => _ = PrepareUpdateAsync(result, model!),
+            requestUpdate: () => { if (result.ManualDownloadUrl is not null) OpenManualDownload(result.ManualDownloadUrl); else _ = PrepareUpdateAsync(result, model!); },
             dialogClosed: () => _updateDiagnostics?.Add("gui-dialog-closed", new { busy = model?.IsBusy, threadId = Environment.CurrentManagedThreadId }));
         (show ?? (viewModel => WpfDialogService.ShowUpdateAvailable(this, viewModel)))(model);
         return true;
@@ -143,6 +144,12 @@ public partial class MainWindow : Window
         catch (OperationCanceledException) { _updateDiagnostics?.Add("gui-prepare-cancelled", new { operationId }); if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.Cancelled, "已取消更新包准备。")); }
         catch (Exception error) { _updateDiagnostics?.Add("gui-prepare-error", new { operationId, error = _updateDiagnostics.SafeError(error) }); if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
         finally { model.CancelRequested -= cancel; _updateDiagnostics?.Add("gui-cts-disposed", new { operationId, tokenId = linked.GetHashCode() }); }
+    }
+
+    private static void OpenManualDownload(Uri url)
+    {
+        try { Process.Start(new ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true }); }
+        catch { }
     }
 
     internal void StopUpdatePreparation() => StopUpdatePreparation("app-exit");
