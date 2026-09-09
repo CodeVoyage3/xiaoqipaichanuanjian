@@ -1,3 +1,12 @@
+# 2026-09-09 current：S15-T01 已实现，等待后续评审
+
+- Stage15 = `IN_PROGRESS / S15_T01_IMPLEMENTED / READY_FOR_REVIEW`；S15-T01 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。
+- Terra 隔离提交 `2fce2c999c06302622fd3b77623109c7e0ecd5ba`；未 push/tag/Release。
+- 6 个修改文件仅覆盖现有 App 更新交接 UI 回调、更新窗口/ViewModel/状态映射及最小直接测试。下载为整数百分比，内部技术阶段统一“更新中…”，独立 Updater 启动前为“安装中…”；取消只在真实下载阶段可见。
+- 最小专项 `6/6 PASS`；Release App build `0 error`，3 个 `NU1900` 为 NuGet 漏洞元数据网络警告。`NO_FULL`。
+- 无更新底层协议、Updater/journal/rollback、manifest/signature、SQLite/migration、导航、业务 UI、托盘或提醒逻辑变化。不发布 v1.0.6，不创建 S15-T02。
+
+
 # 2026-09-09 current：Stage15 / S15-T01 在线更新进度界面简化已授权
 
 - fresh fetch：`main == origin/main == 7cfbcd340aec97c55da880002779177c5a27834e`，ahead/behind `0/0`；Stage14/S14-T01 已关闭，stable/latest = `v1.0.5`。

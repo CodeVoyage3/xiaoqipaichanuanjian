@@ -1,3 +1,12 @@
+# 2026-09-09：S15-T01 已实现，专项与 Release build 通过
+
+Terra 在全新隔离 worktree 提交 `2fce2c999c06302622fd3b77623109c7e0ecd5ba`，未 push/tag/Release。Stage15 = `IN_PROGRESS / S15_T01_IMPLEMENTED / READY_FOR_REVIEW`；S15-T01 = `IMPLEMENTED / TARGETED_AND_RELEASE_BUILD_PASSED / READY_FOR_REVIEW`。
+
+实际修改 6 文件：App 只增加独立 Updater 启动前的 UI 回调；更新窗口/ViewModel/状态映射实现初始极简、下载整数百分比、更新中不确定进度、安装中交接提示，以及只在真实下载阶段可见的现有安全取消；新增最小 S15 专项并调整一个直接相关 S9-T04 断言。原有稍后提醒固定二次告知保持不变。
+
+独立复跑最小专项 `6/6 PASS`；Release App build `0 error`，3 个 `NU1900` 仅为无法获取 NuGet 漏洞元数据。`NO_FULL`；无更新底层协议、Updater/journal/rollback、manifest/signature、SQLite/migration、导航、业务 UI、托盘或每日提醒逻辑变化。不发布 v1.0.6，不创建 S15-T02。
+
+
 # 2026-09-09：Stage15 / S15-T01 在线更新进度界面简化治理冻结
 
 fresh fetch 已确认 `main == origin/main == 7cfbcd340aec97c55da880002779177c5a27834e`、ahead/behind `0/0`；Stage14 = `CLOSED`，S14-T01 = `V105_RELEASED / REAL_V104_TO_V105_ONLINE_UPDATE_VERIFIED / CLOSED`，stable/latest = `v1.0.5`。
