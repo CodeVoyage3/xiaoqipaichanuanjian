@@ -1,3 +1,12 @@
+# 2026-09-09：S17-T01 治理冻结，批准派发独立 Terra
+
+fresh fetch 确认 `HEAD == origin/main == a6a47f2a255f3eaad5687a7700d72818d0ee5898`、ahead/behind `0/0`；stable/latest 仍为 v1.0.6，Stage15 `CLOSED`，Stage16 未启动且继续预留“未来效期风险总览”。正式主工作区原 1 个修改测试文件与 4 个未跟踪用户文件保持未触碰。
+
+Stage17 = `IN_PROGRESS / GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；S17-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。本卡只允许全新 GPT-5.6 Terra 从 fresh clean worktree 实现 GitHub 指定网络失败后的 Gitee metadata + 夸克人工下载兜底；当前 Sol 禁止直接修改生产代码，只负责独立治理和技术验收。
+
+本轮只冻结 Task/Acceptance，不修改生产代码，不运行测试/build/EF，不访问正式数据库，不修改 Stage16，不 tag/Release，不上传夸克正式安装包，不把 Gitee `latest.json` 改为正式 1.0.7。详见 `../STAGES/STAGE-17.md`、`../TASKS/S17-T01.md`、`../ACCEPTANCE/S17-T01.md`。
+
+
 # 2026-09-09：门店效期排查软件 v1.0.6 正式发布
 
 GitHub stable/latest Release `v1.0.6` 已正式发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.6>。Release ID `385388292`，`draft=false`、`prerelease=false`；annotated tag object `2dfb272a2590902f67665a1c96368897bacfab76` 解引用到精确产品 source `93affffaa98b17e61ecd79970b450937a5c15380`，不指向后续治理提交。
