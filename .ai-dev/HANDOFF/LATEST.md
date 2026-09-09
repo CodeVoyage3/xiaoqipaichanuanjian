@@ -1,3 +1,14 @@
+# 2026-09-09：新版 v1.0.5 已发布，等待用户真实在线升级
+
+S14-T01 = `V105_RELEASED / WAITING_USER_REAL_V104_TO_V105_UPGRADE / NOT_ACCEPTED`；Stage14 = `IN_PROGRESS`。
+
+GitHub stable/latest Release `v1.0.5` 已发布：<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.5>。Release ID `385203812`，`draft=false`、`prerelease=false`；annotated tag object `118d180882f29c9a8a0c4539e024a401b4a6c312` 解引用到精确产品 source `cddd897d72c4e95c6fd974d5ea44bc24d9c985c7`，不指向治理提交。
+
+发布后匿名 fresh 下载四项公开资产，SHA256/size 与冻结候选全部一致：ZIP 109411185 bytes / `543032FC76947772B4CAD3CC2416D611EC7C78A0D2C82C4993C13428E49D1673`；Setup 75328700 bytes / `55680AFCD55D8603E9E3443D23AFCD946DA3FE534BD81A47C1A84D5F6C8DB843`；manifest 869 bytes / `996C366D938E019984C7FDD569B2FAEE72C01A95CE5DFDD5D2397816B06C5FC0`；signature 384 bytes / `05C3A65FF4E8323D5F49857A7612DAF5AC644A93FA9397FFD54D64847BAB8076`。`PUBLIC_V105_RELEASE_ASSET_EQUIVALENCE = PASS`。
+
+本轮未重新 build、生成或签名候选，未运行测试/build/Full，未访问正式 SQLite，未创建 S14-T02。`NO_FULL`。不得声称 `v1.0.4 -> v1.0.5 ONLINE UPDATE VERIFIED`；下一步只等待用户使用当前正式 v1.0.4 执行一次真实在线升级。
+
+
 # 2026-09-09：S14-T01 候选技术接受，等待发布授权
 
 S14-T01 = `CANDIDATE_TECHNICALLY_ACCEPTED / RELEASE_AUTHORIZATION_PENDING`；Stage14 保持 `IN_PROGRESS`。精确产品 source `cddd897d72c4e95c6fd974d5ea44bc24d9c985c7` 已以普通 fast-forward 纳入 `main`，实现远端分支 `origin/codex/s14-t01-terra` 继续固定在该 SHA，未 force push、squash 或重写产品提交。
