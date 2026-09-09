@@ -1,3 +1,12 @@
+# 2026-09-09：S15-T02 GUI 验收通过，Stage15 正式关闭
+
+用户已明确回执 `S15-T02 GUI 验收通过`：确认“本次更新”区域、完整门店版更新说明、长内容滚动、窗口尺寸、当前/最新版本及“稍后提醒 / 立即更新”均正常。
+
+S15-T01 = `GUI_ACCEPTED / CLOSED`；S15-T02 = `GUI_ACCEPTED / CLOSED`；Stage15 = `CLOSED`。S15-T02 既有技术证据继续继承：technical review `PASS`、targeted `10/10 PASS`、Release build `0 warning / 0 error`、`FULL = NOT_RUN / NO_FULL`、正式数据库访问 `NO`。
+
+本轮仅治理文档收口，未重跑 targeted、Release build、Full 或 GUI，未修改生产代码；不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03。临时 acceptance Harness 与远端 Terra 分支均不作为 Stage15 关闭门禁。
+
+
 # 2026-09-09：S15-T02 技术接受并集成，等待用户 GUI 验收
 
 Sol 已独立读取并审查真实 Terra diff：`TECHNICAL_REVIEW = PASS`，`REWORK = 0`。Terra `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00` 已从 fresh `origin/main@7308d8ff35503b6ebefc699bca3a2f6baacf50f3` 无冲突 cherry-pick 为 integration commit `f3cb2451442e5dba540796743f038072be7fd32c`；三个生产文件与 Terra 实现等价，原提交未 amend/squash/rebase。`origin/codex/s15-t02-terra` 保留至 Stage15 `CLOSED`。

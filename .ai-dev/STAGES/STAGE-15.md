@@ -2,7 +2,7 @@
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`
+Stage15 = `CLOSED`
 
 当前唯一任务：`S15-T02｜更新提示恢复完整门店版更新说明`。
 
@@ -60,4 +60,12 @@ Stage15 = `IN_PROGRESS / S15_T01_CLOSED / S15_T02_TECHNICALLY_ACCEPTED / WAITING
 - Terra `0afddbdd5cb42f1f7f9d02ca84d1267842a30e00` 已从 fresh `origin/main@7308d8ff35503b6ebefc699bca3a2f6baacf50f3` 无冲突 cherry-pick 为 `f3cb2451442e5dba540796743f038072be7fd32c`；生产代码与 Terra 等价。
 - targeted：`INHERITED 10/10 PASS / NOT_RERUN`；Release build：`INHERITED 0 warning / 0 error / NOT_RERUN`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`。
 - 过宽 S9T03 `29/30` 的 synthetic WPF core-ready 27 秒超时继续为 `NON_BLOCKER`，未追加测试。
-- S15-T02 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`。GUI 尚未执行；`origin/codex/s15-t02-terra` 保留至 Stage15 `CLOSED`。
+- 技术接受阶段 S15-T02 = `TECHNICALLY_ACCEPTED / WAITING_USER_GUI_ACCEPTANCE`；当时 GUI 尚未执行。
+
+## 最终关闭
+
+- 用户已明确回执 `S15-T02 GUI 验收通过`：确认“本次更新”区域、完整门店版更新说明、长内容滚动、窗口尺寸、当前版本/最新版本及“稍后提醒 / 立即更新”均正常。
+- S15-T01 = `GUI_ACCEPTED / CLOSED`；S15-T02 = `GUI_ACCEPTED / CLOSED`；Stage15 = `CLOSED`。
+- S15-T02 technical review `PASS`、targeted `10/10 PASS`、Release build `0 warning / 0 error` 继续继承；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`。
+- 本轮仅治理文档收口，未重跑 targeted、Release build、Full 或 GUI，未修改生产代码。
+- 不 tag、不 Release、不发布 v1.0.6、不创建 S15-T03；临时 acceptance Harness 与远端 Terra 分支均不作为关闭门禁。
