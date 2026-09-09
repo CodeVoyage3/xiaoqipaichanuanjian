@@ -1,3 +1,10 @@
+# 2026-09-09 current：S17-T01 QUARK_PREFLIGHT_PASSED
+
+- 用户已确认 `QUARK_SKILL_WINDOWS_PERSISTENCE = PASS`；本轮未重新安装或重新授权，直接使用现有 Node CLI 完成真实 Setup 大文件预检。
+- `门店效期排查软件/发布验证/v1.0.7-candidate` 中已重新读取确认 `StoreExpiryInspector-Setup-1.0.7.exe` / `75340490` bytes，并生成独立公开分享链接 <https://pan.quark.cn/s/bb99b4a8ac80>。
+- `RELEASE_BLOCKED_ENVIRONMENT` 已解除；Stage17 与 S17-T01 均进入 `RELEASE_AUTHORIZED / QUARK_PREFLIGHT_PASSED`。GitHub tag/Release、夸克正式目录及 Gitee 正式 metadata 仍待后续门禁；`FULL = NOT_RUN / NO_FULL`。
+
+
 # 2026-09-09 current：S17-T01 RELEASE_BLOCKED_ENVIRONMENT
 
 - GUI A/B/C 与真实候选版本显示均 `PASS`；唯一四资产已从 `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 冻结，production signature `PASS`。

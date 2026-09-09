@@ -1,3 +1,10 @@
+# 2026-09-09：S17-T01 夸克真实 Setup 预检通过，环境阻塞解除
+
+用户已确认 `QUARK_SKILL_WINDOWS_PERSISTENCE = PASS`。本轮未重新安装或重新授权，直接使用用户级 Skill 的现有 Node CLI 完成发布前真实大文件预检：在 `门店效期排查软件/发布验证/v1.0.7-candidate` 上传同一冻结 `StoreExpiryInspector-Setup-1.0.7.exe`，重新读取确认文件名与 `75340490` bytes 一致，并生成独立公开分享链接 <https://pan.quark.cn/s/bb99b4a8ac80>。
+
+`RELEASE_BLOCKED_ENVIRONMENT` 已解除。Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED / QUARK_PREFLIGHT_PASSED`；S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED / QUARK_PREFLIGHT_PASSED`。下一步按门禁创建精确指向产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 的 annotated tag 与 GitHub Release；`FULL = NOT_RUN / NO_FULL`。
+
+
 # 2026-09-09：S17-T01 候选已冻结，发布阻塞于夸克 Skill 运行环境
 
 用户 GUI A/B/C 均 `PASS`，发版前真实候选版本显示 `PASS`。从精确产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f` 冻结了唯一四资产：ZIP 109414792 bytes / `2BF575A1518C7A207A71B9B2294182BC4C33C5807391DDEE1FF66C42DA02CE31`；Setup 75340490 bytes / `A03EB7CE46E3AA6EB0A4C735C961671E58FF6663ADE76F33CD671689B7637664`；manifest 869 bytes / `2954E1D33ABC495CE3070EC47C1BEFCECD3CDC409EF9FB8515D92F1475A43C7B`；signature 384 bytes / `88FCDE0100D7C9705ABACB4D8F1B089D278C5F2513C2B478570A958DE44E83C3`。production signature `PASS`，manifest 为 `1.0.4..1.0.6 -> 1.0.7`、migration `9`。

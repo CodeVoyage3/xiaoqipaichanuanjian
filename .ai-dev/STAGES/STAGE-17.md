@@ -2,7 +2,7 @@
 
 日期：2026-09-09（Asia/Shanghai）
 
-Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED / RELEASE_BLOCKED_ENVIRONMENT`
+Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED / QUARK_PREFLIGHT_PASSED`
 
 当前唯一任务：`S17-T01｜v1.0.7 国内备用版本检测与夸克手动下载兜底`。
 
@@ -28,6 +28,6 @@ Stage17 = `IN_PROGRESS / S17_T01_GUI_ACCEPTED / RELEASE_AUTHORIZED / RELEASE_BLO
 - Release App/Updater build 均 `0 warning / 0 error`；EF 无漂移；migration `9`；App/Updater FileVersion 均 `1.0.7.0`。
 - 用户 GUI A/B/C 三场景均 `PASS`，S17-T01 = `GUI_ACCEPTED / RELEASE_AUTHORIZED`。
 - 真实 Release App 入口程序集、FileVersion 均为 `1.0.7.0`，ProductVersion 为 `1.0.7+ee83b0c...`；左下角读取入口程序集三段版本，隔离真实 App 启动稳定。一次性 harness 的 `v1.0.0` 来自 harness 自身入口程序集，不是生产缺陷。
-- 唯一候选四资产已从精确产品 source 冻结且 production signature `PASS`；夸克预检在任何云端命令前因执行环境无可用 Bash、WSL 无发行版而阻断。未绕过 Skill，未创建 tag/Release，未进行夸克或 Gitee 正式写入。
+- 唯一候选四资产已从精确产品 source 冻结且 production signature `PASS`。用户已实证 Quark Skill Windows 用户级跨话题持久化 `PASS`；本轮直接使用现有 Node CLI 完成真实 Setup 大文件预检：创建 `门店效期排查软件/发布验证/v1.0.7-candidate`、上传并重新读取同名文件，大小 `75340490` bytes，生成独立 `pan.quark.cn` 分享链接。`RELEASE_BLOCKED_ENVIRONMENT` 已解除，下一门禁为 GitHub 正式发布与公网资产等价。
 
 任务与验收见 `../TASKS/S17-T01.md` 与 `../ACCEPTANCE/S17-T01.md`。
