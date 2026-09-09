@@ -1,6 +1,7 @@
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.UI;
 using System.Windows;
@@ -51,13 +52,25 @@ public sealed class S9T03UpdateCheckTests
     }
 
     [Fact]
-    public async Task MissingContentLengthStillHasByteLimitAndNotesAreBounded()
+    public async Task MissingContentLengthStillHasByteLimitAndNotesAreNotTruncated()
     {
         var huge = "{\"tag_name\":\"v1.0.1\",\"draft\":false,\"prerelease\":false,\"body\":\"" + new string('x', 300_000) + "\"}";
         var hugeResult = await CheckAsync(HttpStatusCode.OK, huge);
         Assert.Equal(UpdateCheckOutcome.InvalidRemoteMetadata, hugeResult.Outcome);
-        var notes = await CheckAsync(HttpStatusCode.OK, "{\"tag_name\":\"v1.0.1\",\"draft\":false,\"prerelease\":false,\"body\":\"" + new string('x', 1500) + "\"}");
-        Assert.Equal(1000, notes.ReleaseNotes!.Length);
+        var releaseBody = new string('x', 1500) + "尾部内容";
+        var notes = await CheckAsync(HttpStatusCode.OK, "{\"tag_name\":\"v1.0.1\",\"draft\":false,\"prerelease\":false,\"body\":" + JsonSerializer.Serialize(releaseBody) + "}");
+        Assert.Equal(releaseBody, notes.ReleaseNotes);
+        Assert.True(notes.ReleaseNotes!.Length > 1000);
+        Assert.EndsWith("尾部内容", notes.ReleaseNotes, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ReleaseNotesKeepLineBreaksAndRemoveUnsafeControlCharacters()
+    {
+        const string releaseBody = "第一行\n第二行\t保留\u0001移除\r\n第三行";
+        var result = await CheckAsync(HttpStatusCode.OK, "{\"tag_name\":\"v1.0.1\",\"draft\":false,\"prerelease\":false,\"body\":" + JsonSerializer.Serialize(releaseBody) + "}");
+
+        Assert.Equal("第一行\n第二行\t保留移除\r\n第三行", result.ReleaseNotes);
     }
 
     [Fact]
