@@ -560,7 +560,7 @@ public partial class App : System.Windows.Application
         Shutdown();
     }
 
-    private async Task<UpdatePackageResult> InstallPreparedUpdateAsync(VerifiedUpdatePackage package, SignedUpdatePackageDownloader downloader)
+    private async Task<UpdatePackageResult> InstallPreparedUpdateAsync(VerifiedUpdatePackage package, SignedUpdatePackageDownloader downloader, Action installing)
     {
         if (!await BeginDatabaseMaintenanceAsync())
             return new(UpdatePackageOutcome.IoFailure, "当前仍有写入操作，未进入升级维护状态。");
@@ -576,6 +576,7 @@ public partial class App : System.Windows.Application
 #endif
                 return preparer.Prepare(package, parent, CancellationToken.None);
             });
+            installing();
             var updater = Process.Start(UpdaterLaunch.Create(prepared.UpdaterPath, prepared.JournalPath)) ?? throw new InvalidOperationException("独立 Updater 未启动。");
 #if S9T07_TEST
             if (RuntimeDataRoot.IsTestUpdateInstall)
@@ -618,7 +619,7 @@ public partial class App : System.Windows.Application
             if (prepared.Outcome != UpdatePackageOutcome.Verified || prepared.Package is null) throw new InvalidDataException("pre-release package was not verified: " + prepared.Outcome);
             handler.RequireCompleteSequence();
             PreReleaseTestMarker(stage = "downloaded-and-verified");
-            var result = await InstallPreparedUpdateAsync(prepared.Package, downloader);
+            var result = await InstallPreparedUpdateAsync(prepared.Package, downloader, () => { });
             if (result.Outcome != UpdatePackageOutcome.Verified) { PreReleaseTestMarker("install-failed-" + result.Outcome); Shutdown(1); return; }
             PreReleaseTestMarker("updater-started");
         }
@@ -635,7 +636,7 @@ public partial class App : System.Windows.Application
             var key = Convert.FromBase64String(Environment.GetEnvironmentVariable("S9_T07_TEST_PUBLIC_KEY") ?? throw new InvalidDataException());
             using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(key, out _); TestInstallMarker(stage = "key-imported"); var version = new Version(99, 0, 0); var target = StaticMigrations().Concat(["20260905120000_S9T07Fixture10"]).ToArray();
             var verified = new VerifiedUpdatePackage(Path.GetDirectoryName(packagePath)!, packagePath, version, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(packagePath))).ToLowerInvariant(), target, manifest, signature, new CheckedRelease(version, 1, "v99.0.0", []), 2, new Version(1, 0, 5), new Version(1, 0, 5), target[0], target[^2]);
-            TestInstallMarker("verified-input"); var result = await InstallPreparedUpdateAsync(verified, new SignedUpdatePackageDownloader(options: new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: Path.GetDirectoryName(packagePath)!)));
+            TestInstallMarker("verified-input"); var result = await InstallPreparedUpdateAsync(verified, new SignedUpdatePackageDownloader(options: new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: Path.GetDirectoryName(packagePath)!)), () => { });
             if (result.Outcome != UpdatePackageOutcome.Verified) { Shutdown(1); return; }
             TestInstallMarker("install-returned-" + result.Outcome);
         }

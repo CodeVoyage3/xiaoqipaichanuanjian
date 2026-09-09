@@ -20,33 +20,42 @@ internal static class WpfDialogService
 {
     public static void ShowUpdateAvailable(Window owner, UpdateNotificationViewModel model)
     {
-        var dialog = new Window { Owner = owner, Title = "发现新版本", Width = 460, MaxHeight = 420, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
+        var dialog = new Window { Owner = owner, Title = "发现新版本", Width = 460, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
         var panel = new StackPanel { Margin = new Thickness(24) };
         panel.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
-        if (!string.IsNullOrWhiteSpace(model.DiagnosticBanner)) panel.Children.Add(new TextBlock { Text = model.DiagnosticBanner, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap, Foreground = FindBrush(owner, "SecondaryTextBrush") });
-        if (!string.IsNullOrWhiteSpace(model.ReleaseNotes)) panel.Children.Add(new ScrollViewer { MaxHeight = 120, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = new TextBlock { Text = model.ReleaseNotes, TextWrapping = TextWrapping.Wrap } });
-        var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap };
-        var bytes = new TextBlock { Text = model.ProgressText, Margin = new Thickness(0, 4, 0, 0), Foreground = FindBrush(owner, "SecondaryTextBrush") };
-        panel.Children.Add(status); panel.Children.Add(bytes);
+        var status = new TextBlock { Text = model.StatusText, Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+        var progress = new ProgressBar { Height = 8, Margin = new Thickness(0, 8, 0, 0), Minimum = 0, Maximum = 100, Visibility = Visibility.Collapsed };
+        panel.Children.Add(status); panel.Children.Add(progress);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         var later = new Button { Content = "稍后提醒", IsDefault = true, IsCancel = true, Width = 88, Height = 36, Style = FindStyle(owner, "SecondaryButtonStyle") };
         var update = new Button { Content = new TextBlock { Text = "立即更新", Foreground = Brushes.White }, Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
         var cancel = new Button { Content = "取消更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Visibility = Visibility.Collapsed, Style = FindStyle(owner, "SecondaryButtonStyle") };
-        later.Click += (_, _) =>
-        {
-            dialog.Close();
-            model.DismissCommand.Execute(null);
-            Show(owner, "稍后提醒", "当前版本暂时可以继续使用，请尽快完成升级。旧版本后续可能停止支持，届时可能无法继续使用软件。", "知道了", WpfDialogKind.Information, showCancel: false);
-        };
+        var showLaterReminder = false;
+        later.Click += (_, _) => { if (!model.IsBusy) { showLaterReminder = true; dialog.Close(); } };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
         cancel.Click += (_, _) => model.CancelCommand.Execute(null);
         System.ComponentModel.PropertyChangedEventHandler changed = (_, _) =>
         {
-            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; bytes.Text = model.ProgressText; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.IsBusy ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
+            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; status.Visibility = model.IsInitial ? Visibility.Collapsed : Visibility.Visible; progress.Visibility = model.IsDownloading || model.IsUpdating ? Visibility.Visible : Visibility.Collapsed; progress.IsIndeterminate = model.IsProgressIndeterminate; progress.Value = model.DownloadPercent; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.CanCancel ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
         };
         model.PropertyChanged += changed;
-        dialog.Closed += (_, _) => { model.PropertyChanged -= changed; model.DialogClosed(); };
+        dialog.Closing += (_, e) =>
+        {
+            if (!model.IsBusy) showLaterReminder = true;
+            else if (model.CanCancel) model.CancelCommand.Execute(null);
+            else e.Cancel = true;
+        };
+        dialog.Closed += (_, _) =>
+        {
+            model.PropertyChanged -= changed;
+            model.DialogClosed();
+            if (showLaterReminder)
+            {
+                model.DismissCommand.Execute(null);
+                Show(owner, "稍后提醒", "当前版本暂时可以继续使用，请尽快完成升级。旧版本后续可能停止支持，届时可能无法继续使用软件。", "知道了", WpfDialogKind.Information, showCancel: false);
+            }
+        };
         buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => later.Focus(); dialog.ShowDialog();
     }
     public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
