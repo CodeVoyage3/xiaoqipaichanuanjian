@@ -1,4 +1,10 @@
-# 2026-09-10：S18-T01-R1 GUI VISUAL REWORK REQUIRED
+# 2026-09-10：S18-T01-R5 最终紧凑视觉基线已批准
+
+用户批准 `D:\下载\ChatGPT Image 2026年9月10日 21_43_57.png`（SHA256 `AFC6A06E691F3755CD7B4868F00E39308753E08C9EEC072DC98F089EFC182B7B`）作为唯一正向基线。目标 Window 为 `620～700 × 360～420` DIP，硬门禁不超过 `720 × 430`；核心卡高 `60～75`、四张统计卡高 `55～70`，Footer 合并为左侧两行信息与右侧双按钮。不得沿 R1～R4 继续微调，不得改变视觉语言、业务层级或行为。
+
+从本治理提交后的 fresh `origin/main` 新建 clean worktree，交全新 GPT-5.6 Terra（medium）实施；Sol 必须真实启动 GUI 并完成 A～J。BUSINESS LOGIC DIFF=`0`，migration=`9`，FULL=`NOT_RUN`。S18-T01 仅可保持 `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI_ACCEPTANCE`，S18-T02=`PLANNED / NOT_DISPATCHED`。
+
+# 2026-09-10 historical：S18-T01-R1 GUI VISUAL REWORK REQUIRED
 
 用户明确拒绝当前提醒弹窗的整体视觉：“我还是不满意，就感觉丑。”`D:\下载\门店效期提醒.png` 继续作为 APPROVED PRODUCT PROTOTYPE / HARD VISUAL BASELINE；当前拒绝截图只作 NEGATIVE REFERENCE。此前业务映射、数据口径与导航通过项冻结，但不构成视觉接受。
 
