@@ -1,4 +1,12 @@
-# 2026-09-10 current：S18-T02 GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED
+# 2026-09-10 current：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+
+- implementation=`bf32c192554d3e890b3c7126adb9d5196654d289`；全新 GPT-5.6 Terra / medium / clean baseline=`d61e417e1809772ade32016fafc677ee064e29a2`。
+- 现有 `ProductBarcode` 生成 checksum 有效 EAN-13 矢量条码；无效值中性降级；详情顶部左/中/右与排查信息同排已实现。公共 Button 模板根治蓝/红底深色字，无逐页补丁。
+- Sol 独立专项/直接回归=`47/47 PASS`，GUI fixture=`1/1 PASS`，Release=`0 warning / 0 error`，migration=`9`，Schema/ModelSnapshot/依赖=`NO CHANGE`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN / NO_FULL`。
+- TEMP/GUID 隔离候选已启动；Barcode=`6974396950994`。Computer Use 连接无法返回窗口树/截图，故视觉与手机实扫仍 `NOT_ACCEPTED`。
+- S18-T02=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_GUI_ACCEPTANCE`。禁止关闭 Stage18、tag/Release/夸克/Gitee 发布。
+
+# 2026-09-10 historical：S18-T02 GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED
 
 - fresh `origin/main=1979fdd93a6aa766bb5b33e6086df11b995aeae6`；S18-T01=`GUI_ACCEPTED / CLOSED`；Stage18=`IN_PROGRESS / S18_T02_IMPLEMENTATION_DISPATCH_AUTHORIZED`。
 - S18-T02 最终范围：真实 `ProductBarcode` 的 EAN-13 屏幕扫码、排查信息同排紧凑化、共享 Button 模板视觉一致性；NO NEW DEPENDENCY。

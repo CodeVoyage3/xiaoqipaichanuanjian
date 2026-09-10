@@ -2,11 +2,13 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_IMPLEMENTATION_DISPATCH_AUTHORIZED`
+Stage18 = `IN_PROGRESS / S18_T01_CLOSED / WAITING_USER_S18_T02_GUI_ACCEPTANCE`
 
 ## S18-T02 当前治理冻结
 
-S18-T02 正式名称为“排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口”，范围固定为 A 真实 ProductBarcode/EAN-13、B 排查信息同排紧凑化、C 共享 Button 模板视觉根治。状态=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
+S18-T02 正式名称为“排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口”，范围固定为 A 真实 ProductBarcode/EAN-13、B 排查信息同排紧凑化、C 共享 Button 模板视觉根治。状态=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
+
+实现 `bf32c192554d3e890b3c7126adb9d5196654d289` 已通过 Sol 独立 `47/47 + fixture 1/1` 与 Release `0 warning / 0 error`；当前 S18-T02=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，只等待用户 GUI/手机实扫，Stage18 不关闭。
 
 fresh baseline=`origin/main@1979fdd93a6aa766bb5b33e6086df11b995aeae6`。NO NEW DEPENDENCY；Schema/migration/ModelSnapshot=`NO CHANGE / 9`；正式数据库=`NO ACCESS`；`FULL=NOT_RUN / NO_FULL`。从本治理提交后的 fresh origin/main 派发全新 GPT-5.6 Terra（medium）clean worktree；技术通过后仍须等待用户 GUI。
 
@@ -19,7 +21,7 @@ S18-T01=`GUI_ACCEPTED / CLOSED`；最终 R5 视觉锁定为用户通过的 `660 
 ## 固定顺序
 
 1. `S18-T01｜今日提醒弹窗信息层级优化`：`GUI_ACCEPTED / CLOSED`。
-2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
+2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
 
 S18-T01 已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。S18-T02 已在本话题获准按上方冻结合同派发。
 

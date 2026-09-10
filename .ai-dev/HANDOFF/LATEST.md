@@ -1,4 +1,14 @@
-# 2026-09-10：S18-T02 治理冻结并批准派发
+# 2026-09-10：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
+
+全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@d61e417e1809772ade32016fafc677ee064e29a2` 完成 implementation=`bf32c192554d3e890b3c7126adb9d5196654d289`。实现仅增加原生 EAN-13 矢量条码、顶部/排查信息紧凑布局与共享 Button 模板前景根治；不新增依赖、Schema 或迁移。
+
+Sol 独立确认 ProductBarcode-only 数据链、完整 95-bit 标准向量、非法安全降级、公共模板和 S18-T01 冻结范围；专项/直接回归=`47/47 PASS`，GUI fixture=`1/1 PASS`，Release=`0 warning / 0 error`，migration=`9`，`FULL=NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。
+
+隔离 GUI 根=`C:\Users\39037\AppData\Local\Temp\a632547d-dae2-4c60-b71e-27858e6bd5ca`，Barcode=`6974396950994`，ProductCode=`S18-T02-GUI-001`，库存=`18`，待排查批次=`1`。Sol 已启动 Release 候选；Computer Use 连接返回 `apps=[]`，故不把视觉/手机扫码冒充为已验。
+
+S18-T02=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_GUI_ACCEPTANCE`。只等待用户 A～F，不关闭 Stage18、不做 v1.0.9 发布。
+
+# 2026-09-10 historical：S18-T02 治理冻结并批准派发
 
 fresh `origin/main=1979fdd93a6aa766bb5b33e6086df11b995aeae6`；S18-T01=`GUI_ACCEPTED / CLOSED`。S18-T02 最终名称为“排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口”，状态=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
 
