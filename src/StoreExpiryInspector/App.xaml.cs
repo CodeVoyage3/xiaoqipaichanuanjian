@@ -413,7 +413,14 @@ public partial class App : System.Windows.Application
             }
             var coordinator = new DailyReminderRuntimeCoordinator(
                 new WindowsMessageBoxReminderChannel(
-                    () => mainWindow.IsVisible ? mainWindow : null),
+                    () => mainWindow.IsVisible ? mainWindow : null,
+                    () =>
+                    {
+                        mainWindow.Show();
+                        if (mainWindow.WindowState == WindowState.Minimized) mainWindow.WindowState = WindowState.Normal;
+                        mainWindow.Activate();
+                        ((ShellViewModel)mainWindow.DataContext).NavigateTo(ShellPage.PendingTasks);
+                    }),
                 logger);
             scheduler = new DailyReminderScheduler(
                 reminderMinuteOfDay,

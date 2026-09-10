@@ -163,13 +163,15 @@ public sealed class V1F02PreReminderTests
     }
 
     [Fact]
-    public void PreReminderOnlyMessageHasNoFakeTaskDirection()
+    public void PreReminderOnlyMessageKeepsNeutralTodayTaskAndTaskDirection()
     {
         var message = WindowsMessageBoxReminderChannel.FormatMessage(new ReminderNotification(
             2, ExpiryStageCalculator.None, 0, 1, 0, 1, 0));
 
         Assert.Contains("提前 3 天预提醒", message, StringComparison.Ordinal);
-        Assert.DoesNotContain("待排查任务", message, StringComparison.Ordinal);
+        Assert.Contains("今日待排查：0 个商品", message, StringComparison.Ordinal);
+        Assert.Contains("最高紧急阶段：无今日任务", message, StringComparison.Ordinal);
+        Assert.Contains("待排查任务", message, StringComparison.Ordinal);
     }
 
     [Fact]

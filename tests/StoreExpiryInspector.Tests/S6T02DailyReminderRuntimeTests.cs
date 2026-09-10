@@ -128,7 +128,7 @@ public sealed class S6T02DailyReminderRuntimeTests
     public void WindowsMessageContainsCountUrgencyAndPendingTaskDirection()
     {
         var message = WindowsMessageBoxReminderChannel.FormatMessage(
-            new ReminderNotification(3, ExpiryStageCalculator.Expired));
+            new ReminderNotification(3, ExpiryStageCalculator.Expired, FormalTaskItemCount: 3));
 
         Assert.Contains("3 个商品", message, StringComparison.Ordinal);
         Assert.Contains("过期", message, StringComparison.Ordinal);
