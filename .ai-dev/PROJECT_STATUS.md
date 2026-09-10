@@ -1,3 +1,10 @@
+# 2026-09-10 current：S16-T01 GUI_ACCEPTED / CLOSED
+
+- 最终 UI 收口 `db30f798e8558132f0aff133b6620b2e3036ba71` 仅删除风险明细商品编码显示列；底层 ProductCode 与业务逻辑不变。
+- 最终表头 7 列；Sol 独立列结构专项 `1/1 PASS`；Release build `0 warning / 0 error`；Schema/migration 无变化；`FULL = NOT_RUN`。
+- Stage16 = `IN_PROGRESS / S16_T01_CLOSED / S16_T02_READY`。S16-T02 已具备启动条件但仍 `PLANNED / NOT_DISPATCHED`，等待单独授权。
+
+
 # 2026-09-10 current：S16-T01 GUI_ACCEPTED / MINOR_UI_CLEANUP_PENDING
 
 - 用户已确认 GUI 主体验收通过；唯一剩余项为风险明细删除 `商品编码` 显示列，最终 7 列。

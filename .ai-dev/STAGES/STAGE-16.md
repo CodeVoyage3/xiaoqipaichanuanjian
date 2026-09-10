@@ -2,9 +2,9 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage16 = `IN_PROGRESS / S16_T01_MINOR_UI_CLEANUP`
+Stage16 = `IN_PROGRESS / S16_T01_CLOSED / S16_T02_READY`
 
-用户已确认 S16-T01 GUI 主体验收通过。S16-T01 = `GUI_ACCEPTED / MINOR_UI_CLEANUP_PENDING`，当前只删除风险明细的商品编码显示列；S16-T02 继续 `PLANNED / NOT_DISPATCHED`，须待本项关闭后方具备启动条件。
+用户已确认 S16-T01 GUI 主体验收通过，最终单列收口亦已通过 Sol 独立核验。S16-T01 = `GUI_ACCEPTED / CLOSED`。S16-T02 已具备启动条件，但仍保持 `PLANNED / NOT_DISPATCHED`，等待单独授权。
 
 ## 当前范围与顺序
 

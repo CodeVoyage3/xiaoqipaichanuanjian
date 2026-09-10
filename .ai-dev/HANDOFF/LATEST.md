@@ -1,3 +1,10 @@
+# 2026-09-10：S16-T01 GUI_ACCEPTED / CLOSED
+
+用户确认 GUI 主体验收通过后，全新 Terra 从 fresh `origin/main@ea4fdf9` 完成唯一单列收口 `db30f798e8558132f0aff133b6620b2e3036ba71`：风险明细删除商品编码显示列，底层 ProductCode 与业务逻辑不变。Sol 独立确认最终表头精确 7 列，列结构专项 `1/1 PASS`，Release build `0 warning / 0 error`，Schema/migration 无变化，`FULL = NOT_RUN`。
+
+S16-T01 = `GUI_ACCEPTED / CLOSED`；Stage16 = `IN_PROGRESS / S16_T01_CLOSED / S16_T02_READY`。S16-T02 已具备启动条件但仍 `PLANNED / NOT_DISPATCHED`，等待用户另行授权。
+
+
 # 2026-09-10：S16-T01 GUI 主体验收通过，等待极小 UI 收口
 
 用户已确认 S16-T01 GUI 主体验收通过；当前状态 `GUI_ACCEPTED / MINOR_UI_CLEANUP_PENDING`。唯一剩余项是在“未来效期风险明细”删除 `商品编码` 显示列，最终保持 7 列；底层 ProductCode、查询、排序、分页、内部滚轮、固定表头、首页、Schema/migration 均不变。
