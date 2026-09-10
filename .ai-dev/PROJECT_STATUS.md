@@ -1,9 +1,9 @@
-# 2026-09-11 current：S18-T02-R2 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+# 2026-09-11 current：S18-T02 GUI_ACCEPTED / CLOSED
 
-- R1 用户通过项全部冻结；R2 baseline=`32ab9d4b99c2202abc10b970e58f5d8e2266e2c4`，全新 GPT-5.6 Terra / medium implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`。
-- 左侧商品名称/编码组已原位垂直居中；条码控件自身外围矩形绘制已删除。生产 diff 两行，BUSINESS LOGIC DIFF=`0`。
-- R2 精确静态契约=`2/2 PASS`；Release=`0 warning / 0 error`；隔离 GUI 已启动。R1 `46/46` 未重跑，FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。
-- S18-T02=`R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R2_GUI_ACCEPTANCE`。只等待用户 A～C，禁止关闭或发布。
+- 用户已确认 S18-T02-R2 最终 GUI 全部 PASS；最终 implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1` 已 push 并经 fresh fetch 确认。
+- S18-T02=`GUI_ACCEPTED / CLOSED`。本收口轮未再运行测试或 build；FULL=`NOT_RUN / NO_FULL`。
+- Stage18=`IN_PROGRESS / S18_T01_CLOSED / S18_T02_CLOSED / S18_T03_NEXT`；不得关闭 Stage18 或进入 v1.0.9 发布准备。
+- 下一张任务：`S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`，状态=`PLANNED / NOT_DISPATCHED`。仅可在新的 Codex 话题中，由 Sol fresh fetch 后单独建立治理、Task、Acceptance 和实施合同。
 
 # 2026-09-10 historical：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 

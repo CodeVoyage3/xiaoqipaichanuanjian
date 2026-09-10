@@ -1,12 +1,12 @@
-# 2026-09-11：S18-T02-R2 技术验收就绪，等待用户 A～C
+# 2026-09-11：S18-T02 GUI_ACCEPTED / CLOSED
 
-用户已确认 R1 的三处浅灰分割线、条码数字选择/Ctrl+C、手机扫码、排查信息同排、按钮视觉和其他详情功能全部通过并冻结。R2 已完成。
+用户已确认 S18-T02-R2 最终 GUI A～C 全部 PASS；连同此前 R1 已通过项，S18-T02=`GUI_ACCEPTED / CLOSED`。
 
-baseline=`32ab9d4b99c2202abc10b970e58f5d8e2266e2c4`；全新 GPT-5.6 Terra / medium implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`。左栏只增加垂直居中属性；条码控件只删除自有外围矩形绘制。实际改动为 2 个生产文件 + 1 个现有测试文件。
+最终 implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`，已 fast-forward push 并经 fresh fetch 确认包含于 origin/main。R2 左栏垂直平衡、条码外围灰框移除和手机扫码均获用户通过。
 
-精确 R2 契约=`2/2 PASS`，Release App build=`0 warning / 0 error`，diff scope/冻结路径通过，BUSINESS LOGIC DIFF=`0`。R1 `46/46`、完整算法专项与其他禁止套件未重跑。
+本收口轮未再运行任何测试或 build；沿用已记录技术证据。FULL=`NOT_RUN / NO_FULL`。Stage18=`IN_PROGRESS / S18_T01_CLOSED / S18_T02_CLOSED / S18_T03_NEXT`，不得关闭或进入 v1.0.9 发布准备。
 
-隔离 R2 Release 候选已启动并保持，Barcode=`6974396950994`。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。S18-T02=`R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R2_GUI_ACCEPTANCE`。等待用户只验 A～C。
+下一张任务：`S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`，状态=`PLANNED / NOT_DISPATCHED`。必须在新的 Codex 话题中，由 Sol fresh fetch 后单独建立治理、Task、Acceptance 和实施合同。本话题不创建/实施生产代码、不派发 Terra、不冻结详细方案。
 
 # 2026-09-10 historical：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
 

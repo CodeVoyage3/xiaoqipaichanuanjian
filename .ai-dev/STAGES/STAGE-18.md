@@ -2,17 +2,19 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / S18_T01_CLOSED / WAITING_USER_S18_T02_R2_GUI_ACCEPTANCE`
+Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_CLOSED / S18_T03_NEXT`
 
-## S18-T02-R2 当前返修
+## S18-T02-R2 收口
 
 R1 的分割线、数字复制、手机扫码、排查信息、按钮及其他详情功能已由用户确认通过并冻结。R2 已平衡左侧商品名称/编码的垂直位置，并删除条码控件自身外围矩形框；商品卡高度、中/右栏及 EAN-13/业务逻辑无变化。
 
-R2 baseline=`32ab9d4b99c2202abc10b970e58f5d8e2266e2c4`，implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`；精确契约=`2/2 PASS`，Release=`0 warning / 0 error`，隔离候选已启动。不重跑 R1 `46/46`，FULL=`NOT_RUN / NO_FULL`。S18-T02=`R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户 A～C。
+R2 baseline=`32ab9d4b99c2202abc10b970e58f5d8e2266e2c4`，implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`；用户已确认最终 GUI A～C 全部 PASS。S18-T02=`GUI_ACCEPTED / CLOSED`。本轮未再运行测试或 build，FULL=`NOT_RUN / NO_FULL`。
+
+下一张任务：`S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`，状态=`PLANNED / NOT_DISPATCHED`。必须在新的 Codex 话题中，由 Sol fresh fetch 后单独建立治理、Task、Acceptance 和实施合同；本话题不创建、不派发、不冻结详细技术方案。
 
 ## S18-T02-R1 当前返修
 
-用户已通过扫码、排查信息紧凑化和按钮颜色；R1 已补顶部三条浅灰竖向分割线，并把条码数字换为复用既有无边框透明样式的只读可选 TextBox。其余生产逻辑和页面冻结。S18-T02=`IMPLEMENTED / R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
+用户已通过扫码、排查信息紧凑化和按钮颜色；R1 已补顶部三条浅灰竖向分割线，并把条码数字换为复用既有无边框透明样式的只读可选 TextBox。其余生产逻辑和页面冻结。该轮证据已由 R2 最终 GUI 通过收口覆盖，S18-T02=`GUI_ACCEPTED / CLOSED`。
 
 R1 governance=`cb02504b981b8b97d491881d7dc713b39a55e2e1`，implementation=`bb9c4afd7ceef975752f7493bfe66d46e6ebc1ba`；Sol 独立 `46/46 + fixture 1/1` 与 Release `0 warning / 0 error`。FULL=`NOT_RUN`，只等待用户 A～D。
 
@@ -20,7 +22,7 @@ R1 governance=`cb02504b981b8b97d491881d7dc713b39a55e2e1`，implementation=`bb9c4
 
 S18-T02 正式名称为“排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口”，范围固定为 A 真实 ProductBarcode/EAN-13、B 排查信息同排紧凑化、C 共享 Button 模板视觉根治。状态=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
 
-实现 `bf32c192554d3e890b3c7126adb9d5196654d289` 已通过 Sol 独立 `47/47 + fixture 1/1` 与 Release `0 warning / 0 error`；当前 S18-T02=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，只等待用户 GUI/手机实扫，Stage18 不关闭。
+实现 `bf32c192554d3e890b3c7126adb9d5196654d289` 与后续 R1/R2 已完成技术及用户 GUI 验收；当前 S18-T02=`GUI_ACCEPTED / CLOSED`，Stage18 保持 `IN_PROGRESS`。
 
 fresh baseline=`origin/main@1979fdd93a6aa766bb5b33e6086df11b995aeae6`。NO NEW DEPENDENCY；Schema/migration/ModelSnapshot=`NO CHANGE / 9`；正式数据库=`NO ACCESS`；`FULL=NOT_RUN / NO_FULL`。从本治理提交后的 fresh origin/main 派发全新 GPT-5.6 Terra（medium）clean worktree；技术通过后仍须等待用户 GUI。
 
@@ -33,7 +35,7 @@ S18-T01=`GUI_ACCEPTED / CLOSED`；最终 R5 视觉锁定为用户通过的 `660 
 ## 固定顺序
 
 1. `S18-T01｜今日提醒弹窗信息层级优化`：`GUI_ACCEPTED / CLOSED`。
-2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
+2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`GUI_ACCEPTED / CLOSED`。
 
 S18-T01 已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。S18-T02 已在本话题获准按上方冻结合同派发。
 
