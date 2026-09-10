@@ -1,12 +1,12 @@
-# 2026-09-10：S18-T02-R2 MINOR GUI REWORK 已授权
+# 2026-09-11：S18-T02-R2 技术验收就绪，等待用户 A～C
 
-用户已确认 R1 的三处浅灰分割线、条码数字选择/Ctrl+C、手机扫码、排查信息同排、按钮视觉和其他详情功能全部通过并冻结。
+用户已确认 R1 的三处浅灰分割线、条码数字选择/Ctrl+C、手机扫码、排查信息同排、按钮视觉和其他详情功能全部通过并冻结。R2 已完成。
 
-R2 只修两项：在不新增字段、不增高卡片或改变中/右栏的前提下，垂直平衡左侧商品名称/编码；只删除 `Ean13Barcode.OnRender` 自绘的外围灰色矩形框，所有编码与扫码参数冻结。
+baseline=`32ab9d4b99c2202abc10b970e58f5d8e2266e2c4`；全新 GPT-5.6 Terra / medium implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`。左栏只增加垂直居中属性；条码控件只删除自有外围矩形绘制。实际改动为 2 个生产文件 + 1 个现有测试文件。
 
-从 R2 governance push 后 fresh origin/main 派发全新 GPT-5.6 Terra / medium / clean worktree；生产原则上只限 `MainWindow.xaml`、实际条码控件文件和现有 S18-T02 专项测试。BUSINESS LOGIC DIFF=`0`。
+精确 R2 契约=`2/2 PASS`，Release App build=`0 warning / 0 error`，diff scope/冻结路径通过，BUSINESS LOGIC DIFF=`0`。R1 `46/46`、完整算法专项与其他禁止套件未重跑。
 
-不重跑 R1 `46/46` 或完整算法专项；只做 R2 静态契约、diff scope、一次 Release build 与隔离 GUI。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。技术完成后最多 `R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户只验 A～C。
+隔离 R2 Release 候选已启动并保持，Barcode=`6974396950994`。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。S18-T02=`R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R2_GUI_ACCEPTANCE`。等待用户只验 A～C。
 
 # 2026-09-10 historical：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
 

@@ -1,9 +1,9 @@
-# 2026-09-10 current：S18-T02-R2 MINOR GUI REWORK AUTHORIZED
+# 2026-09-11 current：S18-T02-R2 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
-- R1 的三处分割线、数字复制、手机扫码、排查信息、按钮视觉与其他详情功能已由用户确认通过并冻结。
-- R2 只平衡左侧商品名称/编码的垂直位置，并移除条码控件自身外围灰色矩形框；BUSINESS LOGIC DIFF=`0`。
-- 从 R2 governance push 后 fresh origin/main 使用全新 GPT-5.6 Terra / medium / clean worktree；不重跑 R1 `46/46`，只做 R2 最小静态契约、一次 Release build 和隔离 GUI。
-- S18-T02=`R2_MINOR_GUI_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T02_R2_MINOR_GUI_REWORK_AUTHORIZED`。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。
+- R1 用户通过项全部冻结；R2 baseline=`32ab9d4b99c2202abc10b970e58f5d8e2266e2c4`，全新 GPT-5.6 Terra / medium implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1`。
+- 左侧商品名称/编码组已原位垂直居中；条码控件自身外围矩形绘制已删除。生产 diff 两行，BUSINESS LOGIC DIFF=`0`。
+- R2 精确静态契约=`2/2 PASS`；Release=`0 warning / 0 error`；隔离 GUI 已启动。R1 `46/46` 未重跑，FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。
+- S18-T02=`R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R2_GUI_ACCEPTANCE`。只等待用户 A～C，禁止关闭或发布。
 
 # 2026-09-10 historical：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
