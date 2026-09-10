@@ -2,14 +2,16 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / GOVERNANCE_FROZEN / S18_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`
+Stage18 = `IN_PROGRESS / WAITING_USER_S18_T01_GUI_ACCEPTANCE`
 
 ## 固定顺序
 
-1. `S18-T01｜今日提醒弹窗信息层级优化`：`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
+1. `S18-T01｜今日提醒弹窗信息层级优化`：`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
 2. `S18-T02｜排查详情扫码识别与信息区紧凑化`：`PLANNED / NOT_DISPATCHED`。
 
 S18-T01 必须先完成技术验收、用户真实 WPF GUI 验收并 `CLOSED`，才允许启动 S18-T02。不得混合实施。
+
+S18-T01 implementation `87dd576fc0a69fe567a246dd55debb3aaddd642b` 已通过 Sol 独立专项、直接回归、Release build、范围与原型静态审查；当前只等待用户 GUI 验收，不得把技术证据改写为 GUI 通过。
 
 ## 固定边界
 

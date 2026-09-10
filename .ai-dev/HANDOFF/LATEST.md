@@ -1,3 +1,14 @@
+# 2026-09-10：S18-T01 技术验收就绪，等待用户 GUI 验收
+
+全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@d39b7452bee4962ca03ee9e365bd0d767b118604` 在独立 clean worktree完成 implementation `87dd576fc0a69fe567a246dd55debb3aaddd642b`。Sol 已独立审查批准原型、真实 diff、现有提醒口径、专项/直接回归与 Release build。
+
+实现只把现有 `ReminderNotification` 映射为两块核心信息、四个低饱和阶段分区、总数/提示和两个按钮；“查看待排查任务”调用现有 `ShellPage.PendingTasks`。提醒时间、3 天预提醒、阶段/任务/库存/调度/记录语义均未改。Sol 独立 `26/26 PASS`，Release `0 warning / 0 error`，migration `9`，Schema/migration/ModelSnapshot `NO CHANGE`。
+
+隔离 GUI 入口：`C:\Users\39037\.codex\visualizations\2026\09\10\01a08ab1-7224-7ff1-b10a-3dc1d98e5b82\S18-T01-GUI-Acceptance\启动S18-T01验收.cmd`。每次使用全新 `%TEMP%\GUID` synthetic 数据，正式数据库 `NO ACCESS`；入口自检 `due / formal=6 / highest=expired / pre=1,1,1,1 / total=10`。
+
+S18-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18 = `IN_PROGRESS / WAITING_USER_S18_T01_GUI_ACCEPTANCE`；S18-T02 = `PLANNED / NOT_DISPATCHED`。`FULL = NOT_RUN / NO_FULL`。下一步只等待用户 A～F；不得启动 S18-T02、关闭 Stage18 或发布 v1.0.9。
+
+
 # 2026-09-10：Stage18 / S18-T01 治理冻结并批准派发
 
 fresh fetch 确认 `origin/main = 3810289089a8c74f0f42341f61f49d245591a339`；GitHub latest API 匿名只读核验 stable/latest 为 `v1.0.8`（Release ID `386129690`，非 draft、非 prerelease，target `4027b6c195b6ff89d22c315c22a30b33a799079c`）。Stage16、Stage17 均为 `CLOSED`。

@@ -1,11 +1,13 @@
-# 2026-09-10 current：Stage18 / S18-T01 治理冻结
+# 2026-09-10 current：S18-T01 技术验收就绪，等待用户 GUI
 
-- fresh `origin/main = 3810289089a8c74f0f42341f61f49d245591a339`；stable/latest = `v1.0.8`（GitHub Release ID `386129690`，非 draft、非 prerelease）。
-- Stage16 = `CLOSED`；Stage17 = `CLOSED`；Stage18 = `IN_PROGRESS / GOVERNANCE_FROZEN / S18_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`。
-- S18-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；S18-T02 = `PLANNED / NOT_DISPATCHED`。
+- fresh `origin/main = 87dd576fc0a69fe567a246dd55debb3aaddd642b`；stable/latest = `v1.0.8`（GitHub Release ID `386129690`，非 draft、非 prerelease）。
+- Stage16 = `CLOSED`；Stage17 = `CLOSED`；Stage18 = `IN_PROGRESS / WAITING_USER_S18_T01_GUI_ACCEPTANCE`。
+- S18-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；S18-T02 = `PLANNED / NOT_DISPATCHED`。
 - S18-T01 只映射现有 `ReminderNotification` 至批准提醒原型并复用现有 PendingTasks 导航；提醒决策、阶段优先级、3 天预提醒、任务、库存、调度与记录不变。
-- Schema/migration/ModelSnapshot `NO CHANGE`；正式数据库 `NO ACCESS`；正式 dirty 1 modified + 4 untracked 保持。
-- `FULL = NOT_RUN / NO_FULL`。实施必须由全新 GPT-5.6 Terra（medium）在独立 clean worktree完成；用户 GUI 验收前不得启动 S18-T02。
+- implementation `87dd576fc0a69fe567a246dd55debb3aaddd642b`；Sol 独立专项/直接回归 `26/26 PASS`；Release App build `0 warning / 0 error`。
+- Schema/migration/ModelSnapshot `NO CHANGE`，migration `9`；正式数据库 `NO ACCESS`；正式 dirty 1 modified + 4 untracked 保持。
+- GUI 入口：`C:\Users\39037\.codex\visualizations\2026\09\10\01a08ab1-7224-7ff1-b10a-3dc1d98e5b82\S18-T01-GUI-Acceptance\启动S18-T01验收.cmd`。
+- `FULL = NOT_RUN / NO_FULL`。只等待用户 S18-T01 GUI；验收前不得启动 S18-T02。
 
 
 # 2026-09-10 historical：v1.0.8 RELEASED / Stage16 CLOSED
