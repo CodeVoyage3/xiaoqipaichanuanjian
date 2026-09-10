@@ -1,3 +1,12 @@
+# 2026-09-10：Stage16 CLOSED；v1.0.8 RELEASE_PREPARATION_READY
+
+用户最终确认 S16-T03 GUI A～E 全部 `PASS`：超过 5 条时首页只显示 5 条、首页顺序保持“优先处理 → 未来效期风险”、未来风险可见、“查看全部”进入完整任务、未来风险视觉/点击无回归。S16-T03 = `GUI_ACCEPTED / CLOSED`。
+
+S16-T01、S16-T02、S16-T03 均为 `GUI_ACCEPTED / CLOSED`；Stage16 = `CLOSED`。既有技术证据继承，未重跑任何专项、FULL、大库或回归；Schema/migration `NO CHANGE`，migration `9`；正式数据库 `NO ACCESS`，正式 dirty 五项保持。
+
+fresh 核验确定 v1.0.8 精确产品 source 为 `4027b6c195b6ff89d22c315c22a30b33a799079c`：包含 S16-T01 `db30f798e8558132f0aff133b6620b2e3036ba71`、S16-T02 `cd7f7c893012e8f21c82495e4abfc55092be0e54` 与 S16-T03；App/Updater FileVersion 均为 `1.0.8.0`，无 Stage18 内容。当前仅 `RELEASE_PREPARATION_READY`，不得在下一步正式授权前创建 tag/Release 或启动 Stage18。
+
+
 # 2026-09-10：S16-T03 技术验收就绪，等待用户最小 GUI 验收
 
 全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@61d5bd9fa3e7244b53f384008dc587dd917e83e4` 完成 implementation `4027b6c195b6ff89d22c315c22a30b33a799079c`。生产 diff 仅限制 Dashboard 默认摘要和首页搜索为现有排序前 5 条；真实总数、完整任务页、“查看全部”绑定、XAML 与 S16-T01 未来风险均未改。

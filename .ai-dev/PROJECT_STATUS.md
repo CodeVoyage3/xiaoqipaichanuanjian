@@ -1,4 +1,13 @@
-# 2026-09-10 current：S16-T03 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+# 2026-09-10 current：Stage16 CLOSED / v1.0.8 RELEASE_PREPARATION_READY
+
+- S16-T01、S16-T02、S16-T03 全部 `GUI_ACCEPTED / CLOSED`；Stage16 = `CLOSED`。
+- S16-T03 用户 GUI：`>5 → 5`、优先处理在未来风险上方、未来风险可见、查看全部完整任务、未来风险视觉/点击无回归，A～E 全部 `PASS`。
+- v1.0.8 精确产品 source：`4027b6c195b6ff89d22c315c22a30b33a799079c`；包含 S16-T01 `db30f798e8558132f0aff133b6620b2e3036ba71`、S16-T02 `cd7f7c893012e8f21c82495e4abfc55092be0e54` 与 S16-T03，App/Updater FileVersion 均为 `1.0.8.0`，不含 Stage18。
+- 继承既有证据：`FULL = NOT_RUN / NO_FULL`；Schema/migration `NO CHANGE`，migration `9`；正式数据库 `NO ACCESS`；正式 dirty 五项保持。
+- 当前仅具备进入 v1.0.8 正式发版流程的条件；尚未创建 tag/Release、冻结资产或发布渠道。Stage18 / v1.0.9 在 v1.0.8 发版完成前不得实施。
+
+
+# 2026-09-10 historical：S16-T03 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
 - fresh 治理基线 `61d5bd9fa3e7244b53f384008dc587dd917e83e4`；全新 GPT-5.6 Terra（medium）implementation `4027b6c195b6ff89d22c315c22a30b33a799079c`。
 - 首页优先处理默认/搜索最多 5 条；真实待排查总数、既有排序、完整任务页与“查看全部”入口保持；XAML 和未来风险无 diff。
