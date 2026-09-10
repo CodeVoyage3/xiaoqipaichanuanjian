@@ -1,3 +1,14 @@
+# 2026-09-10：v1.0.8 RELEASED；Stage16 CLOSED
+
+正式发布基于精确产品 source `4027b6c195b6ff89d22c315c22a30b33a799079c`；annotated tag `v1.0.8` 精确解引用到该 source。GitHub Release ID `386129690`，四项公网匿名 fresh 下载与冻结候选逐项全等，production RSA-PSS/SHA256 signature 复验 `PASS`。
+
+冻结资产：ZIP `109428664` bytes / `D4270B8D2B0ABCC50E860FAC05322B5DA79C746471DD088FBDD6AB373CFA369F`；Setup `75327902` bytes / `FC6E4B974463056ABF3119AF512B97AAA3CD3F0DB4D19607232D8C71F010414B`；manifest `869` bytes / `33CC069186830959BCD8773199D027DC03D4125E21A17736D157DAA123E93B15`；signature `384` bytes / `34270FD7876FADA3D40E3803D071BBA1733DD3F67F5D38A7932A174E1CB0181C`。
+
+同一冻结 Setup 的夸克真实预检与正式上传均 `PASS`，正式分享 <https://pan.quark.cn/s/43763c1d96bf>。Gitee `master/latest.json` commit `50ab5ab133badfdacb153687fb6dc72ba5309fbe`；Raw 匿名 HTTP `200` 且 `version/releaseNotes/manualDownloadUrl` 三字段精确一致。
+
+v1.0.8 = `RELEASED`；Stage16 与 S16-T01/T02/T03 保持 `CLOSED`。`FULL = NOT_RUN / NO_FULL`；migration `9`；正式数据库 `NO ACCESS`；正式 dirty 五项保持；Stage18 尚未实施。
+
+
 # 2026-09-10：Stage16 CLOSED；v1.0.8 RELEASE_PREPARATION_READY
 
 用户最终确认 S16-T03 GUI A～E 全部 `PASS`：超过 5 条时首页只显示 5 条、首页顺序保持“优先处理 → 未来效期风险”、未来风险可见、“查看全部”进入完整任务、未来风险视觉/点击无回归。S16-T03 = `GUI_ACCEPTED / CLOSED`。
