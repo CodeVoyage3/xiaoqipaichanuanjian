@@ -199,7 +199,7 @@ public sealed class InspectionTaskQuery
             tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Withdraw),
             tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Discount20),
             tasks.Count(task => task.HighestStage == ExpiryStageCalculator.Discount50),
-            Array.AsReadOnly(ReadTaskRows(tasks, 1, 20).ToArray()),
+            Array.AsReadOnly(ReadTaskRows(tasks, 1, 5).ToArray()),
             lastSuccessfulImportAtUtc,
             productCount,
             batchCount,

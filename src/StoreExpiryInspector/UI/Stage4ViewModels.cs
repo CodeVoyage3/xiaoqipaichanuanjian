@@ -515,14 +515,14 @@ public sealed class DashboardViewModel : ViewModelBase
         try
         {
             var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _searchTasks(
-                new InspectionTaskSearchRequest(normalizedSearchText, null, 1, 20))));
+                new InspectionTaskSearchRequest(normalizedSearchText, null, 1, 5))));
             if (version != _loadVersion)
             {
                 return;
             }
 
             UrgentTasks.Clear();
-            foreach (var item in result.Items)
+            foreach (var item in result.Items.Take(5))
             {
                 UrgentTasks.Add(item);
             }
@@ -583,7 +583,7 @@ public sealed class DashboardViewModel : ViewModelBase
             OnPropertyChanged(nameof(FutureRiskSummary));
             LastSuccessfulImportAtUtc = result.LastSuccessfulImportAtUtc;
             UrgentTasks.Clear();
-            foreach (var task in result.UrgentTasks)
+            foreach (var task in result.UrgentTasks.Take(5))
             {
                 UrgentTasks.Add(task);
             }

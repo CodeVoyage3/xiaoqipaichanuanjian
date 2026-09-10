@@ -182,7 +182,7 @@ public sealed class InspectionTaskQueryTests
     }
 
     [Fact]
-    public void DashboardUrgentTasksAreCappedAtTwenty()
+    public void DashboardUrgentTasksAreCappedAtFive()
     {
         using var database = SqliteTestDatabase.Create();
         using (var seed = database.Open())
@@ -201,9 +201,9 @@ public sealed class InspectionTaskQueryTests
         var result = new InspectionTaskQuery().Dashboard(context);
 
         Assert.Equal(21, result.OpenTaskCount);
-        Assert.Equal(20, result.UrgentTasks.Count);
+        Assert.Equal(5, result.UrgentTasks.Count);
         Assert.Equal("P-00", result.UrgentTasks[0].ProductCode);
-        Assert.Equal("P-19", result.UrgentTasks[^1].ProductCode);
+        Assert.Equal("P-04", result.UrgentTasks[^1].ProductCode);
     }
 
     [Fact]

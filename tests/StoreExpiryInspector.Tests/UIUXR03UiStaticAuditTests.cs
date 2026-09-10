@@ -201,7 +201,7 @@ public sealed class UIUXR03UiStaticAuditTests
         Assert.Equal("690000000001", request.SearchText);
         Assert.Null(request.Stage);
         Assert.Equal(1, request.Page);
-        Assert.Equal(20, request.PageSize);
+        Assert.Equal(5, request.PageSize);
         Assert.Equal(new[] { "found" }, vm.UrgentTasks.Select(item => item.ProductCode));
         Assert.True(vm.IsSearchActive);
         Assert.Equal(1, vm.SearchResultCount);
