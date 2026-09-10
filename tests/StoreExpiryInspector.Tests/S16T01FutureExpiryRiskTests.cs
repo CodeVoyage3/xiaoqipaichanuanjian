@@ -80,6 +80,39 @@ public sealed class S16T01FutureExpiryRiskTests
         shell.ReturnFromFutureRiskCommand.Execute(null); Assert.Equal(StoreExpiryInspector.UI.ShellPage.Dashboard, shell.CurrentPage);
     }
 
+    [Fact]
+    public async Task FailedLoadClearsPriorRowsAndStaticPrototypeContractRemainsPresent()
+    {
+        var row = new FutureExpiryRiskItem(1, 1, "p", "b", "p", 1, "none", new DateOnly(2026, 1, 2), 1);
+        var calls = 0;
+        var vm = new StoreExpiryInspector.UI.FutureExpiryRiskViewModel(_ => ++calls == 1 ? new([row], 1, 1, 50) : throw new InvalidOperationException("test"));
+        await vm.OpenAsync(7, ExpiryStageCalculator.Discount50); Assert.Single(vm.Items);
+        await vm.OpenAsync(14, ExpiryStageCalculator.Withdraw); Assert.Empty(vm.Items); Assert.Equal(0, vm.TotalCount); Assert.True(vm.HasError);
+        var root = FindRepositoryRoot(); var xaml = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        Assert.True(xaml.IndexOf("优先处理", StringComparison.Ordinal) < xaml.IndexOf("未来效期风险", StringComparison.Ordinal));
+        foreach (var parameter in new[] { "7|discount_50", "7|discount_20", "7|withdraw", "7|expired", "14|discount_50", "14|discount_20", "14|withdraw", "14|expired", "30|discount_50", "30|discount_20", "30|withdraw", "30|expired" }) Assert.Contains(parameter, xaml, StringComparison.Ordinal);
+        Assert.Contains("NavigationHomeButton", xaml, StringComparison.Ordinal); Assert.Contains("IsHomeSectionVisible", xaml, StringComparison.Ordinal); Assert.Contains("返回首页", xaml, StringComparison.Ordinal); Assert.Contains("未来效期风险明细列表", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("NavigationFutureRisk", xaml, StringComparison.Ordinal); Assert.DoesNotContain("Chart", xaml, StringComparison.Ordinal); Assert.DoesNotContain("处理风险", xaml, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ExpiryPolicies.Food, 270, "D")]
+    [InlineData(ExpiryPolicies.Pet, 12, "M")]
+    [InlineData(ExpiryPolicies.GeneralLong, 1, "Y")]
+    public void ApprovedPoliciesSupplyAllFourDates(string policy, int value, string unit)
+    {
+        var days = unit switch { "D" => value, "M" => value * 30, _ => value * 365 };
+        var dates = ExpiryPolicyCalculator.CalculateStageDates(policy, 1, new DateOnly(2027, 1, 1), days);
+        Assert.NotNull(dates); Assert.True(dates!.Discount50 < dates.Discount20 && dates.Discount20 < dates.Withdraw && dates.Withdraw < dates.Expired);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "StoreExpiryInspector.slnx"))) return directory.FullName;
+        throw new DirectoryNotFoundException("repository root");
+    }
+
     private static Product Product(string code, int stock) => new() { ProductCode = code, CurrentName = code, CurrentBarcode = code, CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = stock };
     private static Batch Batch(Product product, DateOnly expiry) => new() { Product = product, ExpiryDate = expiry, ShelfLifeValue = 270, ShelfLifeUnit = "D", CurrentArrivalQty = 1, MaxArrivalQty = 1, TrackingStatus = "active" };
 }
