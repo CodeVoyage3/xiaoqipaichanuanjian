@@ -2,7 +2,13 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / S18_T01_CLOSED / WAITING_USER_S18_T02_GUI_ACCEPTANCE`
+Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_R1_REWORK_AUTHORIZED`
+
+## S18-T02-R1 当前返修
+
+用户已通过扫码、排查信息紧凑化和按钮颜色；仅补顶部三条浅灰竖向分割线，并把条码数字换为无边框透明、只读可选中的 TextBox。其余生产逻辑和页面冻结。S18-T02=`GUI_ACCEPTANCE_PARTIAL / R1_REWORK_AUTHORIZED / NOT_ACCEPTED`。
+
+从 R1 governance push 后 fresh origin/main 创建另一位全新 GPT-5.6 Terra / medium / clean worktree；只跑 R1 专项、直接详情回归和一次 Release build，FULL=`NOT_RUN`。
 
 ## S18-T02 当前治理冻结
 

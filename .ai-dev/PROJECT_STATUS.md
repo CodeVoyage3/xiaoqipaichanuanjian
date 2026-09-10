@@ -1,4 +1,11 @@
-# 2026-09-10 current：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+# 2026-09-10 current：S18-T02-R1 GUI 小返修已授权
+
+- 用户 GUI 已确认条码扫码、排查信息紧凑化和按钮颜色通过；剩余仅为顶部三处分割线与条码数字只读可复制。
+- S18-T02=`GUI_ACCEPTANCE_PARTIAL / R1_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T02_R1_REWORK_AUTHORIZED`。
+- 冻结 EAN-13/非法降级、排查信息、Button 模板、S18-T01、Schema/migration/业务及其他页面。R1 只允许最小 XAML + 专项测试。
+- R1 governance push 后派发另一位全新 GPT-5.6 Terra / medium / clean worktree；FULL=`NOT_RUN`，正式数据库=`NO ACCESS`。
+
+# 2026-09-10 historical：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
 - implementation=`bf32c192554d3e890b3c7126adb9d5196654d289`；全新 GPT-5.6 Terra / medium / clean baseline=`d61e417e1809772ade32016fafc677ee064e29a2`。
 - 现有 `ProductBarcode` 生成 checksum 有效 EAN-13 矢量条码；无效值中性降级；详情顶部左/中/右与排查信息同排已实现。公共 Button 模板根治蓝/红底深色字，无逐页补丁。

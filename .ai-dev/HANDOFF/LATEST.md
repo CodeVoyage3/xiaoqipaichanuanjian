@@ -1,4 +1,12 @@
-# 2026-09-10：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
+# 2026-09-10：S18-T02-R1 最终 GUI 小返修已授权
+
+用户 GUI 已确认 EAN-13 手机扫码、排查信息紧凑化和全局按钮颜色通过。仅剩两项：顶部商品卡按批准原型补三条浅灰细竖线；条码数字改为无边框透明、只读可选中的 TextBox，支持鼠标选择/Ctrl+C/原生右键复制。
+
+EAN-13/非法降级、排查信息、Button 模板、S18-T01、Schema/migration、业务规则、排查流程和其他页面全部冻结。S18-T02=`GUI_ACCEPTANCE_PARTIAL / R1_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T02_R1_REWORK_AUTHORIZED`。
+
+下一步从本 R1 governance push 后 fresh origin/main 创建另一位全新 GPT-5.6 Terra / medium / clean worktree，只做最小 XAML/专项、直接详情回归和一次 Release App build；FULL=`NOT_RUN`，正式数据库=`NO ACCESS`。技术通过后仍等待用户只验 A～D。
+
+# 2026-09-10 historical：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
 
 全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@d61e417e1809772ade32016fafc677ee064e29a2` 完成 implementation=`bf32c192554d3e890b3c7126adb9d5196654d289`。实现仅增加原生 EAN-13 矢量条码、顶部/排查信息紧凑布局与共享 Button 模板前景根治；不新增依赖、Schema 或迁移。
 
