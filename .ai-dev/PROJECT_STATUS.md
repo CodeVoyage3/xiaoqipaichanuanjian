@@ -1,4 +1,13 @@
-# 2026-09-10 current：S18-T01 FUNCTIONALLY_ACCEPTED / MINOR_UI_SIZE_REWORK_PENDING
+# 2026-09-10 current：S18-T01-R1 GUI_VISUAL_REWORK_REQUIRED
+
+- 用户已拒绝当前提醒弹窗的整体视觉；批准原型 A 是唯一 HARD VISUAL BASELINE，拒绝截图仅作 NEGATIVE REFERENCE。
+- S18-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / GUI_VISUAL_REWORK_REQUIRED / NOT_ACCEPTED`；Stage18 = `IN_PROGRESS / WAITING_S18_T01_VISUAL_REWORK`；S18-T02 = `PLANNED / NOT_DISPATCHED`。
+- 本轮只允许提醒弹窗内部 WPF 视觉/布局/局部资源与纯 UI 构造代码：克制标题、两张完整顶卡、数量/单位层级、警告图标+动态状态胶囊、统一四卡、轻量底部与一致按钮；100% 缩放等效目标 `880～920 × 600～640`。
+- Reminder 数据/计算、3 天规则、四阶段计数、导航、调度、数据库、Schema/migration/ModelSnapshot、其他页面、版本与发布链全部冻结；原 `26/26`、Release build、reminder 业务测试与 `FULL` 均 `NOT_RUN`。
+- 治理提交 push 后必须从 fresh `origin/main` 创建全新 GPT-5.6 Terra（medium、标准速度）clean worktree；Sol A～K 全部 YES 后才可再次交付用户 GUI。
+
+
+# 2026-09-10 historical：S18-T01 FUNCTIONALLY_ACCEPTED / MINOR_UI_SIZE_REWORK_PENDING
 
 - 用户真实 GUI 已确认信息结构、第一层重点、四阶段预提醒、总数/提示与待排查任务导航 `PASS`；唯一剩余项为提醒弹窗整体视觉体量从约 `960 × 715` 收紧至约 `880～900 × 620～640`。
 - S18-T01 = `FUNCTIONALLY_ACCEPTED / MINOR_UI_SIZE_REWORK_PENDING / NOT_CLOSED`；Stage18 = `IN_PROGRESS / S18_T01_MINOR_UI_SIZE_REWORK`；S18-T02 = `PLANNED / NOT_DISPATCHED`。

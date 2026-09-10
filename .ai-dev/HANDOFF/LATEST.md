@@ -1,4 +1,13 @@
-# 2026-09-10：S18-T01 功能验收通过，待提醒弹窗尺寸轻微返修
+# 2026-09-10：S18-T01-R1 GUI VISUAL REWORK REQUIRED
+
+用户明确拒绝当前提醒弹窗的整体视觉：“我还是不满意，就感觉丑。”`D:\下载\门店效期提醒.png` 继续作为 APPROVED PRODUCT PROTOTYPE / HARD VISUAL BASELINE；当前拒绝截图只作 NEGATIVE REFERENCE。此前业务映射、数据口径与导航通过项冻结，但不构成视觉接受。
+
+S18-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / GUI_VISUAL_REWORK_REQUIRED / NOT_ACCEPTED`；Stage18 = `IN_PROGRESS / WAITING_S18_T01_VISUAL_REWORK`；S18-T02 = `PLANNED / NOT_DISPATCHED`。R1 必须真正重做提醒窗内视觉层级：克制标题、两张完整顶部卡、数量/单位层级、警告图标+动态状态胶囊、四张统一预提醒卡、轻量底部与一致按钮；移除粗红框和裸红状态字。
+
+100% 缩放等效目标为 `880～920 × 600～640`，无裁切/遮挡/四卡换行。生产业务逻辑、Reminder 数据、规则、导航、调度、数据库、Schema/migration、其他页面、版本与发布链全部冻结。治理 push 后从 fresh `origin/main` 创建全新 GPT-5.6 Terra（medium、标准速度）clean worktree；Sol 独立 A～K 全部 YES 后才可交用户。原 `26/26`、Release build、reminder 业务测试与 `FULL` 均 `NOT_RUN`。
+
+
+# 2026-09-10 historical：S18-T01 功能验收通过，待提醒弹窗尺寸轻微返修
 
 用户真实 GUI 已确认第一层“今日待排查 / 最高紧急阶段”、四阶段预提醒分区、涉及商品总数与提示、以及“查看待排查任务”均 `PASS`。当前信息结构与业务层级符合批准原型。
 
