@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T01 返修技术验收就绪，等待用户重新 GUI 验收
+
+全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@a0bf7e61c721beb61188c47de42044cf7147e9d2` 的独立 clean worktree完成返修 source `49ab29b02dc46168cb949d0cee0329686c6facdd`。Sol 已独立通过批准原型/diff、精确专项、Release build、EF/migration 与隔离真实 WPF 探针复核。
+
+结果：首页动态浅蓝提示条与有表头/横纵分隔的真正矩阵 `PASS`；明细当前/后续阶段、八列表头及来源语义 `PASS`；DataGrid 有界高度、内部滚轮、原生固定表头和分页 `PASS`。精确专项 `1/1`；Release `0 warning / 0 error`；EF 无漂移；migration `9`；探针 `50 rows / 2 pages / wheelOffset=3 / headerFixed=True / back=Dashboard`。
+
+新入口：`C:\Users\39037\AppData\Local\Temp\S16-T01-GUI-Rework-Acceptance\启动S16-T01返修验收.cmd`，使用返修 Release 程序集与真实 Domain/policy/stage 生成的隔离 TEMP/GUID 数据。S16-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_GUI_ACCEPTANCE`。未运行旧 9/9、101/101、100k 或 FULL，未访问正式数据库；S16-T02 未启动，不得发布 v1.0.8。
+
+
 # 2026-09-10：S16-T01 用户 GUI 验收失败，进入原卡返修
 
 用户对照两张批准原型验收真实程序后判定未通过。S16-T01 = `GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED`；Stage16 = `IN_PROGRESS / S16_T01_REWORK`；S16-T02 继续 `PLANNED / NOT_DISPATCHED`。

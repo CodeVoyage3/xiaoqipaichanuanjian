@@ -1,3 +1,12 @@
+# 2026-09-10 current：S16-T01 返修技术验收就绪
+
+- fresh 治理基线 `a0bf7e61c721beb61188c47de42044cf7147e9d2`；全新 Terra 返修 source `49ab29b02dc46168cb949d0cee0329686c6facdd` 已通过 Sol 独立审查。
+- 首页真正矩阵、动态浅蓝摘要、12 个入口 `PASS`；明细当前/后续阶段与八列表头 `PASS`；DataGrid 内部滚轮和原生固定表头 `PASS`。
+- 精确专项 `1/1`；Release build `0 warning / 0 error`；EF 无漂移；migration `9`；隔离 WPF 探针 `wheelOffset=3 / headerFixed=True / back=Dashboard`。
+- S16-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_GUI_ACCEPTANCE`。新 GUI 入口位于 `%TEMP%\S16-T01-GUI-Rework-Acceptance\启动S16-T01返修验收.cmd`。
+- 旧 9/9、101/101、100k 与 FULL 均未运行；正式数据库未访问；正式 dirty 五项保持；S16-T02 未启动，不发布 v1.0.8。
+
+
 # 2026-09-10 current：S16-T01 GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED
 
 - 用户对照批准原型验收真实程序后判定失败；Stage16 = `IN_PROGRESS / S16_T01_REWORK`，S16-T02 = `PLANNED / NOT_DISPATCHED`。
