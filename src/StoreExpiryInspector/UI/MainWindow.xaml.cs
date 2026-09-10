@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Markup;
 using System.Windows.Threading;
 using System.Diagnostics;
+using System.IO;
 using Microsoft.Win32;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Application.Backups;
@@ -19,6 +20,7 @@ namespace StoreExpiryInspector.UI;
 
 public partial class MainWindow : Window
 {
+    private const string NavigationStateFileName = "ui-navigation-state.txt";
     private bool _isNavigationCollapsed;
     private readonly HashSet<Version> _suppressedUpdateVersions = [];
     private readonly CancellationTokenSource _updatePackageCancellation = new();
@@ -76,6 +78,7 @@ public partial class MainWindow : Window
     private void InitializeShell(ShellViewModel shell)
     {
         NavigationVersionText.Text = $"软件版本：v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "未知"}";
+        _isNavigationCollapsed = LoadNavigationCollapsedState();
         ApplyNavigationLayout();
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
@@ -169,7 +172,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            ShellColumn.Width = new(208);
+            ShellColumn.Width = new(220);
         }
         ContentRoot.Margin = new Thickness(compact ? 16 : 24, 0, compact ? 16 : 24, 0);
         if (PendingTasksStandardGrid is not null && PendingTasksCompactGrid is not null)
@@ -183,6 +186,7 @@ public partial class MainWindow : Window
     {
         _isNavigationCollapsed = !_isNavigationCollapsed;
         ApplyNavigationLayout();
+        SaveNavigationCollapsedState();
     }
 
     private void ApplyNavigationLayout()
@@ -198,7 +202,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            ShellColumn.Width = new(208);
+            ShellColumn.Width = new(220);
         }
         var textVisibility = _isNavigationCollapsed
             ? Visibility.Collapsed
@@ -212,6 +216,10 @@ public partial class MainWindow : Window
         NavigationTodayInspectionText.Visibility = textVisibility;
         NavigationBackupText.Visibility = textVisibility;
         NavigationSettingsText.Visibility = textVisibility;
+        NavigationWorkspaceGroupText.Visibility = textVisibility;
+        NavigationInspectionGroupText.Visibility = textVisibility;
+        NavigationDataGroupText.Visibility = textVisibility;
+        NavigationSystemGroupText.Visibility = textVisibility;
 
         foreach (var button in new[]
         {
@@ -229,12 +237,12 @@ public partial class MainWindow : Window
                 : HorizontalAlignment.Left;
             button.Padding = _isNavigationCollapsed
                 ? new Thickness(0)
-                : new Thickness(14, 0, 14, 0);
+                : new Thickness(12, 0, 12, 0);
         }
 
         NavigationBrandArea.Margin = _isNavigationCollapsed
-            ? new Thickness(4, 20, 4, 20)
-            : new Thickness(12, 20, 12, 20);
+            ? new Thickness(4, 20, 4, 16)
+            : new Thickness(16, 20, 12, 16);
         NavigationToggleButton.Width = _isNavigationCollapsed ? 24 : 32;
         NavigationToggleButton.Height = _isNavigationCollapsed ? 24 : 32;
         NavigationToggleButton.FontSize = _isNavigationCollapsed ? 16 : 14;
@@ -242,6 +250,31 @@ public partial class MainWindow : Window
         NavigationToggleButton.VerticalAlignment = VerticalAlignment.Center;
         NavigationToggleButton.Content = _isNavigationCollapsed ? "›" : "‹";
         NavigationToggleButton.ToolTip = _isNavigationCollapsed ? "展开导航" : "收起导航";
+    }
+
+    private static bool LoadNavigationCollapsedState()
+    {
+        try
+        {
+            var state = File.ReadAllText(Path.Combine(RuntimeDataRoot.RootDirectory, NavigationStateFileName)).Trim();
+            return string.Equals(state, "collapsed", StringComparison.Ordinal);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void SaveNavigationCollapsedState()
+    {
+        try
+        {
+            File.WriteAllText(Path.Combine(RuntimeDataRoot.RootDirectory, NavigationStateFileName), _isNavigationCollapsed ? "collapsed" : "expanded");
+        }
+        catch
+        {
+            // UI preference persistence must never block the shell.
+        }
     }
 
     private void DashboardDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

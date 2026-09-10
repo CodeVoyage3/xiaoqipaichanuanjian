@@ -494,7 +494,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="ShellColumn" Width="208" />
+            <ColumnDefinition x:Name="ShellColumn" Width="220" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -510,13 +510,14 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="NavigationBrandArea" Margin="12,20,12,20" HorizontalAlignment="Left">
+                <Grid x:Name="NavigationBrandArea" Margin="16,20,12,16" HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="32" />
                     </Grid.ColumnDefinitions>
                     <Button x:Name="NavigationToggleButton"
-                            Grid.Column="1"
+                            Grid.Column="2"
                             Content="‹"
                             Click="ToggleNavigation_Click"
                             Style="{StaticResource LinkButtonStyle}"
@@ -536,10 +537,21 @@
                               Stretch="Uniform"
                               Margin="7" />
                     </Border>
-                    <TextBlock x:Name="NavigationBrandText" Visibility="Collapsed" />
+                    <TextBlock x:Name="NavigationBrandText"
+                               Grid.Column="1"
+                               Margin="10,0,8,0"
+                               Text="效期排查"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
                 </Grid>
 
                 <StackPanel Grid.Row="1" Margin="12,0,12,0">
+                    <TextBlock x:Name="NavigationWorkspaceGroupText"
+                               Margin="8,0,0,6"
+                               Text="工作台"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}" />
                     <Button x:Name="NavigationHomeButton"
                             AutomationProperties.Name="首页"
                             ToolTip="首页"
@@ -551,9 +563,14 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock x:Name="NavigationHomeText" Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationHomeText" Margin="14,0,0,0" Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <TextBlock x:Name="NavigationInspectionGroupText"
+                               Margin="8,16,0,6"
+                               Text="排查管理"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}" />
                     <Button x:Name="NavigationTasksButton"
                             AutomationProperties.Name="待排查任务"
                             ToolTip="待排查任务"
@@ -565,7 +582,7 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock x:Name="NavigationTasksText" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationTasksText" Margin="14,0,0,0" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="NavigationTodayInspectionButton"
@@ -575,10 +592,10 @@
                             Tag="{Binding IsTodayInspectionVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource ClipboardIcon}"
+                            <Path Data="{StaticResource CalendarIcon}"
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                            <TextBlock x:Name="NavigationTodayInspectionText" Text="今日排查" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationTodayInspectionText" Margin="14,0,0,0" Text="今日排查" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="NavigationHistoryButton"
@@ -588,13 +605,18 @@
                             Tag="{Binding IsHistoryVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource FileIcon}"
+                            <Path Data="{StaticResource ClockIcon}"
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock x:Name="NavigationHistoryText" Text="排查历史" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationHistoryText" Margin="14,0,0,0" Text="排查历史" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <TextBlock x:Name="NavigationDataGroupText"
+                               Margin="8,16,0,6"
+                               Text="数据管理"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}" />
                     <Button x:Name="NavigationImportButton"
                             AutomationProperties.Name="数据导入"
                             ToolTip="数据导入"
@@ -606,7 +628,7 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock x:Name="NavigationImportText" Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationImportText" Margin="14,0,0,0" Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="NavigationBackupButton"
@@ -616,16 +638,21 @@
                             Tag="{Binding IsBackupRestoreVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource ShieldIcon}"
+                            <Path Data="{StaticResource DatabaseIcon}"
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock x:Name="NavigationBackupText" Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationBackupText" Margin="14,0,0,0" Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <TextBlock x:Name="NavigationSystemGroupText"
+                               Margin="8,16,0,6"
+                               Text="系统"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}" />
                     <Button x:Name="NavigationSettingsButton"
                             AutomationProperties.Name="设置"
-                            ToolTip="提醒时间与开机自启动"
+                            ToolTip="设置"
                             Click="Settings_Click"
                             IsEnabled="{Binding CanOpenSettings}"
                             Style="{StaticResource NavButtonStyle}">
@@ -634,7 +661,7 @@
                                   Style="{StaticResource NavIconPathStyle}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   />
-                            <TextBlock x:Name="NavigationSettingsText" Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="NavigationSettingsText" Margin="14,0,0,0" Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

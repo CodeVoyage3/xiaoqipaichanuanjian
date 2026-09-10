@@ -667,7 +667,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("cancelText: \"返回检查\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("选择“返回检查”保留当前填写结果。", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("string cancelText = \"取消\"", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
-        Assert.Equal(2, Count(File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), "ShellColumn.Width = new(208)"));
+        Assert.Equal(2, Count(File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), "ShellColumn.Width = new(220)"));
         Assert.Contains("x:Name=\"NavigationToggleButton\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("Grid.Column=\"2\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("TodayCategoryComboBoxStyle", mainWindow, StringComparison.Ordinal);

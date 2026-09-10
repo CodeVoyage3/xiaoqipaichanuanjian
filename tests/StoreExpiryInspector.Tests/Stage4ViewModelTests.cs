@@ -406,9 +406,9 @@ public sealed class Stage4ViewModelTests
         var brandAreaStart = window.IndexOf("x:Name=\"NavigationBrandArea\"", StringComparison.Ordinal);
         var brandAreaEnd = window.IndexOf("</Grid>", brandAreaStart, StringComparison.Ordinal);
         var brandArea = window[brandAreaStart..brandAreaEnd];
-        Assert.Contains("HorizontalAlignment=\"Left\"", brandArea, StringComparison.Ordinal);
-        Assert.DoesNotContain("<ColumnDefinition Width=\"*\" />", brandArea, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"NavigationToggleButton\"\n                            Grid.Column=\"1\"", brandArea.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.Contains("HorizontalAlignment=\"Stretch\"", brandArea, StringComparison.Ordinal);
+        Assert.Contains("<ColumnDefinition Width=\"*\" />", brandArea, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"NavigationToggleButton\"\n                            Grid.Column=\"2\"", brandArea.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
         Assert.Contains("<Border Grid.Column=\"0\"", brandArea, StringComparison.Ordinal);
         Assert.Contains("ShieldIcon", brandArea, StringComparison.Ordinal);
         Assert.True(window.IndexOf("NavigationTasksButton", StringComparison.Ordinal) < window.IndexOf("NavigationTodayInspectionButton", StringComparison.Ordinal));
