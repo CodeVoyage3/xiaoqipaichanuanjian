@@ -1,4 +1,12 @@
-# 2026-09-11：S18-T02 GUI_ACCEPTED / CLOSED
+# 2026-09-11：S18-T03 治理冻结并批准派发
+
+fresh fetch 确认 `origin/main=bb72e7ce085652bd378676d74d8dd3eeff948d37`；S18-T01、S18-T02 均为 `GUI_ACCEPTED / CLOSED`。旧的“T01+T02 即可关闭 Stage18”规则已修正为 T01+T02+T03 全部关闭后才允许 Stage18 关闭并进入 v1.0.9 发布准备。
+
+S18-T03=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。批准原型 `D:\下载\ChatGPT Image 2026年9月10日 23_36_49.png`（SHA256 `2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`）为唯一 HARD VISUAL BASELINE。范围仅为现有左侧 Navigation 的 `220 / 72 DIP`、固定业务分组/七菜单、锁定图标、同一菜单/Path、轻量 SaaS 状态视觉和本地导航状态持久化；右侧页面、ShellViewModel、业务、数据库、版本与发布链冻结。
+
+下一步从本治理 push 后 fresh origin/main 创建全新 GPT-5.6 Terra / medium / 标准速度 / clean worktree实施。只跑 S18-T03 专项、必要 Shell 直接回归和一次 Release App build；FULL=`NOT_RUN / NO_FULL`。Sol 独立技术通过后只能停在 `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户 GUI A～H。
+
+# 2026-09-11 historical：S18-T02 GUI_ACCEPTED / CLOSED
 
 用户已确认 S18-T02-R2 最终 GUI A～C 全部 PASS；连同此前 R1 已通过项，S18-T02=`GUI_ACCEPTED / CLOSED`。
 

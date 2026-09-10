@@ -1,8 +1,14 @@
-# Stage18｜v1.0.9 今日提醒与现场排查体验优化
+# Stage18｜v1.0.9 今日提醒、现场排查与导航体验优化
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_CLOSED / S18_T03_NEXT`
+Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_CLOSED / S18_T03_IMPLEMENTATION_DISPATCH_AUTHORIZED`
+
+## S18-T03 当前治理冻结
+
+S18-T03=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。批准原型 `D:\下载\ChatGPT Image 2026年9月10日 23_36_49.png`（SHA256 `2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`）为 HARD VISUAL BASELINE，文字合同优先。只重构现有左侧 Navigation：展开/收起 `220 / 72 DIP`、固定业务分组与七菜单、正确图标语义、同一套菜单/Path、轻量 SaaS 选中态，以及 `RuntimeDataRoot.RootDirectory` 下安全降级的本地展开状态持久化。右侧页面、ShellViewModel、业务、数据库、版本与发布链冻结。
+
+治理 baseline=`origin/main@bb72e7ce085652bd378676d74d8dd3eeff948d37`。下一步由全新 GPT-5.6 Terra / medium 从本治理 push 后 fresh origin/main 建立独立 clean worktree实施；只跑 S18-T03 专项、必要 Shell 直接回归和一次 Release App build，FULL=`NOT_RUN / NO_FULL`。Sol 独立技术通过后停在等待用户 GUI A～H。
 
 ## S18-T02-R2 收口
 
@@ -36,8 +42,9 @@ S18-T01=`GUI_ACCEPTED / CLOSED`；最终 R5 视觉锁定为用户通过的 `660 
 
 1. `S18-T01｜今日提醒弹窗信息层级优化`：`GUI_ACCEPTED / CLOSED`。
 2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`GUI_ACCEPTED / CLOSED`。
+3. `S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`：`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
 
-S18-T01 已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。S18-T02 已在本话题获准按上方冻结合同派发。
+S18-T01、S18-T02 已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。S18-T03 已按上方冻结合同获准派发。
 
 S18-T01 最终 product implementation `0f3bdf287b73263f72f4c4500b82e38da41c89c6` 已通过用户 GUI 验收；其 `660 × 360 DIP` 视觉、业务映射、数据口径和导航证据全部冻结。此前 R1～R4 拒绝结论只作历史保留。
 
@@ -49,9 +56,10 @@ S18-T01 最终 product implementation `0f3bdf287b73263f72f4c4500b82e38da41c89c6`
 - Schema、migration、ModelSnapshot、库存、任务生成、提醒时间、3 天预提醒、重复提醒、Updater、Installer 与发布通道均不变；migration 保持现状。
 - 本次视觉返修仅做静态 diff/XAML 检查、一次必要 build（若 GUI harness 未覆盖）与隔离真实 GUI；原 `26/26`、Release build、reminder 业务测试与 `FULL` 均 `NOT_RUN`。
 - Sol 不写生产代码；每张正式 Task 使用全新 GPT-5.6 Terra、reasoning `medium`、标准速度、独立 clean worktree。Terra 不得自判 `ACCEPTED/CLOSED`，不得 tag/Release。
+- S18-T03 只改现有左侧 Navigation，右侧业务页面、Shell 页面映射、业务逻辑、Schema/migration、版本及发布链全部冻结。
 
-任务与验收见 `../TASKS/S18-T01.md`、`../ACCEPTANCE/S18-T01.md` 与 `../TASKS/S18-T02.md`。
+任务与验收见 `../TASKS/S18-T01.md`、`../ACCEPTANCE/S18-T01.md`、`../TASKS/S18-T02.md`、`../ACCEPTANCE/S18-T02.md`、`../TASKS/S18-T03.md` 与 `../ACCEPTANCE/S18-T03.md`。
 
 ## 发布门禁
 
-只有 S18-T01 与 S18-T02 均 `GUI_ACCEPTED / CLOSED` 后，才允许 Stage18 `CLOSED` 并进入 v1.0.9 `RELEASE_PREPARATION`。本轮禁止 tag、Release、夸克/Gitee 发布或更新通道改造。
+只有 S18-T01、S18-T02 与 S18-T03 均 `GUI_ACCEPTED / CLOSED` 后，才允许 Stage18 `CLOSED` 并进入 v1.0.9 `RELEASE_PREPARATION`。本轮禁止 tag、Release、夸克/Gitee 发布或更新通道改造。

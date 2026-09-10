@@ -1,4 +1,12 @@
-# 2026-09-11 current：S18-T02 GUI_ACCEPTED / CLOSED
+# 2026-09-11 current：S18-T03 GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED
+
+- fresh `origin/main=bb72e7ce085652bd378676d74d8dd3eeff948d37`；S18-T01、S18-T02 均为 `GUI_ACCEPTED / CLOSED`。
+- S18-T03=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；批准原型 SHA256=`2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`，只重构现有左侧 Navigation。
+- 固定为 `220 / 72 DIP`、四组七菜单、锁定图标语义、同一菜单/Path、轻量 SaaS 视觉，以及 `RuntimeDataRoot.RootDirectory` 下安全降级的展开状态持久化；右侧页面与 ShellViewModel 冻结。
+- 生产预计仅 `App.xaml`、`MainWindow.xaml`、`MainWindow.xaml.cs`，确有需要最多增加一个小型 UI 状态存储；BUSINESS LOGIC DIFF=`0`，Schema/migration=`NO CHANGE / 9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN / NO_FULL`。
+- 治理 push 后派发全新 GPT-5.6 Terra / medium / clean worktree；Sol 独立技术验收后停在 `WAITING_USER_S18_T03_GUI_ACCEPTANCE`。
+
+# 2026-09-11 historical：S18-T02 GUI_ACCEPTED / CLOSED
 
 - 用户已确认 S18-T02-R2 最终 GUI 全部 PASS；最终 implementation=`5269ca4af330888eb262655e0b9c23305f1f70c1` 已 push 并经 fresh fetch 确认。
 - S18-T02=`GUI_ACCEPTED / CLOSED`。本收口轮未再运行测试或 build；FULL=`NOT_RUN / NO_FULL`。
