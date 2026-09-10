@@ -59,6 +59,28 @@ public sealed class S18T02Ean13BarcodeTests
         Assert.Contains("Detail.HasValidEan13", xaml, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DetailIdentityGroupIsVerticallyBalancedInTheLeftColumn()
+    {
+        var xaml = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+
+        Assert.Matches("<StackPanel VerticalAlignment=\"Center\">\\s*<TextBlock Text=\"\\{Binding Detail\\.ProductName\\}\"", xaml);
+        Assert.Contains("Text=\"商品编码：\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Text=\"商品条码：\"", xaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BarcodeRendererHasNoControlOwnedOuterBorder()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "Ean13Barcode.cs"));
+
+        Assert.DoesNotContain("new Pen(new SolidColorBrush(Color.FromRgb(214, 220, 229)), 1)", source, StringComparison.Ordinal);
+        Assert.Contains("const int quietZone = 10;", source, StringComparison.Ordinal);
+        Assert.Contains("const double moduleWidth = 2;", source, StringComparison.Ordinal);
+        Assert.Contains("index < 3 || (index >= 45 && index < 50) || index >= 92", source, StringComparison.Ordinal);
+        Assert.Contains("if (!TryEncode(Barcode, out var modules))", source, StringComparison.Ordinal);
+    }
+
     private static string FindRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)

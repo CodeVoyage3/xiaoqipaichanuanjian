@@ -24,7 +24,6 @@ internal sealed class Ean13Barcode : FrameworkElement
     {
         base.OnRender(drawingContext);
         var bounds = new Rect(new Point(), RenderSize);
-        drawingContext.DrawRectangle(Brushes.White, new Pen(new SolidColorBrush(Color.FromRgb(214, 220, 229)), 1), bounds);
         if (!TryEncode(Barcode, out var modules))
         {
             DrawCenteredText(drawingContext, "暂无可用商品条码", bounds, Brushes.Gray);
