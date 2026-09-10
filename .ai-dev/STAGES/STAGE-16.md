@@ -2,14 +2,14 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage16 = `IN_PROGRESS / S16_T02_REWORK`
+Stage16 = `IN_PROGRESS / WAITING_USER_S16_T02_ACCEPTANCE`
 
-S16-T01 = `GUI_ACCEPTED / CLOSED`。S16-T02 = `GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED`；用户真实全新安装与手工覆盖安装均复现 Installer Mutex 生命周期过长，旧候选已拒绝，等待全新 Terra 最小返修。
+S16-T01 = `GUI_ACCEPTED / CLOSED`。S16-T02 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Installer Mutex 生命周期返修与 Sol 独立真实 TestMode 验证均已通过，等待用户使用新候选重验 A/B。
 
 ## 当前范围与顺序
 
 1. `S16-T01｜未来效期风险总览与风险明细`：`GUI_ACCEPTED / CLOSED`。
-2. `S16-T02｜安装完成后自动启动主程序`：当前唯一授权返修任务；修复 Installer 在 postinstall 启动前释放保护 Mutex，不修改 App 单实例或 Updater。
+2. `S16-T02｜安装完成后自动启动主程序`：返修技术验收就绪，等待用户 A 全新安装与 B 手工覆盖安装重验。
 
 Stage16 是此前预留的“未来效期风险总览”阶段；Stage17 已关闭后回到 Stage16，不改名为 Stage18。
 

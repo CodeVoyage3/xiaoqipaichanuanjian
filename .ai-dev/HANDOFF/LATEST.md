@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T02 Mutex 返修技术验收就绪，等待用户重验
+
+全新 GPT-5.6 Terra（medium）从返修治理后 fresh `origin/main@e6e6e62c88f77b39ef3b71bb6e34f29f3c04e349` 完成 source `cd7f7c893012e8f21c82495e4abfc55092be0e54`。最小 diff 仅 Installer 与直接专项：安装保护 Mutex 仍在 `PrepareToInstall` 创建；普通 postinstall `[Run]` 判定成立后先关闭/清零 Installer Mutex，再创建 App。App 单实例与 Updater 无修改。
+
+Sol 独立直接专项 `5/5 PASS`。TEMP/GUID TestMode 真实安装验证 Setup exit `0`、App 取得同名 Mutex、主窗口显示、重复实例提示未出现、关闭主窗口后托盘保持进程；`/NOPOSTINSTALLRUN + verysilent` 与 `silent` 实跑均未启动 App。Release Setup build `PASS`，候选内 App/Updater 为 `1.0.8.0`。
+
+新候选：`D:\wendang\ChatGPT\门店效期排查软件\TestResults\c2a4a47b-82c1-449c-88de-62de223b038c\StoreExpiryInspector-Setup-1.0.8.exe`，`75342179` bytes，SHA256 `8017D31F3FB09AFE1BDDA2B565CD31A353B2282F028E38068F88419A77C0124D`。S16-T02 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_S16_T02_ACCEPTANCE`；`FULL = NOT_RUN / NO_FULL`，不得发布。
+
+
 # 2026-09-10：S16-T02 用户真实安装验收失败，进入返修
 
 用户真实 A 全新安装与 B 手工覆盖安装均 `FAIL`：Setup 自动启动发生，但 App 立即提示“已在运行，请从系统托盘打开”，随后无主窗口、无托盘图标并退出。旧候选 SHA256 `C5680C9FF9DBEB9291B6E5DBD07B7997A059762DD347F7EF1B87100FCFE9183A` = `REJECTED_CANDIDATE`。

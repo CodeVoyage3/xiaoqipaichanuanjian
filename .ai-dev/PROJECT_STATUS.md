@@ -1,3 +1,12 @@
+# 2026-09-10 current：S16-T02 MUTEX REWORK TECHNICAL_ACCEPTANCE_READY
+
+- 全新 Terra 基线 `e6e6e62c88f77b39ef3b71bb6e34f29f3c04e349`，实现 `cd7f7c893012e8f21c82495e4abfc55092be0e54`；仅 Installer Mutex 生命周期与直接专项有 diff。
+- 安装期间仍持有保护 Mutex；普通 postinstall 启动前关闭/清零，再由 App 正常取得同名 Mutex。App 单实例与 Updater 协议无修改。
+- Sol 独立专项 `5/5 PASS`；TEMP/GUID 真实安装探针确认 App 自动启动、主窗口/托盘/Mutex 正常且无重复实例提示；silent 与 `/NOPOSTINSTALLRUN + verysilent` 均未启动 App。
+- Release Setup build `PASS`；新候选 SHA256 `8017D31F3FB09AFE1BDDA2B565CD31A353B2282F028E38068F88419A77C0124D`；旧 `C568...9183A` 继续 `REJECTED_CANDIDATE`。
+- S16-T02 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_S16_T02_ACCEPTANCE`；`FULL = NOT_RUN / NO_FULL`，等待用户重验 A/B，不发布。
+
+
 # 2026-09-10 current：S16-T02 GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED
 
 - 用户真实 A 全新安装、B 手工覆盖安装均 `FAIL`：自动启动 App 被 Installer 尚未释放的同名单实例 Mutex 阻断；无主窗口/托盘。
