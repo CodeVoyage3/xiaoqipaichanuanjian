@@ -1,4 +1,13 @@
-# 2026-09-10 current：S16-T02 CLOSED / S16-T03 IMPLEMENTATION_DISPATCH_AUTHORIZED
+# 2026-09-10 current：S16-T03 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+
+- fresh 治理基线 `61d5bd9fa3e7244b53f384008dc587dd917e83e4`；全新 GPT-5.6 Terra（medium）implementation `4027b6c195b6ff89d22c315c22a30b33a799079c`。
+- 首页优先处理默认/搜索最多 5 条；真实待排查总数、既有排序、完整任务页与“查看全部”入口保持；XAML 和未来风险无 diff。
+- Sol 独立专项 `8/8 PASS`；Release build 0 warning / 0 error；EF 无漂移；migration `9`；`FULL = NOT_RUN / NO_FULL`。
+- 隔离 GUI 自检 `total=8 / summary=5 / full=8`，首页顺序、首屏未来风险、查看全部、风险明细及返回均 `PASS`。入口 `%TEMP%\S16-T03-GUI-Acceptance\启动S16-T03验收.cmd`。
+- S16-T01、S16-T02 保持 `GUI_ACCEPTED / CLOSED`；S16-T03 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_S16_T03_ACCEPTANCE`，不发布 v1.0.8。
+
+
+# 2026-09-10 historical：S16-T02 CLOSED / S16-T03 IMPLEMENTATION_DISPATCH_AUTHORIZED
 
 - S16-T02 用户真实 A 全新安装、B 覆盖安装、B 原数据、B 单实例/托盘全部 `PASS`；S16-T02 = `GUI_ACCEPTED / CLOSED`。
 - fresh S16-T03 治理基线 `b60bdda4416ebf314f3eca35425fd99fa36ac821`；首页优先处理常规/搜索摘要最多 5 条，排序、真实总数、完整任务页和现有“查看全部”入口保持。

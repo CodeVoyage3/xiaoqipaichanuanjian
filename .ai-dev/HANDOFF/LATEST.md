@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T03 技术验收就绪，等待用户最小 GUI 验收
+
+全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@61d5bd9fa3e7244b53f384008dc587dd917e83e4` 完成 implementation `4027b6c195b6ff89d22c315c22a30b33a799079c`。生产 diff 仅限制 Dashboard 默认摘要和首页搜索为现有排序前 5 条；真实总数、完整任务页、“查看全部”绑定、XAML 与 S16-T01 未来风险均未改。
+
+Sol 独立专项 `8/8 PASS`；Release build `0 warning / 0 error`；EF 无漂移，migration `9`；`FULL = NOT_RUN / NO_FULL`。隔离真实 GUI 自检为 `total=8 / summary=5 / full=8`，1366×768 首屏顺序、未来风险可见、查看全部、风险明细和返回均 `PASS`。
+
+入口：`%TEMP%\S16-T03-GUI-Acceptance\启动S16-T03验收.cmd`。S16-T03 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_S16_T03_ACCEPTANCE`。只等待用户 A～E；不得关闭或发布 v1.0.8。
+
+
 # 2026-09-10：S16-T02 CLOSED；S16-T03 治理冻结并批准派发
 
 用户真实验收确认 S16-T02：A 全新安装、B 覆盖安装、B 原数据、B 单实例/托盘全部 `PASS`。S16-T02 = `GUI_ACCEPTED / CLOSED`；Stage16 暂不关闭，v1.0.8 暂不发布。

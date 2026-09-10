@@ -2,15 +2,15 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage16 = `IN_PROGRESS / S16_T02_CLOSED / S16_T03_IMPLEMENTATION_DISPATCH_AUTHORIZED`
+Stage16 = `IN_PROGRESS / WAITING_USER_S16_T03_ACCEPTANCE`
 
-S16-T01 = `GUI_ACCEPTED / CLOSED`。S16-T02 = `GUI_ACCEPTED / CLOSED`。S16-T03 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；当前唯一任务为首页优先处理最多显示 5 条，同时保持未来风险在其下方及完整业务不变。
+S16-T01 = `GUI_ACCEPTED / CLOSED`。S16-T02 = `GUI_ACCEPTED / CLOSED`。S16-T03 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；首页优先处理最多显示 5 条，未来风险仍在其下方且完整业务不变，等待用户最小 GUI 验收。
 
 ## 当前范围与顺序
 
 1. `S16-T01｜未来效期风险总览与风险明细`：`GUI_ACCEPTED / CLOSED`。
 2. `S16-T02｜安装完成后自动启动主程序`：`GUI_ACCEPTED / CLOSED`。
-3. `S16-T03｜首页优先处理摘要化与未来风险可见性优化`：当前唯一授权实施任务。
+3. `S16-T03｜首页优先处理摘要化与未来风险可见性优化`：技术验收通过，等待用户最小 GUI 验收。
 
 Stage16 是此前预留的“未来效期风险总览”阶段；Stage17 已关闭后回到 Stage16，不改名为 Stage18。
 
