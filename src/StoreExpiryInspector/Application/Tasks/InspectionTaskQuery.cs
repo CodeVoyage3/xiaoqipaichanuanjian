@@ -38,7 +38,8 @@ public sealed record InspectionDashboardResult(
     IReadOnlyList<InspectionTaskListItem> UrgentTasks,
     DateTime? LastSuccessfulImportAtUtc = null,
     int ProductCount = 0,
-    int BatchCount = 0);
+    int BatchCount = 0,
+    FutureExpiryRiskOverview? FutureRisk = null);
 
 public sealed record InspectionTaskSearchResult(
     IReadOnlyList<InspectionTaskListItem> Items,
@@ -201,7 +202,8 @@ public sealed class InspectionTaskQuery
             Array.AsReadOnly(ReadTaskRows(tasks, 1, 20).ToArray()),
             lastSuccessfulImportAtUtc,
             productCount,
-            batchCount);
+            batchCount,
+            new FutureExpiryRiskQuery().Overview(context, DateOnly.FromDateTime(DateTime.Today)));
     }
 
     public InspectionTaskSearchResult SearchOpenTasks(

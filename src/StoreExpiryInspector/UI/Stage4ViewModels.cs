@@ -24,7 +24,8 @@ public enum ShellPage
     Import,
     TodayInspection,
     BackupRestore,
-    InspectionDetail
+    InspectionDetail,
+    FutureExpiryRisk
 }
 
 public abstract class ViewModelBase : INotifyPropertyChanged
@@ -198,6 +199,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _discount50Count;
     private int _productCount;
     private int _batchCount;
+    private FutureExpiryRiskOverview? _futureRisk;
     private DateTime? _lastSuccessfulImportAtUtc;
     private bool _isSearchActive;
     private int _searchResultCount;
@@ -444,6 +446,11 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
+    public int FutureRiskCount(int days, string stage) => _futureRisk?.Cells.Single(cell => cell.Days == days && cell.Stage == stage).Count ?? 0;
+    public int Future7Discount50 => FutureRiskCount(7, ExpiryStageCalculator.Discount50); public int Future7Discount20 => FutureRiskCount(7, ExpiryStageCalculator.Discount20); public int Future7Withdraw => FutureRiskCount(7, ExpiryStageCalculator.Withdraw); public int Future7Expired => FutureRiskCount(7, ExpiryStageCalculator.Expired);
+    public int Future14Discount50 => FutureRiskCount(14, ExpiryStageCalculator.Discount50); public int Future14Discount20 => FutureRiskCount(14, ExpiryStageCalculator.Discount20); public int Future14Withdraw => FutureRiskCount(14, ExpiryStageCalculator.Withdraw); public int Future14Expired => FutureRiskCount(14, ExpiryStageCalculator.Expired);
+    public int Future30Discount50 => FutureRiskCount(30, ExpiryStageCalculator.Discount50); public int Future30Discount20 => FutureRiskCount(30, ExpiryStageCalculator.Discount20); public int Future30Withdraw => FutureRiskCount(30, ExpiryStageCalculator.Withdraw); public int Future30Expired => FutureRiskCount(30, ExpiryStageCalculator.Expired);
+
     public DateTime? LastSuccessfulImportAtUtc
     {
         get => _lastSuccessfulImportAtUtc;
@@ -570,6 +577,8 @@ public sealed class DashboardViewModel : ViewModelBase
             Discount50Count = result.Discount50Count;
             ProductCount = result.ProductCount;
             BatchCount = result.BatchCount;
+            _futureRisk = result.FutureRisk;
+            foreach (var name in new[] { "Future7Discount50", "Future7Discount20", "Future7Withdraw", "Future7Expired", "Future14Discount50", "Future14Discount20", "Future14Withdraw", "Future14Expired", "Future30Discount50", "Future30Discount20", "Future30Withdraw", "Future30Expired" }) OnPropertyChanged(name);
             LastSuccessfulImportAtUtc = result.LastSuccessfulImportAtUtc;
             UrgentTasks.Clear();
             foreach (var task in result.UrgentTasks)
@@ -626,6 +635,47 @@ public sealed class DashboardViewModel : ViewModelBase
         DateTimeKind.Local => value.ToUniversalTime(),
         _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
     };
+}
+
+public sealed class FutureExpiryRiskViewModel : ViewModelBase
+{
+    private readonly Func<FutureExpiryRiskRequest, FutureExpiryRiskPage> _load;
+    private readonly Action<Exception>? _log;
+    private int _days;
+    private string _stage = ExpiryStageCalculator.Discount50;
+    private int _page = 1;
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    public FutureExpiryRiskViewModel(Func<FutureExpiryRiskRequest, FutureExpiryRiskPage> load, Action<Exception>? log = null)
+    {
+        _load = load;
+        _log = log;
+        PreviousPageCommand = new RelayCommand(_ => { if (Page > 1) { Page--; _ = LoadAsync(); } }, _ => !IsLoading && Page > 1);
+        NextPageCommand = new RelayCommand(_ => { if (Page < TotalPages) { Page++; _ = LoadAsync(); } }, _ => !IsLoading && Page < TotalPages);
+    }
+
+    public ObservableCollection<FutureExpiryRiskItem> Items { get; } = [];
+    public RelayCommand PreviousPageCommand { get; }
+    public RelayCommand NextPageCommand { get; }
+    public int Page { get => _page; private set { _page = value; OnPropertyChanged(); OnPropertyChanged(nameof(PageSummary)); PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged(); } }
+    public int TotalCount { get; private set; }
+    public int TotalPages => Math.Max(1, (TotalCount + 49) / 50);
+    public bool IsLoading { get => _isLoading; private set { _isLoading = value; OnPropertyChanged(); PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged(); } }
+    public string? ErrorMessage { get => _errorMessage; private set { _errorMessage = value; OnPropertyChanged(); } }
+    public int Days => _days;
+    public string Stage => _stage;
+    public string StageText => StageLabels.ToDisplay(Stage);
+    public string PageSummary => $"第 {Page} / {TotalPages} 页 · 共 {TotalCount} 条记录";
+    public string RangeText => $"未来{Days}天";
+    public void Open(int days, string stage) { _days = days; _stage = stage; Page = 1; OnPropertyChanged(nameof(Days)); OnPropertyChanged(nameof(Stage)); OnPropertyChanged(nameof(StageText)); OnPropertyChanged(nameof(RangeText)); _ = LoadAsync(); }
+    public async Task LoadAsync()
+    {
+        IsLoading = true; ErrorMessage = null;
+        try { var result = await Task.Run(() => _load(new(Days, Stage, Page, 50))); Items.Clear(); foreach (var item in result.Items) Items.Add(item); TotalCount = result.TotalCount; OnPropertyChanged(nameof(TotalCount)); OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(PageSummary)); }
+        catch (Exception exception) { ErrorMessage = $"风险明细加载失败：{exception.Message}"; _log?.Invoke(exception); }
+        finally { IsLoading = false; }
+    }
 }
 
 public sealed class PendingTasksViewModel : ViewModelBase
@@ -1090,6 +1140,9 @@ public sealed class ShellViewModel : ViewModelBase
         var searchTasks = taskLoader ?? (hasInjectedReadDependency
             ? FailClosedLoader<InspectionTaskSearchRequest, InspectionTaskSearchResult>("taskLoader")
             : CreateTaskLoader(contextFactory));
+        var loadFutureRisk = hasInjectedReadDependency
+            ? FailClosedLoader<FutureExpiryRiskRequest, FutureExpiryRiskPage>("futureExpiryRiskLoader")
+            : CreateFutureExpiryRiskLoader(contextFactory);
         var loadCategories = categoryLoader ?? (hasInjectedReadDependency
             ? null
             : CreateCategoryLoader(contextFactory));
@@ -1223,6 +1276,7 @@ public sealed class ShellViewModel : ViewModelBase
             confirmZeroInventory: confirmZeroInventory,
             goBack: ReturnFromDetailAsync,
             submit: submitInspection);
+        FutureRisk = new FutureExpiryRiskViewModel(loadFutureRisk, logger);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => CanNavigate);
         SearchTasksCommand = new RelayCommand(_ => { _ = SearchDashboardAsync(); }, _ => CanNavigate);
@@ -1239,6 +1293,12 @@ public sealed class ShellViewModel : ViewModelBase
                 OpenDetail(item.TaskId);
             }
         }, _ => CanNavigate);
+        OpenFutureRiskCommand = new RelayCommand(parameter =>
+        {
+            var parts = parameter as string is { } text ? text.Split('|') : [];
+            if (parts.Length == 2 && int.TryParse(parts[0], out var days)) OpenFutureRisk(days, parts[1]);
+        }, _ => CanNavigate);
+        ReturnFromFutureRiskCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
         History.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(History.IsEditBusy))
@@ -1293,6 +1353,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public InspectionDetailViewModel Detail { get; }
 
+    public FutureExpiryRiskViewModel FutureRisk { get; }
+
     public RelayCommand NavigateHomeCommand { get; }
 
     public RelayCommand NavigateTasksCommand { get; }
@@ -1313,6 +1375,10 @@ public sealed class ShellViewModel : ViewModelBase
 
     public RelayCommand OpenDetailCommand { get; }
 
+    public RelayCommand OpenFutureRiskCommand { get; }
+
+    public RelayCommand ReturnFromFutureRiskCommand { get; }
+
     public ShellPage CurrentPage
     {
         get => _currentPage;
@@ -1332,6 +1398,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsTodayInspectionVisible));
             OnPropertyChanged(nameof(IsBackupRestoreVisible));
             OnPropertyChanged(nameof(IsInspectionDetailVisible));
+            OnPropertyChanged(nameof(IsFutureExpiryRiskVisible));
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(PageSubtitle));
         }
@@ -1351,6 +1418,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
 
+    public bool IsFutureExpiryRiskVisible => CurrentPage == ShellPage.FutureExpiryRisk;
+
     public string PageTitle => CurrentPage switch
     {
         ShellPage.Dashboard => "效期排查",
@@ -1360,6 +1429,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.TodayInspection => "今日排查",
         ShellPage.BackupRestore => "数据备份与恢复",
         ShellPage.InspectionDetail => "排查详情",
+        ShellPage.FutureExpiryRisk => "未来效期风险明细",
         _ => "效期排查"
     };
 
@@ -1372,6 +1442,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.TodayInspection => "导出今日计划、回导结果并集中提交已完成排查",
         ShellPage.BackupRestore => "创建经过验证的本地备份，或从应用备份安全恢复",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
+        ShellPage.FutureExpiryRisk => "查看未来时间范围内即将进入指定阶段的商品明细",
         _ => "查看当前数据状态"
     };
 
@@ -1454,6 +1525,13 @@ public sealed class ShellViewModel : ViewModelBase
         _ = Detail.LoadAsync(taskId);
     }
 
+    public void OpenFutureRisk(int days, string stage)
+    {
+        if (days is not (7 or 14 or 30) || stage is not (ExpiryStageCalculator.Discount50 or ExpiryStageCalculator.Discount20 or ExpiryStageCalculator.Withdraw or ExpiryStageCalculator.Expired) || !CanNavigate) return;
+        CurrentPage = ShellPage.FutureExpiryRisk;
+        FutureRisk.Open(days, stage);
+    }
+
     private async Task ReturnFromDetailAsync() =>
         await NavigateAwayFromDetailAsync(_detailReturnPage);
 
@@ -1496,6 +1574,12 @@ public sealed class ShellViewModel : ViewModelBase
     {
         using var context = contextFactory();
         return new InspectionTaskQuery().SearchOpenTasks(context, request);
+    };
+
+    private static Func<FutureExpiryRiskRequest, FutureExpiryRiskPage> CreateFutureExpiryRiskLoader(Func<StoreDbContext> contextFactory) => request =>
+    {
+        using var context = contextFactory();
+        return new FutureExpiryRiskQuery().Search(context, DateOnly.FromDateTime(DateTime.Today), request);
     };
 
     private static Func<IReadOnlyList<string>> CreateCategoryLoader(Func<StoreDbContext> contextFactory) => () =>
