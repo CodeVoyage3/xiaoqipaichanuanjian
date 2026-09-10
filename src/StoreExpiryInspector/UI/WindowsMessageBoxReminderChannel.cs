@@ -55,7 +55,7 @@ public sealed class WindowsMessageBoxReminderChannel : IReminderChannel
             Owner = owner,
             Title = "门店效期提醒",
             Width = 660,
-            Height = 390,
+            Height = 360,
             MinWidth = 620,
             MinHeight = 360,
             MaxWidth = 720,
@@ -70,7 +70,7 @@ public sealed class WindowsMessageBoxReminderChannel : IReminderChannel
         };
         AutomationProperties.SetName(dialog, "门店效期提醒");
 
-        var panel = new Grid { Margin = new Thickness(24, 22, 24, 20) };
+        var panel = new Grid { Margin = new Thickness(24, 22, 24, 10) };
         panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(75) });
         panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -117,6 +117,8 @@ public sealed class WindowsMessageBoxReminderChannel : IReminderChannel
         dismiss.IsCancel = true;
         dismiss.Click += (_, _) => dialog.Close();
         var viewTasks = Button("查看待排查任务", "PrimaryButtonStyle", owner, new Thickness(8, 0, 0, 0), 144);
+        viewTasks.Foreground = Brushes.White;
+        viewTasks.Content = Text("查看待排查任务", 14, FontWeights.SemiBold, foreground: Brushes.White);
         viewTasks.IsDefault = true;
         viewTasks.Click += (_, _) => { dialog.Close(); _openPendingTasks(); };
         buttons.Children.Add(dismiss);
