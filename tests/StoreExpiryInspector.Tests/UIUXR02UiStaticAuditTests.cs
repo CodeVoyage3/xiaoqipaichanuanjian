@@ -40,17 +40,20 @@ public sealed class UIUXR02UiStaticAuditTests
         Assert.Contains("HoverSurfaceBrush", rowStyle, StringComparison.Ordinal);
 
         var dashboardStart = window.IndexOf("<!-- 首页", StringComparison.Ordinal);
+        var futureRiskStart = window.IndexOf("<!-- 未来效期风险明细", dashboardStart, StringComparison.Ordinal);
         var pendingStart = window.IndexOf("<!-- 待排查任务", dashboardStart, StringComparison.Ordinal);
         var historyStart = window.IndexOf("<!-- 排查历史", pendingStart, StringComparison.Ordinal);
         var detailStart = window.IndexOf("<!-- 排查详情", historyStart, StringComparison.Ordinal);
         var detailEnd = window.IndexOf("<!-- 数据导入", detailStart, StringComparison.Ordinal);
         Assert.True(dashboardStart >= 0
+            && futureRiskStart > dashboardStart
+            && pendingStart > futureRiskStart
             && pendingStart > dashboardStart
             && historyStart > pendingStart
             && detailStart > historyStart
             && detailEnd > detailStart);
 
-        var dashboard = window[dashboardStart..pendingStart];
+        var dashboard = window[dashboardStart..futureRiskStart];
         var pending = window[pendingStart..historyStart];
         var detail = window[detailStart..detailEnd];
         Assert.Contains("商品编码", dashboard, StringComparison.Ordinal);
