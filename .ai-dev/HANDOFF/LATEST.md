@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T02 CLOSED；S16-T03 治理冻结并批准派发
+
+用户真实验收确认 S16-T02：A 全新安装、B 覆盖安装、B 原数据、B 单实例/托盘全部 `PASS`。S16-T02 = `GUI_ACCEPTED / CLOSED`；Stage16 暂不关闭，v1.0.8 暂不发布。
+
+S16-T03 从 fresh `origin/main@b60bdda4416ebf314f3eca35425fd99fa36ac821` 冻结：首页顺序继续为搜索 → 数据状态 → 优先处理 → 未来效期风险；常规首页与首页搜索的优先处理均最多展示现有排序前 5 条，真实总数与完整待排查页不变。不得修改 S16-T01 风险业务/结构或 S16-T02。
+
+下一步仅从本治理提交后的 fresh origin/main 创建全新 GPT-5.6 Terra（medium、标准速度）独立 clean worktree。只跑 S16-T03 最小专项、必要 Release build、EF/migration；`FULL = NOT_RUN / NO_FULL`。技术通过后停在等待用户最小 GUI 验收，不关闭 Stage16、不发布。
+
+
 # 2026-09-10：S16-T02 Mutex 返修技术验收就绪，等待用户重验
 
 全新 GPT-5.6 Terra（medium）从返修治理后 fresh `origin/main@e6e6e62c88f77b39ef3b71bb6e34f29f3c04e349` 完成 source `cd7f7c893012e8f21c82495e4abfc55092be0e54`。最小 diff 仅 Installer 与直接专项：安装保护 Mutex 仍在 `PrepareToInstall` 创建；普通 postinstall `[Run]` 判定成立后先关闭/清零 Installer Mutex，再创建 App。App 单实例与 Updater 无修改。

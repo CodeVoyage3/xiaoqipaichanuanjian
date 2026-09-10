@@ -1,3 +1,11 @@
+# 2026-09-10 current：S16-T02 CLOSED / S16-T03 IMPLEMENTATION_DISPATCH_AUTHORIZED
+
+- S16-T02 用户真实 A 全新安装、B 覆盖安装、B 原数据、B 单实例/托盘全部 `PASS`；S16-T02 = `GUI_ACCEPTED / CLOSED`。
+- fresh S16-T03 治理基线 `b60bdda4416ebf314f3eca35425fd99fa36ac821`；首页优先处理常规/搜索摘要最多 5 条，排序、真实总数、完整任务页和现有“查看全部”入口保持。
+- 首页顺序固定为优先处理在未来效期风险上方；S16-T01 风险业务/结构与 S16-T02 冻结。
+- Stage16 = `IN_PROGRESS / S16_T02_CLOSED / S16_T03_IMPLEMENTATION_DISPATCH_AUTHORIZED`。治理 push 后派发全新 GPT-5.6 Terra（medium）；`FULL = NOT_RUN / NO_FULL`，不发布 v1.0.8。
+
+
 # 2026-09-10 current：S16-T02 MUTEX REWORK TECHNICAL_ACCEPTANCE_READY
 
 - 全新 Terra 基线 `e6e6e62c88f77b39ef3b71bb6e34f29f3c04e349`，实现 `cd7f7c893012e8f21c82495e4abfc55092be0e54`；仅 Installer Mutex 生命周期与直接专项有 diff。
