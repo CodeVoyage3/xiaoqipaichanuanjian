@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T02 用户真实安装验收失败，进入返修
+
+用户真实 A 全新安装与 B 手工覆盖安装均 `FAIL`：Setup 自动启动发生，但 App 立即提示“已在运行，请从系统托盘打开”，随后无主窗口、无托盘图标并退出。旧候选 SHA256 `C5680C9FF9DBEB9291B6E5DBD07B7997A059762DD347F7EF1B87100FCFE9183A` = `REJECTED_CANDIDATE`。
+
+Sol 对真实 source `70512165526e63b50b8086fcd4be3e82c197e38d` 取证确认：Installer 在 `PrepareToInstall` 创建并持有 `Local\StoreExpiryInspector.SingleInstance`，成功路径未释放便进入 `[Run]`；App `OnStartup` 申请同名 Mutex 失败，精确进入现有提示与 Shutdown。Updater 仍不调用 Setup。
+
+S16-T02 = `GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED`；Stage16 = `IN_PROGRESS / S16_T02_REWORK`。返修只允许在文件替换安全完成后、postinstall App 创建前释放 Installer 的 Mutex；安装期间保护、App 单实例和 Updater 协议保持。先 push 本治理，再从 fresh `origin/main` 创建全新 GPT-5.6 Terra（medium）独立实施；`FULL = NOT_RUN / NO_FULL`，不得发布 v1.0.8。
+
+
 # 2026-09-10：S16-T02 技术验收就绪，等待用户真实安装验收
 
 全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@730de88fb3a96d2d3d5fce54b729092e5325048e` 在独立 clean worktree 完成 source `70512165526e63b50b8086fcd4be3e82c197e38d`；Sol 已独立审查真实安装/更新链路与 diff。

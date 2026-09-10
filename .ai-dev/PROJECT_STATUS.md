@@ -1,3 +1,11 @@
+# 2026-09-10 current：S16-T02 GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED
+
+- 用户真实 A 全新安装、B 手工覆盖安装均 `FAIL`：自动启动 App 被 Installer 尚未释放的同名单实例 Mutex 阻断；无主窗口/托盘。
+- 真实代码确认 `PrepareToInstall` 持有 `Local\StoreExpiryInspector.SingleInstance` 至 `[Run]`，App `OnStartup` 因同名 Mutex 失败进入“已在运行”提示并 Shutdown。
+- 旧候选 SHA256 `C5680C9FF9DBEB9291B6E5DBD07B7997A059762DD347F7EF1B87100FCFE9183A` = `REJECTED_CANDIDATE`，不得发布或复用。
+- Stage16 = `IN_PROGRESS / S16_T02_REWORK`。仅在安装文件安全完成后、postinstall 启动前释放 Installer Mutex；App 单实例与 Updater 协议不改。治理 push 后派发全新 GPT-5.6 Terra（medium）；`FULL = NOT_RUN / NO_FULL`。
+
+
 # 2026-09-10 current：S16-T02 TECHNICAL_ACCEPTANCE_READY
 
 - fresh 治理基线 `730de88fb3a96d2d3d5fce54b729092e5325048e`；全新 GPT-5.6 Terra（medium）实现 `70512165526e63b50b8086fcd4be3e82c197e38d`。
