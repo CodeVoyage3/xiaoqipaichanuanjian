@@ -1,4 +1,14 @@
-# 2026-09-11：S18-T03 治理冻结并批准派发
+# 2026-09-11：S18-T03 技术验收就绪，等待用户 GUI A～H
+
+全新 GPT-5.6 Terra / medium 从治理后 fresh `origin/main@25b4485d0e479c89482e8ab61cf957de5e421835` 完成 implementation=`35ae161ae11ad80c7acfa0cc2fd610cd62663367`。Sol 在 push 前拦截并修正品牌箭头未真正靠右、72 DIP 品牌区溢出及折叠图标残留 margin；最终只改现有左侧 Navigation 三个批准生产文件及最小测试，右侧页面、ShellViewModel、业务、数据库、版本与发布链无 diff。
+
+Sol 独立 S18-T03=`2/2 PASS`，Shell 页面映射=`1/1 PASS`，Release App build=`0 warning / 0 error`，`git diff --check=PASS`，migration=`9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN / NO_FULL`。四个被动更新的旧静态方法额外核对为 `1/4 PASS`，三个失败来自基线旧 300 DIP 断言和 worktree `.git` 目录假设，证据保留且未扩修。
+
+GUI 入口：`C:\Users\39037\.codex\visualizations\2026\09\10\01a08c1e-770a-79c3-b0cb-6e628ca64f1c\S18-T03-GUI-Acceptance\启动S18-T03验收.cmd`。首次误用“前缀+GUID”被安全门禁拒绝，错误进程已关闭；现已改为 TEMP 下纯 GUID `3f478a82-3e92-4d57-a93e-410b50d8c3c2` 并成功取得真实主窗口句柄。Computer Use 无原生应用接口，视觉不自判。
+
+S18-T03=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T03_GUI_ACCEPTANCE`。下一步只等待用户 A～H；禁止关闭任务/Stage18、v1.0.9 发布准备、tag、Release、夸克或 Gitee。
+
+# 2026-09-11 historical：S18-T03 治理冻结并批准派发
 
 fresh fetch 确认 `origin/main=bb72e7ce085652bd378676d74d8dd3eeff948d37`；S18-T01、S18-T02 均为 `GUI_ACCEPTED / CLOSED`。旧的“T01+T02 即可关闭 Stage18”规则已修正为 T01+T02+T03 全部关闭后才允许 Stage18 关闭并进入 v1.0.9 发布准备。
 

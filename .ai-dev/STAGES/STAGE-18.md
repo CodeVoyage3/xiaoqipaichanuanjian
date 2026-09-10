@@ -2,13 +2,13 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_CLOSED / S18_T03_IMPLEMENTATION_DISPATCH_AUTHORIZED`
+Stage18 = `IN_PROGRESS / WAITING_USER_S18_T03_GUI_ACCEPTANCE`
 
-## S18-T03 当前治理冻结
+## S18-T03 当前技术验收就绪
 
-S18-T03=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。批准原型 `D:\下载\ChatGPT Image 2026年9月10日 23_36_49.png`（SHA256 `2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`）为 HARD VISUAL BASELINE，文字合同优先。只重构现有左侧 Navigation：展开/收起 `220 / 72 DIP`、固定业务分组与七菜单、正确图标语义、同一套菜单/Path、轻量 SaaS 选中态，以及 `RuntimeDataRoot.RootDirectory` 下安全降级的本地展开状态持久化。右侧页面、ShellViewModel、业务、数据库、版本与发布链冻结。
+S18-T03=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。批准原型 `D:\下载\ChatGPT Image 2026年9月10日 23_36_49.png`（SHA256 `2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`）保持 HARD VISUAL BASELINE。implementation=`35ae161ae11ad80c7acfa0cc2fd610cd62663367`；Sol 独立专项=`2/2 PASS`、Shell 直接回归=`1/1 PASS`、Release App build=`0 warning / 0 error`、隔离主窗口启动成功；FULL=`NOT_RUN / NO_FULL`。
 
-治理 baseline=`origin/main@bb72e7ce085652bd378676d74d8dd3eeff948d37`。下一步由全新 GPT-5.6 Terra / medium 从本治理 push 后 fresh origin/main 建立独立 clean worktree实施；只跑 S18-T03 专项、必要 Shell 直接回归和一次 Release App build，FULL=`NOT_RUN / NO_FULL`。Sol 独立技术通过后停在等待用户 GUI A～H。
+当前只等待用户 GUI A～H；不得关闭 S18-T03/Stage18、进入 v1.0.9 发布准备或发布任何渠道。
 
 ## S18-T02-R2 收口
 
@@ -42,7 +42,7 @@ S18-T01=`GUI_ACCEPTED / CLOSED`；最终 R5 视觉锁定为用户通过的 `660 
 
 1. `S18-T01｜今日提醒弹窗信息层级优化`：`GUI_ACCEPTED / CLOSED`。
 2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`GUI_ACCEPTED / CLOSED`。
-3. `S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`：`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
+3. `S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`：`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
 
 S18-T01、S18-T02 已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。S18-T03 已按上方冻结合同获准派发。
 

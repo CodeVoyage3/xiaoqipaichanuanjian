@@ -1,10 +1,10 @@
-# 2026-09-11 current：S18-T03 GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED
+# 2026-09-11 current：S18-T03 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
-- fresh `origin/main=bb72e7ce085652bd378676d74d8dd3eeff948d37`；S18-T01、S18-T02 均为 `GUI_ACCEPTED / CLOSED`。
-- S18-T03=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；批准原型 SHA256=`2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`，只重构现有左侧 Navigation。
-- 固定为 `220 / 72 DIP`、四组七菜单、锁定图标语义、同一菜单/Path、轻量 SaaS 视觉，以及 `RuntimeDataRoot.RootDirectory` 下安全降级的展开状态持久化；右侧页面与 ShellViewModel 冻结。
-- 生产预计仅 `App.xaml`、`MainWindow.xaml`、`MainWindow.xaml.cs`，确有需要最多增加一个小型 UI 状态存储；BUSINESS LOGIC DIFF=`0`，Schema/migration=`NO CHANGE / 9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN / NO_FULL`。
-- 治理 push 后派发全新 GPT-5.6 Terra / medium / clean worktree；Sol 独立技术验收后停在 `WAITING_USER_S18_T03_GUI_ACCEPTANCE`。
+- governance=`25b4485d0e479c89482e8ab61cf957de5e421835`；implementation=`35ae161ae11ad80c7acfa0cc2fd610cd62663367` 已 fast-forward push。
+- S18-T03=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；生产 diff 仅批准的 `App.xaml`、`MainWindow.xaml`、`MainWindow.xaml.cs`，另有最小导航测试；右侧页面与 ShellViewModel 无 diff。
+- Sol 独立专项=`2/2 PASS`、Shell 映射=`1/1 PASS`、Release App build=`0 warning / 0 error`、`git diff --check=PASS`；FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`，Schema/migration=`NO CHANGE / 9`。
+- TEMP 纯 GUID 隔离候选已取得真实主窗口句柄；GUI 入口为 `C:\Users\39037\.codex\visualizations\2026\09\10\01a08c1e-770a-79c3-b0cb-6e628ca64f1c\S18-T03-GUI-Acceptance\启动S18-T03验收.cmd`。首次错误的非纯 GUID 入口已修正并重启成功。
+- Stage18=`IN_PROGRESS / WAITING_USER_S18_T03_GUI_ACCEPTANCE`。只等待用户 A～H；不得关闭或进入 v1.0.9 发布准备。
 
 # 2026-09-11 historical：S18-T02 GUI_ACCEPTED / CLOSED
 
