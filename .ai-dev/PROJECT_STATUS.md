@@ -1,9 +1,9 @@
-# 2026-09-10 current：S18-T02-R1 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+# 2026-09-10 current：S18-T02-R2 MINOR GUI REWORK AUTHORIZED
 
-- governance=`cb02504b981b8b97d491881d7dc713b39a55e2e1`；全新 GPT-5.6 Terra / medium / clean baseline 同 governance；implementation=`bb9c4afd7ceef975752f7493bfe66d46e6ebc1ba`。
-- 三条浅灰分割线与条码数字只读可复制已最小实现；生产仅改 `MainWindow.xaml`，并更新既有 S18-T02 专项测试。
-- Sol 独立相关专项/直接回归=`46/46 PASS`，GUI fixture=`1/1 PASS`，Release=`0 warning / 0 error`；Schema/migration=`NO CHANGE / 9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN`。
-- S18-T02=`IMPLEMENTED / R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R1_GUI_ACCEPTANCE`。只等待用户 A～D，禁止关闭 Stage18 或发布。
+- R1 的三处分割线、数字复制、手机扫码、排查信息、按钮视觉与其他详情功能已由用户确认通过并冻结。
+- R2 只平衡左侧商品名称/编码的垂直位置，并移除条码控件自身外围灰色矩形框；BUSINESS LOGIC DIFF=`0`。
+- 从 R2 governance push 后 fresh origin/main 使用全新 GPT-5.6 Terra / medium / clean worktree；不重跑 R1 `46/46`，只做 R2 最小静态契约、一次 Release build 和隔离 GUI。
+- S18-T02=`R2_MINOR_GUI_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T02_R2_MINOR_GUI_REWORK_AUTHORIZED`。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。
 
 # 2026-09-10 historical：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 

@@ -1,12 +1,12 @@
-# 2026-09-10：S18-T02-R1 技术验收通过，等待用户 A～D
+# 2026-09-10：S18-T02-R2 MINOR GUI REWORK 已授权
 
-用户 GUI 已确认 EAN-13 手机扫码、排查信息紧凑化和全局按钮颜色通过。R1 已按批准原型补三条浅灰细竖线；条码数字已改为复用既有无边框透明样式的只读可选 TextBox，原生支持鼠标选择/Ctrl+C/右键复制。
+用户已确认 R1 的三处浅灰分割线、条码数字选择/Ctrl+C、手机扫码、排查信息同排、按钮视觉和其他详情功能全部通过并冻结。
 
-governance=`cb02504b981b8b97d491881d7dc713b39a55e2e1`；全新 GPT-5.6 Terra / medium / clean baseline 同 governance；implementation=`bb9c4afd7ceef975752f7493bfe66d46e6ebc1ba`。实际 diff 仅 `MainWindow.xaml` 与既有 `S18T02Ean13BarcodeTests.cs`。
+R2 只修两项：在不新增字段、不增高卡片或改变中/右栏的前提下，垂直平衡左侧商品名称/编码；只删除 `Ean13Barcode.OnRender` 自绘的外围灰色矩形框，所有编码与扫码参数冻结。
 
-Sol 独立相关专项/直接回归=`46/46 PASS`，GUI fixture=`1/1 PASS`，Release App build=`0 warning / 0 error`；Schema/migration=`NO CHANGE / 9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN`。隔离 Release 候选已成功启动，Barcode=`6974396950994`。
+从 R2 governance push 后 fresh origin/main 派发全新 GPT-5.6 Terra / medium / clean worktree；生产原则上只限 `MainWindow.xaml`、实际条码控件文件和现有 S18-T02 专项测试。BUSINESS LOGIC DIFF=`0`。
 
-S18-T02=`IMPLEMENTED / R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R1_GUI_ACCEPTANCE`。下一步仅由用户检查 A 分割线、B 可复制、C 手机扫码、D 紧凑无错位。
+不重跑 R1 `46/46` 或完整算法专项；只做 R2 静态契约、diff scope、一次 Release build 与隔离 GUI。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`。技术完成后最多 `R2_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户只验 A～C。
 
 # 2026-09-10 historical：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
 

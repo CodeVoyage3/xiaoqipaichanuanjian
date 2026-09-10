@@ -2,7 +2,13 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / S18_T01_CLOSED / WAITING_USER_S18_T02_R1_GUI_ACCEPTANCE`
+Stage18 = `IN_PROGRESS / S18_T01_CLOSED / S18_T02_R2_MINOR_GUI_REWORK_AUTHORIZED`
+
+## S18-T02-R2 当前返修
+
+R1 的分割线、数字复制、手机扫码、排查信息、按钮及其他详情功能已由用户确认通过并冻结。R2 只平衡左侧商品名称/编码的垂直位置，并删除条码控件自身外围矩形框；不得改变商品卡高度、中/右栏或 EAN-13/业务逻辑。
+
+从 R2 governance push 后 fresh origin/main 派发全新 GPT-5.6 Terra / medium / clean worktree。只做 R2 静态契约、diff scope、一次 Release build 和隔离 GUI；不重跑 R1 `46/46`，FULL=`NOT_RUN / NO_FULL`。
 
 ## S18-T02-R1 当前返修
 
