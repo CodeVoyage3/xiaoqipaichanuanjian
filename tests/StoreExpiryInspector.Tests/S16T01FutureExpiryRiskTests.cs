@@ -138,6 +138,24 @@ public sealed class S16T01FutureExpiryRiskTests
         finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); if (File.Exists(path)) File.Delete(path); }
     }
 
+    [Fact]
+    public void SameDayRepresentativeSortsAndPaginatesFiftyThenOne()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"s16-page-{Guid.NewGuid():N}.db"); var today = new DateOnly(2026, 1, 1);
+        try
+        {
+            DatabaseInitializer.Initialize(path); using var db = DatabaseInitializer.CreateContext(path);
+            var import = new ImportRecord { SourceFileName = "page.xlsx", SourceFileSha256 = new string('d', 64), Status = "succeeded" }; db.Imports.Add(import); db.SaveChanges();
+            db.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = ExpiryPolicies.Food, PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, IsCompleted = true, CompletedAtUtc = DateTime.UtcNow });
+            Product? duplicate = null;
+            for (var i = 50; i >= 0; i--) { var product = Product($"C{i:D3}", 1, ExpiryPolicies.Food, ExpiryPolicies.Food); db.Products.Add(product); db.Batches.Add(BatchForNode(product, ExpiryPolicies.Food, 270, "D", today, ExpiryStageCalculator.Withdraw, today.AddDays(7))); if (i == 25) duplicate = product; }
+            db.SaveChanges(); var extra = BatchForNode(duplicate!, ExpiryPolicies.Food, 270, "D", today, ExpiryStageCalculator.Withdraw, today.AddDays(7)); extra.ProductionDate = new DateOnly(2025, 1, 2); db.Batches.Single(x => x.ProductId == duplicate!.Id).ProductionDate = new DateOnly(2025, 1, 1); db.Batches.Add(extra); db.SaveChanges();
+            var allBatches = db.Batches.Where(x => x.ProductId == duplicate!.Id).OrderBy(x => x.Id).Select(x => x.Id).ToArray(); var query = new FutureExpiryRiskQuery(); var first = query.Search(db, today, new(7, ExpiryStageCalculator.Withdraw)); var second = query.Search(db, today, new(7, ExpiryStageCalculator.Withdraw, 2)); var combined = first.Items.Concat(second.Items).ToArray();
+            Assert.Equal(51, first.TotalCount); Assert.Equal(50, first.Items.Count); Assert.Single(second.Items); Assert.Equal(allBatches[0], combined.Single(x => x.ProductId == duplicate!.Id).RepresentativeBatchId); Assert.Equal(combined.OrderBy(x => x.EffectiveDate).ThenBy(x => x.ProductCode, StringComparer.Ordinal).ThenBy(x => x.ProductId).Select(x => x.ProductId), combined.Select(x => x.ProductId));
+        }
+        finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); if (File.Exists(path)) File.Delete(path); }
+    }
+
     private static IEnumerable<string> Stages() => [ExpiryStageCalculator.Discount50, ExpiryStageCalculator.Discount20, ExpiryStageCalculator.Withdraw, ExpiryStageCalculator.Expired];
     private static Batch BatchForNode(Product product, string policy, int shelfLife, string unit, DateOnly today, string stage, DateOnly target, string tracking = "active")
     {
