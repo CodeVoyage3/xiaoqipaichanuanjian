@@ -1,4 +1,12 @@
-# 2026-09-10：S18-T01-R5 最终紧凑视觉基线已批准
+# 2026-09-10：S18-T01-R5 用户 GUI 验收通过并收口
+
+用户最终确认 R5 `660 × 360 DIP` 提醒弹窗 `PASS`。整体尺寸、整体视觉、今日待排查、最高紧急阶段、四类提前 3 天预提醒、Footer 信息与“查看待排查任务”全部通过；最终 R5 视觉稿 `ACCEPTED`。
+
+R5 governance=`9a0af0345507d1303ec712b11cca5d1668950084`；最终 product implementation=`0f3bdf287b73263f72f4c4500b82e38da41c89c6`。S18-T01=`GUI_ACCEPTED / CLOSED`；Stage18=`IN_PROGRESS / S18_T01_CLOSED / S18_T02_PLANNED`；S18-T02=`PLANNED / NOT_DISPATCHED`。
+
+既有技术证据继承，没有重跑测试或 GUI harness。BUSINESS LOGIC DIFF=`0`；Schema/migration=`NO CHANGE / 9`；正式数据库=`NO ACCESS`；FULL=`NOT_RUN / NO_FULL`。本话题停止，不得启动 S18-T02，等待用户在新的 Codex 话题单独开始。
+
+# 2026-09-10 historical：S18-T01-R5 最终紧凑视觉基线已批准
 
 用户批准 `D:\下载\ChatGPT Image 2026年9月10日 21_43_57.png`（SHA256 `AFC6A06E691F3755CD7B4868F00E39308753E08C9EEC072DC98F089EFC182B7B`）作为唯一正向基线。目标 Window 为 `620～700 × 360～420` DIP，硬门禁不超过 `720 × 430`；核心卡高 `60～75`、四张统计卡高 `55～70`，Footer 合并为左侧两行信息与右侧双按钮。不得沿 R1～R4 继续微调，不得改变视觉语言、业务层级或行为。
 
