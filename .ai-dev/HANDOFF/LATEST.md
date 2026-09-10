@@ -1,3 +1,14 @@
+# 2026-09-10：Stage16 / S16-T01 治理冻结并批准派发
+
+fresh fetch 确认 `origin/main = 9eed5973caf6a7cc05a9b70a9a5c27ebd9c02682`；GitHub latest API 只读核验 stable/latest 为 `v1.0.7`。Stage17 = `CLOSED`，S17-T01 = `GUI_ACCEPTED / RELEASED / CLOSED`。
+
+Stage16 = `IN_PROGRESS / GOVERNANCE_FROZEN / S16_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`。S16-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；S16-T02 = `PLANNED / NOT_DISPATCHED`。两张用户锁定原型已按文件名/SHA256写入 S16-T01，属于正式视觉实施与用户 GUI 验收基准。
+
+风险口径冻结为：复用 `ExpiryPolicyCalculator.CalculateStageDates`；窗口 `(businessDate, businessDate+N]`；只纳入 active、正库存、Managed/V1 且 scope baseline 完成的批次；每个 `时间窗口 × 阶段` 按 `ProductId` 去重，数字等于明细商品行数；同商品多批次以最早节点、再最小 BatchId 作为明细代表。只读、无 Schema/migration，数据库候选先以现有 ExpiryDate 索引限制至未来 210 天，并要求 TEMP/GUID 100k Batch 性能证据。
+
+正式主工作区原 1 个修改测试文件与 4 个未跟踪用户文件保持未触碰；治理使用独立 clean worktree。本轮未运行测试/build/EF，未访问正式数据库，`FULL = NOT_RUN / NO_FULL`。下一步从治理提交后的 fresh origin/main 新建独立 GPT-5.6 Terra（reasoning medium）实施 S16-T01；实施后由 Sol 独立技术验收并停在等待用户 GUI。
+
+
 # 2026-09-10：v1.0.7 正式发布完成，Stage17 CLOSED
 
 用户 GUI A/B/C 均 `PASS`。正式发布使用产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`；annotated tag `v1.0.7` 精确指向该 source。GitHub Release <https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.7>，ID `385663956`；公网匿名 fresh 下载四项资产 bytes/SHA256 与冻结候选逐项全等，production signature 复验 `PASS`。

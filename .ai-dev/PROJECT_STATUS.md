@@ -1,3 +1,13 @@
+# 2026-09-10 current：Stage16 / S16-T01 治理冻结并批准派发
+
+- fresh `origin/main = 9eed5973caf6a7cc05a9b70a9a5c27ebd9c02682`；GitHub stable/latest = `v1.0.7`；Stage17 = `CLOSED`。
+- Stage16 = `IN_PROGRESS / GOVERNANCE_FROZEN / S16_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`。
+- S16-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；两张批准原型是正式视觉合同。
+- 风险按现有 policy 阶段节点、未来 `(today, today+7/14/30]`、资格批次及 `ProductId` 单元格去重计算；只读、无 Schema/migration，并要求有界查询与 100k Batch 性能证据。
+- S16-T02 = `PLANNED / NOT_DISPATCHED`，不得与 T01 混合实施。
+- 正式 dirty 五项现场未触碰；治理轮未测试/build/EF、未访问正式数据库；`FULL = NOT_RUN / NO_FULL`。下一步派发独立 GPT-5.6 Terra（medium）实施 S16-T01。
+
+
 # 2026-09-10 current：v1.0.7 RELEASED / Stage17 CLOSED
 
 - 用户 GUI A/B/C 均 `PASS`；annotated tag `v1.0.7` 精确指向产品 source `ee83b0c10f252d1ee136464e0a2bb6d09452a34f`。
