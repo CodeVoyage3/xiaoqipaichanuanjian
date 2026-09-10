@@ -87,11 +87,15 @@ public sealed class S16T01FutureExpiryRiskTests
         var calls = 0;
         var vm = new StoreExpiryInspector.UI.FutureExpiryRiskViewModel(_ => ++calls == 1 ? new([row], 1, 1, 50) : throw new InvalidOperationException("test"));
         await vm.OpenAsync(7, ExpiryStageCalculator.Discount50); Assert.Single(vm.Items);
+        Assert.Equal(ExpiryStageCalculator.Discount50, vm.TargetStageBadge.HighestStage);
         await vm.OpenAsync(14, ExpiryStageCalculator.Withdraw); Assert.Empty(vm.Items); Assert.Equal(0, vm.TotalCount); Assert.True(vm.HasError);
+        Assert.Equal(ExpiryStageCalculator.Withdraw, vm.TargetStageBadge.HighestStage);
         var root = FindRepositoryRoot(); var xaml = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         Assert.True(xaml.IndexOf("优先处理", StringComparison.Ordinal) < xaml.IndexOf("未来效期风险", StringComparison.Ordinal));
         foreach (var parameter in new[] { "7|discount_50", "7|discount_20", "7|withdraw", "7|expired", "14|discount_50", "14|discount_20", "14|withdraw", "14|expired", "30|discount_50", "30|discount_20", "30|withdraw", "30|expired" }) Assert.Contains(parameter, xaml, StringComparison.Ordinal);
-        Assert.Contains("NavigationHomeButton", xaml, StringComparison.Ordinal); Assert.Contains("IsHomeSectionVisible", xaml, StringComparison.Ordinal); Assert.Contains("返回首页", xaml, StringComparison.Ordinal); Assert.Contains("未来效期风险明细列表", xaml, StringComparison.Ordinal);
+        Assert.Contains("Background=\"#EDF6FF\"", xaml, StringComparison.Ordinal); Assert.Contains("时间范围", xaml, StringComparison.Ordinal); Assert.Contains("5折", xaml, StringComparison.Ordinal); Assert.Contains("2折", xaml, StringComparison.Ordinal); Assert.Contains("收仓", xaml, StringComparison.Ordinal); Assert.Contains("过期", xaml, StringComparison.Ordinal);
+        Assert.Contains("BorderThickness=\"1,1,1,1\"", xaml, StringComparison.Ordinal); Assert.Contains("后续阶段", xaml, StringComparison.Ordinal); Assert.Contains("预计进入后续阶段日期", xaml, StringComparison.Ordinal); Assert.Contains("所选时间范围内进入指定未来后续阶段", xaml, StringComparison.Ordinal);
+        Assert.Contains("NavigationHomeButton", xaml, StringComparison.Ordinal); Assert.Contains("IsHomeSectionVisible", xaml, StringComparison.Ordinal); Assert.Contains("返回首页", xaml, StringComparison.Ordinal); Assert.Contains("未来效期风险明细列表", xaml, StringComparison.Ordinal); Assert.Contains("Height=\"420\"", xaml, StringComparison.Ordinal); Assert.Contains("ScrollViewer.VerticalScrollBarVisibility=\"Auto\"", xaml, StringComparison.Ordinal); Assert.Contains("ScrollViewer.HorizontalScrollBarVisibility=\"Auto\"", xaml, StringComparison.Ordinal); Assert.Contains("PreviewMouseWheel=\"FutureRiskDataGrid_PreviewMouseWheel\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("NavigationFutureRisk", xaml, StringComparison.Ordinal); Assert.DoesNotContain("Chart", xaml, StringComparison.Ordinal); Assert.DoesNotContain("处理风险", xaml, StringComparison.Ordinal);
     }
 

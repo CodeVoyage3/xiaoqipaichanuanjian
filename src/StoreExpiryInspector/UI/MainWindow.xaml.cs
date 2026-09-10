@@ -273,6 +273,19 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void FutureRiskDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is DataGrid dataGrid && FindVisualChild<ScrollViewer>(dataGrid) is { } scrollViewer)
+        {
+            for (var count = 0; count < 3; count++)
+            {
+                if (e.Delta > 0) scrollViewer.LineUp();
+                else scrollViewer.LineDown();
+            }
+            e.Handled = true;
+        }
+    }
+
     private static T? FindVisualChild<T>(DependencyObject parent)
         where T : DependencyObject
     {

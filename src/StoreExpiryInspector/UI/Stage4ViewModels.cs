@@ -671,9 +671,10 @@ public sealed class FutureExpiryRiskViewModel : ViewModelBase
     public int Days => _days;
     public string Stage => _stage;
     public string StageText => StageLabels.ToDisplay(Stage);
+    public StageBadge TargetStageBadge => new(Stage);
     public string PageSummary => $"第 {Page} / {TotalPages} 页 · 共 {TotalCount} 条记录";
     public string RangeText => $"未来{Days}天";
-    public Task OpenAsync(int days, string stage) { _days = days; _stage = stage; Page = 1; OnPropertyChanged(nameof(Days)); OnPropertyChanged(nameof(Stage)); OnPropertyChanged(nameof(StageText)); OnPropertyChanged(nameof(RangeText)); return LoadAsync(); }
+    public Task OpenAsync(int days, string stage) { _days = days; _stage = stage; Page = 1; OnPropertyChanged(nameof(Days)); OnPropertyChanged(nameof(Stage)); OnPropertyChanged(nameof(StageText)); OnPropertyChanged(nameof(TargetStageBadge)); OnPropertyChanged(nameof(RangeText)); return LoadAsync(); }
     public async Task LoadAsync()
     {
         var version = ++_loadVersion; IsLoading = true; ErrorMessage = null; Items.Clear(); TotalCount = 0; OnPropertyChanged(nameof(TotalCount)); OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(HasError)); OnPropertyChanged(nameof(HasEmptyResult));
@@ -682,6 +683,8 @@ public sealed class FutureExpiryRiskViewModel : ViewModelBase
         finally { if (version == _loadVersion) { IsLoading = false; OnPropertyChanged(nameof(HasEmptyResult)); } }
     }
 }
+
+public sealed record StageBadge(string HighestStage);
 
 public sealed class PendingTasksViewModel : ViewModelBase
 {
