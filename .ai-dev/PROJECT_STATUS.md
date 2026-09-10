@@ -1,4 +1,14 @@
-# 2026-09-10 current：v1.0.8 RELEASED / Stage16 CLOSED
+# 2026-09-10 current：Stage18 / S18-T01 治理冻结
+
+- fresh `origin/main = 3810289089a8c74f0f42341f61f49d245591a339`；stable/latest = `v1.0.8`（GitHub Release ID `386129690`，非 draft、非 prerelease）。
+- Stage16 = `CLOSED`；Stage17 = `CLOSED`；Stage18 = `IN_PROGRESS / GOVERNANCE_FROZEN / S18_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`。
+- S18-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；S18-T02 = `PLANNED / NOT_DISPATCHED`。
+- S18-T01 只映射现有 `ReminderNotification` 至批准提醒原型并复用现有 PendingTasks 导航；提醒决策、阶段优先级、3 天预提醒、任务、库存、调度与记录不变。
+- Schema/migration/ModelSnapshot `NO CHANGE`；正式数据库 `NO ACCESS`；正式 dirty 1 modified + 4 untracked 保持。
+- `FULL = NOT_RUN / NO_FULL`。实施必须由全新 GPT-5.6 Terra（medium）在独立 clean worktree完成；用户 GUI 验收前不得启动 S18-T02。
+
+
+# 2026-09-10 historical：v1.0.8 RELEASED / Stage16 CLOSED
 
 - 产品 source `4027b6c195b6ff89d22c315c22a30b33a799079c`；annotated tag `v1.0.8` 精确指向该 source；GitHub Release ID `386129690`，stable/latest = `v1.0.8`。
 - 冻结四资产与 GitHub 公网匿名下载 bytes/SHA256 逐项全等，production RSA-PSS/SHA256 signature `PASS`：ZIP `109428664` / `D4270B8D2B0ABCC50E860FAC05322B5DA79C746471DD088FBDD6AB373CFA369F`；Setup `75327902` / `FC6E4B974463056ABF3119AF512B97AAA3CD3F0DB4D19607232D8C71F010414B`；manifest `869` / `33CC069186830959BCD8773199D027DC03D4125E21A17736D157DAA123E93B15`；signature `384` / `34270FD7876FADA3D40E3803D071BBA1733DD3F67F5D38A7932A174E1CB0181C`。

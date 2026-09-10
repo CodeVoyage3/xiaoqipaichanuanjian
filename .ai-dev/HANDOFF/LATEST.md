@@ -1,3 +1,14 @@
+# 2026-09-10：Stage18 / S18-T01 治理冻结并批准派发
+
+fresh fetch 确认 `origin/main = 3810289089a8c74f0f42341f61f49d245591a339`；GitHub latest API 匿名只读核验 stable/latest 为 `v1.0.8`（Release ID `386129690`，非 draft、非 prerelease，target `4027b6c195b6ff89d22c315c22a30b33a799079c`）。Stage16、Stage17 均为 `CLOSED`。
+
+Stage18 = `IN_PROGRESS / GOVERNANCE_FROZEN / S18_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`。S18-T01 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`；S18-T02 = `PLANNED / NOT_DISPATCHED`。两张批准原型已按原路径/SHA256冻结；本轮只允许实施 S18-T01。
+
+当前提醒真实口径无需新增：`DailyReminderUseCase` 决策；`GetReminderCandidates` 按既有 `expired > withdraw > discount_20 > discount_50` 排序；runtime 按 ProductId 形成今日待排查、最高阶段、四类提前 3 天商品数与正式/预提醒并集商品总数。S18-T01 只换 WPF 展示并接入现有 PendingTasks 导航，不改业务计算、调度或记录语义。
+
+Schema/migration/ModelSnapshot `NO CHANGE`，不访问正式数据库；正式主工作区 1 modified + 4 untracked 保持未触碰。`FULL = NOT_RUN / NO_FULL`。下一步从本治理提交后的 fresh origin/main 创建全新 GPT-5.6 Terra（medium、标准速度）独立 clean worktree实施；Sol 技术通过后停在等待用户 S18-T01 GUI 验收，不启动 S18-T02。
+
+
 # 2026-09-10：v1.0.8 RELEASED；Stage16 CLOSED
 
 正式发布基于精确产品 source `4027b6c195b6ff89d22c315c22a30b33a799079c`；annotated tag `v1.0.8` 精确解引用到该 source。GitHub Release ID `386129690`，四项公网匿名 fresh 下载与冻结候选逐项全等，production RSA-PSS/SHA256 signature 复验 `PASS`。
