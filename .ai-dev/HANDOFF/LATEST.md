@@ -1,3 +1,12 @@
+# 2026-09-10：S18-T01 功能验收通过，待提醒弹窗尺寸轻微返修
+
+用户真实 GUI 已确认第一层“今日待排查 / 最高紧急阶段”、四阶段预提醒分区、涉及商品总数与提示、以及“查看待排查任务”均 `PASS`。当前信息结构与业务层级符合批准原型。
+
+唯一剩余项为 `MINOR_UI_SIZE_REWORK`：当前提醒弹窗视觉体量约 `960 × 715`，应通过 Window 宽高、Margin/Padding、Grid Row/卡片高度与区块间距收紧至普通 Windows 下约 `880～900 × 620～640`；保持数字字号、第一视觉层、四卡横向一排及全部既有行为不变。不得修改 ViewModel、提醒数据/口径、3 天规则、导航、调度、数据库、Schema/migration 或其他页面。
+
+S18-T01 = `FUNCTIONALLY_ACCEPTED / MINOR_UI_SIZE_REWORK_PENDING / NOT_CLOSED`；Stage18 = `IN_PROGRESS / S18_T01_MINOR_UI_SIZE_REWORK`；S18-T02 = `PLANNED / NOT_DISPATCHED`。本轮只做 layout 静态 diff 检查与真实 GUI 无裁切/无遮挡复核；原 `26/26`、Release build、reminder 业务测试与 FULL 均 `NOT_RUN`。返修完成后继续使用同一个 GUI 验收入口，不启动 S18-T02。
+
+
 # 2026-09-10：S18-T01 技术验收就绪，等待用户 GUI 验收
 
 全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@d39b7452bee4962ca03ee9e365bd0d767b118604` 在独立 clean worktree完成 implementation `87dd576fc0a69fe567a246dd55debb3aaddd642b`。Sol 已独立审查批准原型、真实 diff、现有提醒口径、专项/直接回归与 Release build。

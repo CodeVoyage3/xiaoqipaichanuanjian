@@ -1,3 +1,11 @@
+# 2026-09-10 current：S18-T01 FUNCTIONALLY_ACCEPTED / MINOR_UI_SIZE_REWORK_PENDING
+
+- 用户真实 GUI 已确认信息结构、第一层重点、四阶段预提醒、总数/提示与待排查任务导航 `PASS`；唯一剩余项为提醒弹窗整体视觉体量从约 `960 × 715` 收紧至约 `880～900 × 620～640`。
+- S18-T01 = `FUNCTIONALLY_ACCEPTED / MINOR_UI_SIZE_REWORK_PENDING / NOT_CLOSED`；Stage18 = `IN_PROGRESS / S18_T01_MINOR_UI_SIZE_REWORK`；S18-T02 = `PLANNED / NOT_DISPATCHED`。
+- 返修只允许提醒弹窗 Window 宽高、Margin/Padding、Grid Row/卡片高度与区块间距；不改 ViewModel、提醒数据/业务口径、导航、调度、数据库、Schema/migration 或其他页面。
+- 本轮只做 layout 静态 diff 与真实 GUI 无裁切/无遮挡确认；原 `26/26`、Release build、reminder 业务测试、FULL 均 `NOT_RUN`。完成后沿用同一 GUI 入口交用户复核。
+
+
 # 2026-09-10 current：S18-T01 技术验收就绪，等待用户 GUI
 
 - fresh `origin/main = 87dd576fc0a69fe567a246dd55debb3aaddd642b`；stable/latest = `v1.0.8`（GitHub Release ID `386129690`，非 draft、非 prerelease）。
