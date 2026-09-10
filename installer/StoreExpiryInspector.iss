@@ -106,11 +106,21 @@ begin
   #endif
 end;
 
+procedure ReleaseInstallMutexForApplicationLaunch;
+begin
+  if InstallMutex <> 0 then
+  begin
+    CloseHandle(InstallMutex);
+    InstallMutex := 0;
+  end;
+end;
+
 function ShouldLaunchApplication(): Boolean;
 begin
   Result := (not WizardSilent) and
     (Pos('/NOPOSTINSTALLRUN', Uppercase(GetCmdTail)) = 0) and
     (Pos('/SUPPRESSMSGBOXES', Uppercase(GetCmdTail)) = 0);
+  if Result then ReleaseInstallMutexForApplicationLaunch;
 end;
 
 function NextVersionPart(var Value: String): Integer;
