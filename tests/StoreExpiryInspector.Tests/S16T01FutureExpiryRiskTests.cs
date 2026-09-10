@@ -1,6 +1,7 @@
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using Xunit;
 
@@ -19,12 +20,22 @@ public sealed class S16T01FutureExpiryRiskTests
             var import = new ImportRecord { SourceFileName = "s16-perf.xlsx", SourceFileSha256 = new string('b', 64), Status = "succeeded" };
             context.Imports.Add(import); context.SaveChanges();
             context.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, IsCompleted = true, CompletedAtUtc = DateTime.UtcNow });
-            for (var i = 0; i < 100_000; i++) { var product = Product($"P{i:D6}", 1); context.Products.Add(product); context.Batches.Add(Batch(product, new DateOnly(2026, 2, 7))); }
-            context.SaveChanges(); context.ChangeTracker.Clear();
+            context.Products.AddRange(Enumerable.Range(0, 1_000).Select(i => Product($"P{i:D4}", 1))); context.SaveChanges();
+            using (var command = context.Database.GetDbConnection().CreateCommand())
+            {
+                context.Database.OpenConnection();
+                command.CommandText = """
+                    WITH RECURSIVE n(value) AS (SELECT 0 UNION ALL SELECT value + 1 FROM n WHERE value < 99999)
+                    INSERT INTO batches (product_id, production_date, expiry_date, shelf_life_value, shelf_life_unit, current_arrival_qty, max_arrival_qty, lifecycle_generation, tracking_status, current_stage, attention_version, handled_attention_version)
+                    SELECT (value % 1000) + 1, date('1900-01-01', '+' || value || ' days'), '2026-02-07', 270, 'D', 1, 1, 0, 'active', 'none', 0, 0 FROM n;
+                    """;
+                command.ExecuteNonQuery(); context.Database.CloseConnection();
+            }
+            context.ChangeTracker.Clear();
             var query = new FutureExpiryRiskQuery(); var watch = Stopwatch.StartNew(); var overview = query.Overview(context, new DateOnly(2026, 1, 1)); var overviewMs = watch.ElapsedMilliseconds;
             watch.Restart(); var page = query.Search(context, new DateOnly(2026, 1, 1), new(7, ExpiryStageCalculator.Discount50)); var pageMs = watch.ElapsedMilliseconds;
             Console.WriteLine($"S16_100K overview_ms={overviewMs} first_page_ms={pageMs} candidates=100000 results={page.TotalCount}");
-            Assert.Equal(100_000, overview.Cells.Single(x => x.Days == 7 && x.Stage == ExpiryStageCalculator.Discount50).Count); Assert.Equal(50, page.Items.Count);
+            Assert.Equal(100_000, context.Batches.Count()); Assert.Equal(1_000, overview.Cells.Single(x => x.Days == 7 && x.Stage == ExpiryStageCalculator.Discount50).Count); Assert.Equal(50, page.Items.Count);
         }
         finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); if (File.Exists(path)) File.Delete(path); }
     }
@@ -63,7 +74,7 @@ public sealed class S16T01FutureExpiryRiskTests
     {
         var page = new FutureExpiryRiskPage(Enumerable.Range(1, 50).Select(i => new FutureExpiryRiskItem(i, i, "p", "b", i.ToString("D3"), 1, "none", new DateOnly(2026, 1, 2), 1)).ToArray(), 51, 1, 50);
         var vm = new StoreExpiryInspector.UI.FutureExpiryRiskViewModel(_ => page); await vm.OpenAsync(7, ExpiryStageCalculator.Discount50);
-        await Task.Delay(50); Assert.Equal(50, vm.Items.Count); Assert.Equal(2, vm.TotalPages);
+        Assert.Equal(50, vm.Items.Count); Assert.Equal(2, vm.TotalPages);
         var shell = new StoreExpiryInspector.UI.ShellViewModel(dashboardLoader: () => new(0, 0, 0, 0, 0, []));
         shell.OpenFutureRisk(7, ExpiryStageCalculator.Discount50); Assert.Equal(StoreExpiryInspector.UI.ShellPage.FutureExpiryRisk, shell.CurrentPage);
         shell.ReturnFromFutureRiskCommand.Execute(null); Assert.Equal(StoreExpiryInspector.UI.ShellPage.Dashboard, shell.CurrentPage);
