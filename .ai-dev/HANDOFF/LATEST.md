@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T02 治理冻结并批准派发
+
+fresh baseline `origin/main@6580a9d8af6ffa90f373bb795a28a1089721b183`；S16-T01 = `GUI_ACCEPTED / CLOSED`。用户已正式批准 S16-T02，状态 `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`。
+
+目标仅为：普通全新/覆盖安装真正成功后由 Setup 默认启动一次最新版 App；取消/失败不启动；在线 Updater 调用 Setup 时显式关闭 Setup 自启动，继续由 Updater 唯一最终重启，避免双实例与 ACK/事务时序变化。App/Updater 候选版本为 1.0.8，不发布。
+
+下一步从本治理提交后的 fresh origin/main 新建全新 GPT-5.6 Terra（medium、标准速度）独立 clean worktree。只跑 S16-T02 直接专项、Release Setup build、必要 App/Updater build、EF/migration；`FULL = NOT_RUN / NO_FULL`。技术通过后停在等待用户真实安装验收。
+
+
 # 2026-09-10：S16-T01 GUI_ACCEPTED / CLOSED
 
 用户确认 GUI 主体验收通过后，全新 Terra 从 fresh `origin/main@ea4fdf9` 完成唯一单列收口 `db30f798e8558132f0aff133b6620b2e3036ba71`：风险明细删除商品编码显示列，底层 ProductCode 与业务逻辑不变。Sol 独立确认最终表头精确 7 列，列结构专项 `1/1 PASS`，Release build `0 warning / 0 error`，Schema/migration 无变化，`FULL = NOT_RUN`。

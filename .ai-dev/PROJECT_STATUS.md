@@ -1,3 +1,11 @@
+# 2026-09-10 current：S16-T02 IMPLEMENTATION_DISPATCH_AUTHORIZED
+
+- fresh baseline `6580a9d8af6ffa90f373bb795a28a1089721b183`；S16-T01 = `GUI_ACCEPTED / CLOSED`。
+- S16-T02 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；当前唯一目标为人工安装成功后 Setup 自动启动，并用明确参数与在线 Updater 唯一重启职责隔离。
+- App/Updater 候选版本 `1.0.8`；只做直接专项、Release Setup 与必要 App/Updater build、EF/migration；`FULL = NOT_RUN / NO_FULL`，不得发布。
+- 正式 dirty 五项继续冻结；实施必须使用治理提交后 fresh origin/main 的全新 GPT-5.6 Terra 独立 clean worktree。
+
+
 # 2026-09-10 current：S16-T01 GUI_ACCEPTED / CLOSED
 
 - 最终 UI 收口 `db30f798e8558132f0aff133b6620b2e3036ba71` 仅删除风险明细商品编码显示列；底层 ProductCode 与业务逻辑不变。
