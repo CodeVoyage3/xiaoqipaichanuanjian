@@ -1,3 +1,12 @@
+# 2026-09-10 current：S16-T02 TECHNICAL_ACCEPTANCE_READY
+
+- fresh 治理基线 `730de88fb3a96d2d3d5fce54b729092e5325048e`；全新 GPT-5.6 Terra（medium）实现 `70512165526e63b50b8086fcd4be3e82c197e38d`。
+- 人工 Setup 以 Inno 标准完成页 `[Run]` 默认启动一次 App；静默、`/SUPPRESSMSGBOXES` 与 `/NOPOSTINSTALLRUN` 禁止启动。
+- 当前真实 Updater 不调用 Setup，直接切换 ZIP 程序树并由既有 `StartNormalApplication` 唯一重启；无双启动链，在线更新协议未改。
+- 直接专项 `3/3 PASS`；App/Updater/Setup Release build `PASS`；EF 无漂移；migration `9`；`FULL = NOT_RUN / NO_FULL`。
+- S16-T02 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_S16_T02_ACCEPTANCE`。候选 Setup 位于 `TestResults\8c9d7190-567f-4ae2-88af-8f0cc245e07b\StoreExpiryInspector-Setup-1.0.8.exe`；等待用户真实安装验收，不发布。
+
+
 # 2026-09-10 current：S16-T02 IMPLEMENTATION_DISPATCH_AUTHORIZED
 
 - fresh baseline `6580a9d8af6ffa90f373bb795a28a1089721b183`；S16-T01 = `GUI_ACCEPTED / CLOSED`。

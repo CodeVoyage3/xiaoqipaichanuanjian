@@ -2,14 +2,14 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage16 = `IN_PROGRESS / S16_T01_CLOSED / S16_T02_IMPLEMENTATION_DISPATCH_AUTHORIZED`
+Stage16 = `IN_PROGRESS / WAITING_USER_S16_T02_ACCEPTANCE`
 
-S16-T01 = `GUI_ACCEPTED / CLOSED`。用户已正式批准 S16-T02；S16-T02 = `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`，必须由全新 Terra 独立实施并在技术验收后等待用户真实安装验收。
+S16-T01 = `GUI_ACCEPTED / CLOSED`。S16-T02 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；全新 Terra 实施与 Sol 独立技术验收已完成，当前只等待用户使用候选 Setup 完成真实安装验收。
 
 ## 当前范围与顺序
 
 1. `S16-T01｜未来效期风险总览与风险明细`：`GUI_ACCEPTED / CLOSED`。
-2. `S16-T02｜安装完成后自动启动主程序`：当前唯一授权实施任务，不得与 T01 混合。
+2. `S16-T02｜安装完成后自动启动主程序`：技术验收就绪，等待用户 A 全新安装与 B 手工覆盖安装验收。
 
 Stage16 是此前预留的“未来效期风险总览”阶段；Stage17 已关闭后回到 Stage16，不改名为 Stage18。
 

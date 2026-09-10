@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T02 技术验收就绪，等待用户真实安装验收
+
+全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@730de88fb3a96d2d3d5fce54b729092e5325048e` 在独立 clean worktree 完成 source `70512165526e63b50b8086fcd4be3e82c197e38d`；Sol 已独立审查真实安装/更新链路与 diff。
+
+人工 Setup 通过 Inno 标准完成页 `[Run]` 默认启动 App，并以 `skipifsilent`、`WizardSilent`、`/SUPPRESSMSGBOXES`、`/NOPOSTINSTALLRUN` 排除静默/明确禁用场景。真实 Updater 不调用 Setup，而是直接校验/切换 ZIP 程序树并由既有 `StartNormalApplication` 唯一启动 App，因此未新增虚构参数且无 Setup/Updater 双启动链。
+
+直接专项 `3/3 PASS`；App/Updater/Setup Release build 均 `PASS`；EF 无漂移，migration `9`；候选为 `D:\wendang\ChatGPT\门店效期排查软件\TestResults\8c9d7190-567f-4ae2-88af-8f0cc245e07b\StoreExpiryInspector-Setup-1.0.8.exe`（`75350802` bytes，SHA256 `C5680C9FF9DBEB9291B6E5DBD07B7997A059762DD347F7EF1B87100FCFE9183A`）。S16-T02 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_S16_T02_ACCEPTANCE`。`FULL = NOT_RUN / NO_FULL`，未发布。
+
+
 # 2026-09-10：S16-T02 治理冻结并批准派发
 
 fresh baseline `origin/main@6580a9d8af6ffa90f373bb795a28a1089721b183`；S16-T01 = `GUI_ACCEPTED / CLOSED`。用户已正式批准 S16-T02，状态 `GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`。
