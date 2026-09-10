@@ -1,4 +1,12 @@
-# 2026-09-10：S18-T01-R5 用户 GUI 验收通过并收口
+# 2026-09-10：S18-T02 治理冻结并批准派发
+
+fresh `origin/main=1979fdd93a6aa766bb5b33e6086df11b995aeae6`；S18-T01=`GUI_ACCEPTED / CLOSED`。S18-T02 最终名称为“排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口”，状态=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
+
+实施固定为：只用现有详情链中的 `ProductBarcode`，内部实现有效 EAN-13 矢量图，其他输入安全降级且不新增依赖；顶部一张商品卡左/中/右；排查信息三项同一行；公共 Button 模板让文本跟随 Button.Foreground，根治隐式 TextBlock 前景覆盖导致的蓝/红底深色字。S18-T01 `660 × 360 DIP` 布局冻结。
+
+Schema/migration/ModelSnapshot=`NO CHANGE / 9`；正式数据库=`NO ACCESS`；正式 dirty `1 modified + 4 untracked` 原样保持；`FULL=NOT_RUN / NO_FULL`。下一步从本治理提交后 fresh origin/main 创建全新 GPT-5.6 Terra（medium、标准速度）clean worktree实施。Sol 独立技术验收后只可停在 `NOT_ACCEPTED`，等待用户真实手机扫码与 GUI 验收。
+
+# 2026-09-10 historical：S18-T01-R5 用户 GUI 验收通过并收口
 
 用户最终确认 R5 `660 × 360 DIP` 提醒弹窗 `PASS`。整体尺寸、整体视觉、今日待排查、最高紧急阶段、四类提前 3 天预提醒、Footer 信息与“查看待排查任务”全部通过；最终 R5 视觉稿 `ACCEPTED`。
 

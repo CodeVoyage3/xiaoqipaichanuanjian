@@ -1,4 +1,12 @@
-# 2026-09-10 current：S18-T01 GUI_ACCEPTED / CLOSED
+# 2026-09-10 current：S18-T02 GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED
+
+- fresh `origin/main=1979fdd93a6aa766bb5b33e6086df11b995aeae6`；S18-T01=`GUI_ACCEPTED / CLOSED`；Stage18=`IN_PROGRESS / S18_T02_IMPLEMENTATION_DISPATCH_AUTHORIZED`。
+- S18-T02 最终范围：真实 `ProductBarcode` 的 EAN-13 屏幕扫码、排查信息同排紧凑化、共享 Button 模板视觉一致性；NO NEW DEPENDENCY。
+- `ProductBarcode` 已存在于详情 Query/DTO/ViewModel；无需 Schema/映射扩张。非正式证据含 null/任意文本/多长度，唯一真实形态证据与批准原型均为有效 EAN-13，因此仅支持 EAN-13，其余安全降级。
+- 蓝/红底深色字根因：全局隐式 TextBlock 前景覆盖 Button 模板继承色；从共享模板让内容跟随 Button.Foreground，禁止逐页补丁。
+- Schema/migration/ModelSnapshot=`NO CHANGE / 9`；正式数据库=`NO ACCESS`；`FULL=NOT_RUN / NO_FULL`。治理 push 后派发全新 GPT-5.6 Terra（medium）clean worktree。
+
+# 2026-09-10 historical：S18-T01 GUI_ACCEPTED / CLOSED
 
 - 用户最终确认 R5 `660 × 360 DIP` 提醒弹窗视觉与功能信息 `PASS`；最终 product implementation=`0f3bdf287b73263f72f4c4500b82e38da41c89c6`。
 - S18-T01=`GUI_ACCEPTED / CLOSED`；Stage18=`IN_PROGRESS / S18_T01_CLOSED / S18_T02_PLANNED`。
