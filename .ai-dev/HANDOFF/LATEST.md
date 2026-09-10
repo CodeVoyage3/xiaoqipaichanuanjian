@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T01 技术验收就绪，等待用户 GUI 验收
+
+Terra 从治理后 fresh `origin/main@c00d33abef1cd87b856bbaf718e2f4404606cbdb` 在独立 clean worktree 完成 source `8143dd47c4c38dedfc03cf1958fb7f1b405a0b05`；Sol 已独立完成真实 diff、业务口径、只读边界、批准原型静态对照、性能、自动化、Release build 与 EF 复核。S16-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_GUI_ACCEPTANCE`。
+
+Sol 新鲜证据：S16-T01 `9/9 PASS`；直接相关回归最终 `101/101 PASS`；TEMP/GUID SQLite 100k Batch 总览 `616 ms`、明细首屏 `378 ms`、结果 `1000`；Release App build `0 error`（3 个 `NU1900` 网络元数据警告）；EF 无漂移；migration `9`；受限路径无 diff。实现只新增只读查询与现有 Dashboard/Shell 最小接入，无 Schema、业务写入、提醒、更新器、安装器或版本变化。
+
+两张批准原型继续是用户 GUI 主基准；静态/代码验收不能替代真实 WPF 观感。`FULL = NOT_RUN / NO_FULL`，正式数据库访问 `NO`，正式 dirty 五项现场未触碰。下一步只等待用户检查首页矩阵、数字点击、只读明细/分页/返回与无设计扩张；不得开始 S16-T02 或发布 v1.0.8。
+
+
 # 2026-09-10：Stage16 / S16-T01 治理冻结并批准派发
 
 fresh fetch 确认 `origin/main = 9eed5973caf6a7cc05a9b70a9a5c27ebd9c02682`；GitHub latest API 只读核验 stable/latest 为 `v1.0.7`。Stage17 = `CLOSED`，S17-T01 = `GUI_ACCEPTED / RELEASED / CLOSED`。

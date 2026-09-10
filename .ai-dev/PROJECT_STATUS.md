@@ -1,3 +1,12 @@
+# 2026-09-10 current：S16-T01 技术验收就绪，等待用户 GUI 验收
+
+- Terra source `8143dd47c4c38dedfc03cf1958fb7f1b405a0b05` 已通过 Sol 独立 diff/口径/原型静态/性能/自动化/Build/EF 审查。
+- S16-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_GUI_ACCEPTANCE`。
+- 新鲜门禁：S16 `9/9 PASS`；直接相关回归 `101/101 PASS`；100k Batch 总览 `616 ms`、明细首屏 `378 ms`；Release build `0 error`（NU1900 网络警告 3）；EF 无漂移；migration `9`。
+- 两张批准原型是最终 GUI 主基准；下一步只等待用户检查模块位置、风险层级/点击、只读明细与无设计扩张。
+- S16-T02 继续 `PLANNED / NOT_DISPATCHED`；`FULL = NOT_RUN / NO_FULL`；正式数据库访问 `NO`；正式 dirty 五项未触碰；不得发布 v1.0.8。
+
+
 # 2026-09-10 current：Stage16 / S16-T01 治理冻结并批准派发
 
 - fresh `origin/main = 9eed5973caf6a7cc05a9b70a9a5c27ebd9c02682`；GitHub stable/latest = `v1.0.7`；Stage17 = `CLOSED`。
