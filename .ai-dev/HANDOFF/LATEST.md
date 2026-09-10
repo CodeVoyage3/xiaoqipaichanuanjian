@@ -1,10 +1,12 @@
-# 2026-09-10：S18-T02-R1 最终 GUI 小返修已授权
+# 2026-09-10：S18-T02-R1 技术验收通过，等待用户 A～D
 
-用户 GUI 已确认 EAN-13 手机扫码、排查信息紧凑化和全局按钮颜色通过。仅剩两项：顶部商品卡按批准原型补三条浅灰细竖线；条码数字改为无边框透明、只读可选中的 TextBox，支持鼠标选择/Ctrl+C/原生右键复制。
+用户 GUI 已确认 EAN-13 手机扫码、排查信息紧凑化和全局按钮颜色通过。R1 已按批准原型补三条浅灰细竖线；条码数字已改为复用既有无边框透明样式的只读可选 TextBox，原生支持鼠标选择/Ctrl+C/右键复制。
 
-EAN-13/非法降级、排查信息、Button 模板、S18-T01、Schema/migration、业务规则、排查流程和其他页面全部冻结。S18-T02=`GUI_ACCEPTANCE_PARTIAL / R1_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T02_R1_REWORK_AUTHORIZED`。
+governance=`cb02504b981b8b97d491881d7dc713b39a55e2e1`；全新 GPT-5.6 Terra / medium / clean baseline 同 governance；implementation=`bb9c4afd7ceef975752f7493bfe66d46e6ebc1ba`。实际 diff 仅 `MainWindow.xaml` 与既有 `S18T02Ean13BarcodeTests.cs`。
 
-下一步从本 R1 governance push 后 fresh origin/main 创建另一位全新 GPT-5.6 Terra / medium / clean worktree，只做最小 XAML/专项、直接详情回归和一次 Release App build；FULL=`NOT_RUN`，正式数据库=`NO ACCESS`。技术通过后仍等待用户只验 A～D。
+Sol 独立相关专项/直接回归=`46/46 PASS`，GUI fixture=`1/1 PASS`，Release App build=`0 warning / 0 error`；Schema/migration=`NO CHANGE / 9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN`。隔离 Release 候选已成功启动，Barcode=`6974396950994`。
+
+S18-T02=`IMPLEMENTED / R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R1_GUI_ACCEPTANCE`。下一步仅由用户检查 A 分割线、B 可复制、C 手机扫码、D 紧凑无错位。
 
 # 2026-09-10 historical：S18-T02 技术验收就绪，等待用户 GUI/手机实扫
 

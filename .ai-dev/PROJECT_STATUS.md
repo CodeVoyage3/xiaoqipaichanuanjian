@@ -1,9 +1,9 @@
-# 2026-09-10 current：S18-T02-R1 GUI 小返修已授权
+# 2026-09-10 current：S18-T02-R1 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
-- 用户 GUI 已确认条码扫码、排查信息紧凑化和按钮颜色通过；剩余仅为顶部三处分割线与条码数字只读可复制。
-- S18-T02=`GUI_ACCEPTANCE_PARTIAL / R1_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T02_R1_REWORK_AUTHORIZED`。
-- 冻结 EAN-13/非法降级、排查信息、Button 模板、S18-T01、Schema/migration/业务及其他页面。R1 只允许最小 XAML + 专项测试。
-- R1 governance push 后派发另一位全新 GPT-5.6 Terra / medium / clean worktree；FULL=`NOT_RUN`，正式数据库=`NO ACCESS`。
+- governance=`cb02504b981b8b97d491881d7dc713b39a55e2e1`；全新 GPT-5.6 Terra / medium / clean baseline 同 governance；implementation=`bb9c4afd7ceef975752f7493bfe66d46e6ebc1ba`。
+- 三条浅灰分割线与条码数字只读可复制已最小实现；生产仅改 `MainWindow.xaml`，并更新既有 S18-T02 专项测试。
+- Sol 独立相关专项/直接回归=`46/46 PASS`，GUI fixture=`1/1 PASS`，Release=`0 warning / 0 error`；Schema/migration=`NO CHANGE / 9`，正式数据库=`NO ACCESS`，FULL=`NOT_RUN`。
+- S18-T02=`IMPLEMENTED / R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T02_R1_GUI_ACCEPTANCE`。只等待用户 A～D，禁止关闭 Stage18 或发布。
 
 # 2026-09-10 historical：S18-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
