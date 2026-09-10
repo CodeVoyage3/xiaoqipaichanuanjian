@@ -1,3 +1,10 @@
+# 2026-09-10：S16-T01 GUI 主体验收通过，等待极小 UI 收口
+
+用户已确认 S16-T01 GUI 主体验收通过；当前状态 `GUI_ACCEPTED / MINOR_UI_CLEANUP_PENDING`。唯一剩余项是在“未来效期风险明细”删除 `商品编码` 显示列，最终保持 7 列；底层 ProductCode、查询、排序、分页、内部滚轮、固定表头、首页、Schema/migration 均不变。
+
+按治理规则从本提交后的 fresh origin/main 创建全新 Terra，只实施这一处 XAML/最小列结构专项与必要 Release build。Sol 不写生产代码，不跑 S16 业务专项或 FULL。通过后可直接关闭 S16-T01，Stage16 随后具备启动 S16-T02 的条件；本轮不自动启动 S16-T02。
+
+
 # 2026-09-10：S16-T01 返修技术验收就绪，等待用户重新 GUI 验收
 
 全新 GPT-5.6 Terra（medium）从治理后 fresh `origin/main@a0bf7e61c721beb61188c47de42044cf7147e9d2` 的独立 clean worktree完成返修 source `49ab29b02dc46168cb949d0cee0329686c6facdd`。Sol 已独立通过批准原型/diff、精确专项、Release build、EF/migration 与隔离真实 WPF 探针复核。

@@ -1,3 +1,10 @@
+# 2026-09-10 current：S16-T01 GUI_ACCEPTED / MINOR_UI_CLEANUP_PENDING
+
+- 用户已确认 GUI 主体验收通过；唯一剩余项为风险明细删除 `商品编码` 显示列，最终 7 列。
+- ProductCode 数据、查询/排序/分页、鼠标滚轮/固定表头、首页、Schema/migration 均保持；本轮仅最小列结构专项与必要 Release build，`FULL = NOT_RUN`。
+- 新 Terra 完成并经 Sol 核验后可直接 `GUI_ACCEPTED / CLOSED`；S16-T02 当前仍 `PLANNED / NOT_DISPATCHED`。
+
+
 # 2026-09-10 current：S16-T01 返修技术验收就绪
 
 - fresh 治理基线 `a0bf7e61c721beb61188c47de42044cf7147e9d2`；全新 Terra 返修 source `49ab29b02dc46168cb949d0cee0329686c6facdd` 已通过 Sol 独立审查。
