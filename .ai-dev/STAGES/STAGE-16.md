@@ -2,7 +2,9 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage16 = `IN_PROGRESS / S16_T01_TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI_ACCEPTANCE`
+Stage16 = `IN_PROGRESS / S16_T01_REWORK`
+
+用户 GUI 验收已失败；S16-T01 = `GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED`。返修仅覆盖批准原型矩阵还原、当前/后续阶段语义、明细固定表头与 DataGrid 内部鼠标滚动；既有业务计算保持不变。S16-T02 继续 `PLANNED / NOT_DISPATCHED`。
 
 ## 当前范围与顺序
 

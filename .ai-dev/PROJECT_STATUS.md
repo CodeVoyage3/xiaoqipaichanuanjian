@@ -1,3 +1,11 @@
+# 2026-09-10 current：S16-T01 GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED
+
+- 用户对照批准原型验收真实程序后判定失败；Stage16 = `IN_PROGRESS / S16_T01_REWORK`，S16-T02 = `PLANNED / NOT_DISPATCHED`。
+- 返修范围固定为：首页真正有边框风险矩阵；明细当前/后续阶段语义；“预计进入后续阶段日期”；有界 DataGrid 内部滚轮与原生固定表头。查询、窗口、去重、policy/stage、性能、Schema 均不变。
+- 新 Terra 必须从治理 push 后 fresh `origin/main` 的独立 clean worktree实施；Sol 只做治理和独立技术验收。
+- 既有 9/9、101/101、100k 性能证据继承；本轮只跑直接专项与必要 Release build；`FULL = NOT_RUN / NO_FULL`，正式数据库访问 `NO`，正式 dirty 五项继续冻结。
+
+
 # 2026-09-10 current：S16-T01 技术验收就绪，等待用户 GUI 验收
 
 - Terra source `8143dd47c4c38dedfc03cf1958fb7f1b405a0b05` 已通过 Sol 独立 diff/口径/原型静态/性能/自动化/Build/EF 审查。

@@ -1,3 +1,12 @@
+# 2026-09-10：S16-T01 用户 GUI 验收失败，进入原卡返修
+
+用户对照两张批准原型验收真实程序后判定未通过。S16-T01 = `GUI_ACCEPTANCE_FAILED / REWORK_REQUIRED`；Stage16 = `IN_PROGRESS / S16_T01_REWORK`；S16-T02 继续 `PLANNED / NOT_DISPATCHED`。
+
+返修硬门禁：首页恢复带固定五列表头、横纵分隔和明确单元格的真正风险矩阵；明细同时显示当前阶段与直接继承点击来源的后续阶段；日期字段统一为“预计进入后续阶段日期”；DataGrid 采用明确可视高度与原生固定 ColumnHeader，鼠标滚轮只滚当前页商品行，分页保留。不得修改风险业务计算、Domain、Schema/migration 或正式数据库。
+
+先普通 push 本治理记录，再从更新后的 fresh `origin/main` 新建全新 GPT-5.6 Terra（medium、标准速度）独立 clean worktree实施；原 Terra 不复用。既有 9/9、101/101、100k 性能证据继承，本轮只跑返修直接专项和必要 Release build，`FULL = NOT_RUN / NO_FULL`。完成后由 Sol 独立验收并提供新 GUI 入口，状态仅回到等待用户复验，不得自判 GUI 通过、启动 S16-T02 或发布 v1.0.8。
+
+
 # 2026-09-10：S16-T01 技术验收就绪，等待用户 GUI 验收
 
 Terra 从治理后 fresh `origin/main@c00d33abef1cd87b856bbaf718e2f4404606cbdb` 在独立 clean worktree 完成 source `8143dd47c4c38dedfc03cf1958fb7f1b405a0b05`；Sol 已独立完成真实 diff、业务口径、只读边界、批准原型静态对照、性能、自动化、Release build 与 EF 复核。S16-T01 = `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage16 = `IN_PROGRESS / WAITING_USER_GUI_ACCEPTANCE`。
