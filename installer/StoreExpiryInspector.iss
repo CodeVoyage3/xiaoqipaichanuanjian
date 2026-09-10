@@ -73,6 +73,9 @@ Source: "{#PayloadDir}\*"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flag
 Name: "{autodesktop}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; IconFilename: "{app}\app\StoreExpiryInspector.exe"
 Name: "{group}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; IconFilename: "{app}\app\StoreExpiryInspector.exe"
 
+[Run]
+Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; Description: "安装完成后运行门店效期排查软件"; Flags: postinstall nowait skipifsilent; Check: ShouldLaunchApplication
+
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#RunValueName}"; Flags: uninsdeletevalue
 
@@ -101,6 +104,13 @@ begin
   #else
     Result := '';
   #endif
+end;
+
+function ShouldLaunchApplication(): Boolean;
+begin
+  Result := (not WizardSilent) and
+    (Pos('/NOPOSTINSTALLRUN', Uppercase(GetCmdTail)) = 0) and
+    (Pos('/SUPPRESSMSGBOXES', Uppercase(GetCmdTail)) = 0);
 end;
 
 function NextVersionPart(var Value: String): Integer;
