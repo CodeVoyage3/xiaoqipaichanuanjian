@@ -106,6 +106,45 @@ public sealed class S16T01FutureExpiryRiskTests
         Assert.NotNull(dates); Assert.True(dates!.Discount50 < dates.Discount20 && dates.Discount20 < dates.Withdraw && dates.Withdraw < dates.Expired);
     }
 
+    [Fact]
+    public void QueryHonorsAllWindowsEligibilityRepresentationSortingAndReadOnly()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"s16-matrix-{Guid.NewGuid():N}.db"); var today = new DateOnly(2026, 1, 1);
+        try
+        {
+            DatabaseInitializer.Initialize(path); using var db = DatabaseInitializer.CreateContext(path);
+            var import = new ImportRecord { SourceFileName = "matrix.xlsx", SourceFileSha256 = new string('c', 64), Status = "succeeded" }; db.Imports.Add(import); db.SaveChanges();
+            foreach (var policy in new[] { ExpiryPolicies.Food, ExpiryPolicies.Pet, ExpiryPolicies.GeneralLong }) db.ScopeBaselines.Add(new ScopeBaseline { ScopeKey = policy, PolicyCode = policy, PolicyVersion = 1, CreatedImportId = import.Id, IsCompleted = true, CompletedAtUtc = DateTime.UtcNow });
+            var query = new FutureExpiryRiskQuery(); var serial = 0;
+            foreach (var days in new[] { 7, 14, 30 }) foreach (var stage in Stages())
+            {
+                foreach (var offset in new[] { 0, days, days + 1 })
+                {
+                    var product = Product($"P{serial++ :D3}", 1, ExpiryPolicies.Food, ExpiryPolicies.Food); db.Products.Add(product);
+                    db.Batches.Add(BatchForNode(product, ExpiryPolicies.Food, 270, "D", today, stage, today.AddDays(offset)));
+                }
+            }
+            foreach (var valid in new[] { (ExpiryPolicies.Food, 270, "D"), (ExpiryPolicies.Pet, 12, "M"), (ExpiryPolicies.GeneralLong, 1, "Y") })
+            { var product = Product($"V{serial++ :D3}", 1, valid.Item1, valid.Item1); product.CategoryCode = valid.Item1; db.Products.Add(product); db.Batches.Add(BatchForNode(product, valid.Item1, valid.Item2, valid.Item3, today, ExpiryStageCalculator.Withdraw, today.AddDays(7))); }
+            var stopped = Product("stopped", 1, ExpiryPolicies.Food, ExpiryPolicies.Food); var zero = Product("zero", 0, ExpiryPolicies.Food, ExpiryPolicies.Food); var excluded = Product("excluded", 1, ExpiryPolicies.Food, ExpiryPolicies.Food); excluded.ExpiryManagementStatus = ExpiryManagementStatus.Excluded; excluded.PolicyCode = null; excluded.PolicyVersion = null; var unresolved = Product("unresolved", 1, ExpiryPolicies.Food, ExpiryPolicies.Food); unresolved.ExpiryManagementStatus = ExpiryManagementStatus.Unresolved; unresolved.PolicyCode = null; unresolved.PolicyVersion = null; var noBaseline = Product("nobase", 1, ExpiryPolicies.Food, "other"); noBaseline.CategoryCode = "other";
+            db.Products.AddRange(stopped, zero, excluded, unresolved, noBaseline); foreach (var item in new[] { stopped, zero, excluded, unresolved, noBaseline }) db.Batches.Add(BatchForNode(item, ExpiryPolicies.Food, 270, "D", today, ExpiryStageCalculator.Withdraw, today.AddDays(7), item == stopped ? "stopped" : "active"));
+            db.SaveChanges();
+            var before = (db.Products.Count(), db.Batches.Count(), db.Tasks.Count(), db.TaskItems.Count(), db.Batches.OrderBy(x => x.Id).AsEnumerable().Select(x => (x.CurrentStage, x.NextTriggerDate)).ToArray());
+            foreach (var days in new[] { 7, 14, 30 }) foreach (var stage in Stages())
+            { var result = query.Search(db, today, new(days, stage)); Assert.DoesNotContain(result.Items, x => x.ProductCode.StartsWith("stopped") || x.ProductCode.StartsWith("zero") || x.ProductCode.StartsWith("excluded") || x.ProductCode.StartsWith("unresolved") || x.ProductCode.StartsWith("nobase")); Assert.Equal(query.Overview(db, today).Cells.Single(x => x.Days == days && x.Stage == stage).Count, result.TotalCount); }
+            foreach (var stage in Stages()) foreach (var days in new[] { 7, 14, 30 }) { Assert.DoesNotContain(query.Search(db, today, new(days, stage)).Items, x => x.EffectiveDate == today); Assert.Contains(query.Search(db, today, new(days, stage)).Items, x => x.EffectiveDate == today.AddDays(days)); Assert.DoesNotContain(query.Search(db, today, new(days, stage)).Items, x => x.EffectiveDate == today.AddDays(days + 1)); }
+            var after = (db.Products.Count(), db.Batches.Count(), db.Tasks.Count(), db.TaskItems.Count(), db.Batches.OrderBy(x => x.Id).AsEnumerable().Select(x => (x.CurrentStage, x.NextTriggerDate)).ToArray()); Assert.Equal(before, after);
+        }
+        finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); if (File.Exists(path)) File.Delete(path); }
+    }
+
+    private static IEnumerable<string> Stages() => [ExpiryStageCalculator.Discount50, ExpiryStageCalculator.Discount20, ExpiryStageCalculator.Withdraw, ExpiryStageCalculator.Expired];
+    private static Batch BatchForNode(Product product, string policy, int shelfLife, string unit, DateOnly today, string stage, DateOnly target, string tracking = "active")
+    {
+        for (var expiry = today.AddDays(-200); expiry <= today.AddDays(600); expiry = expiry.AddDays(1)) { var dates = ExpiryPolicyCalculator.CalculateStageDates(policy, 1, expiry, unit == "D" ? shelfLife : unit == "M" ? shelfLife * 30 : shelfLife * 365); if (dates is not null && (stage switch { "discount_50" => dates.Discount50, "discount_20" => dates.Discount20, "withdraw" => dates.Withdraw, _ => dates.Expired }) == target) return new Batch { Product = product, ExpiryDate = expiry, ShelfLifeValue = shelfLife, ShelfLifeUnit = unit, CurrentArrivalQty = 1, MaxArrivalQty = 1, TrackingStatus = tracking }; }
+        throw new InvalidOperationException("node not found");
+    }
+
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
@@ -113,6 +152,6 @@ public sealed class S16T01FutureExpiryRiskTests
         throw new DirectoryNotFoundException("repository root");
     }
 
-    private static Product Product(string code, int stock) => new() { ProductCode = code, CurrentName = code, CurrentBarcode = code, CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = stock };
+    private static Product Product(string code, int stock, string policy = ExpiryPolicies.Food, string category = "food") => new() { ProductCode = code, CurrentName = code, CurrentBarcode = code, CategoryCode = category, PolicyCode = policy, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = stock };
     private static Batch Batch(Product product, DateOnly expiry) => new() { Product = product, ExpiryDate = expiry, ShelfLifeValue = 270, ShelfLifeUnit = "D", CurrentArrivalQty = 1, MaxArrivalQty = 1, TrackingStatus = "active" };
 }
