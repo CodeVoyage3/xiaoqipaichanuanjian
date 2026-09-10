@@ -45,6 +45,13 @@ public sealed class S18T02Ean13BarcodeTests
         Assert.Contains("<Setter Property=\"Foreground\" Value=\"White\"", app, StringComparison.Ordinal);
         Assert.Contains("DisabledTextBrush", app, StringComparison.Ordinal);
         Assert.Contains("<ui:Ean13Barcode Barcode=\"{Binding Detail.ProductBarcode}\" Width=\"300\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("<TextBox Text=\"{Binding Detail.ProductBarcode, Mode=OneWay}\" Style=\"{StaticResource ReadOnlyIdentityTextBoxStyle}\" Focusable=\"True\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("HorizontalContentAlignment=\"Center\" TextAlignment=\"Center\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("<Style x:Key=\"ReadOnlyIdentityTextBoxStyle\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"IsReadOnly\" Value=\"True\" />", xaml, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"BorderThickness\" Value=\"0\" />", xaml, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"Background\" Value=\"Transparent\" />", xaml, StringComparison.Ordinal);
+        Assert.Equal(3, xaml.Split("Background=\"{DynamicResource TableDividerBrush}\"").Length - 1);
         Assert.DoesNotContain("Text=\"商品条码：\"", xaml, StringComparison.Ordinal);
         Assert.Contains("Text=\"排查信息\" FontSize=\"16\"", xaml, StringComparison.Ordinal);
         Assert.Contains("Text=\"排查人\"", xaml, StringComparison.Ordinal);
