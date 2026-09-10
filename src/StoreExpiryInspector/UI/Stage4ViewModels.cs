@@ -447,6 +447,7 @@ public sealed class DashboardViewModel : ViewModelBase
     }
 
     public int FutureRiskCount(int days, string stage) => _futureRisk?.Cells.Single(cell => cell.Days == days && cell.Stage == stage).Count ?? 0;
+    public string FutureRiskSummary => _futureRisk is null ? "未来 7 天风险商品加载中。" : $"未来 7 天预计有 {_futureRisk.Future7Total} 个风险商品发生效期节点变化，其中收仓 {Future7Withdraw} 个、过期 {Future7Expired} 个。";
     public int Future7Discount50 => FutureRiskCount(7, ExpiryStageCalculator.Discount50); public int Future7Discount20 => FutureRiskCount(7, ExpiryStageCalculator.Discount20); public int Future7Withdraw => FutureRiskCount(7, ExpiryStageCalculator.Withdraw); public int Future7Expired => FutureRiskCount(7, ExpiryStageCalculator.Expired);
     public int Future14Discount50 => FutureRiskCount(14, ExpiryStageCalculator.Discount50); public int Future14Discount20 => FutureRiskCount(14, ExpiryStageCalculator.Discount20); public int Future14Withdraw => FutureRiskCount(14, ExpiryStageCalculator.Withdraw); public int Future14Expired => FutureRiskCount(14, ExpiryStageCalculator.Expired);
     public int Future30Discount50 => FutureRiskCount(30, ExpiryStageCalculator.Discount50); public int Future30Discount20 => FutureRiskCount(30, ExpiryStageCalculator.Discount20); public int Future30Withdraw => FutureRiskCount(30, ExpiryStageCalculator.Withdraw); public int Future30Expired => FutureRiskCount(30, ExpiryStageCalculator.Expired);
@@ -579,6 +580,7 @@ public sealed class DashboardViewModel : ViewModelBase
             BatchCount = result.BatchCount;
             _futureRisk = result.FutureRisk;
             foreach (var name in new[] { "Future7Discount50", "Future7Discount20", "Future7Withdraw", "Future7Expired", "Future14Discount50", "Future14Discount20", "Future14Withdraw", "Future14Expired", "Future30Discount50", "Future30Discount20", "Future30Withdraw", "Future30Expired" }) OnPropertyChanged(name);
+            OnPropertyChanged(nameof(FutureRiskSummary));
             LastSuccessfulImportAtUtc = result.LastSuccessfulImportAtUtc;
             UrgentTasks.Clear();
             foreach (var task in result.UrgentTasks)
@@ -646,6 +648,7 @@ public sealed class FutureExpiryRiskViewModel : ViewModelBase
     private int _page = 1;
     private bool _isLoading;
     private string? _errorMessage;
+    private int _loadVersion;
 
     public FutureExpiryRiskViewModel(Func<FutureExpiryRiskRequest, FutureExpiryRiskPage> load, Action<Exception>? log = null)
     {
@@ -663,18 +666,20 @@ public sealed class FutureExpiryRiskViewModel : ViewModelBase
     public int TotalPages => Math.Max(1, (TotalCount + 49) / 50);
     public bool IsLoading { get => _isLoading; private set { _isLoading = value; OnPropertyChanged(); PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged(); } }
     public string? ErrorMessage { get => _errorMessage; private set { _errorMessage = value; OnPropertyChanged(); } }
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+    public bool HasEmptyResult => !IsLoading && !HasError && TotalCount == 0;
     public int Days => _days;
     public string Stage => _stage;
     public string StageText => StageLabels.ToDisplay(Stage);
     public string PageSummary => $"第 {Page} / {TotalPages} 页 · 共 {TotalCount} 条记录";
     public string RangeText => $"未来{Days}天";
-    public void Open(int days, string stage) { _days = days; _stage = stage; Page = 1; OnPropertyChanged(nameof(Days)); OnPropertyChanged(nameof(Stage)); OnPropertyChanged(nameof(StageText)); OnPropertyChanged(nameof(RangeText)); _ = LoadAsync(); }
+    public Task OpenAsync(int days, string stage) { _days = days; _stage = stage; Page = 1; OnPropertyChanged(nameof(Days)); OnPropertyChanged(nameof(Stage)); OnPropertyChanged(nameof(StageText)); OnPropertyChanged(nameof(RangeText)); return LoadAsync(); }
     public async Task LoadAsync()
     {
-        IsLoading = true; ErrorMessage = null;
-        try { var result = await Task.Run(() => _load(new(Days, Stage, Page, 50))); Items.Clear(); foreach (var item in result.Items) Items.Add(item); TotalCount = result.TotalCount; OnPropertyChanged(nameof(TotalCount)); OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(PageSummary)); }
-        catch (Exception exception) { ErrorMessage = $"风险明细加载失败：{exception.Message}"; _log?.Invoke(exception); }
-        finally { IsLoading = false; }
+        var version = ++_loadVersion; IsLoading = true; ErrorMessage = null; Items.Clear(); TotalCount = 0; OnPropertyChanged(nameof(TotalCount)); OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(HasError)); OnPropertyChanged(nameof(HasEmptyResult));
+        try { var result = await Task.Run(() => _load(new(Days, Stage, Page, 50))); if (version != _loadVersion) return; foreach (var item in result.Items) Items.Add(item); TotalCount = result.TotalCount; OnPropertyChanged(nameof(TotalCount)); OnPropertyChanged(nameof(TotalPages)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(HasEmptyResult)); }
+        catch (Exception exception) { if (version == _loadVersion) { ErrorMessage = $"风险明细加载失败：{exception.Message}"; OnPropertyChanged(nameof(HasError)); OnPropertyChanged(nameof(HasEmptyResult)); _log?.Invoke(exception); } }
+        finally { if (version == _loadVersion) { IsLoading = false; OnPropertyChanged(nameof(HasEmptyResult)); } }
     }
 }
 
@@ -1399,6 +1404,8 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsBackupRestoreVisible));
             OnPropertyChanged(nameof(IsInspectionDetailVisible));
             OnPropertyChanged(nameof(IsFutureExpiryRiskVisible));
+            OnPropertyChanged(nameof(IsHomeSectionVisible));
+            OnPropertyChanged(nameof(IsStandardHeaderVisible));
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(PageSubtitle));
         }
@@ -1419,6 +1426,10 @@ public sealed class ShellViewModel : ViewModelBase
     public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
 
     public bool IsFutureExpiryRiskVisible => CurrentPage == ShellPage.FutureExpiryRisk;
+
+    public bool IsHomeSectionVisible => CurrentPage is ShellPage.Dashboard or ShellPage.FutureExpiryRisk;
+
+    public bool IsStandardHeaderVisible => CurrentPage is not (ShellPage.InspectionDetail or ShellPage.FutureExpiryRisk);
 
     public string PageTitle => CurrentPage switch
     {
@@ -1529,7 +1540,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         if (days is not (7 or 14 or 30) || stage is not (ExpiryStageCalculator.Discount50 or ExpiryStageCalculator.Discount20 or ExpiryStageCalculator.Withdraw or ExpiryStageCalculator.Expired) || !CanNavigate) return;
         CurrentPage = ShellPage.FutureExpiryRisk;
-        FutureRisk.Open(days, stage);
+        _ = FutureRisk.OpenAsync(days, stage);
     }
 
     private async Task ReturnFromDetailAsync() =>

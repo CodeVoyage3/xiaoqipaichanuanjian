@@ -6,7 +6,7 @@ namespace StoreExpiryInspector.Application.Tasks;
 
 public sealed record FutureExpiryRiskRequest(int Days, string Stage, int Page = 1, int PageSize = 50);
 public sealed record FutureExpiryRiskCell(int Days, string Stage, int Count);
-public sealed record FutureExpiryRiskOverview(DateOnly BusinessDate, IReadOnlyList<FutureExpiryRiskCell> Cells);
+public sealed record FutureExpiryRiskOverview(DateOnly BusinessDate, IReadOnlyList<FutureExpiryRiskCell> Cells, int Future7Total);
 public sealed record FutureExpiryRiskItem(long ProductId, long RepresentativeBatchId, string? ProductName, string? ProductBarcode, string ProductCode, int EffectiveStockQty, string CurrentStage, DateOnly EffectiveDate, int DaysUntil)
 {
     public string HighestStage => CurrentStage;
@@ -19,8 +19,11 @@ public sealed class FutureExpiryRiskQuery
     private static readonly int[] Windows = [7, 14, 30];
     private static readonly string[] Stages = [ExpiryStageCalculator.Discount50, ExpiryStageCalculator.Discount20, ExpiryStageCalculator.Withdraw, ExpiryStageCalculator.Expired];
 
-    public FutureExpiryRiskOverview Overview(StoreDbContext context, DateOnly businessDate) =>
-        new(businessDate, Build(context, businessDate).Select(pair => new FutureExpiryRiskCell(pair.Key.Days, pair.Key.Stage, pair.Value.Count)).ToArray());
+    public FutureExpiryRiskOverview Overview(StoreDbContext context, DateOnly businessDate)
+    {
+        var buckets = Build(context, businessDate);
+        return new(businessDate, buckets.Select(pair => new FutureExpiryRiskCell(pair.Key.Days, pair.Key.Stage, pair.Value.Count)).ToArray(), buckets.Where(pair => pair.Key.Days == 7).SelectMany(pair => pair.Value.Rows).Select(item => item.ProductId).Distinct().Count());
+    }
 
     public FutureExpiryRiskPage Search(StoreDbContext context, DateOnly businessDate, FutureExpiryRiskRequest request)
     {

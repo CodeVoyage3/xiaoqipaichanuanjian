@@ -62,11 +62,11 @@ public sealed class S16T01FutureExpiryRiskTests
     public async Task DetailUsesFiftyRowsAndClickRouteReturnsHome()
     {
         var page = new FutureExpiryRiskPage(Enumerable.Range(1, 50).Select(i => new FutureExpiryRiskItem(i, i, "p", "b", i.ToString("D3"), 1, "none", new DateOnly(2026, 1, 2), 1)).ToArray(), 51, 1, 50);
-        var vm = new StoreExpiryInspector.UI.FutureExpiryRiskViewModel(_ => page); vm.Open(7, ExpiryStageCalculator.Discount50);
+        var vm = new StoreExpiryInspector.UI.FutureExpiryRiskViewModel(_ => page); await vm.OpenAsync(7, ExpiryStageCalculator.Discount50);
         await Task.Delay(50); Assert.Equal(50, vm.Items.Count); Assert.Equal(2, vm.TotalPages);
         var shell = new StoreExpiryInspector.UI.ShellViewModel(dashboardLoader: () => new(0, 0, 0, 0, 0, []));
         shell.OpenFutureRisk(7, ExpiryStageCalculator.Discount50); Assert.Equal(StoreExpiryInspector.UI.ShellPage.FutureExpiryRisk, shell.CurrentPage);
-        shell.ReturnFromFutureRiskCommand.Execute(null); await Task.Delay(50); Assert.Equal(StoreExpiryInspector.UI.ShellPage.Dashboard, shell.CurrentPage);
+        shell.ReturnFromFutureRiskCommand.Execute(null); Assert.Equal(StoreExpiryInspector.UI.ShellPage.Dashboard, shell.CurrentPage);
     }
 
     private static Product Product(string code, int stock) => new() { ProductCode = code, CurrentName = code, CurrentBarcode = code, CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = stock };

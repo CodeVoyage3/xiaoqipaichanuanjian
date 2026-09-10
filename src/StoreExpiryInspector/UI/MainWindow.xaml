@@ -503,7 +503,6 @@
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,1,0">
-            <Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding IsFutureExpiryRiskVisible}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></Border.Style>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -545,7 +544,7 @@
                             AutomationProperties.Name="首页"
                             ToolTip="首页"
                             Command="{Binding NavigateHomeCommand}"
-                            Tag="{Binding IsDashboardVisible}"
+                            Tag="{Binding IsHomeSectionVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource HomeIcon}"
@@ -659,14 +658,13 @@
               Margin="24,0,24,0"
               MinHeight="0"
               VerticalAlignment="Stretch">
-            <Grid.Style><Style TargetType="Grid"><Style.Triggers><DataTrigger Binding="{Binding IsFutureExpiryRiskVisible}" Value="True"><Setter Property="Grid.Column" Value="0" /><Setter Property="Grid.ColumnSpan" Value="2" /></DataTrigger></Style.Triggers></Style></Grid.Style>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0"
-                  Visibility="{Binding IsInspectionDetailVisible, Converter={StaticResource InverseBoolToVisibility}}">
+                  Visibility="{Binding IsStandardHeaderVisible, Converter={StaticResource BoolToVisibility}}">
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Height" Value="72" />
@@ -1018,7 +1016,7 @@
                             <Border Margin="0,16,0,0" Padding="12" Style="{StaticResource PageSectionBorderStyle}">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal"><TextBlock Text="未来效期风险" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="未来 7 / 14 / 30 天内即将进入各效期处理阶段" Margin="12,3,0,0" Foreground="{DynamicResource SecondaryTextBrush}"/></StackPanel>
-                                    <TextBlock Text="未来 7 天预计有风险商品发生效期节点变化，点击数字查看只读明细。" Margin="0,8,0,8" Foreground="{DynamicResource PrimaryActionBrush}"/>
+                                    <TextBlock Text="{Binding Dashboard.FutureRiskSummary}" Margin="0,8,0,8" Foreground="{DynamicResource PrimaryActionBrush}"/>
                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="36"/><RowDefinition Height="40"/><RowDefinition Height="40"/><RowDefinition Height="40"/></Grid.RowDefinitions>
                                         <TextBlock Text="时间范围" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="5折" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock Grid.Column="2" Text="2折" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock Grid.Column="3" Text="收仓" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock Grid.Column="4" Text="过期" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                         <TextBlock Grid.Row="1" Text="未来7天" VerticalAlignment="Center"/><TextBlock Grid.Row="2" Text="未来14天" VerticalAlignment="Center"/><TextBlock Grid.Row="3" Text="未来30天" VerticalAlignment="Center"/>
@@ -1032,7 +1030,7 @@
                     </ScrollViewer>
                 </Grid>
 
-                <!-- 未来效期风险明细：无左侧导航的只读入口 -->
+                <!-- 未来效期风险明细：不新增侧栏入口 -->
                 <Grid Visibility="{Binding IsFutureExpiryRiskVisible, Converter={StaticResource BoolToVisibility}}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="0,0,0,24">
@@ -1047,6 +1045,9 @@
                                 </Grid>
                             </Border>
                             <Border Margin="0,16,0,16" Padding="12" Background="#EDF6FF" CornerRadius="6"><TextBlock Text="以下商品将在所选时间范围内进入指定阶段，仅供提前关注与安排排查；本页不提供编辑或处理操作。" Foreground="{DynamicResource PrimaryActionBrush}"/></Border>
+                            <TextBlock Text="加载中…" Visibility="{Binding FutureRisk.IsLoading, Converter={StaticResource BoolToVisibility}}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding FutureRisk.ErrorMessage}" Visibility="{Binding FutureRisk.HasError, Converter={StaticResource BoolToVisibility}}" Foreground="{DynamicResource DangerBrush}" Margin="0,0,0,8"/>
+                            <TextBlock Text="没有符合当前时间范围与阶段的风险商品。" Visibility="{Binding FutureRisk.HasEmptyResult, Converter={StaticResource BoolToVisibility}}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,8"/>
                             <Border Padding="12" Style="{StaticResource PageSectionBorderStyle}">
                                 <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                     <TextBlock Text="{Binding FutureRisk.TotalCount, StringFormat=共 {0} 个商品，按预计进入日期从近到远排序}" FontWeight="SemiBold" Margin="0,0,0,10"/>
