@@ -374,7 +374,9 @@ public sealed class InspectionDetailViewModel : ViewModelBase
 
     public string ProductCode => _detail?.ProductCode ?? string.Empty;
 
-    public string ProductBarcode => _detail?.ProductBarcode ?? "—";
+    public string ProductBarcode => _detail?.ProductBarcode ?? string.Empty;
+
+    public bool HasValidEan13 => Ean13Barcode.TryEncode(ProductBarcode, out _);
 
     public int EffectiveStockQty => _detail?.EffectiveStockQty ?? 0;
 
@@ -1794,6 +1796,7 @@ public sealed class InspectionDetailViewModel : ViewModelBase
         OnPropertyChanged(nameof(ProductName));
         OnPropertyChanged(nameof(ProductCode));
         OnPropertyChanged(nameof(ProductBarcode));
+        OnPropertyChanged(nameof(HasValidEan13));
         OnPropertyChanged(nameof(EffectiveStockQty));
         OnPropertyChanged(nameof(HighestStage));
         OnPropertyChanged(nameof(Stage));
