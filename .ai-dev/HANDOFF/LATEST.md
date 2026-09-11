@@ -1,4 +1,12 @@
-# 2026-09-11：S18-T03-R1 技术验收就绪，等待用户 GUI A～D
+# 2026-09-11：S18-T03 GUI_ACCEPTED / Stage18 CLOSED
+
+用户已完成 S18-T03 最终真实 GUI 验收并确认当前展开/收起导航视觉可以接受，不再继续返修。S18-T01=`GUI_ACCEPTED / CLOSED`；S18-T02=`GUI_ACCEPTED / CLOSED`；S18-T03=`GUI_ACCEPTED / CLOSED`；Stage18=`CLOSED`。
+
+既有技术验收证据全部继承。本轮仅更新五个治理文件，未修改生产代码，未重新运行专项、Release build 或 FULL，`FULL=NOT_RUN / NO_FULL`；未创建 tag/GitHub Release，未上传夸克，未更新 Gitee `latest.json`。
+
+当前具备进入 v1.0.9 `RELEASE_PREPARATION` 的条件，但尚未启动发布准备或执行任何发布动作。下一步须等待新的正式授权。
+
+# 2026-09-11 historical：S18-T03-R1 技术验收就绪，等待用户 GUI A～D
 
 用户首轮真实 GUI 验收=`NOT_ACCEPTED`。两处失败为：收起态因分组标题 `Collapsed` 连带丢失纵向分组节奏；当前页面没有在展开/收起两态明确选中同一个菜单，Hover 不能替代 Selected。
 

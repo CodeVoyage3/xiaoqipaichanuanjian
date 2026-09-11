@@ -1,4 +1,10 @@
-# 2026-09-11 current：S18-T03-R1 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+# 2026-09-11 current：S18-T03 GUI_ACCEPTED / Stage18 CLOSED
+
+- 用户最终真实 GUI 验收确认当前展开/收起导航视觉可以接受；S18-T01=`GUI_ACCEPTED / CLOSED`，S18-T02=`GUI_ACCEPTED / CLOSED`，S18-T03=`GUI_ACCEPTED / CLOSED`。
+- Stage18=`CLOSED`；当前具备进入 v1.0.9 `RELEASE_PREPARATION` 的条件，但尚未启动或执行发布。
+- 本轮仅治理收口，继承既有技术证据；未修改生产代码，未重新运行专项、Release build 或 FULL，`FULL=NOT_RUN / NO_FULL`；未创建 tag/GitHub Release、上传夸克或更新 Gitee `latest.json`。
+
+# 2026-09-11 historical：S18-T03-R1 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
 - 用户首轮真实 GUI 验收=`NOT_ACCEPTED`；R1 implementation=`733bc909b0f4b487508b69ddc3ed2f87d08538cd` 已 push，S18-T03=`R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
 - R1 只修收起态分组节奏与导航 Selected/Hover 状态映射；`220 / 72 DIP`、图标/语义、持久化、Shell/业务/右侧页面、数据库、Schema/migration 与版本全部冻结，`BUSINESS LOGIC DIFF=0`。

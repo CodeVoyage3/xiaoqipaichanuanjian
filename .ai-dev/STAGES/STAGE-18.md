@@ -2,9 +2,15 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / WAITING_USER_S18_T03_R1_GUI_ACCEPTANCE`
+Stage18 = `CLOSED`
 
-## S18-T03-R1 当前返修
+## Stage18 最终收口
+
+用户已完成 S18-T03 最终真实 GUI 验收并确认当前展开/收起导航视觉可以接受。S18-T01=`GUI_ACCEPTED / CLOSED`；S18-T02=`GUI_ACCEPTED / CLOSED`；S18-T03=`GUI_ACCEPTED / CLOSED`。Stage18 三张任务均已满足关闭门禁，因此 Stage18=`CLOSED`，当前具备进入 v1.0.9 `RELEASE_PREPARATION` 的条件。
+
+本轮仅治理收口，继承既有技术证据；未修改生产代码，未重新运行专项、Release build 或 FULL，`FULL=NOT_RUN / NO_FULL`。未创建 tag/GitHub Release，未上传夸克，未更新 Gitee `latest.json`。
+
+## S18-T03-R1 返修（历史）
 
 用户首轮真实 GUI 验收=`NOT_ACCEPTED`：收起态丢失业务分组节奏，当前页面的菜单 Selected 映射不正确。R1 仅授权在导航 XAML / Style 中增加轻量收起态分组表现并修正 Selected/Hover 状态；`220 / 72 DIP`、Logo、品牌文字、七项 Geometry/语义、同一菜单、ToolTip、持久化、Shell/业务/右侧页面、数据库、Schema/migration 与版本全部冻结，`BUSINESS LOGIC DIFF=0`。
 
@@ -50,9 +56,9 @@ S18-T01=`GUI_ACCEPTED / CLOSED`；最终 R5 视觉锁定为用户通过的 `660 
 
 1. `S18-T01｜今日提醒弹窗信息层级优化`：`GUI_ACCEPTED / CLOSED`。
 2. `S18-T02｜排查详情扫码识别、信息区紧凑化与按钮视觉一致性收口`：`GUI_ACCEPTED / CLOSED`。
-3. `S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`：`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。
+3. `S18-T03｜左侧导航栏展开/收起与企业 SaaS 视觉重构`：`GUI_ACCEPTED / CLOSED`。
 
-S18-T01、S18-T02 已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。S18-T03 已按上方冻结合同获准派发。
+S18-T01、S18-T02、S18-T03 均已完成技术验收及用户真实 WPF GUI 验收并 `CLOSED`。Stage18 已关闭，当前仅具备进入 v1.0.9 `RELEASE_PREPARATION` 的条件；尚未执行任何发布动作。
 
 S18-T01 最终 product implementation `0f3bdf287b73263f72f4c4500b82e38da41c89c6` 已通过用户 GUI 验收；其 `660 × 360 DIP` 视觉、业务映射、数据口径和导航证据全部冻结。此前 R1～R4 拒绝结论只作历史保留。
 
