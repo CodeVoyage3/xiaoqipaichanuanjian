@@ -1,4 +1,10 @@
-# 2026-09-11 current：S18-T03 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
+# 2026-09-11 current：S18-T03-R1 MINOR GUI REWORK
+
+- 用户首轮真实 GUI 验收=`NOT_ACCEPTED`；S18-T03=`GUI_ACCEPTANCE_FAILED / S18_T03_R1_MINOR_GUI_REWORK_AUTHORIZED / NOT_ACCEPTED`。
+- R1 只修收起态分组节奏与导航 Selected/Hover 状态映射；`220 / 72 DIP`、图标/语义、持久化、Shell/业务/右侧页面、数据库、Schema/migration 与版本全部冻结，`BUSINESS LOGIC DIFF=0`。
+- 只跑两项最小静态契约、必要一次 Release App build 与 TEMP 下纯 GUID 隔离 GUI；`FULL=NOT_RUN / NO_FULL`。技术完成后等待用户 A～D，Stage18 保持 `IN_PROGRESS`。
+
+# 2026-09-11 historical：S18-T03 首轮 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
 - governance=`25b4485d0e479c89482e8ab61cf957de5e421835`；implementation=`35ae161ae11ad80c7acfa0cc2fd610cd62663367` 已 fast-forward push。
 - S18-T03=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；生产 diff 仅批准的 `App.xaml`、`MainWindow.xaml`、`MainWindow.xaml.cs`，另有最小导航测试；右侧页面与 ShellViewModel 无 diff。

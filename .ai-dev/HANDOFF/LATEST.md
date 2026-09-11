@@ -1,4 +1,12 @@
-# 2026-09-11：S18-T03 技术验收就绪，等待用户 GUI A～H
+# 2026-09-11：S18-T03-R1 MINOR GUI REWORK 已授权
+
+用户首轮真实 GUI 验收=`NOT_ACCEPTED`。两处失败为：收起态因分组标题 `Collapsed` 连带丢失纵向分组节奏；当前页面没有在展开/收起两态明确选中同一个菜单，Hover 不能替代 Selected。
+
+R1 仅允许修改导航 XAML / Style 的轻量分组与状态映射；`Stage4ViewModels.cs`、`220 / 72 DIP`、Logo、“效期排查”、七项 Geometry/语义、同一组 Button/Path、ToolTip、持久化、Shell 命令、右侧页面、业务、数据库、Schema/migration、版本和发布链全部冻结。验证只跑两项最小静态契约、必要一次 Release App build 与 TEMP 下纯 GUID 隔离 GUI；`FULL=NOT_RUN / NO_FULL`。
+
+当前 S18-T03=`GUI_ACCEPTANCE_FAILED / S18_T03_R1_MINOR_GUI_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T03_R1_MINOR_GUI_REWORK`。技术完成后只能停在 `R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户重验 A～D；不得关闭任务/Stage18 或进入 v1.0.9 发布准备。
+
+# 2026-09-11 historical：S18-T03 首轮技术验收就绪，等待用户 GUI A～H
 
 全新 GPT-5.6 Terra / medium 从治理后 fresh `origin/main@25b4485d0e479c89482e8ab61cf957de5e421835` 完成 implementation=`35ae161ae11ad80c7acfa0cc2fd610cd62663367`。Sol 在 push 前拦截并修正品牌箭头未真正靠右、72 DIP 品牌区溢出及折叠图标残留 margin；最终只改现有左侧 Navigation 三个批准生产文件及最小测试，右侧页面、ShellViewModel、业务、数据库、版本与发布链无 diff。
 

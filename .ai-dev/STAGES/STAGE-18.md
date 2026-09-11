@@ -2,9 +2,15 @@
 
 日期：2026-09-10（Asia/Shanghai）
 
-Stage18 = `IN_PROGRESS / WAITING_USER_S18_T03_GUI_ACCEPTANCE`
+Stage18 = `IN_PROGRESS / S18_T03_R1_MINOR_GUI_REWORK`
 
-## S18-T03 当前技术验收就绪
+## S18-T03-R1 当前返修
+
+用户首轮真实 GUI 验收=`NOT_ACCEPTED`：收起态丢失业务分组节奏，当前页面的菜单 Selected 映射不正确。R1 仅授权在导航 XAML / Style 中增加轻量收起态分组表现并修正 Selected/Hover 状态；`220 / 72 DIP`、Logo、品牌文字、七项 Geometry/语义、同一菜单、ToolTip、持久化、Shell/业务/右侧页面、数据库、Schema/migration 与版本全部冻结，`BUSINESS LOGIC DIFF=0`。
+
+技术完成后 S18-T03 只能为 `R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户重验 A～D；Stage18 保持 `IN_PROGRESS`。验证只含两项最小静态契约、必要一次 Release App build 与纯 GUID 隔离 GUI；`FULL=NOT_RUN / NO_FULL`。
+
+## S18-T03 首轮技术验收（历史）
 
 S18-T03=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。批准原型 `D:\下载\ChatGPT Image 2026年9月10日 23_36_49.png`（SHA256 `2FB55AF5C17454A73ED9C963B347C96212A130B7456DCC5EF7C1C8AA7D908E22`）保持 HARD VISUAL BASELINE。implementation=`35ae161ae11ad80c7acfa0cc2fd610cd62663367`；Sol 独立专项=`2/2 PASS`、Shell 直接回归=`1/1 PASS`、Release App build=`0 warning / 0 error`、隔离主窗口启动成功；FULL=`NOT_RUN / NO_FULL`。
 
