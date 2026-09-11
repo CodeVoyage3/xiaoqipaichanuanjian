@@ -213,18 +213,18 @@
                                               TextElement.FontWeight="{TemplateBinding FontWeight}" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="Tag" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#EAF2FF" />
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
-                                <Setter Property="Foreground" Value="{DynamicResource PrimaryActionBrush}" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Chrome" Property="Background" Value="#F0F5FC" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Chrome" Property="Background" Value="#DDEBFF" />
                             </Trigger>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#EAF2FF" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </DataTrigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                             </Trigger>

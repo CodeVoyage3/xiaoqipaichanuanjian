@@ -220,6 +220,9 @@ public partial class MainWindow : Window
         NavigationInspectionGroupText.Visibility = textVisibility;
         NavigationDataGroupText.Visibility = textVisibility;
         NavigationSystemGroupText.Visibility = textVisibility;
+        NavigationInspectionGroupSpacer.Visibility = _isNavigationCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        NavigationDataGroupSpacer.Visibility = _isNavigationCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        NavigationSystemGroupSpacer.Visibility = _isNavigationCollapsed ? Visibility.Visible : Visibility.Collapsed;
 
         foreach (var button in new[]
         {

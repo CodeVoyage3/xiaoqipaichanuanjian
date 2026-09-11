@@ -566,6 +566,11 @@
                             <TextBlock x:Name="NavigationHomeText" Margin="14,0,0,0" Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Border x:Name="NavigationInspectionGroupSpacer"
+                            Height="1"
+                            Margin="12,8,12,7"
+                            Background="{DynamicResource BorderBrush}"
+                            Visibility="Collapsed" />
                     <TextBlock x:Name="NavigationInspectionGroupText"
                                Margin="8,16,0,6"
                                Text="排查管理"
@@ -612,6 +617,11 @@
                             <TextBlock x:Name="NavigationHistoryText" Margin="14,0,0,0" Text="排查历史" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Border x:Name="NavigationDataGroupSpacer"
+                            Height="1"
+                            Margin="12,8,12,7"
+                            Background="{DynamicResource BorderBrush}"
+                            Visibility="Collapsed" />
                     <TextBlock x:Name="NavigationDataGroupText"
                                Margin="8,16,0,6"
                                Text="数据管理"
@@ -645,6 +655,11 @@
                             <TextBlock x:Name="NavigationBackupText" Margin="14,0,0,0" Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Border x:Name="NavigationSystemGroupSpacer"
+                            Height="1"
+                            Margin="12,8,12,7"
+                            Background="{DynamicResource BorderBrush}"
+                            Visibility="Collapsed" />
                     <TextBlock x:Name="NavigationSystemGroupText"
                                Margin="8,16,0,6"
                                Text="系统"
