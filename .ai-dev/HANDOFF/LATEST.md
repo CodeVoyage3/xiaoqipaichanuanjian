@@ -1,10 +1,14 @@
-# 2026-09-11：S18-T03-R1 MINOR GUI REWORK 已授权
+# 2026-09-11：S18-T03-R1 技术验收就绪，等待用户 GUI A～D
 
 用户首轮真实 GUI 验收=`NOT_ACCEPTED`。两处失败为：收起态因分组标题 `Collapsed` 连带丢失纵向分组节奏；当前页面没有在展开/收起两态明确选中同一个菜单，Hover 不能替代 Selected。
 
 R1 仅允许修改导航 XAML / Style 的轻量分组与状态映射；`Stage4ViewModels.cs`、`220 / 72 DIP`、Logo、“效期排查”、七项 Geometry/语义、同一组 Button/Path、ToolTip、持久化、Shell 命令、右侧页面、业务、数据库、Schema/migration、版本和发布链全部冻结。验证只跑两项最小静态契约、必要一次 Release App build 与 TEMP 下纯 GUID 隔离 GUI；`FULL=NOT_RUN / NO_FULL`。
 
-当前 S18-T03=`GUI_ACCEPTANCE_FAILED / S18_T03_R1_MINOR_GUI_REWORK_AUTHORIZED / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / S18_T03_R1_MINOR_GUI_REWORK`。技术完成后只能停在 `R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户重验 A～D；不得关闭任务/Stage18 或进入 v1.0.9 发布准备。
+全新 GPT-5.6 Terra / medium 从治理后 fresh `origin/main@3a1839a789eeceba80395d65629593db386aa7a2` 在独立 clean worktree 完成 R1 implementation=`733bc909b0f4b487508b69ddc3ed2f87d08538cd`。生产 diff 仅三个批准导航文件：对模板父 Button 的布尔 `Tag` 使用后置 `DataTrigger`，确保 Selected 不被 Hover 覆盖；收起态仅显示三条 `1 DIP` 浅分隔。`Stage4ViewModels.cs` 与全部冻结项零 diff。
+
+最小静态契约=`2/2 PASS`；Release App build=`0 warning / 0 error`；纯 GUID 隔离启动进程响应并生成独立数据库/日志；FULL=`NOT_RUN / NO_FULL`。GUI 入口为 `C:\Users\39037\.codex\visualizations\2026\09\10\01a08c1e-770a-79c3-b0cb-6e628ca64f1c\S18-T03-GUI-Acceptance\启动S18-T03验收.cmd`，每次生成新的 TEMP 纯 GUID 根。
+
+当前 S18-T03=`R1_TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage18=`IN_PROGRESS / WAITING_USER_S18_T03_R1_GUI_ACCEPTANCE`。下一步只由用户重验 A～D；不得关闭任务/Stage18 或进入 v1.0.9 发布准备。
 
 # 2026-09-11 historical：S18-T03 首轮技术验收就绪，等待用户 GUI A～H
 
