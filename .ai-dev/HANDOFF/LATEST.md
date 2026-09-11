@@ -1,3 +1,16 @@
+# 2026-09-11：v1.0.9 RELEASED；Stage18 CLOSED
+
+正式发布基于唯一 PRODUCT SOURCE `9bf4ee71f1579097d816032d867041c0519cf789`；App/Updater 均为 `1.0.9 / 1.0.9.0`。annotated tag `v1.0.9` 精确解引用到该 source；GitHub Release ID `386762247`，stable/latest=`v1.0.9`。
+
+冻结四资产与 GitHub 公网匿名 fresh 下载 bytes/SHA256 逐项全等，production RSA-PSS/SHA256 signature 复验 `PASS`：ZIP `109433662` / `71923637759B9E90D41C4293F01CAE8329F69DE77B50E6DB699D8C832E3A6D55`；Setup `75331419` / `9979AC7CD6B48FB6DF74CF218A8B7F7926FF315402DD738EA19CD84ADCE3BBEF`；manifest `869` / `95E909DE059EC0D3F70430FC3145ECCF8C5806AF73966EB47D20D0F4A0093C97`；signature `384` / `B71713E86756832B080278D1207BFE24E5E784F9F8D431D35019305E2CB6CE04`。
+
+NETSDK1047 已通过 App/Updater 显式 `win-x64` restore 解决；RID targets 分别为 `net10.0-windows/win-x64` 与 `net10.0/win-x64`。旧 v1.0.6 专用脚本未修改、未原样运行；沿用 v1.0.8 已验证的 repo 外内存桥，仅替换版本合同后复刻原 production release 安全门禁。Schema=`NO CHANGE`，migration=`9`，正式数据库=`NO ACCESS`，`FULL=NOT_RUN / NO_FULL`。
+
+同一冻结 Setup 已上传夸克正式 `门店效期排查软件/v1.0.9` 目录，回读与客态分享内层验证均为 `75331419` bytes；永久分享 <https://pan.quark.cn/s/be348f33499a>。Gitee `master/latest.json` commit `dd8afd8a9d6c1651f6ec117aef6d80d50097781d`；固定 Raw 匿名 HTTP `200` 且 `version/releaseNotes/manualDownloadUrl` 三字段精确一致。
+
+v1.0.9=`RELEASED`；S18-T01/T02/T03=`GUI_ACCEPTED / CLOSED`；Stage18=`CLOSED`。正式主工作区历史 dirty 保持未触碰。
+
+
 # 2026-09-11：S18-T03 GUI_ACCEPTED / Stage18 CLOSED
 
 用户已完成 S18-T03 最终真实 GUI 验收并确认当前展开/收起导航视觉可以接受，不再继续返修。S18-T01=`GUI_ACCEPTED / CLOSED`；S18-T02=`GUI_ACCEPTED / CLOSED`；S18-T03=`GUI_ACCEPTED / CLOSED`；Stage18=`CLOSED`。

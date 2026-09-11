@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-09-11",
+  "result": "V1.0.9_RELEASED",
+  "stage": "Stage18",
+  "stageState": "CLOSED",
+  "productSource": "9bf4ee71f1579097d816032d867041c0519cf789",
+  "versions": {
+    "app": "1.0.9",
+    "appFileVersion": "1.0.9.0",
+    "updater": "1.0.9",
+    "updaterFileVersion": "1.0.9.0"
+  },
+  "tag": {
+    "name": "v1.0.9",
+    "type": "annotated",
+    "dereferenceSha": "9bf4ee71f1579097d816032d867041c0519cf789"
+  },
+  "githubRelease": {
+    "id": 386762247,
+    "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.0.9",
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "anonymousFreshDownloadExactMatch": true
+  },
+  "assets": [
+    { "name": "StoreExpiryInspector-1.0.9-win-x64.zip", "bytes": 109433662, "sha256": "71923637759B9E90D41C4293F01CAE8329F69DE77B50E6DB699D8C832E3A6D55" },
+    { "name": "StoreExpiryInspector-Setup-1.0.9.exe", "bytes": 75331419, "sha256": "9979AC7CD6B48FB6DF74CF218A8B7F7926FF315402DD738EA19CD84ADCE3BBEF" },
+    { "name": "update-manifest.json", "bytes": 869, "sha256": "95E909DE059EC0D3F70430FC3145ECCF8C5806AF73966EB47D20D0F4A0093C97" },
+    { "name": "update-manifest.sig", "bytes": 384, "sha256": "B71713E86756832B080278D1207BFE24E5E784F9F8D431D35019305E2CB6CE04" }
+  ],
+  "signing": {
+    "algorithm": "RSA-PSS/SHA256",
+    "productionTrustAnchorVerified": true
+  },
+  "manifest": {
+    "version": "1.0.9",
+    "sourceMinVersion": "1.0.4",
+    "sourceMaxVersion": "1.0.8",
+    "migrationCount": 9
+  },
+  "quark": {
+    "shareUrl": "https://pan.quark.cn/s/be348f33499a",
+    "setupBytesReread": 75331419,
+    "publicShareVerified": true
+  },
+  "gitee": {
+    "commit": "dd8afd8a9d6c1651f6ec117aef6d80d50097781d",
+    "rawUrl": "https://gitee.com/CodeVoyage3/xiaoqipaichanuanjian-update/raw/master/latest.json",
+    "anonymousHttpStatus": 200,
+    "threeFieldsExact": true
+  },
+  "boundaries": {
+    "schemaChanged": false,
+    "migrationCount": 9,
+    "formalDatabaseAccess": false,
+    "full": "NOT_RUN / NO_FULL",
+    "trackedProductionOrReleaseSourceModifiedDuringPipeline": false,
+    "formalDirtyWorktreeTouched": false
+  },
+  "pipeline": {
+    "netSdk1047Resolved": true,
+    "appRidTarget": "net10.0-windows/win-x64",
+    "updaterRidTarget": "net10.0/win-x64",
+    "legacyV1.0.6ScriptModified": false,
+    "releaseBridge": "v1.0.8-equivalent repository-external in-memory version-contract bridge"
+  }
+}
