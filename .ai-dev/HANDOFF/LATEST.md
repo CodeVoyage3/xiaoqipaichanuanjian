@@ -4,6 +4,8 @@ R2 GUI 已确认预览有效80/未填写100/状态变化0，但正式提交把 8
 
 repair=`f38f4cd` 删除错误相等门禁，并使合法 attention=0 的剩余 item 可进入 successor；其余 stale 与 handled `0 <= handled <= attention` 结构保护未削弱。直接专项=`99/99 PASS`，覆盖 cold-start 0/0 全链、真实 180/80/100 提交和八类负例；Release App build=`0 warning / 0 error`。当前 `R3_REPAIR_IMPLEMENTED / PARTIAL_SUBMISSION_GUI_RETEST_READY / NOT_ACCEPTED`。新 GUI 只先重验正式提交成功、确认窗口自然关闭、约100待排查且已提交80消失；PASS 后再恢复 A～I。FULL 未跑，未 push、未发布、正式数据库未访问。
 
+R3 GUI candidate=`eedd651e35364d87b351ee5484128310e805c626`；入口=`S19-T01-R3-PartialSubmission-GUI/启动S19-T01-R3验收.cmd`；独立根=`%TEMP%\54dfe6b7-8dfd-4253-84da-bdb56aa1a06f`。Release 候选已实际启动并生成独立数据库后关闭；旧候选不得复用。
+
 # 2026-09-12：S19-T01 GUI BLOCKER R2 REPAIRED / PARTIAL PREVIEW RETEST READY
 
 用户现场已完成 180 批次首次导入/导出，但填 80、空 100 后预览为有效 0、未填写 100、状态变化 80；A～I 再次停止，状态曾退回 `GUI_BLOCKER_FOUND_R2 / REPAIR_REQUIRED / NOT_ACCEPTED`。
