@@ -1,3 +1,12 @@
+# 2026-09-12 current：Stage19 CLOSED / ACCEPTED
+
+- S19-T01｜首次冷启动与今日排查回导优化=`CLOSED / ACCEPTED`；S19-T02｜在线更新下载失败国内兜底=`CLOSED / ACCEPTED`。
+- S19-T02 final product source=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`；technical=`PASS`，用户最终 GUI=`PASS`，`FULL=NOT_RUN / NO_FULL`。
+- GUI 已确认第二阶段网络失败、`[点击网盘下载] [重试在线更新] [取消]`、已验证 `pan.quark.cn` 打开、重试单 worker/fallback 清理及取消继续运行全部 PASS。
+- 安全裁决保持：仅 `NetworkUnavailable / RateLimited` fallback；`SizeMismatch` 与 SHA/signature/manifest/archive/`IoFailure` 等均无兜底；Gitee 只提供 URL，GitHub 保持版本/发行身份权威；downloader 与独立 Updater 未改。
+- 本收口轮不重跑测试/build/FULL；未修改版本、tag、Release、Installer、夸克正式文件或 Gitee metadata。正式工作区历史 dirty 保持原 `1 modified + 4 untracked`。
+- 版本规划最终确认：废弃 `v1.0.10`；Stage19 进入 main 后另开正式发布流程，下一正式版本统一为 App/对外/Gitee `1.1.0`、Updater `1.1.0.0`、Git tag/GitHub Release `v1.1.0`，发布资产文件名使用 `1.1.0`。本轮不实施该发布。
+
 # 2026-09-12 current：S19-T02 TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI
 
 - 最终 implementation=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`；Sol `TECHNICAL_REVIEW=PASS`。最终 diff 精确四生产+一新增专项，禁止路径无 diff。

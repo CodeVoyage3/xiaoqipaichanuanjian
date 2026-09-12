@@ -2,7 +2,16 @@
 
 日期：2026-09-12（Asia/Shanghai）
 
-Stage19 = `IN_PROGRESS / S19-T01_CLOSED / S19-T02_TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI / NOT_CLOSED`
+Stage19 = `CLOSED / ACCEPTED`
+
+## 2026-09-12 Stage19 final closeout
+
+- S19-T01｜首次冷启动与今日排查回导优化：`CLOSED / ACCEPTED`，历史验收事实保持不变。
+- S19-T02｜在线更新下载失败国内兜底：`CLOSED / ACCEPTED`；final product source=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`，technical=`PASS`，用户 GUI=`PASS`。
+- S19-T02 GUI 确认第二阶段网络失败、同窗三按钮、已验证 `pan.quark.cn` 打开、重试单 worker/fallback 清理及取消继续运行均 PASS。
+- `FULL=NOT_RUN / NO_FULL`；本最终收口轮不重跑既有测试、GUI smoke 或 Release build。
+- 未修改版本号，未 tag、未发布 Installer/GitHub Release/夸克正式文件或 Gitee 正式 metadata。
+- 后续版本规划：废弃 `v1.0.10`，下一正式版本统一为 `1.1.0`（Updater `1.1.0.0`、tag/Release `v1.1.0`），须在 Stage19 进入 main 后另开正式发布流程；本轮不实施。
 
 ## 2026-09-12 S19-T02 technical acceptance ready
 

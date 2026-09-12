@@ -1,3 +1,13 @@
+# 2026-09-12：Stage19 CLOSED / ACCEPTED
+
+用户最终确认 S19-T02 GUI=`PASS`。S19-T02=`CLOSED / ACCEPTED`，final product source=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`，technical=`PASS`，GUI=`PASS`，`FULL=NOT_RUN / NO_FULL`。第二阶段网络失败、同窗 `[点击网盘下载] [重试在线更新] [取消]`、已验证 `pan.quark.cn` 打开、重试无重复窗口/worker且清理 fallback、取消继续运行且不启动安装程序均通过。
+
+Stage19=`CLOSED / ACCEPTED`：S19-T01｜首次冷启动与今日排查回导优化、S19-T02｜在线更新下载失败国内兜底均已关闭。安全边界保持：fallback 仅 `NetworkUnavailable / RateLimited`；`SizeMismatch` 和 SHA/signature/manifest/archive/`IoFailure` 等不 fallback；Gitee 只提供 `ManualDownloadUrl`，GitHub 仍为版本与发行身份权威；`SignedUpdatePackageDownloader` 与独立 Updater 未改。
+
+本最终收口轮不重跑 44/44、GUI smoke、Release build、FULL 或 S19-T01 旧回归。未修改版本号，未 tag、未发布 GitHub Release/Installer、未上传夸克正式文件、未修改 Gitee 正式 metadata。正式工作区历史 dirty 保持原 `1 modified + 4 untracked`。
+
+版本规划最终确认：废弃 `v1.0.10`。Stage19 进入 main 后须另开 `v1.1.0` 正式发布流程；届时对外/App/Gitee metadata=`1.1.0`，Updater=`1.1.0.0`，Git tag/GitHub Release=`v1.1.0`，发布资产文件名使用 `1.1.0`。本轮仍不实施任何版本或发布变更。
+
 # 2026-09-12：S19-T02 技术验收就绪，等待用户 GUI
 
 最终 implementation=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`，Sol 独立 `TECHNICAL_REVIEW=PASS`。最终范围精确为 `App.xaml.cs`、`MainWindow.xaml.cs`、`UpdateNotificationViewModel.cs`、`WpfDialogService.cs` 与新增 S19-T02 专项；S17 第一阶段 fallback 和全部安全链保持。S19+S17+S15=`44/44 PASS`；final Release App build=`0 warning / 0 error`；`FULL=NOT_RUN / NO_FULL`。
