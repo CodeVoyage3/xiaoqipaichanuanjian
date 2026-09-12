@@ -1,5 +1,6 @@
 # 2026-09-12 current：S19-T01 R4 UI POLISH / FINAL GUI RETEST READY
 
+- 初版 R4 launcher 使用了非 TEMP/GUID 根并被运行时正确拒绝；入口已修正为 `%TEMP%\78958c41-8cbe-49f7-a20b-95f575b4af9d`。一次性同结构 smoke 已取得真实主窗口后删除；最终根从 R3 基线重新复制，DB SHA256=`3F70174D...68818`、sidecar=`0`。
 - 用户 GUI 已确认 R3 正式提交、180→80提交/100待排查及其余业务流 PASS；5000 行读取逻辑 PASS，仅 loading 视觉与结果原因/筛选需收口。
 - R4=`443e926`，只增加 TodayInspection 居中不定进度 overlay，以及确认窗口基于既有 Preview 分类/Reason 的可见结果、原因与 UI-only 筛选；业务、Schema、Excel、提交链均未修改。
 - R4 精准专项=`4/4 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`，既有 `99/99`、`114/114`、`36/36` 未重跑。

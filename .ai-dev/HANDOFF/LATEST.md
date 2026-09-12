@@ -1,5 +1,7 @@
 # 2026-09-12：S19-T01 R4 UI POLISH / FINAL GUI RETEST READY
 
+R4 首次交付启动器错误地把隔离根放在候选目录，触发“隔离数据目录必须是 TEMP 下的 GUID 普通目录”；该候选入口已立即修正。当前唯一 R4 根=`%TEMP%\78958c41-8cbe-49f7-a20b-95f575b4af9d`，从 R3 已验收隔离 DB 重新复制，SHA256=`3F70174D16C69E97A4DA3E83725402A0908619D62B718C3C5C2C28670FF68818`，sidecar=`0`。同结构一次性 smoke 根已取得真实主窗口后删除；不得再使用修正前入口/数据根。
+
 用户 GUI 已确认 R3 正式提交与 180→80/100 闭环 PASS，任意文件名、A:L、行级容错和文件级错误均 PASS；5000 行 loading 功能 PASS，但视觉反馈与结果原因可读性需最终收口。
 
 R4 implementation=`443e926`，仅为 TodayInspection 居中原生不定进度 overlay，以及确认窗口复用既有 Preview 分类/Reason 的“处理结果”“原因”和轻量筛选。筛选只投影显示集合，不改原始 Preview 或 Submit payload。R4 精准专项=`4/4 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`。当前 `R4_UI_POLISH_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`，Stage19 不关闭，未 push、未发布。
