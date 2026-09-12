@@ -1,3 +1,10 @@
+# 2026-09-12 current：S19-T01 GUI BLOCKER R3 REPAIRED / PARTIAL SUBMISSION RETEST READY
+
+- R2 GUI 预览已达有效80/未填写100/状态变化0，但正式确认提交后再次状态变化80；A～I 停止，状态曾退回 `GUI_BLOCKER_FOUND_R3 / REPAIR_REQUIRED / NOT_ACCEPTED`。
+- R2 隔离库 80 条 Draft 逐项证明，仅提交分支 `HandledAttentionVersion >= AttentionVersion` 命中80/80，其余当前事实门禁及 handled 结构均合法。
+- repair=`f38f4cd`；提交/批量提交/Excel 链路直接专项=`99/99 PASS`，真实 180/80/100 形成 `80 Inspection + 100 open pending`；Release App build=`0 warning / 0 error`。
+- S19-T01=`R3_REPAIR_IMPLEMENTED / PARTIAL_SUBMISSION_GUI_RETEST_READY / NOT_ACCEPTED`；Stage19 不关闭。FULL=`NOT_RUN / NO_FULL`，正式数据库=`NO ACCESS`，未 push、未发布。
+
 # 2026-09-12 current：S19-T01 GUI BLOCKER R2 REPAIRED / PARTIAL PREVIEW RETEST READY
 
 - 用户现场 180 批次填 80/空 100 后预览为有效 0、未填写 100、状态变化 80；A～I 停止，状态曾退回 `GUI_BLOCKER_FOUND_R2 / REPAIR_REQUIRED / NOT_ACCEPTED`。

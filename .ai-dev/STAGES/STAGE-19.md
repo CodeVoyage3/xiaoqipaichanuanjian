@@ -2,7 +2,11 @@
 
 日期：2026-09-12（Asia/Shanghai）
 
-Stage19 = `IN_PROGRESS / S19_T01_PARTIAL_PREVIEW_GUI_RETEST_READY / NOT_CLOSED`
+Stage19 = `IN_PROGRESS / S19_T01_PARTIAL_SUBMISSION_GUI_RETEST_READY / NOT_CLOSED`
+
+## 2026-09-12 GUI blocker R3
+
+R2 GUI 已通过预览 80/100/0，但正式提交仍因 `InspectionSubmissionUseCase` 把合法 cold-start 0/0 解释为已处理而跳过 80/80。R2 隔离库逐项核对证明其余提交门禁全部有效且未命中。repair=`f38f4cd` 删除 partial 提交的错误相等判断，并确保合法 0/0 剩余 item 可重建；handled 结构边界和其他 stale 保护保持。直接专项 `99/99 PASS`，Release App build `0 warning / 0 error`。新 GUI 只先重验正式提交成功、窗口自然关闭及 80 已提交/100 待排查；PASS 后再恢复其余 A～I，Stage19 不关闭。
 
 ## 2026-09-12 GUI blocker R2
 

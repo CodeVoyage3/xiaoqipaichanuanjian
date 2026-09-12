@@ -1,3 +1,9 @@
+# 2026-09-12：S19-T01 GUI BLOCKER R3 REPAIRED / PARTIAL SUBMISSION RETEST READY
+
+R2 GUI 已确认预览有效80/未填写100/状态变化0，但正式提交把 80 条再次全部判 stale。R2 隔离库只读统计证明 task/item/tracking/stage/attention/reconfirmation/product/baseline 及 handled 结构均合法，唯一命中是 `InspectionSubmissionUseCase` partial 分支的 `HandledAttentionVersion >= AttentionVersion`（80/80）。
+
+repair=`f38f4cd` 删除错误相等门禁，并使合法 attention=0 的剩余 item 可进入 successor；其余 stale 与 handled `0 <= handled <= attention` 结构保护未削弱。直接专项=`99/99 PASS`，覆盖 cold-start 0/0 全链、真实 180/80/100 提交和八类负例；Release App build=`0 warning / 0 error`。当前 `R3_REPAIR_IMPLEMENTED / PARTIAL_SUBMISSION_GUI_RETEST_READY / NOT_ACCEPTED`。新 GUI 只先重验正式提交成功、确认窗口自然关闭、约100待排查且已提交80消失；PASS 后再恢复 A～I。FULL 未跑，未 push、未发布、正式数据库未访问。
+
 # 2026-09-12：S19-T01 GUI BLOCKER R2 REPAIRED / PARTIAL PREVIEW RETEST READY
 
 用户现场已完成 180 批次首次导入/导出，但填 80、空 100 后预览为有效 0、未填写 100、状态变化 80；A～I 再次停止，状态曾退回 `GUI_BLOCKER_FOUND_R2 / REPAIR_REQUIRED / NOT_ACCEPTED`。
