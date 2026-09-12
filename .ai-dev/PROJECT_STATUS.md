@@ -1,3 +1,9 @@
+# 2026-09-12 current：S19-T01 TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED
+
+- candidate=`378c3e5683741210204e5d9b3c31bd3e2094e814`，未 push；S19-T01=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，Stage19 等待用户 GUI A～I。
+- 回导/部分提交=`114/114 PASS`（继承且相关代码未再改）；冷启动、migration 9→10、保护快照恢复及直接回归=`36/36 PASS`；Release App build=`0 warning / 0 error`；EF 无漂移；migration=`10`。
+- migration 9 字节未变；migration 10 唯一 schema 变化为 catchup 约束 `3..30 → 1..30`，业务仍只生成 `1..7`。正式数据库=`NO ACCESS`；FULL=`NOT_RUN / NO_FULL`；版本与发布链未动。
+
 # 2026-09-12 current：S19-T01 MINIMAL SCHEMA CHANGE AUTHORIZED
 
 - 用户授权新增第 10 条 migration；第 9 条保持不可变。唯一 schema 变化为 `CK_batch_baselines_catchup_window: 3..30 → 1..30`，同步 configuration/ModelSnapshot；生产业务仍只生成 `1..7`。
