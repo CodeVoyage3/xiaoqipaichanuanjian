@@ -31,7 +31,8 @@ function Native-Text([string]$File, [string[]]$Arguments, [string]$WorkingDirect
     $lines = @(& $File @Arguments 2>&1)
     if ($LASTEXITCODE -ne 0) { throw "$File failed with exit $LASTEXITCODE`n$($lines -join [Environment]::NewLine)" }
     $last = $lines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Last 1
-    return if ($null -eq $last) { '' } else { $last.ToString().Trim() }
+    if ($null -eq $last) { return '' }
+    return $last.ToString().Trim()
   } finally { Pop-Location }
 }
 function Native-Checked([string]$Name, [string]$File, [string[]]$Arguments, [string]$WorkingDirectory) {
