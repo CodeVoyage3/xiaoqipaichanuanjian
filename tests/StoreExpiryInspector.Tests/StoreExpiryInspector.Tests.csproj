@@ -31,8 +31,11 @@
     <ProjectReference Include="..\StoreExpiryInspector.S9T07Fixture\StoreExpiryInspector.S9T07Fixture.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <Target Name="CopyProductionAppToTestOutput" AfterTargets="Build">
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\StoreExpiryInspector.exe;$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\StoreExpiryInspector.dll"
+  <Target Name="BuildHistoricalV107AppForS9T04" AfterTargets="Build">
+    <MSBuild Projects="$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\StoreExpiryInspector.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);Version=1.0.7;AssemblyVersion=1.0.7.0;FileVersion=1.0.7.0;S9T04V107TestMode=true;OutputPath=bin\$(Configuration)\net10.0-windows\s9t04v107\;IntermediateOutputPath=obj\$(Configuration)\net10.0-windows\s9t04v107\" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\s9t07test\net10.0-windows\StoreExpiryInspector.exe;$(MSBuildProjectDirectory)\..\..\src\StoreExpiryInspector\bin\$(Configuration)\net10.0-windows\s9t07test\net10.0-windows\StoreExpiryInspector.dll"
           DestinationFiles="$(TargetDir)StoreExpiryInspector.exe;$(TargetDir)StoreExpiryInspector.dll" />
   </Target>
   <Target Name="BindHardKillUpdateSafetyForS9T07" AfterTargets="Build" Condition="'$(S9T05TestMode)' == 'true'">

@@ -13,6 +13,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.UpdateSafety;
 
 namespace StoreExpiryInspector.Application.Updates;
 
@@ -40,7 +41,10 @@ public sealed class UpdateInstallationPreparer
     internal PreparedUpdateInstallation PrepareForTest(VerifiedUpdatePackage package, Process parent, string installRoot, string dataRoot, string updaterSourceRoot, CancellationToken cancellationToken) =>
         PrepareCore(package, parent, installRoot, dataRoot, updaterSourceRoot, true, cancellationToken);
 
-    private PreparedUpdateInstallation PrepareCore(VerifiedUpdatePackage package, Process parent, string installRoot, string dataRoot, string updaterSourceRoot, bool testOnly, CancellationToken cancellationToken)
+    internal PreparedUpdateInstallation PrepareForInstaller(VerifiedUpdatePackage package, Process bootstrap, string installRoot, string dataRoot, string sourceVersion, IReadOnlyList<string> sourceMigrations, CancellationToken cancellationToken, bool testOnly = false) =>
+        PrepareCore(package, bootstrap, installRoot, dataRoot, Path.Combine(AppContext.BaseDirectory, "Updater"), testOnly, cancellationToken, sourceVersion, sourceMigrations, true, true);
+
+    private PreparedUpdateInstallation PrepareCore(VerifiedUpdatePackage package, Process parent, string installRoot, string dataRoot, string updaterSourceRoot, bool testOnly, CancellationToken cancellationToken, string? sourceVersionOverride = null, IReadOnlyList<string>? sourceMigrationsOverride = null, bool updaterFromCandidate = false, bool installerBootstrap = false)
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(parent);
@@ -53,28 +57,29 @@ public sealed class UpdateInstallationPreparer
         var journalPath = Path.Combine(operationRoot, "journal.json");
         var preJournalPath = Path.Combine(operationRoot, "schema-preparation.json");
 
-        ValidateRoots(installRoot, dataRoot, updaterSourceRoot, testOnly);
+        ValidateRoots(installRoot, dataRoot, updaterSourceRoot, testOnly, installerBootstrap);
         if (!Directory.Exists(appPath) || Directory.Exists(stagingPath) || Directory.Exists(oldPath)) throw new InvalidOperationException("更新程序目录状态无效。");
         var oldTree = InstallationTreeFingerprint.Create(appPath);
         try
         {
             Directory.CreateDirectory(operationRoot);
             EnsureOrdinaryTree(operationRoot);
-            CopyTree(updaterSourceRoot, updaterPath);
             var operationPackage = Path.Combine(operationRoot, "candidate.zip");
             CopyPackage(package.PackagePath, operationPackage, cancellationToken);
             using var lockedPackage = new FileStream(operationPackage, FileMode.Open, FileAccess.Read, FileShare.Read);
             var revalidated = package with { CacheDirectory = operationRoot, PackagePath = operationPackage };
-            if (_downloader.RevalidateForInstall(revalidated, cancellationToken).Outcome != UpdatePackageOutcome.Verified)
-                throw new InvalidDataException("更新包安装前重验失败。");
+            var revalidation = _downloader.RevalidateForInstall(revalidated, cancellationToken);
+            if (revalidation.Outcome != UpdatePackageOutcome.Verified)
+                throw new InvalidDataException($"更新包安装前重验失败：{revalidation.Outcome}。{revalidation.Message}");
             lockedPackage.Position = 0;
             TestCheckpoint(testOnly, "StagingStarted", stagingPath, operationRoot, dataRoot);
             ExtractAuditedArchive(lockedPackage, stagingPath, cancellationToken);
+            CopyTree(updaterFromCandidate ? Path.Combine(stagingPath, "Updater") : updaterSourceRoot, updaterPath);
             TestCheckpoint(testOnly, "StagingCompleted", stagingPath, operationRoot, dataRoot);
             var candidateTree = InstallationTreeFingerprint.Create(stagingPath);
             var now = DateTimeOffset.UtcNow;
-            var sourceVersion = SourceVersion(parent);
-            var declaredSourceMigrations = DeclaredSourceMigrations();
+            var sourceVersion = sourceVersionOverride ?? TestFixtureSourceVersion(testOnly) ?? SourceVersion(parent);
+            var declaredSourceMigrations = sourceMigrationsOverride ?? DeclaredSourceMigrations(testOnly, package.TargetMigrations);
             var actualSourceMigrations = ReadAppliedMigrations(dataRoot);
             ValidateSourcePermission(package, sourceVersion, actualSourceMigrations);
             SchemaUpdateJournal? schema = null;
@@ -119,8 +124,14 @@ public sealed class UpdateInstallationPreparer
         DurableFile.Replace(path, JsonSerializer.Serialize(new { operationId, sourceVersion, sourceMigrations = source, targetMigrations = target, phase, treeSwitchAuthorized = false }));
     }
 
-    private static IReadOnlyList<string> DeclaredSourceMigrations()
+    private static IReadOnlyList<string> DeclaredSourceMigrations(bool testOnly, IReadOnlyList<string> targetMigrations)
     {
+#if S9T07_TEST
+        if (testOnly && targetMigrations.SequenceEqual(CurrentSchemaIdentity.Migrations.Take(9), StringComparer.Ordinal))
+            return CurrentSchemaIdentity.Migrations.Take(9).ToArray();
+        if (testOnly && RuntimeDataRoot.IsS9T07TestInstall)
+            return CurrentSchemaIdentity.Migrations.Take(9).ToArray();
+#endif
         using var context = new StoreDbContextFactory().CreateDbContext([]);
         var migrations = context.Database.GetMigrations().OrderBy(id => id, StringComparer.Ordinal).ToArray();
         if (!SchemaUpdateJournal.IsValidMigrationList(migrations)) throw new InvalidDataException("旧程序 Schema 声明无效。");
@@ -138,7 +149,7 @@ public sealed class UpdateInstallationPreparer
         return migrations;
     }
 
-    private static void ValidateRoots(string installRoot, string dataRoot, string updaterSourceRoot, bool testOnly)
+    private static void ValidateRoots(string installRoot, string dataRoot, string updaterSourceRoot, bool testOnly, bool installerBootstrap = false)
     {
         installRoot = Path.GetFullPath(installRoot); dataRoot = Path.GetFullPath(dataRoot); updaterSourceRoot = Path.GetFullPath(updaterSourceRoot);
         if (testOnly)
@@ -149,12 +160,11 @@ public sealed class UpdateInstallationPreparer
         else
         {
             var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var appPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory));
             var registeredRoot = Registry.CurrentUser.OpenSubKey($"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{{{AppIdKey}}}_is1")?.GetValue("Inno Setup: App Path") as string;
             if (!string.Equals(dataRoot, Path.Combine(local, ProductId), StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(appPath, Path.Combine(installRoot, "app"), StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(registeredRoot is null ? null : Path.TrimEndingDirectorySeparator(Path.GetFullPath(registeredRoot)), installRoot, StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(updaterSourceRoot, Path.Combine(appPath, "Updater"), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("升级根目录身份无效。");
+                (!installerBootstrap && (!string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)), Path.Combine(installRoot, "app"), StringComparison.OrdinalIgnoreCase) || !string.Equals(updaterSourceRoot, Path.Combine(installRoot, "app", "Updater"), StringComparison.OrdinalIgnoreCase))) ||
+                (installerBootstrap && !File.Exists(Path.Combine(installRoot, "app", "StoreExpiryInspector.exe")))) throw new InvalidDataException("升级根目录身份无效。");
         }
         EnsureOrdinaryTree(installRoot); EnsureOrdinaryTree(dataRoot); EnsureOrdinaryTree(updaterSourceRoot);
     }
@@ -168,6 +178,14 @@ public sealed class UpdateInstallationPreparer
         Version.TryParse(value, out var version) && version.Major >= 0 && version.Minor >= 0 && version.Build >= 0 && version.Revision <= 0
             ? version.ToString(3)
             : throw new InvalidDataException("父进程版本身份无效。");
+
+    private static string? TestFixtureSourceVersion(bool testOnly)
+    {
+#if S9T07_TEST
+        if (testOnly && RuntimeDataRoot.IsS9T07TestInstall) return "1.0.5";
+#endif
+        return null;
+    }
 
     private static void RequireDirectGuidChild(string root, string value)
     {

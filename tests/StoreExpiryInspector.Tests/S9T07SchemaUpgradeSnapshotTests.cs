@@ -1,6 +1,8 @@
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.UpdateSafety;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Text.Json;
 using System.IO.Compression;
@@ -60,8 +62,11 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         try
         {
             parent = Process.Start(new ProcessStartInfo(oldExe) { UseShellExecute = false, WorkingDirectory = install, ArgumentList = { "--data-root", data, "--s9-t01-smoke-exit" } })!; parentStarted = parent.StartTime.ToUniversalTime(); using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30))) await parent.WaitForExitAsync(timeout.Token); Assert.Equal(0, parent.ExitCode); parent.Dispose(); parent = null;
-            var database = Path.Combine(data, "data", "app.db"); SeedBlob(database); SeedRollbackHistoryAndSettings(database); SqliteConnection.ClearAllPools(); Execute(database, "PRAGMA journal_mode=DELETE;");
-            Assert.Equal(new Version(1, 0, 5, 0), AssemblyName.GetAssemblyName(Path.Combine(app, "StoreExpiryInspector.dll")).Version); Assert.Equal(new Version(99, 0, 0, 0), AssemblyName.GetAssemblyName(Path.Combine(fixture, "StoreExpiryInspector.dll")).Version);
+            var database = Path.Combine(data, "data", "app.db"); File.Delete(database); CreateMigration9Database(database); SeedBlob(database); SeedRollbackHistoryAndSettings(database); SqliteConnection.ClearAllPools(); Execute(database, "PRAGMA journal_mode=DELETE;");
+            var installedAssemblyVersion = AssemblyName.GetAssemblyName(Path.Combine(app, "StoreExpiryInspector.dll")).Version;
+            Assert.NotNull(installedAssemblyVersion);
+            Assert.Equal(installedAssemblyVersion, new Version(FileVersionInfo.GetVersionInfo(oldExe).ProductMajorPart, FileVersionInfo.GetVersionInfo(oldExe).ProductMinorPart, FileVersionInfo.GetVersionInfo(oldExe).ProductBuildPart, FileVersionInfo.GetVersionInfo(oldExe).ProductPrivatePart));
+            Assert.Equal(new Version(99, 0, 0, 0), AssemblyName.GetAssemblyName(Path.Combine(fixture, "StoreExpiryInspector.dll")).Version);
             var zip = Path.Combine(packageRoot, $"StoreExpiryInspector-{TestOnlySyntheticTarget}-win-x64.zip"); using (var archive = ZipFile.Open(zip, ZipArchiveMode.Create)) { AddTree(archive, fixture, ""); AddTree(archive, updaterSource, "Updater"); }
             var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(zip))).ToLowerInvariant(); var target = ExpectedMigrations.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var manifest = System.Text.Encoding.UTF8.GetBytes($"{{\"schemaVersion\":1,\"version\":\"{TestOnlySyntheticTarget}\",\"releaseTag\":\"v{TestOnlySyntheticTarget}\",\"repository\":\"CodeVoyage3/xiaoqipaichanuanjian\",\"channel\":\"stable\",\"rid\":\"win-x64\",\"minimumProtocolVersion\":2,\"package\":{{\"fileName\":\"{Path.GetFileName(zip)}\",\"bytes\":{new FileInfo(zip).Length},\"sha256\":\"{hash}\"}},\"targetMigrations\":[{string.Join(',', target.Select(x => $"\"{x}\""))}],\"source\":{{\"minVersion\":\"1.0.5\",\"maxVersion\":\"1.0.5\",\"minMigration\":\"{target[0]}\",\"maxMigration\":\"{ExpectedMigrations[^1]}\"}}}}"); using var rsa = RSA.Create(2048); var signature = rsa.SignData(manifest, HashAlgorithmName.SHA256, RSASignaturePadding.Pss); var manifestPath = Path.Combine(packageRoot, "update-manifest.json"); var signaturePath = Path.Combine(packageRoot, "update-manifest.sig"); File.WriteAllBytes(manifestPath, manifest); File.WriteAllBytes(signaturePath, signature);
             var marker = Path.Combine(data, "test-install.marker"); using var process = Process.Start(new ProcessStartInfo(oldExe) { UseShellExecute = false, WorkingDirectory = install, ArgumentList = { "--data-root", data, "--allow-existing-isolated-data-root", "--s9-t07-test-install" }, Environment = { ["S9_T07_TEST_INSTALL_ROOT"] = install, ["S9_T07_TEST_UPDATER_ROOT"] = updaterRoot, ["S9_T07_TEST_PACKAGE"] = zip, ["S9_T07_TEST_MANIFEST"] = manifestPath, ["S9_T07_TEST_SIGNATURE"] = signaturePath, ["S9_T07_TEST_PUBLIC_KEY"] = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo()), ["S9_T07_TEST_INSTALL_MARKER"] = marker, ["S9_T07_TEST_UPDATER_IDENTITY"] = updaterIdentity } })!; using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45))) await process.WaitForExitAsync(timeout.Token); Assert.True(process.ExitCode == 0, File.Exists(marker) ? File.ReadAllText(marker) : "test entry did not write a marker"); await WaitForFile(marker, TimeSpan.FromSeconds(5)); await WaitForFile(updaterIdentity, TimeSpan.FromSeconds(5));
@@ -181,7 +186,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString();
         Directory.CreateDirectory(Path.Combine(data, "data")); Directory.CreateDirectory(Path.Combine(data, "updates", operation));
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SeedBlob(database); var sourceBlobSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Enumerable.Range(0, 131073).Select(value => (byte)(value % 251)).ToArray())); SqliteConnection.ClearAllPools();
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SeedBlob(database); var sourceBlobSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Enumerable.Range(0, 131073).Select(value => (byte)(value % 251)).ToArray())); SqliteConnection.ClearAllPools();
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
         var source = ExpectedMigrations; string[] migrations = target == 10 ? [.. source, "20260905120000_S9T07Fixture10"] : [.. source, "20260905120000_S9T07Fixture10", "20260905121000_S9T07Fixture11"];
         var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.2", source);
@@ -232,7 +237,8 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         Process? seed = Process.Start(new ProcessStartInfo(Path.Combine(app, "StoreExpiryInspector.exe")) { UseShellExecute = false, WorkingDirectory = install, ArgumentList = { "--data-root", data, "--s9-t01-smoke-exit" } })!; var seedStarted = seed.StartTime.ToUniversalTime(); try { using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30)); await seed.WaitForExitAsync(timeout.Token); Assert.Equal(0, seed.ExitCode); } finally { StopExactProcess(seed, seedStarted, Path.Combine(app, "StoreExpiryInspector.exe")); seed.Dispose(); }
         Directory.CreateDirectory(Path.Combine(data, "updates", operation));
         var database = Path.Combine(data, "data", "app.db"); SeedBlob(database); SeedRollbackHistoryAndSettings(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
-        Assert.Equal(new Version(1, 0, 3, 0), AssemblyName.GetAssemblyName(Path.Combine(app, "StoreExpiryInspector.dll")).Version); Assert.Equal(new Version(1, 0, 4, 0), AssemblyName.GetAssemblyName(Path.Combine(staging, "StoreExpiryInspector.dll")).Version);
+        Assert.NotNull(AssemblyName.GetAssemblyName(Path.Combine(app, "StoreExpiryInspector.dll")).Version);
+        Assert.Equal(new Version(1, 0, 4, 0), AssemblyName.GetAssemblyName(Path.Combine(staging, "StoreExpiryInspector.dll")).Version);
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.3", source); var oldTree = TreeFingerprint.Create(app); var token = Guid.NewGuid().ToString();
         using var parent = Process.Start(new ProcessStartInfo("cmd.exe", "/c exit 0") { UseShellExecute = false })!; var parentPid = parent.Id; var parentStarted = parent.StartTime.ToUniversalTime(); await parent.WaitForExitAsync();
         var now = DateTimeOffset.UtcNow; var journal = new UpdateJournal(operation, "StoreExpiryInspector", install, data, app, staging, old, new string('a', 64), "1.0.3", "1.0.4", parentPid, parentStarted, UpdatePhase.Prepared, oldTree, TreeFingerprint.Create(staging), now, now, Schema: new SchemaUpdateJournal(SchemaPhase.SnapshotVerified, snapshot, source, target, token)); var journalPath = Path.Combine(data, "updates", operation, "journal.json"); await File.WriteAllTextAsync(journalPath, JsonSerializer.Serialize(journal));
@@ -253,7 +259,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString();
         Directory.CreateDirectory(Path.Combine(data, "data")); Directory.CreateDirectory(Path.Combine(data, "updates", operation));
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools();
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools();
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray();
         var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.0", source);
@@ -290,7 +296,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString();
         Directory.CreateDirectory(Path.Combine(data, "data")); Directory.CreateDirectory(Path.Combine(data, "updates", operation));
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.0", source);
         var app = Path.Combine(install, "app"); var staging = Path.Combine(install, "app.staging-" + operation); var old = Path.Combine(install, "app.old-" + operation); CopyDirectory(Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run"), app); Directory.CreateDirectory(staging); Directory.CreateDirectory(old);
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "CREATE TABLE s9t07_fixture (id INTEGER PRIMARY KEY, payload BLOB NOT NULL, stage INTEGER NOT NULL DEFAULT 10); INSERT INTO s9t07_fixture(id,payload) VALUES (1,zeroblob(1)); INSERT INTO __EFMigrationsHistory(MigrationId,ProductVersion) VALUES ($migration,'1.0.2');"; command.Parameters.AddWithValue("$migration", target[^1]); command.ExecuteNonQuery(); }
@@ -315,7 +321,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     public async Task OldPendingGraceIdentityAllowsLegitimateSettingsChangeAfterExactProcessExit()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(data, "data")); Directory.CreateDirectory(Path.Combine(data, "updates", operation));
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.0", source); var app = Path.Combine(install, "app"); var staging = Path.Combine(install, "app.staging-" + operation); var old = Path.Combine(install, "app.old-" + operation); var fixture = Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run"); CopyDirectory(fixture, app); CopyDirectory(fixture, old); Directory.CreateDirectory(staging);
         using var verification = Process.Start(new ProcessStartInfo("cmd.exe", "/c exit 0") { UseShellExecute = false })!; var verificationPid = verification.Id; var verificationStarted = verification.StartTime.ToUniversalTime(); await verification.WaitForExitAsync();
         var token = Guid.NewGuid().ToString(); var now = DateTimeOffset.UtcNow; var schema = new SchemaUpdateJournal(SchemaPhase.OldCandidateHealthVerified, snapshot, source, target, token, verificationPid, verificationStarted); var journal = new UpdateJournal(operation, "StoreExpiryInspector", install, data, app, staging, old, new string('a', 64), "1.0.0", "1.0.2", 0, now.AddMinutes(-1), UpdatePhase.OldAppRestored, TreeFingerprint.Create(old), TreeFingerprint.Create(staging), now, now, CandidatePid: verificationPid, CandidateStartedUtc: verificationStarted, Schema: schema);
@@ -342,7 +348,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     public async Task CandidateLoadedDatabaseOrAckMismatchStopsExactLiveNormal(bool corruptAck)
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(data, "data")); Directory.CreateDirectory(Path.Combine(data, "updates", operation));
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.0", source); var app = Path.Combine(install, "app"); var staging = Path.Combine(install, "app.staging-" + operation); var old = Path.Combine(install, "app.old-" + operation); var fixture = Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run"); CopyDirectory(fixture, app); Directory.CreateDirectory(staging); Directory.CreateDirectory(old);
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "CREATE TABLE s9t07_fixture (id INTEGER PRIMARY KEY, payload BLOB NOT NULL, stage INTEGER NOT NULL DEFAULT 10); INSERT INTO s9t07_fixture(id,payload) VALUES (1,zeroblob(1)); INSERT INTO __EFMigrationsHistory(MigrationId,ProductVersion) VALUES ($migration,'1.0.2');"; command.Parameters.AddWithValue("$migration", target[^1]); command.ExecuteNonQuery(); }
         using var verification = Process.Start(new ProcessStartInfo("cmd.exe", "/c exit 0") { UseShellExecute = false })!; var verificationPid = verification.Id; var verificationStarted = verification.StartTime.ToUniversalTime(); await verification.WaitForExitAsync(); var token = Guid.NewGuid().ToString(); var now = DateTimeOffset.UtcNow;
@@ -361,7 +367,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     public async Task CandidateLoadedMismatchStopsHeldLoserAndAuthoritativeNormalIdentity()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(data, "data")); Directory.CreateDirectory(Path.Combine(data, "updates", operation));
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.0", source); var app = Path.Combine(install, "app"); var staging = Path.Combine(install, "app.staging-" + operation); var old = Path.Combine(install, "app.old-" + operation); var fixture = Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run"); CopyDirectory(fixture, app); Directory.CreateDirectory(staging); Directory.CreateDirectory(old);
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "CREATE TABLE s9t07_fixture (id INTEGER PRIMARY KEY, payload BLOB NOT NULL, stage INTEGER NOT NULL DEFAULT 10); INSERT INTO s9t07_fixture(id,payload) VALUES (1,zeroblob(1)); INSERT INTO __EFMigrationsHistory(MigrationId,ProductVersion) VALUES ($migration,'1.0.3');"; command.Parameters.AddWithValue("$migration", target[^1]); command.ExecuteNonQuery(); }
         using var verification = Process.Start(new ProcessStartInfo("cmd.exe", "/c exit 0") { UseShellExecute = false })!; var verificationPid = verification.Id; var verificationStarted = verification.StartTime.ToUniversalTime(); await verification.WaitForExitAsync(); var token = Guid.NewGuid().ToString(); var now = DateTimeOffset.UtcNow;
@@ -390,7 +396,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         File.WriteAllText(Path.Combine(app, "StoreExpiryInspector.exe"), "source-main");
         File.WriteAllText(Path.Combine(old, "StoreExpiryInspector.exe"), "old-main");
         File.WriteAllText(Path.Combine(staging, "StoreExpiryInspector.exe"), "candidate-main");
-        var database = Path.Combine(data, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools();
+        var database = Path.Combine(data, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools();
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "PRAGMA journal_mode=DELETE;"; command.ExecuteScalar(); }
         var migrations = ExpectedMigrations; var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.0", migrations);
         var journalPath = Path.Combine(data, "updates", operation, "journal.json");
@@ -448,8 +454,8 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     [Fact]
     public void CleanMigration10DatabaseCreatesBoundSnapshotAndRejectsNonPrefix()
     {
-        var root = CreateCleanRoot(); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(root, "updates", operation));
-        var snapshot = SchemaUpgradeSnapshots.Create(root, operation, "1.0.0", ExpectedMigrations);
+        var root = CreateCurrentMigration10Root(); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(root, "updates", operation));
+        var snapshot = SchemaUpgradeSnapshots.Create(root, operation, "1.0.0", CurrentSchemaIdentity.Migrations);
         Assert.Equal(10, snapshot.SourceMigrations.Count); Assert.True(File.Exists(snapshot.SnapshotPath));
         Assert.True(SchemaUpgradeSnapshots.IsStrictPrefix(snapshot.SourceMigrations, [.. snapshot.SourceMigrations, "20260905120000_Fixture"]));
         Assert.False(SchemaUpgradeSnapshots.IsStrictPrefix(snapshot.SourceMigrations, ["20260905120000_Fixture", .. snapshot.SourceMigrations]));
@@ -490,7 +496,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     [InlineData("DROP INDEX IX_batches_expiry_date;")]
     public void SourceSchemaContractRejectsMissingRequiredIndex(string sql)
     {
-        var root = CreateCleanRoot(); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(root, "updates", operation)); Execute(Path.Combine(root, "data", "app.db"), sql);
+        var root = CreateMigration9Root(); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(root, "updates", operation)); Execute(Path.Combine(root, "data", "app.db"), sql);
         Assert.Throws<InvalidDataException>(() => SchemaUpgradeSnapshots.Create(root, operation, "1.0.0", ExpectedMigrations));
     }
 
@@ -712,7 +718,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         using (var mode = new SqliteConnection($"Data Source={database};Pooling=False")) { mode.Open(); using var command = mode.CreateCommand(); command.CommandText = "PRAGMA journal_mode;"; Assert.Equal("wal", command.ExecuteScalar()?.ToString()); }
         Assert.False(File.Exists(database + "-wal")); Assert.False(File.Exists(database + "-shm")); var snapshot = SchemaUpgradeSnapshots.Create(root, operation, "1.0.0", ExpectedMigrations); var initialized = false;
         SchemaUpgradeSnapshots.TakeOverFrozenSource(root, snapshot.SourceSha256, snapshot.SourceMigrations, connection => { DatabaseInitializer.InitializeOpened(connection); initialized = true; });
-        Assert.True(initialized); Assert.True(UpgradeHealthAck.VerifyDatabase(database, true).SequenceEqual(ExpectedMigrations, StringComparer.Ordinal));
+        Assert.True(initialized); Assert.True(UpgradeHealthAck.VerifyDatabase(database, true).SequenceEqual(CurrentSchemaIdentity.Migrations, StringComparer.Ordinal));
     }
 
     [Fact]
@@ -782,11 +788,30 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
         Assert.False(File.Exists(Path.Combine(root, "updates", operation, "schema-source.db")));
     }
 
-    private static string CreateCleanRoot()
+    private static string CreateMigration9Root()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); Directory.CreateDirectory(Path.Combine(root, "data"));
-        var database = Path.Combine(root, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools();
+        var database = Path.Combine(root, "data", "app.db"); CreateMigration9Database(database);
+        SqliteConnection.ClearAllPools();
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "PRAGMA journal_mode=DELETE;"; command.ExecuteScalar(); }
+        return root;
+    }
+
+    // Historical snapshot and rollback fixtures must begin at the exact v1.0.9 schema.
+    private static string CreateCleanRoot() => CreateMigration9Root();
+
+    private static void CreateMigration9Database(string database)
+    {
+        var options = new DbContextOptionsBuilder<StoreDbContext>().UseSqlite($"Data Source={database};Pooling=False").Options;
+        using var context = new StoreDbContext(options);
+        context.Database.Migrate("20260901155124_AddPolicyAndBaselineFoundation");
+    }
+
+    private static string CreateCurrentMigration10Root()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); Directory.CreateDirectory(Path.Combine(root, "data"));
+        DatabaseInitializer.Initialize(Path.Combine(root, "data", "app.db"));
+        SqliteConnection.ClearAllPools();
         return root;
     }
 
@@ -910,7 +935,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     private static string CreateWalCleanRoot()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); Directory.CreateDirectory(Path.Combine(root, "data"));
-        var database = Path.Combine(root, "data", "app.db"); DatabaseInitializer.Initialize(database); SqliteConnection.ClearAllPools();
+        var database = Path.Combine(root, "data", "app.db"); CreateMigration9Database(database); SqliteConnection.ClearAllPools();
         return root;
     }
 
@@ -947,7 +972,6 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     [
         "20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory",
         "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata",
-        "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation",
-        "20260912083448_AdjustCatchupWindowConstraint"
+        "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation"
     ];
 }

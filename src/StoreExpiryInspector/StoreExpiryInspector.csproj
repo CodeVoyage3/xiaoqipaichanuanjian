@@ -18,6 +18,10 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\s9t07test\</IntermediateOutputPath>
     <OutputPath>bin\$(Configuration)\$(TargetFramework)\s9t07test\</OutputPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(S9T04V107TestMode)' == 'true'">
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\s9t04v107\</IntermediateOutputPath>
+    <OutputPath>bin\$(Configuration)\$(TargetFramework)\s9t04v107\</OutputPath>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\StoreExpiryInspector.UpdateSafety\StoreExpiryInspector.UpdateSafety.csproj" GlobalPropertiesToRemove="S9T07HardKillTestMode">
@@ -25,6 +29,8 @@
     </ProjectReference>
     <Compile Remove="Application\Updates\SchemaUpgradeSnapshot.cs" />
     <Compile Remove="Application\Updates\UpgradeHealthAck.cs" />
+    <Compile Remove="Migrations\20260912083448_AdjustCatchupWindowConstraint.cs" Condition="'$(S9T04V107TestMode)' == 'true'" />
+    <Compile Remove="Migrations\20260912083448_AdjustCatchupWindowConstraint.Designer.cs" Condition="'$(S9T04V107TestMode)' == 'true'" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />

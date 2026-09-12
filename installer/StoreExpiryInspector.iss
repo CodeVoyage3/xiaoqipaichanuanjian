@@ -32,10 +32,19 @@
 #endif
 
 #ifndef TestMode
-  #ifndef AppVersion
+#ifndef AppVersion
     #error AppVersion must match the fresh payload executable version.
   #endif
   #define OutputName "StoreExpiryInspector-Setup-" + AppVersion
+#endif
+#ifndef UpdatePackage
+  #error UpdatePackage must be the frozen StoreExpiryInspector win-x64 zip.
+#endif
+#ifndef UpdateManifest
+  #error UpdateManifest must be the frozen signed update manifest.
+#endif
+#ifndef UpdateSignature
+  #error UpdateSignature must be the frozen update manifest signature.
 #endif
 
 [Setup]
@@ -57,8 +66,13 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputDir}
 OutputBaseFilename={#OutputName}
+#ifdef TestMode
+Compression=lzma2/fast
+SolidCompression=no
+#else
 Compression=lzma2/ultra64
 SolidCompression=yes
+#endif
 UninstallDisplayName={#AppName}
 SetupIconFile=..\src\StoreExpiryInspector\Assets\StoreExpiryInspector.ico
 UninstallDisplayIcon={app}\app\StoreExpiryInspector.exe
@@ -66,18 +80,25 @@ AppMutex={#AppMutexName}
 SetupMutex=StoreExpiryInspector.S9T02.Setup.{#AppIdKey}
 
 [Files]
-Source: "{#PayloadDir}\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PayloadDir}\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: ShouldInstallPayload
 Source: "{#PayloadDir}\*"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy recursesubdirs createallsubdirs
+Source: "{#UpdatePackage}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
+Source: "{#UpdateManifest}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
+Source: "{#UpdateSignature}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
 
+#ifndef TestMode
 [Icons]
 Name: "{autodesktop}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; IconFilename: "{app}\app\StoreExpiryInspector.exe"
 Name: "{group}\{#ShortcutName}"; Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; IconFilename: "{app}\app\StoreExpiryInspector.exe"
+#endif
 
 [Run]
 Filename: "{app}\app\StoreExpiryInspector.exe"; Parameters: "{code:RuntimeArguments}"; WorkingDir: "{app}\app"; Description: "安装完成后运行门店效期排查软件"; Flags: postinstall nowait skipifsilent; Check: ShouldLaunchApplication
 
+#ifndef TestMode
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#RunValueName}"; Flags: uninsdeletevalue
+#endif
 
 [Languages]
 Name: "chinesesimp"; MessagesFile: "ChineseSimplified.isl"
@@ -87,6 +108,8 @@ var
   WasInstalled: Boolean;
   InstallMutex: THandle;
   ExistingInstallRoot: String;
+  CrossSchemaUpgrade: Boolean;
+  CrossSchemaOperation: AnsiString;
 
 function GetFileAttributes(Path: String): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
@@ -117,10 +140,15 @@ end;
 
 function ShouldLaunchApplication(): Boolean;
 begin
-  Result := (not WizardSilent) and
+  Result := (not CrossSchemaUpgrade) and (not WizardSilent) and
     (Pos('/NOPOSTINSTALLRUN', Uppercase(GetCmdTail)) = 0) and
     (Pos('/SUPPRESSMSGBOXES', Uppercase(GetCmdTail)) = 0);
   if Result then ReleaseInstallMutexForApplicationLaunch;
+end;
+
+function ShouldInstallPayload(): Boolean;
+begin
+  Result := not CrossSchemaUpgrade;
 end;
 
 function NextVersionPart(var Value: String): Integer;
@@ -267,10 +295,15 @@ begin
   Result := WasInstalled and (PageID = wpSelectDir);
 end;
 
+function IsGuidText(Value: String): Boolean;
+begin
+  Result := (Length(Value) = 36) and (Value[9] = '-') and (Value[14] = '-') and (Value[19] = '-') and (Value[24] = '-');
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
-  PreflightExe: String;
+  PreflightExe, PackageFile, ManifestFile, SignatureFile, ResultFile: String;
 begin
   if WasInstalled then WizardForm.DirEdit.Text := ExistingInstallRoot;
   if not IsSafeInstallRoot(WizardDirValue) then
@@ -295,13 +328,27 @@ begin
     exit;
   end;
   ExtractTemporaryFiles('*');
+  ExtractTemporaryFile(ExtractFileName('{#UpdatePackage}'));
+  ExtractTemporaryFile(ExtractFileName('{#UpdateManifest}'));
+  ExtractTemporaryFile(ExtractFileName('{#UpdateSignature}'));
   PreflightExe := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\StoreExpiryInspector.exe');
   if not Exec(PreflightExe, '--installer-preflight --data-root "' + ExpandConstant('{#DataRoot}') + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     Result := '无法执行数据安全检查。为保护原数据，安装已停止。';
     exit;
   end;
-  if ResultCode = 10 then Result := '检测到旧版数据库。为保护原数据，安装已停止。'
+  if ResultCode = 10 then
+  begin
+    PackageFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdatePackage}');
+    ManifestFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateManifest}');
+    SignatureFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateSignature}');
+    ResultFile := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\operation.txt');
+    if not Exec(PreflightExe, '--installer-cross-schema --data-root "' + ExpandConstant('{#DataRoot}') + '" --install-root "' + ExistingInstallRoot + '" --package "' + PackageFile + '" --manifest "' + ManifestFile + '" --signature "' + SignatureFile + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+    begin Result := '旧版数据无法通过安全离线升级验证，安装已停止。'; exit; end;
+    LoadStringFromFile(ResultFile, CrossSchemaOperation);
+    if not IsGuidText(CrossSchemaOperation) then begin Result := '离线升级操作身份无效，安装已停止。'; exit; end;
+    CrossSchemaUpgrade := True;
+  end
   else if ResultCode = 11 then Result := '检测到未知或更高版本数据库。为保护原数据，安装已停止。'
   else if ResultCode = 12 then Result := '数据库或 WAL 状态不可安全验证。为保护原数据，安装已停止。'
   else if ResultCode = 13 then Result := '数据目录不安全。为保护原数据，安装已停止。'
@@ -351,7 +398,25 @@ var
   ExePath: String;
   Command: String;
   Arguments: String;
+  ResultCode: Integer;
+  PreflightExe, PackageFile, ManifestFile, SignatureFile, UpdaterPath, JournalPath: String;
 begin
+  if (CurStep = ssInstall) and CrossSchemaUpgrade then
+  begin
+    ReleaseInstallMutexForApplicationLaunch;
+    ExtractTemporaryFiles('*');
+    PreflightExe := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\StoreExpiryInspector.exe');
+    PackageFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdatePackage}');
+    ManifestFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateManifest}');
+    SignatureFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateSignature}');
+    UpdaterPath := ExpandConstant('{#DataRoot}\updates\' + CrossSchemaOperation + '\updater\StoreExpiryInspector.Updater.exe');
+    JournalPath := ExpandConstant('{#DataRoot}\updates\' + CrossSchemaOperation + '\journal.json');
+    if not Exec(UpdaterPath, '--journal "' + JournalPath + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+      RaiseException('安全离线升级终态未通过验证，安装已停止。');
+    if not Exec(PreflightExe, '--installer-cross-schema-result --data-root "' + ExpandConstant('{#DataRoot}') + '" --operation "' + CrossSchemaOperation + '" --install-root "' + ExistingInstallRoot + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+      RaiseException('安全离线升级终态未通过验证，安装已停止。');
+  end;
+  #ifndef TestMode
   if (CurStep = ssPostInstall) and not WasInstalled then
   begin
     ExePath := ExpandConstant('{app}\app\StoreExpiryInspector.exe');
@@ -361,4 +426,5 @@ begin
     if not RegWriteStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', '{#RunValueName}', Command) then
       RaiseException('无法写入当前用户开机启动设置。');
   end;
+  #endif
 end;

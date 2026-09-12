@@ -4,6 +4,7 @@ using System.IO;
 using System.Security;
 using System.Security.Cryptography;
 using Microsoft.Data.Sqlite;
+using StoreExpiryInspector.UpdateSafety;
 
 namespace StoreExpiryInspector.Infrastructure.Backups;
 
@@ -50,19 +51,7 @@ public sealed class PreImportSnapshotService
         "__EFMigrationsHistory"
     };
 
-    private static readonly string[] RequiredMigrationIds =
-    {
-        "20260826123739_InitialCreate",
-        "20260826130822_AddTasksAndDrafts",
-        "20260826135612_AddInspectionHistory",
-        "20260826142429_AddInventoryAdjustments",
-        "20260826152131_AddImportPersistence",
-        "20260826155455_AddBackupMetadata",
-        "20260826162033_AddSettingsAndAppState",
-        "20260826170403_AddLifecycleEvents",
-        "20260901155124_AddPolicyAndBaselineFoundation",
-        "20260912083448_AdjustCatchupWindowConstraint"
-    };
+    private static readonly IReadOnlyList<string> RequiredMigrationIds = CurrentSchemaIdentity.Migrations;
 
     private const string EfMigrationsLockTable = "__EFMigrationsLock";
 

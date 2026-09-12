@@ -747,7 +747,7 @@ public sealed class S8T03ImportPerformanceTests
             .Options);
 
     // The rollback matrix uses this complete business-table fingerprint rather than counts alone.
-    private static string BusinessFingerprint(string databasePath)
+    internal static string BusinessFingerprint(string databasePath)
     {
         using var connection = new SqliteConnection($"Data Source={databasePath};Foreign Keys=True");
         connection.Open();

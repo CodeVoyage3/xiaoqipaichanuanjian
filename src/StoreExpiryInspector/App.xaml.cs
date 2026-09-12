@@ -13,6 +13,7 @@ using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Logging;
 using StoreExpiryInspector.UI;
+using StoreExpiryInspector.UpdateSafety;
 
 namespace StoreExpiryInspector;
 
@@ -138,6 +139,10 @@ public partial class App : System.Windows.Application
             StartUpgradeVerification(operationId, schemaToken, schemaToken is not null && !sourceVerification);
             return;
         }
+ #if S9T07_TEST
+        if (!RuntimeDataRoot.IsTestUpdateInstall)
+        {
+ #endif
         try
         {
             DatabaseInitializer.Initialize();
@@ -174,7 +179,9 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
-
+ #if S9T07_TEST
+        }
+ #endif
         base.OnStartup(e);
         if (_updateDiagnostics is null)
         {
@@ -186,6 +193,12 @@ public partial class App : System.Windows.Application
         }
         if (RuntimeDataRoot.NormalLaunchOperationId is { } loadedOperation)
             MainWindow.Loaded += (_, _) => { try { NormalLaunchHandshake.Loaded(RuntimeDataRoot.RootDirectory, loadedOperation, RuntimeDataRoot.NormalLaunchToken!); } catch { Shutdown(1); } };
+#if S9T07_TEST
+        // TestMode E2E must prove the normal-launch ACK without keeping the
+        // Setup process tree alive through the production tray lifetime.
+        if (Environment.GetEnvironmentVariable("S9_T07_EXIT_AFTER_NORMAL_ACK") == "1")
+            MainWindow.Loaded += (_, _) => Dispatcher.BeginInvoke(Shutdown);
+#endif
         MainWindow.Show();
 #if S9T07_TEST
         if (RuntimeDataRoot.IsTestUpdateInstall)
@@ -280,7 +293,11 @@ public partial class App : System.Windows.Application
     private static IReadOnlyList<string> StaticMigrations()
     {
         using var context = new StoreDbContextFactory().CreateDbContext([]);
-        return context.Database.GetMigrations().OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        var migrations = context.Database.GetMigrations().OrderBy(id => id, StringComparer.Ordinal).ToArray();
+#if !S9T07_TEST
+        if (!migrations.SequenceEqual(CurrentSchemaIdentity.Migrations, StringComparer.Ordinal)) throw new InvalidDataException("EF migration identity does not match the production authority.");
+#endif
+        return migrations;
     }
 
     private void VerifyUpgradeAndExit(string operationId, string? schemaLaunchToken = null, bool includeWal = false)
@@ -644,7 +661,7 @@ public partial class App : System.Windows.Application
             TestInstallMarker(stage);
             var packagePath = RequiredTestPath("S9_T07_TEST_PACKAGE"); TestInstallMarker(stage = "package-path"); var manifest = File.ReadAllBytes(RequiredTestPath("S9_T07_TEST_MANIFEST")); var signature = File.ReadAllBytes(RequiredTestPath("S9_T07_TEST_SIGNATURE"));
             var key = Convert.FromBase64String(Environment.GetEnvironmentVariable("S9_T07_TEST_PUBLIC_KEY") ?? throw new InvalidDataException());
-            using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(key, out _); TestInstallMarker(stage = "key-imported"); var version = new Version(99, 0, 0); var target = StaticMigrations().Concat(["20260905120000_S9T07Fixture10"]).ToArray();
+            using var rsa = RSA.Create(); rsa.ImportSubjectPublicKeyInfo(key, out _); TestInstallMarker(stage = "key-imported"); var version = new Version(99, 0, 0); var target = CurrentSchemaIdentity.Migrations.Take(9).Concat(["20260905120000_S9T07Fixture10"]).ToArray();
             var verified = new VerifiedUpdatePackage(Path.GetDirectoryName(packagePath)!, packagePath, version, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(packagePath))).ToLowerInvariant(), target, manifest, signature, new CheckedRelease(version, 1, "v99.0.0", []), 2, new Version(1, 0, 5), new Version(1, 0, 5), target[0], target[^2]);
             TestInstallMarker("verified-input"); var result = await InstallPreparedUpdateAsync(verified, new SignedUpdatePackageDownloader(options: new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: Path.GetDirectoryName(packagePath)!)), () => { });
             if (result.Outcome != UpdatePackageOutcome.Verified) { Shutdown(1); return; }

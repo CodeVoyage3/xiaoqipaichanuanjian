@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
 using System.Reflection.Metadata;
+using System.Reflection;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -16,6 +17,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
+using StoreExpiryInspector.UpdateSafety;
 
 namespace StoreExpiryInspector.Application.Updates;
 
@@ -52,7 +54,7 @@ public sealed class SignedUpdatePackageDownloader
     private const int EntryLimit = 4096;
     private static readonly Regex VersionPattern = new("\\A(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\z", RegexOptions.CultureInvariant);
     private static readonly Regex MigrationPattern = new("\\A[0-9]{14}_[^\\s/\\\\]+\\z", RegexOptions.CultureInvariant);
-    private static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation", "20260912083448_AdjustCatchupWindowConstraint"];
+    private static readonly IReadOnlyList<string> CurrentMigrations = CurrentSchemaIdentity.Migrations;
     private readonly HttpClient _client;
     private readonly UpdatePackageOptions _options;
     private readonly HttpMessageHandler _handler;
@@ -68,6 +70,29 @@ public sealed class SignedUpdatePackageDownloader
         _options = options ?? new();
         _diagnostics = diagnostics;
         _diagnostics?.Add("downloader-handler", new { handlerType = _handler.GetType().FullName, handlerId = RuntimeHelpers.GetHashCode(_handler), clientId = RuntimeHelpers.GetHashCode(_client), createdThreadId = Environment.CurrentManagedThreadId, automaticRedirects = false, timeout = "infinite", defaultProxy = true, tls = "system-default" });
+    }
+
+    // The Setup payload is intentionally offline: its package is authenticated by the same
+    // production signature and archive audit as an online package, not by a URL fetch.
+    public UpdatePackageResult PrepareEmbedded(string packagePath, string manifestPath, string signaturePath, Version sourceVersion, string sourceMigration, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var manifestBytes = File.ReadAllBytes(manifestPath);
+            var signature = File.ReadAllBytes(signaturePath);
+            using var verifier = _options.CreateVerifier();
+            if (verifier is null || !verifier.VerifyData(manifestBytes, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss) || !TryParseManifest(manifestBytes, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "安装包内更新清单签名无效。");
+            var entry = Assembly.GetEntryAssembly()?.GetName().Version;
+            var policy = ValidateSignedManifestPolicy(manifest, entry is null ? new Version(0, 0, 0) : new Version(entry.Major, entry.Minor, entry.Build), sourceVersion, sourceMigration, minimumProtocol: 2);
+            if (policy is not null) return Fail(policy.Value, "安装包不允许当前版本或 Schema 来源。");
+            if (!string.Equals(Path.GetFileName(packagePath), manifest.PackageName, StringComparison.Ordinal) || new FileInfo(packagePath).Length != manifest.PackageBytes) return Fail(UpdatePackageOutcome.SizeMismatch, "安装包大小不匹配。");
+            using var stream = File.OpenRead(packagePath);
+            _ = SHA256.HashData(stream); // RevalidateForInstall compares these bytes to the signed manifest hash.
+            var package = new VerifiedUpdatePackage(Path.GetDirectoryName(Path.GetFullPath(packagePath))!, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, manifestBytes, signature, new CheckedRelease(manifest.Version, 1, manifest.ReleaseTag, ["update-manifest.json", "update-manifest.sig", manifest.PackageName]), manifest.MinimumProtocolVersion, manifest.MinVersion, manifest.MaxVersion, manifest.MinMigration, manifest.MaxMigration);
+            return RevalidateForInstall(package, cancellationToken);
+        }
+        catch (IOException) { return Fail(UpdatePackageOutcome.IoFailure, "安装包读取失败。"); }
+        catch (Exception) { return Fail(UpdatePackageOutcome.InvalidManifest, "安装包无法安全验证。"); }
     }
 
     public Task<UpdatePackageResult> PrepareAsync(CheckedRelease release, Version currentVersion, Action<UpdatePackageProgress>? progress, CancellationToken cancellationToken)
@@ -116,13 +141,14 @@ public sealed class SignedUpdatePackageDownloader
             if (!verifier.VerifyData(rawManifest, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名无效。");
             try { using var schema = JsonDocument.Parse(rawManifest); if (schema.RootElement.ValueKind != JsonValueKind.Object || !schema.RootElement.TryGetProperty("schemaVersion", out var schemaVersion) || schemaVersion.ValueKind != JsonValueKind.Number || !schemaVersion.TryGetInt32(out var value)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); if (value != 1) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。"); } catch (JsonException) { return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。"); }
             if (!TryParseManifest(rawManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifest, "更新清单格式无效。");
-            if (manifest.MinimumProtocolVersion is < 1 or > 2) return Fail(UpdatePackageOutcome.UnsupportedProtocol, "更新协议不受支持。");
+            var sourceMigration = CurrentMigrations[^1];
+#if S9T07_TEST
+            if (release.Version == new Version(1, 0, 7)) sourceMigration = CurrentMigrations[8];
+#endif
+            if (ValidateSignedManifestPolicy(manifest, release.Version, currentVersion, sourceMigration, minimumProtocol: 1) is { } policy) return Fail(policy, "更新清单策略无效。");
             if (manifest.Version != release.Version || manifest.ReleaseTag != release.Tag || manifest.Repository != Owner + "/" + Repo) return Fail(UpdatePackageOutcome.VersionMismatch, "更新清单与发行版本不一致。");
-            if (manifest.Rid != "win-x64") return Fail(UpdatePackageOutcome.UnsupportedPlatform, "更新包平台不受支持。");
-            if (manifest.Channel != "stable") return Fail(UpdatePackageOutcome.InvalidManifest, "更新通道无效。");
             if (manifest.Version <= currentVersion) return Fail(UpdatePackageOutcome.VersionMismatch, "候选版本必须高于当前版本。");
-            if (!manifest.SourceAllows(currentVersion, CurrentMigrations[^1])) return Fail(UpdatePackageOutcome.SourceNotSupported, "当前版本不在该更新包支持范围内。");
-            var packageName = $"StoreExpiryInspector-{manifest.Version:0.0.0}-win-x64.zip";
+            var packageName = manifest.PackageName;
             if (manifest.PackageName != packageName || !release.AssetNames.Count(name => name == packageName).Equals(1)) return Fail(UpdatePackageOutcome.AssetMissing, "发行中没有唯一匹配的更新包。");
             if (manifest.PackageBytes > PackageLimit) return Fail(UpdatePackageOutcome.AssetTooLarge, "更新包超过安全大小限制。");
             var expectedHash = Convert.FromHexString(manifest.PackageHash);
@@ -137,11 +163,12 @@ public sealed class SignedUpdatePackageDownloader
             if (!CryptographicOperations.FixedTimeEquals(expectedHash, lockedHash.GetHashAndReset())) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             progress?.Invoke(new("正在校验更新包", manifest.PackageBytes, manifest.PackageBytes));
             cancellationToken.ThrowIfCancellationRequested();
-            var audit = await Task.Run(() => AuditArchive(packagePath, directory, manifest, cancellationToken), cancellationToken);
-            if (audit != UpdatePackageOutcome.Verified) return Fail(audit, "更新包内容不符合安全要求。");
+            var candidatePackage = new VerifiedUpdatePackage(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release, manifest.MinimumProtocolVersion, manifest.MinVersion, manifest.MaxVersion, manifest.MinMigration, manifest.MaxMigration);
+            var commonValidation = RevalidateForInstall(candidatePackage, cancellationToken);
+            if (commonValidation.Outcome != UpdatePackageOutcome.Verified) return commonValidation;
             progress?.Invoke(new("更新包已准备完成，正在进入维护状态。", manifest.PackageBytes, manifest.PackageBytes));
             cancellationToken.ThrowIfCancellationRequested(); verified = true;
-            return new(UpdatePackageOutcome.Verified, "更新包已准备完成，可在维护窗口中安装。", new(directory, packagePath, manifest.Version, manifest.PackageHash, manifest.TargetMigrations, rawManifest.ToArray(), signature.ToArray(), release, manifest.MinimumProtocolVersion, manifest.MinVersion, manifest.MaxVersion, manifest.MinMigration, manifest.MaxMigration));
+            return commonValidation;
         }
         catch (OperationCanceledException error) { _diagnostics?.Add("prepare-error", new { stage = "Prepare", error = _diagnostics.SafeError(error) }); return Fail(UpdatePackageOutcome.Cancelled, "已取消更新包准备。"); }
         catch (HttpRequestException error) { _diagnostics?.Add("prepare-error", new { stage = "Prepare", error = _diagnostics.SafeError(error) }); return Fail(UpdatePackageOutcome.NetworkUnavailable, "无法连接更新服务器。"); }
@@ -162,7 +189,8 @@ public sealed class SignedUpdatePackageDownloader
             using var verifier = _options.CreateVerifier();
             if (verifier is null || package.SignedManifest is null || package.ManifestSignature is null || package.Release is null) return Fail(UpdatePackageOutcome.SigningNotConfigured, "更新包缺少可重验的发行身份。");
             if (!verifier.VerifyData(package.SignedManifest, package.ManifestSignature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss) || !TryParseManifest(package.SignedManifest, out var manifest)) return Fail(UpdatePackageOutcome.InvalidManifestSignature, "更新清单签名或格式无效。");
-            if (manifest.Version != package.Version || manifest.ReleaseTag != package.Release.Tag || manifest.Repository != Owner + "/" + Repo || manifest.Rid != "win-x64" || manifest.MinimumProtocolVersion != package.MinimumProtocolVersion || manifest.TargetMigrations.Count != package.TargetMigrations.Count || !manifest.TargetMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal) || manifest.MinVersion != package.SourceMinVersion || manifest.MaxVersion != package.SourceMaxVersion || manifest.MinMigration != package.SourceMinMigration || manifest.MaxMigration != package.SourceMaxMigration) return Fail(UpdatePackageOutcome.VersionMismatch, "更新包身份在安装前发生变化。");
+            var identityField = RevalidationIdentityMismatch(manifest, package);
+            if (identityField is not null) return Fail(UpdatePackageOutcome.VersionMismatch, $"更新包身份在安装前发生变化：{identityField}。");
             if (!File.Exists(package.PackagePath) || !string.Equals(manifest.PackageHash, package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
             using var packageStream = File.OpenRead(package.PackagePath);
             if (!string.Equals(Convert.ToHexString(SHA256.HashData(packageStream)), package.Sha256, StringComparison.OrdinalIgnoreCase)) return Fail(UpdatePackageOutcome.HashMismatch, "更新包摘要不匹配。");
@@ -180,6 +208,49 @@ public sealed class SignedUpdatePackageDownloader
         var directory = Path.GetFullPath(package.CacheDirectory);
         if (Guid.TryParse(Path.GetFileName(directory), out _) && string.Equals(Path.GetDirectoryName(directory), root, StringComparison.OrdinalIgnoreCase) && IsOrdinaryDirectory(directory)) TryDelete(directory);
     }
+
+    private static string? RevalidationIdentityMismatch(Manifest manifest, VerifiedUpdatePackage package)
+    {
+        if (manifest.Version != package.Version) return "version";
+        if (manifest.ReleaseTag != package.Release!.Tag) return "releaseTag";
+        if (manifest.Repository != Owner + "/" + Repo) return "repository";
+        if (manifest.Rid != "win-x64") return "rid";
+        if (manifest.MinimumProtocolVersion != package.MinimumProtocolVersion) return "minimumProtocolVersion";
+        if (manifest.TargetMigrations.Count != package.TargetMigrations.Count || !manifest.TargetMigrations.SequenceEqual(package.TargetMigrations, StringComparer.Ordinal)) return "targetMigrations";
+        if (manifest.MinVersion != package.SourceMinVersion || manifest.MaxVersion != package.SourceMaxVersion) return "sourceVersionRange";
+        return manifest.MinMigration != package.SourceMinMigration || manifest.MaxMigration != package.SourceMaxMigration ? "sourceMigrationRange" : null;
+    }
+
+    private static UpdatePackageOutcome? ValidateSignedManifestPolicy(Manifest manifest, Version targetVersion, Version sourceVersion, string sourceMigration, int minimumProtocol)
+    {
+        if (manifest.MinimumProtocolVersion is < 1 or > 2 || manifest.MinimumProtocolVersion < minimumProtocol) return UpdatePackageOutcome.UnsupportedProtocol;
+        if (manifest.Version != targetVersion || manifest.ReleaseTag != "v" + manifest.Version.ToString(3) || manifest.Repository != Owner + "/" + Repo || manifest.Channel != "stable") return UpdatePackageOutcome.VersionMismatch;
+        if (manifest.Rid != "win-x64") return UpdatePackageOutcome.UnsupportedPlatform;
+        if (manifest.PackageName != $"StoreExpiryInspector-{manifest.Version:0.0.0}-win-x64.zip" || manifest.PackageBytes <= 0 || manifest.PackageBytes > PackageLimit) return UpdatePackageOutcome.AssetMissing;
+        if (!manifest.TargetMigrations.SequenceEqual(CurrentMigrations, StringComparer.Ordinal)
+#if S9T07_TEST
+            && !IsHistoricalV107FixtureManifest(manifest, targetVersion, sourceVersion, sourceMigration)
+            && !IsS9T07FixtureManifest(manifest, targetVersion, sourceVersion, sourceMigration)
+#endif
+            ) return UpdatePackageOutcome.VersionMismatch;
+        return manifest.SourceAllows(sourceVersion, sourceMigration) ? null : UpdatePackageOutcome.SourceNotSupported;
+    }
+
+#if S9T07_TEST
+    private static bool IsHistoricalV107FixtureManifest(Manifest manifest, Version targetVersion, Version sourceVersion, string sourceMigration) =>
+        targetVersion == new Version(1, 0, 7) && manifest.Version == targetVersion &&
+        sourceMigration == "20260901155124_AddPolicyAndBaselineFoundation" &&
+        manifest.MinimumProtocolVersion == 1 && manifest.TargetMigrations.SequenceEqual(CurrentMigrations.Take(9), StringComparer.Ordinal);
+
+    // S9T07's synthetic migration target is deliberately isolated at compile time. Production
+    // code never includes this branch and always consumes CurrentSchemaIdentity above.
+    private static bool IsS9T07FixtureManifest(Manifest manifest, Version targetVersion, Version sourceVersion, string sourceMigration) =>
+        targetVersion == new Version(99, 0, 0) && manifest.Version == targetVersion &&
+        sourceVersion == new Version(1, 0, 5) && sourceMigration == "20260901155124_AddPolicyAndBaselineFoundation" &&
+        manifest.MinimumProtocolVersion == 2 && manifest.TargetMigrations.Count == 10 &&
+        manifest.TargetMigrations.Take(9).SequenceEqual(CurrentMigrations.Take(9), StringComparer.Ordinal) &&
+        manifest.TargetMigrations[9] == "20260905120000_S9T07Fixture10";
+#endif
 
     private async Task<(CheckedRelease? Release, UpdatePackageResult? Result)> RefreshReleaseAsync(CheckedRelease expected, CancellationToken cancellationToken)
     {

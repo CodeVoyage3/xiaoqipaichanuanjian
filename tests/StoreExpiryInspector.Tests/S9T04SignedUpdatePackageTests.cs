@@ -10,6 +10,7 @@ using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.UI;
 using StoreExpiryInspector.Infrastructure;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace StoreExpiryInspector.Tests;
 
@@ -147,6 +148,8 @@ public sealed class S9T04SignedUpdatePackageTests
         if (string.IsNullOrWhiteSpace(template))
         {
             DatabaseInitializer.Initialize(destination); // The fixture deliberately creates a WAL database.
+            using (var context = DatabaseInitializer.CreateContext(destination))
+                context.Database.Migrate("20260901155124_AddPolicyAndBaselineFoundation");
             SqliteConnection.ClearAllPools(); // Its own pooled connection must close and checkpoint before a main-file copy is trusted.
         }
         else File.Copy(template, destination);
@@ -160,18 +163,18 @@ public sealed class S9T04SignedUpdatePackageTests
     private static async Task<(SignedUpdatePackageDownloader Downloader, VerifiedUpdatePackage Package)> CreateVerifiedPackageAsync(string root, string? sourceMaxVersion = null, string currentVersion = "0.9.9", string sourceMinVersion = "0.9.9")
     {
         var package = Path.Combine(root, "package.zip");
+        var historicalFixture = Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "bin", "Release", "net10.0-windows", "s9t04v107");
+        var app = Path.Combine(historicalFixture, "StoreExpiryInspector.exe");
         using (var zip = ZipFile.Open(package, ZipArchiveMode.Create))
         {
-            var app = Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe");
-            var production = Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "bin", "Release", "net10.0-windows");
             Assert.Equal("1.0.7", Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3));
-            Assert.Equal("1.0.7", AssemblyName.GetAssemblyName(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")).Version!.ToString(3));
-            Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.exe")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(app))));
-            Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(production, "StoreExpiryInspector.dll")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.dll")))));
+            Assert.Equal("1.0.7", AssemblyName.GetAssemblyName(Path.Combine(historicalFixture, "StoreExpiryInspector.dll")).Version!.ToString(3));
+            Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(historicalFixture, "StoreExpiryInspector.exe")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(app))));
+            Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(historicalFixture, "StoreExpiryInspector.dll")))), Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.ChangeExtension(app, ".dll")))));
             zip.CreateEntryFromFile(app, "StoreExpiryInspector.exe");
             zip.CreateEntryFromFile(Path.ChangeExtension(app, ".dll"), "StoreExpiryInspector.dll");
         }
-        var version = Version.Parse(FileVersionInfo.GetVersionInfo(Path.Combine(AppContext.BaseDirectory, "StoreExpiryInspector.exe")).FileVersion!).ToString(3);
+        var version = Version.Parse(FileVersionInfo.GetVersionInfo(app).FileVersion!).ToString(3);
         var packageBytes = await File.ReadAllBytesAsync(package); var hash = Convert.ToHexString(SHA256.HashData(packageBytes)).ToLowerInvariant();
         var maxVersion = sourceMaxVersion ?? UpdateInstallationPreparer.NormalizeSourceVersion(Process.GetCurrentProcess().MainModule?.FileVersionInfo.ProductVersion?.Split('+')[0]);
         var manifest = Encoding.UTF8.GetBytes($"{{\"schemaVersion\":1,\"version\":\"{version}\",\"releaseTag\":\"v{version}\",\"repository\":\"CodeVoyage3/xiaoqipaichanuanjian\",\"channel\":\"stable\",\"rid\":\"win-x64\",\"minimumProtocolVersion\":1,\"package\":{{\"fileName\":\"StoreExpiryInspector-{version}-win-x64.zip\",\"bytes\":{packageBytes.Length},\"sha256\":\"{hash}\"}},\"targetMigrations\":[\"20260826123739_InitialCreate\",\"20260826130822_AddTasksAndDrafts\",\"20260826135612_AddInspectionHistory\",\"20260826142429_AddInventoryAdjustments\",\"20260826152131_AddImportPersistence\",\"20260826155455_AddBackupMetadata\",\"20260826162033_AddSettingsAndAppState\",\"20260826170403_AddLifecycleEvents\",\"20260901155124_AddPolicyAndBaselineFoundation\"],\"source\":{{\"minVersion\":\"{sourceMinVersion}\",\"maxVersion\":\"{maxVersion}\",\"minMigration\":\"20260901155124_AddPolicyAndBaselineFoundation\",\"maxMigration\":\"20260901155124_AddPolicyAndBaselineFoundation\"}}}}");

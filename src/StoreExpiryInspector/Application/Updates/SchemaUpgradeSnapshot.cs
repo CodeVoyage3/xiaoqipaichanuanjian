@@ -55,7 +55,8 @@ public static class SchemaUpgradeSnapshots
             if (!string.Equals(sourceHash, Hash(mainLease), StringComparison.Ordinal)) throw new InvalidDataException("升级源数据库在快照期间变化。");
             RejectUnexpectedSidecars(paths.Database, reservations);
             var copied = Verify(paths.TemporarySnapshot);
-            if (!copied.Migrations.SequenceEqual(expectedSourceMigrations, StringComparer.Ordinal) || !string.Equals(sourceHash, Hash(paths.TemporarySnapshot), StringComparison.Ordinal)) throw new InvalidDataException("升级快照验证期间发生变化。");
+            if (!copied.Migrations.SequenceEqual(expectedSourceMigrations, StringComparer.Ordinal)) throw new InvalidDataException($"升级快照迁移身份不匹配：expected={string.Join(',', expectedSourceMigrations)}; actual={string.Join(',', copied.Migrations)}。");
+            if (!string.Equals(sourceHash, Hash(paths.TemporarySnapshot), StringComparison.Ordinal)) throw new InvalidDataException("升级快照验证期间发生变化。");
             RejectUnexpectedSidecars(paths.TemporarySnapshot, snapshotReservations);
             TestCheckpoint?.Invoke("snapshot-verified");
             File.Move(paths.TemporarySnapshot, paths.Snapshot);

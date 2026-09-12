@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Win32;
 using System.Diagnostics;
 using StoreExpiryInspector.Application.Updates;
+using StoreExpiryInspector.UpdateSafety;
 
 try { Directory.SetCurrentDirectory(AppContext.BaseDirectory); }
 catch (Exception) { return 1; }
@@ -28,7 +29,7 @@ internal sealed record UpdateJournal(string OperationId, string ProductId, strin
 
 internal static class UpdateTransaction
 {
-    internal static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation", "20260912083448_AdjustCatchupWindowConstraint"];
+    internal static readonly IReadOnlyList<string> CurrentMigrations = CurrentSchemaIdentity.Migrations;
 
     internal static async Task<int> ResumeAsync(string journalPath)
     {
@@ -402,7 +403,7 @@ internal static class UpdateTransaction
     }
 
     internal static bool IsCurrentMigrationAck(int count, string? lastMigration) =>
-        count == CurrentMigrations.Length && lastMigration == CurrentMigrations[^1];
+        count == CurrentMigrations.Count && lastMigration == CurrentMigrations[^1];
 
     private static SchemaCandidateIdentity WaitForIdentity(UpdateJournal journal, SchemaUpdateJournal schema, TimeSpan timeout)
     {
@@ -842,7 +843,9 @@ internal static class UpdateTransaction
     private static string SchemaVerificationArguments(UpdateJournal journal, SchemaUpdateJournal schema, bool candidate)
     {
 #if S9T05_TEST
-        var fixtureTarget = candidate && schema.TargetMigrations.Count is 10 or 11 && schema.TargetMigrations.Count > schema.SourceMigrations.Count ? $" --s9-t07-fixture-target {schema.TargetMigrations.Count}" : string.Empty;
+        // The synthetic S9T07 fixture is the only executable that understands this
+        // test-only switch.  A real candidate must retain its strict command parser.
+        var fixtureTarget = candidate && journal.TargetVersion == "99.0.0" && schema.TargetMigrations.Count is 10 or 11 && schema.TargetMigrations.Count > schema.SourceMigrations.Count ? $" --s9-t07-fixture-target {schema.TargetMigrations.Count}" : string.Empty;
         return $"--data-root \"{journal.DataRoot}\" --allow-existing-isolated-data-root --s9-t07-verify {journal.OperationId} {schema.LaunchToken}{fixtureTarget}";
 #else
         return $"--s9-t07-verify {journal.OperationId} {schema.LaunchToken}";
