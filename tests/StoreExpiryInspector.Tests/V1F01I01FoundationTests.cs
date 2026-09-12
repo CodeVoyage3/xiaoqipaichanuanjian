@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using Xunit;
@@ -146,6 +147,59 @@ public sealed class V1F01I01FoundationTests
             Assert.Equal(10, context.Database.GetAppliedMigrations().Count());
             Assert.Equal(1, context.BatchBaselines.Count(value => value.CatchupWindowDays == 1));
             Assert.Contains("BETWEEN 1 AND 30", SqliteTestDatabase.ReadTableSql(context, "batch_baselines"));
+        }
+    }
+
+    [Fact]
+    public void Migration10FailureRecoveryRestoresMigration9SnapshotWithoutSidecars()
+    {
+        using var source = SqliteTestDatabase.CreateEmpty();
+        string[] sourceMigrations;
+        using (var context = source.Open())
+        {
+            var migration9 = context.Database.GetMigrations().Single(value => value.EndsWith("_AddPolicyAndBaselineFoundation", StringComparison.Ordinal));
+            context.Database.Migrate(migration9);
+            SeedHistoricalCatchupFacts(context, [3, 7, 8, 11, 30]);
+            sourceMigrations = context.Database.GetAppliedMigrations().ToArray();
+        }
+
+        var root = Path.Combine(Path.GetTempPath(), "StoreExpiryInspectorTests", Guid.NewGuid().ToString("N"));
+        var dataDirectory = Path.Combine(root, "data");
+        var databasePath = Path.Combine(dataDirectory, "app.db");
+        var operation = Guid.NewGuid().ToString();
+        Directory.CreateDirectory(dataDirectory);
+        Directory.CreateDirectory(Path.Combine(root, "updates", operation));
+        File.Copy(source.Path, databasePath);
+        var sourceSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(databasePath)));
+        try
+        {
+            var snapshot = SchemaUpgradeSnapshots.Create(root, operation, "1.0.0", sourceMigrations);
+            using (var candidate = DatabaseInitializer.CreateContext(databasePath))
+            {
+                candidate.Database.Migrate();
+                var productId = candidate.Products.Single().Id;
+                var batchId = AddBatch(candidate, productId, 301);
+                var baselineId = candidate.ScopeBaselines.Single().Id;
+                var taskId = candidate.Tasks.Single().Id;
+                candidate.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition, catchup_window_days, source_task_id, catchup_source) VALUES ({baselineId}, {batchId}, 'expired', 'expired_catchup_task', 1, {taskId}, 'historical_window')");
+                Assert.Equal(10, candidate.Database.GetAppliedMigrations().Count());
+            }
+
+            SqliteConnection.ClearAllPools();
+            SchemaUpgradeSnapshots.Restore(root, snapshot);
+
+            Assert.Equal(sourceSha256, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(databasePath))));
+            Assert.False(File.Exists(databasePath + "-wal"));
+            Assert.False(File.Exists(databasePath + "-shm"));
+            Assert.False(File.Exists(databasePath + "-journal"));
+            using var restored = DatabaseInitializer.CreateContext(databasePath);
+            Assert.Equal(sourceMigrations, restored.Database.GetAppliedMigrations());
+            Assert.Equal([3, 7, 8, 11, 30], restored.BatchBaselines.OrderBy(value => value.CatchupWindowDays).Select(value => value.CatchupWindowDays).ToArray());
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
     }
 
