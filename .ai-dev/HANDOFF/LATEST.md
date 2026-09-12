@@ -1,4 +1,16 @@
-# 2026-09-11：v1.0.9 RELEASED；Stage18 CLOSED
+# 2026-09-12：Stage19 / S19-T01 治理冻结并批准派发
+
+fresh fetch 确认 `origin/main=43d82ec3d0a6e09a0964a81ce0d531e888fd5abc`；stable/latest=`v1.0.9`，PRODUCT SOURCE=`9bf4ee71f1579097d816032d867041c0519cf789`；Stage18=`CLOSED` 且不得重开。fresh tree 不存在 Stage19/S19-T01。
+
+Stage19=`IN_PROGRESS / GOVERNANCE_FROZEN / S19_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`；S19-T01=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。代码与 EF 约束已核实：ProductCode 唯一；Batch 有生产日期三元组、无生产日期二元组均有过滤唯一索引，因此结论为 `NO SCHEMA CHANGE`，不存在需要用户裁决的身份冲突。
+
+冻结实现为：冷启动历史过期窗口改 1%/min1/max7；Excel 仅 A:L 且文件名不参与识别；非空行按当前数据库业务键逐行重验；空白跳过、0 有效；行级错误隔离；部分提交在权威事务中只形成已填子集 Inspection，并为剩余当前有效 items 建立同商品唯一 successor open task；慢读取显示不确定 loading，文件级错误与结果汇总使用门店大白话。禁止只删除 AllItemsFilled、模糊匹配、Schema/migration、正常生命周期/提醒扩改、版本/发布或正式数据库访问。
+
+下一步从本治理 push 后 fresh origin/main 创建全新 GPT-5.6 Terra / medium / 标准速度 / clean worktree，只实施 S19-T01。Sol 独立专项、必要直接回归与一次 Release App build；FULL=`NOT_RUN / NO_FULL`。技术通过只能停在 `IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，等待用户 GUI A～I。
+
+正式主工作区历史 dirty `1 modified + 4 untracked` 与落后 64 提交状态保持未触碰；本轮不改版本、不创建 tag/Release、不更新夸克/Gitee。
+
+# 2026-09-11 historical：v1.0.9 RELEASED；Stage18 CLOSED
 
 正式发布基于唯一 PRODUCT SOURCE `9bf4ee71f1579097d816032d867041c0519cf789`；App/Updater 均为 `1.0.9 / 1.0.9.0`。annotated tag `v1.0.9` 精确解引用到该 source；GitHub Release ID `386762247`，stable/latest=`v1.0.9`。
 

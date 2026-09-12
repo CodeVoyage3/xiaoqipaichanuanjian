@@ -1,4 +1,12 @@
-# 2026-09-11 current：v1.0.9 RELEASED / Stage18 CLOSED
+# 2026-09-12 current：Stage19 / S19-T01 GOVERNANCE_FROZEN
+
+- fresh `origin/main=43d82ec3d0a6e09a0964a81ce0d531e888fd5abc`；stable/latest=`v1.0.9`，PRODUCT SOURCE=`9bf4ee71f1579097d816032d867041c0519cf789`；Stage18 保持 `CLOSED`。
+- Stage19=`IN_PROGRESS / GOVERNANCE_FROZEN / S19_T01_IMPLEMENTATION_DISPATCH_AUTHORIZED`；S19-T01=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED`。
+- fresh code/EF review 确认 `ProductCode` 唯一，Batch 的有/无生产日期业务键均有过滤唯一索引，结论=`NO SCHEMA CHANGE`。部分提交须在权威事务中关闭已提交原 task，并为剩余当前有效 items 建立唯一 successor open task；不得只删除 `AllItemsFilled`。
+- Excel 冻结为仅 A:L、任意文件名、当前 DB 业务键重新识别；空白跳过、0 有效、行级问题隔离、文件级错误门店可读、慢读取显示不确定 loading。
+- 正式 dirty 主工作区 `1 modified + 4 untracked` 且本地 main 落后 origin/main 64，保持未触碰。Schema/migration=`NO CHANGE / 9`；正式数据库=`NO ACCESS`；FULL=`NOT_RUN / NO_FULL`；不改版本、不发布。
+
+# 2026-09-11 historical：v1.0.9 RELEASED / Stage18 CLOSED
 
 - PRODUCT SOURCE=`9bf4ee71f1579097d816032d867041c0519cf789`；App/Updater=`1.0.9 / 1.0.9.0`；annotated tag `v1.0.9` 精确解引用到 PRODUCT SOURCE。
 - GitHub Release ID=`386762247`，stable/latest=`v1.0.9`；四项公网匿名 fresh 下载与冻结候选 bytes/SHA256 逐项全等，production RSA-PSS/SHA256 signature=`PASS`。
