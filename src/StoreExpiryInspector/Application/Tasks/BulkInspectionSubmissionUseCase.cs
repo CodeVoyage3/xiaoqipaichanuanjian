@@ -46,6 +46,10 @@ public sealed class BulkInspectionSubmissionUseCase
         {
             throw new InvalidOperationException("StoreDbContext must have no pending changes before a bulk inspection submission.");
         }
+        if (request.AllowPartialSubmission)
+        {
+            return SubmitPartial(context, request, taskIds);
+        }
 
         using var transaction = context.Database.BeginTransaction();
         try
@@ -136,6 +140,31 @@ public sealed class BulkInspectionSubmissionUseCase
     }
 
     public BulkInspectionSubmissionResult Execute(StoreDbContext context, BulkInspectionSubmissionRequest request) => Submit(context, request);
+
+    // Plan imports are row-isolated: each product task has its own authority transaction.
+    // Default/manual bulk remains on the all-or-nothing path above.
+    private BulkInspectionSubmissionResult SubmitPartial(StoreDbContext context, BulkInspectionSubmissionRequest request, long[] taskIds)
+    {
+        var submitted = new List<BulkInspectionSubmissionTaskResult>();
+        var warnings = new List<OverStockConfirmation>();
+        foreach (var taskId in taskIds)
+        {
+            try
+            {
+                context.ChangeTracker.Clear();
+                var task = context.Tasks.AsNoTracking().SingleOrDefault(item => item.Id == taskId);
+                if (task is null || task.Status != "open") continue;
+                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, AllowPartialSubmission: true));
+                if (result.Submitted && result.InspectionId is long inspectionId) submitted.Add(new(task.Id, inspectionId));
+                else if (result.RequiresOverStockConfirmation) warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
+            }
+            catch (InvalidOperationException) { context.ChangeTracker.Clear(); }
+            catch (KeyNotFoundException) { context.ChangeTracker.Clear(); }
+        }
+        return warnings.Count != 0
+            ? new(BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation, submitted.OrderBy(item => item.TaskId).ToArray(), warnings.OrderBy(item => item.TaskId).ToArray())
+            : new(BulkInspectionSubmissionOutcome.Submitted, submitted.OrderBy(item => item.TaskId).ToArray(), Array.Empty<OverStockConfirmation>());
+    }
 
     private static BulkInspectionSubmissionResult Rollback(StoreDbContext context, Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction, BulkInspectionSubmissionOutcome outcome, IReadOnlyList<OverStockConfirmation> warnings)
     {
