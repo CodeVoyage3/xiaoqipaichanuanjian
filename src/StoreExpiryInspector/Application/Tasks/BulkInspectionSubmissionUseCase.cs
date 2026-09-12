@@ -147,6 +147,7 @@ public sealed class BulkInspectionSubmissionUseCase
     {
         var submitted = new List<BulkInspectionSubmissionTaskResult>();
         var warnings = new List<OverStockConfirmation>();
+        var confirmations = (request.OverStockConfirmations ?? Array.Empty<OverStockConfirmation>()).ToDictionary(item => item.TaskId);
         foreach (var taskId in taskIds)
         {
             try
@@ -154,15 +155,17 @@ public sealed class BulkInspectionSubmissionUseCase
                 context.ChangeTracker.Clear();
                 var task = context.Tasks.AsNoTracking().SingleOrDefault(item => item.Id == taskId);
                 if (task is null || task.Status != "open") continue;
-                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, AllowPartialSubmission: true));
+                confirmations.TryGetValue(task.Id, out var confirmation);
+                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, confirmation?.EffectiveStockQty, confirmation?.TotalCheckedQty, true));
                 if (result.Submitted && result.InspectionId is long inspectionId) submitted.Add(new(task.Id, inspectionId));
                 else if (result.RequiresOverStockConfirmation) warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
             }
             catch (InvalidOperationException) { context.ChangeTracker.Clear(); }
             catch (KeyNotFoundException) { context.ChangeTracker.Clear(); }
         }
-        return warnings.Count != 0
-            ? new(BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation, submitted.OrderBy(item => item.TaskId).ToArray(), warnings.OrderBy(item => item.TaskId).ToArray())
+        var currentWarnings = warnings.OrderBy(item => item.TaskId).ToArray();
+        return currentWarnings.Length != 0
+            ? new(confirmations.Count == 0 ? BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation : BulkInspectionSubmissionOutcome.OverStockConfirmationStale, submitted.OrderBy(item => item.TaskId).ToArray(), currentWarnings)
             : new(BulkInspectionSubmissionOutcome.Submitted, submitted.OrderBy(item => item.TaskId).ToArray(), Array.Empty<OverStockConfirmation>());
     }
 

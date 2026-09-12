@@ -181,7 +181,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public RelayCommand SubmitCommand { get; }
     public RelayCommand PreviousPageCommand { get; }
     public RelayCommand NextPageCommand { get; }
-    public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.IsDraftComplete).Select(task => task.TaskId).ToArray() ?? [];
+    public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.FilledItemCount > 0 && task.Readiness.RequiresReconfirmationCount == 0).Select(task => task.TaskId).ToArray() ?? [];
     public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsBusy => IsActionBusy;
@@ -354,9 +354,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             BlockSubmission("暂时无法提交。", "排查结果未能保存，请重新导出最新计划后再试。");
             return;
         }
-        if (_draftResult.Tasks.Count == 0 || _draftResult.Tasks.Any(task => !task.Readiness.IsDraftComplete))
+        if (CompleteTaskIds.Count == 0)
         {
-            BlockSubmission("仍有未完成排查项，请填写完整后提交。", "请补全所有可应用任务的排查数量后，再提交数据。");
+            BlockSubmission("没有可提交的有效排查结果。", "请填写至少一项排查数量后再提交。");
             return;
         }
         if (!IsFormValid || !TryGetCheckDate(out var checkDate)) { BlockSubmission("请完善排查人和排查日期。", string.Join("\n", new[] { InspectorNameError, CheckDateError }.Where(value => !string.IsNullOrEmpty(value)))); return; }
