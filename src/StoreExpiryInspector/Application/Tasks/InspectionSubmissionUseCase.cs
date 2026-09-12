@@ -220,7 +220,7 @@ public sealed class InspectionSubmissionUseCase
             context.SaveChanges();
 
             // Complete exactly the submitted coverage, then rebuild the still-current remainder as the product's only open task.
-            var successor = remainingItems.Where(item => item.Batch.TrackingStatus == "active" && item.Batch.HandledAttentionVersion < item.Batch.AttentionVersion && IsInspectableStage(item.Batch.CurrentStage))
+            var successor = remainingItems.Where(item => item.Batch.TrackingStatus == "active" && (item.Batch.AttentionVersion == 0 || item.Batch.HandledAttentionVersion < item.Batch.AttentionVersion) && IsInspectableStage(item.Batch.CurrentStage))
                 .Select(item => new ProductTaskBatchResult(item.BatchId, item.Batch.CurrentStage, item.Batch.AttentionVersion, false)).ToArray();
             if (remainingItems.Length != 0) context.TaskItems.RemoveRange(remainingItems);
             context.SaveChanges();
@@ -371,7 +371,7 @@ public sealed class InspectionSubmissionUseCase
                 if (taskItem.RequiresReconfirmation) throw new InvalidOperationException($"Task item {taskItem.Id} requires reconfirmation.");
                 if (draftItem.ConfirmedAttentionVersion != taskItem.AttentionVersion || draftItem.ConfirmedAttentionVersion != taskItem.Batch.AttentionVersion) throw new InvalidOperationException($"Draft item {draftItem.Id} has a stale attention version.");
             }
-            else if (taskItem.RequiresReconfirmation || draftItem.ConfirmedAttentionVersion != taskItem.AttentionVersion || draftItem.ConfirmedAttentionVersion != taskItem.Batch.AttentionVersion || taskItem.Batch.TrackingStatus != "active" || taskItem.Batch.HandledAttentionVersion >= taskItem.Batch.AttentionVersion || taskItem.Stage != taskItem.Batch.CurrentStage)
+            else if (taskItem.RequiresReconfirmation || draftItem.ConfirmedAttentionVersion != taskItem.AttentionVersion || draftItem.ConfirmedAttentionVersion != taskItem.Batch.AttentionVersion || taskItem.Batch.TrackingStatus != "active" || taskItem.Stage != taskItem.Batch.CurrentStage)
             {
                 skipped.Add(new(taskItem.Id, "该行对应批次状态已经变化，本次已跳过，请重新导出最新计划。"));
                 continue;

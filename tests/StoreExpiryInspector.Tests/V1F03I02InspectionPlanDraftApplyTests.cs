@@ -14,7 +14,7 @@ namespace StoreExpiryInspector.Tests;
 public sealed class V1F03I02InspectionPlanDraftApplyTests
 {
     [Fact]
-    public void ColdStartZeroAttentionTaskExportsAndFilledResultRemainsApplicable()
+    public void ColdStartZeroAttentionTaskExportsAppliesAndSubmits()
     {
         using var database = SqliteTestDatabase.Create();
         var day = new DateOnly(2026, 9, 12);
@@ -47,11 +47,82 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         }
 
         SetQuantity(path, "3");
-        using var preview = database.Open();
-        var result = new InspectionPlanDraftApplyUseCase().Preview(preview, path);
-        Assert.True(result.Summary == new InspectionPlanPreviewSummary(1, 1, 1, 1, 0, 0), string.Join(" | ", result.File.Rows.SelectMany(row => row.Errors)));
-        Assert.Empty(result.File.Rows.Single().Errors);
-        Assert.Single(result.ApplicableTaskIds);
+        InspectionPlanPreview result;
+        using (var preview = database.Open())
+        {
+            result = new InspectionPlanDraftApplyUseCase().Preview(preview, path);
+            Assert.True(result.Summary == new InspectionPlanPreviewSummary(1, 1, 1, 1, 0, 0), string.Join(" | ", result.File.Rows.SelectMany(row => row.Errors)));
+            Assert.Empty(result.File.Rows.Single().Errors);
+            Assert.Single(result.ApplicableTaskIds);
+        }
+
+        var submittedAtUtc = new DateTime(2026, 9, 12, 10, 0, 0, DateTimeKind.Utc);
+        using (var apply = database.Open())
+        {
+            var applied = new InspectionPlanDraftApplyUseCase().Apply(apply, new(result, result.ApplicableTaskIds, "R3 Inspector", day, day, submittedAtUtc.AddMinutes(-1)));
+            Assert.Single(applied.Tasks);
+        }
+        using (var submit = database.Open())
+        {
+            var outcome = new BulkInspectionSubmissionUseCase().Submit(submit, new(result.ApplicableTaskIds, "R3 Inspector", day, day, submittedAtUtc, AllowPartialSubmission: true));
+            Assert.True(outcome.Outcome == BulkInspectionSubmissionOutcome.Submitted, string.Join(" | ", outcome.Skipped?.Select(item => $"{item.TaskItemId}:{item.Reason}") ?? []));
+            Assert.Single(outcome.Tasks);
+        }
+        using var verify = database.Open();
+        Assert.Single(verify.Inspections);
+        Assert.Equal("completed", verify.Tasks.Single().Status);
+    }
+
+    [Fact]
+    public void ColdStart180Preview80Blank100AndPartialSubmitKeeps100Open()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var day = new DateOnly(2026, 9, 12);
+        var savedAtUtc = new DateTime(2026, 9, 12, 10, 0, 0, DateTimeKind.Utc);
+        using (var seed = database.Open())
+        {
+            var import = new ImportRecord { SourceFileName = "cold-start-180.xlsx", SourceFileSha256 = new string('b', 64), ParsedAtUtc = savedAtUtc.AddMinutes(-3), ConfirmedAtUtc = savedAtUtc.AddMinutes(-2), Status = ImportStatuses.Succeeded };
+            seed.Imports.Add(import); seed.SaveChanges();
+            var products = Enumerable.Range(1, 180).Select(index => new Product { ProductCode = $"P-R3-{index:D3}", CurrentName = $"冷启动商品{index:D3}", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, ExcelStockQty = 5, EffectiveStockQty = 5, EffectiveStockSource = "excel", LastSeenImportId = import.Id }).ToArray();
+            seed.Products.AddRange(products); seed.SaveChanges();
+            seed.Batches.AddRange(products.Select(product => new Batch { ProductId = product.Id, ProductionDate = day.AddDays(-101), ExpiryDate = day.AddDays(-1), ShelfLifeValue = 100, ShelfLifeUnit = "D", CurrentArrivalQty = 5, MaxArrivalQty = 5, TrackingStatus = "active", AttentionVersion = 0, HandledAttentionVersion = 0 }));
+            seed.SaveChanges();
+            Assert.True(new ColdStartScopeBaselineUseCase().Execute(seed, new("food", ExpiryPolicies.Food, 1, import.Id, day, savedAtUtc.AddMinutes(-1))).Started);
+            Assert.Equal(180, seed.Tasks.Count(task => task.Status == "open"));
+        }
+
+        var path = Path.Combine(database.Directory, "cold-start-plan-180.xlsx");
+        using (var export = database.Open())
+        {
+            var taskIds = export.Tasks.Where(task => task.Status == "open").OrderBy(task => task.Id).Select(task => task.Id).ToArray();
+            Assert.Equal(180, new TodayInspectionPlanExportUseCase().Execute(export, new(path, taskIds)).RowCount);
+        }
+        SetQuantities(path, 80, "3");
+
+        InspectionPlanPreview previewResult;
+        using (var preview = database.Open())
+        {
+            previewResult = new InspectionPlanDraftApplyUseCase().Preview(preview, path);
+            Assert.True(previewResult.Summary == new InspectionPlanPreviewSummary(80, 80, 80, 80, 100, 0), string.Join(" | ", previewResult.File.Rows.SelectMany(row => row.Errors)));
+        }
+        using (var apply = database.Open())
+        {
+            var applied = new InspectionPlanDraftApplyUseCase().Apply(apply, new(previewResult, previewResult.ApplicableTaskIds, "R3 Inspector", day, day, savedAtUtc));
+            Assert.Equal(80, applied.Tasks.Count);
+        }
+        using (var submit = database.Open())
+        {
+            var outcome = new BulkInspectionSubmissionUseCase().Submit(submit, new(previewResult.ApplicableTaskIds, "R3 Inspector", day, day, savedAtUtc.AddMinutes(1), AllowPartialSubmission: true));
+            Assert.True(outcome.Outcome == BulkInspectionSubmissionOutcome.Submitted, string.Join(" | ", outcome.Skipped?.Select(item => $"{item.TaskItemId}:{item.Reason}") ?? []));
+            Assert.Equal(80, outcome.Tasks.Count);
+            Assert.Empty(outcome.Skipped ?? []);
+        }
+        using var verify = database.Open();
+        Assert.Equal(80, verify.Inspections.Count());
+        Assert.Equal(80, verify.InspectionItems.Count());
+        Assert.Equal(80, verify.Tasks.Count(task => task.Status == "completed"));
+        Assert.Equal(100, verify.Tasks.Count(task => task.Status == "open"));
+        Assert.Equal(100, verify.TaskItems.Count(item => item.Task.Status == "open"));
     }
 
     [Theory]
@@ -181,16 +252,22 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
     private static Cell Cell(int column, uint row, string value) => new() { CellReference = $"{(char)('A' + column - 1)}{row}", DataType = CellValues.InlineString, InlineString = new InlineString(new Text(value)) };
 
     private static void SetQuantity(string path, string value)
+        => SetQuantities(path, 1, value);
+
+    private static void SetQuantities(string path, int count, string value)
     {
         using var document = SpreadsheetDocument.Open(path, true);
         var workbook = document.WorkbookPart?.Workbook ?? throw new InvalidOperationException("Workbook is missing.");
         var sheet = workbook.Sheets?.Elements<Sheet>().Single() ?? throw new InvalidOperationException("Worksheet is missing.");
         var worksheet = (WorksheetPart)document.WorkbookPart!.GetPartById(sheet.Id!);
         var data = worksheet.Worksheet?.GetFirstChild<SheetData>() ?? throw new InvalidOperationException("Sheet data is missing.");
-        var cell = data.Elements<Row>().ElementAt(1).Elements<Cell>().ElementAt(11);
-        cell.DataType = CellValues.InlineString;
-        cell.CellValue = null;
-        cell.InlineString = new InlineString(new Text(value));
+        foreach (var row in data.Elements<Row>().Skip(1).Take(count))
+        {
+            var cell = row.Elements<Cell>().ElementAt(11);
+            cell.DataType = CellValues.InlineString;
+            cell.CellValue = null;
+            cell.InlineString = new InlineString(new Text(value));
+        }
         worksheet.Worksheet.Save();
     }
 

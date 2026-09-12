@@ -1136,6 +1136,91 @@ public sealed class InspectionSubmissionUseCaseTests
         Assert.Equal(3, verify.TaskItems.Single(item => item.TaskId == successor.Id).AttentionVersion);
     }
 
+    [Fact]
+    public void PartialSubmissionAcceptsLegalColdStartZeroVersions()
+    {
+        using var scenario = CreateScenario(new int?[] { 2 }, attentionVersions: new[] { 0 }, handledVersions: new[] { 0 });
+        using var context = scenario.Open();
+        var item = context.TaskItems.Include(candidate => candidate.Batch).Single();
+        var draftItem = context.DraftItems.Single();
+        Assert.False(item.RequiresReconfirmation);
+        Assert.Equal(item.AttentionVersion, draftItem.ConfirmedAttentionVersion);
+        Assert.Equal(item.Batch.AttentionVersion, draftItem.ConfirmedAttentionVersion);
+        Assert.Equal("active", item.Batch.TrackingStatus);
+        Assert.Equal(item.Stage, item.Batch.CurrentStage);
+        var result = new InspectionSubmissionUseCase().Submit(context, new(scenario.TaskId, scenario.ProductId, BusinessDate, SubmittedAtUtc, AllowPartialSubmission: true));
+        Assert.Equal(InspectionSubmissionOutcome.Submitted, result.Outcome);
+        Assert.Single(context.Inspections);
+    }
+
+    [Fact]
+    public void PartialSubmissionKeepsUnfilledLegalZeroVersionItemAsSuccessor()
+    {
+        using var scenario = CreateScenario(new int?[] { 2, 3 }, attentionVersions: new[] { 1, 0 }, handledVersions: new[] { 0, 0 });
+        using (var setup = scenario.Open())
+        {
+            setup.DraftItems.Remove(setup.DraftItems.Single(item => item.TaskItemId == scenario.TaskItemIds[1]));
+            setup.SaveChanges();
+        }
+        using (var context = scenario.Open())
+        {
+            var result = new InspectionSubmissionUseCase().Submit(context, new(scenario.TaskId, scenario.ProductId, BusinessDate, SubmittedAtUtc, AllowPartialSubmission: true));
+            Assert.Equal(InspectionSubmissionOutcome.Submitted, result.Outcome);
+        }
+        using var verify = scenario.Open();
+        var successor = verify.Tasks.Single(task => task.Status == "open");
+        var item = Assert.Single(verify.TaskItems.Where(candidate => candidate.TaskId == successor.Id));
+        Assert.Equal(scenario.BatchIds[1], item.BatchId);
+        Assert.Equal(0, item.AttentionVersion);
+    }
+
+    [Theory]
+    [InlineData("task_closed")]
+    [InlineData("item_missing")]
+    [InlineData("attention_mismatch")]
+    [InlineData("draft_attention_stale")]
+    [InlineData("stage_mismatch")]
+    [InlineData("reconfirmation")]
+    [InlineData("tracking_stopped")]
+    [InlineData("handled_invalid")]
+    public void PartialSubmissionKeepsCurrentFactProtections(string mutation)
+    {
+        using var scenario = CreateScenario(new int?[] { 2 }, attentionVersions: new[] { 1 }, handledVersions: new[] { 0 });
+        using (var setup = scenario.Open())
+        {
+            var task = setup.Tasks.Single();
+            var item = setup.TaskItems.Single();
+            var batch = setup.Batches.Single();
+            var draftItem = setup.DraftItems.Single();
+            switch (mutation)
+            {
+                case "task_closed": task.Status = "completed"; task.ClosedAtUtc = SubmittedAtUtc; break;
+                case "item_missing": setup.DraftItems.Remove(draftItem); setup.TaskItems.Remove(item); break;
+                case "attention_mismatch": batch.AttentionVersion++; break;
+                case "draft_attention_stale": draftItem.ConfirmedAttentionVersion--; break;
+                case "stage_mismatch": batch.CurrentStage = ExpiryStageCalculator.Discount50; break;
+                case "reconfirmation": item.RequiresReconfirmation = true; break;
+                case "tracking_stopped": batch.TrackingStatus = "stopped"; break;
+                case "handled_invalid": batch.HandledAttentionVersion = batch.AttentionVersion + 1; break;
+                default: throw new ArgumentOutOfRangeException(nameof(mutation));
+            }
+            setup.SaveChanges();
+        }
+
+        using var context = scenario.Open();
+        if (mutation is "task_closed" or "item_missing" or "handled_invalid")
+        {
+            Assert.Throws<InvalidOperationException>(() => new InspectionSubmissionUseCase().Submit(context, new(scenario.TaskId, scenario.ProductId, BusinessDate, SubmittedAtUtc, AllowPartialSubmission: true)));
+        }
+        else
+        {
+            var result = new InspectionSubmissionUseCase().Submit(context, new(scenario.TaskId, scenario.ProductId, BusinessDate, SubmittedAtUtc, AllowPartialSubmission: true));
+            Assert.Equal(InspectionSubmissionOutcome.NoCurrentItems, result.Outcome);
+            Assert.Single(result.Skipped!);
+        }
+        Assert.Empty(context.Inspections);
+    }
+
     private static InspectionSubmissionResult Submit(
         StoreDbContext context,
         Scenario database,
