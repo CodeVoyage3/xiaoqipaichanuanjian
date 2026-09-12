@@ -1,3 +1,11 @@
+# 2026-09-12：S19-T01 R4 UI POLISH / FINAL GUI RETEST READY
+
+用户 GUI 已确认 R3 正式提交与 180→80/100 闭环 PASS，任意文件名、A:L、行级容错和文件级错误均 PASS；5000 行 loading 功能 PASS，但视觉反馈与结果原因可读性需最终收口。
+
+R4 implementation=`443e926`，仅为 TodayInspection 居中原生不定进度 overlay，以及确认窗口复用既有 Preview 分类/Reason 的“处理结果”“原因”和轻量筛选。筛选只投影显示集合，不改原始 Preview 或 Submit payload。R4 精准专项=`4/4 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`。当前 `R4_UI_POLISH_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`，Stage19 不关闭，未 push、未发布。
+
+R4 GUI candidate=`S19-T01-R4-Final-UI-GUI/启动S19-T01-R4最终UI复验.cmd`，使用从已验收 R3 隔离状态复制出的独立数据根。用户只验 A：5000 行 loading overlay；B：结果/原因可见及错误、状态变化、全部筛选。明确 GUI PASS 前不得关闭 S19-T01/Stage19。
+
 # 2026-09-12：S19-T01 GUI BLOCKER R3 REPAIRED / PARTIAL SUBMISSION RETEST READY
 
 R2 GUI 已确认预览有效80/未填写100/状态变化0，但正式提交把 80 条再次全部判 stale。R2 隔离库只读统计证明 task/item/tracking/stage/attention/reconfirmation/product/baseline 及 handled 结构均合法，唯一命中是 `InspectionSubmissionUseCase` partial 分支的 `HandledAttentionVersion >= AttentionVersion`（80/80）。

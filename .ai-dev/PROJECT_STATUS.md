@@ -1,3 +1,10 @@
+# 2026-09-12 current：S19-T01 R4 UI POLISH / FINAL GUI RETEST READY
+
+- 用户 GUI 已确认 R3 正式提交、180→80提交/100待排查及其余业务流 PASS；5000 行读取逻辑 PASS，仅 loading 视觉与结果原因/筛选需收口。
+- R4=`443e926`，只增加 TodayInspection 居中不定进度 overlay，以及确认窗口基于既有 Preview 分类/Reason 的可见结果、原因与 UI-only 筛选；业务、Schema、Excel、提交链均未修改。
+- R4 精准专项=`4/4 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`，既有 `99/99`、`114/114`、`36/36` 未重跑。
+- S19-T01=`R4_UI_POLISH_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`；只待用户复验两个画面。Stage19 不关闭，正式数据库=`NO ACCESS`，未 push、未发布。
+
 # 2026-09-12 current：S19-T01 GUI BLOCKER R3 REPAIRED / PARTIAL SUBMISSION RETEST READY
 
 - R2 GUI 预览已达有效80/未填写100/状态变化0，但正式确认提交后再次状态变化80；A～I 停止，状态曾退回 `GUI_BLOCKER_FOUND_R3 / REPAIR_REQUIRED / NOT_ACCEPTED`。
