@@ -20,16 +20,16 @@ The authoritative success receipt is `v1.0.9/m9 -> v1.1.0/m10` through ordinary 
 |---:|---|---|
 | 1 | CurrentSchemaIdentity vs EF | PASS |
 | 2 | App normal startup | PASS |
-| 3 | online automatic upgrade | BLOCKED (not rerun in this release card) |
+| 3 | online automatic upgrade | BLOCKED: existing updater tests prove package/preparation behavior, but no current `v1.0.9/m9 -> m10` online end-to-end receipt was run; external-16 is Setup-only. |
 | 4 | Updater same-schema | PASS |
 | 5 | Updater cross-schema | PASS |
 | 6 | Installer fresh install | PASS |
-| 7 | Installer repair | BLOCKED (not rerun in this release card) |
+| 7 | Installer repair | BLOCKED: historical installer repair coverage predates this m10 cross-schema installer path; no current repair receipt exists. |
 | 8 | Installer previous-version overwrite | PASS (external-16) |
 | 9 | database-protection snapshot | PASS |
 | 10 | failure rollback | NOT_FULLY_VERIFIED/PRODUCT_RISK_ACCEPTED |
-| 11 | manual backup/restore | BLOCKED/MIGRATION_REQUIRED |
-| 12 | automatic backup | BLOCKED/MIGRATION_REQUIRED |
+| 11 | manual backup/restore | BLOCKED/MIGRATION_REQUIRED: historical S7 backup/restore tests exist, but no explicit m9-to-m10 restore compatibility design or current receipt exists. |
+| 12 | automatic backup | BLOCKED/MIGRATION_REQUIRED: existing automatic backup behavior is not a proof of cross-schema restore compatibility; no current m9-to-m10 matrix cell exists. |
 | 13 | pre-import snapshot | PASS |
 | 14 | pending recovery/hard-kill | PASS (existing precise gate; no rerun) |
 | 15 | manifest source/target permission | PASS |
