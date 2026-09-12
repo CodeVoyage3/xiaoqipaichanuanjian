@@ -1,4 +1,12 @@
-# 2026-09-12 current：S19-T01 R4 UI POLISH / FINAL GUI RETEST READY
+# 2026-09-12 current：S19-T01 R4 UI REPAIR / FINAL GUI RETEST READY
+
+- 用户复验发现默认绿色 ProgressBar、原生 ComboBox、hover 后确认窗口/底部布局异常；本轮仅作 UI 返修。
+- repair=`27b73f6`：蓝色自定义不定进度条、五项横向轻量筛选与数量、固定窗口测量/受控列宽并移除结果表 ToolTip；PreviewResult、提交 payload 与业务逻辑不变。
+- 精准专项=`4/4 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`，既有 `99/99`、`114/114`、`36/36` 未重跑。
+- 新 GUI 根=`%TEMP%\4a3e117b-f3fa-445c-a592-ceb124e2ae34`，入口=`S19-T01-R4-Final-UI-Repair-GUI/启动S19-T01-R4最终返修复验.cmd`；旧 R4 候选作废。
+- S19-T01=`R4_UI_REPAIR_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`；只待用户复验 A/B/C。Stage19 不关闭，正式数据库=`NO ACCESS`，未 push、未发布。
+
+# 2026-09-12 historical：S19-T01 R4 INITIAL UI POLISH
 
 - 初版 R4 launcher 使用了非 TEMP/GUID 根并被运行时正确拒绝；入口已修正为 `%TEMP%\78958c41-8cbe-49f7-a20b-95f575b4af9d`。一次性同结构 smoke 已取得真实主窗口后删除；最终根从 R3 基线重新复制，DB SHA256=`3F70174D...68818`、sidecar=`0`。
 - 用户 GUI 已确认 R3 正式提交、180→80提交/100待排查及其余业务流 PASS；5000 行读取逻辑 PASS，仅 loading 视觉与结果原因/筛选需收口。

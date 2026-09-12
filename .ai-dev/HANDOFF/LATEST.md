@@ -1,4 +1,10 @@
-# 2026-09-12：S19-T01 R4 UI POLISH / FINAL GUI RETEST READY
+# 2026-09-12：S19-T01 R4 UI REPAIR / FINAL GUI RETEST READY
+
+用户复验发现默认绿色 ProgressBar、原生 ComboBox 与 hover 布局异常三项纯 UI blocker。repair=`27b73f6`：自定义蓝色不定进度条；五个横向轻量筛选按钮及数量；确认窗口从创建即 `SizeToContent=Manual`，固定高度/受控列宽并移除结果表全部 ToolTip。筛选只投影既有 PreviewResult，不改 Submit payload 或任何业务语义。
+
+精准专项=`4/4 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`。新独立根=`%TEMP%\4a3e117b-f3fa-445c-a592-ceb124e2ae34`，DB SHA256=`3F70174D...68818`、sidecar=`0`；入口=`S19-T01-R4-Final-UI-Repair-GUI/启动S19-T01-R4最终返修复验.cmd`。当前 `R4_UI_REPAIR_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`，Stage19 不关闭，未 push、未发布。
+
+# 2026-09-12 historical：S19-T01 R4 INITIAL UI POLISH
 
 R4 首次交付启动器错误地把隔离根放在候选目录，触发“隔离数据目录必须是 TEMP 下的 GUID 普通目录”；该候选入口已立即修正。当前唯一 R4 根=`%TEMP%\78958c41-8cbe-49f7-a20b-95f575b4af9d`，从 R3 已验收隔离 DB 重新复制，SHA256=`3F70174D16C69E97A4DA3E83725402A0908619D62B718C3C5C2C28670FF68818`，sidecar=`0`。同结构一次性 smoke 根已取得真实主窗口后删除；不得再使用修正前入口/数据根。
 

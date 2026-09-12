@@ -4,7 +4,11 @@
 
 Stage19 = `IN_PROGRESS / S19_T01_FINAL_GUI_RETEST_READY / NOT_CLOSED`
 
-## 2026-09-12 R4 final UI polish
+## 2026-09-12 R4 final UI repair
+
+用户复验发现默认绿色 ProgressBar、原生 ComboBox 与 hover 布局异常三项纯 UI blocker。repair=`27b73f6` 仅加入蓝色自定义不定进度条、五项横向轻量筛选及数量，并把确认窗口改为从创建即固定测量、受控列宽、无结果 ToolTip；不重新判断 valid/stale，不改 PreviewResult、Submit payload 或业务逻辑。精准专项 `4/4 PASS`，Release App build `0 warning / 0 error`，FULL=`NOT_RUN / NO_FULL`。当前 `R4_UI_REPAIR_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`；用户只复验 A/B/C，Stage19 不关闭。
+
+## 2026-09-12 R4 initial UI polish historical
 
 用户 GUI 已确认 R3 正式提交与业务闭环 PASS；5000 行 loading 功能 PASS，仅视觉反馈过弱，确认表仅靠颜色/Tooltip 不够可读。R4=`443e926` 只增加 TodayInspection 居中原生不定进度 overlay、可见处理结果/原因列和基于既有 Preview 分类的轻量筛选；不改 Preview 数据或提交 payload。精准专项 `4/4 PASS`，Release App build `0 warning / 0 error`，FULL=`NOT_RUN / NO_FULL`。当前 `R4_UI_POLISH_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`；用户只复验两个画面，Stage19 不关闭。
 
