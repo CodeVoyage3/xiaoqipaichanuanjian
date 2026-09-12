@@ -133,7 +133,7 @@ public sealed class ColdStartScopeBaselineUseCase
         if (batch.ExpiryDate == request.BusinessDate) return new(batch, stage, ColdStartDispositions.ExpiredTodayTask, null, true, false);
         if (batch.ProductionDate is not DateOnly production || batch.ExpiryDate <= production)
             return new(batch, stage, ColdStartDispositions.ExpiredHistoricalBaseline, null, false, true);
-        var window = Math.Clamp((int)((3L * (batch.ExpiryDate.DayNumber - production.DayNumber) + 99) / 100), 3, 30);
+        var window = Math.Clamp((int)((batch.ExpiryDate.DayNumber - production.DayNumber + 99L) / 100L), 1, 7);
         return request.BusinessDate.DayNumber - batch.ExpiryDate.DayNumber <= window
             ? new(batch, stage, ColdStartDispositions.ExpiredCatchupTask, window, true, false)
             : new(batch, stage, ColdStartDispositions.ExpiredHistoricalBaseline, null, false, false);

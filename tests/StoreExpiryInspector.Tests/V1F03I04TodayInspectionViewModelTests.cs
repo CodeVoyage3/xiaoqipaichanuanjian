@@ -40,8 +40,9 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("本次排查数量", vm.PreviewRows[3].Reason);
         Assert.Equal("本次共 1 个商品 / 4 个批次，1 条可提交", vm.PreviewSummaryText);
         Assert.Contains("未填写 1 条", vm.PreviewIssueText);
-        Assert.Contains("错误 1 条", vm.PreviewIssueText);
-        Assert.Contains("陈旧/失效 2 条", vm.PreviewIssueText);
+        Assert.Contains("填写错误 1 条", vm.PreviewIssueText);
+        Assert.Contains("状态变化 1 条", vm.PreviewIssueText);
+        Assert.Contains("有效 1 条", vm.PreviewIssueText);
     }
 
     [Fact]
@@ -52,7 +53,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await vm.PreviewAsync("C:\\filled.xlsx");
 
         Assert.Equal("本次共 1 个商品 / 1 个批次，1 条可提交", vm.PreviewSummaryText);
-        Assert.Equal(string.Empty, vm.PreviewIssueText);
+        Assert.Equal("有效 1 条", vm.PreviewIssueText);
     }
 
     [Fact]
@@ -69,7 +70,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public async Task DraftGateKeepsEveryTaskOutOfI03UntilAllAreComplete()
+    public async Task DraftGateSubmitsFilledPlanRowsWithoutWaitingForBlankRows()
     {
         var submissions = 0;
         var refreshes = 0;
@@ -105,13 +106,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await vm.SaveDraftAsync();
         await vm.SubmitAsync();
 
-        Assert.Null(submittedTaskIds);
-        Assert.Equal([1], vm.CompleteTaskIds);
-        Assert.Equal(0, submissions);
-        Assert.Equal(0, confirmations);
-        Assert.Empty(submittedAt);
-        Assert.Equal(0, refreshes);
-        Assert.Equal("仍有未完成排查项，请填写完整后提交。", vm.StatusText);
+        Assert.Equal([1], submittedTaskIds);
+        Assert.Empty(vm.CompleteTaskIds);
+        Assert.Equal(3, submissions);
+        Assert.Equal(2, confirmations);
+        Assert.Equal(3, submittedAt.Count);
+        Assert.Equal(1, refreshes);
+        Assert.Equal("提交已成功，首页、今日排查、待办任务、详情和历史已刷新。", vm.StatusText);
     }
 
     [Fact]
@@ -250,7 +251,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await vm.PreviewAsync("C:\\bad.xlsx");
 
         Assert.Equal("读取排查结果文件失败", vm.StatusText);
-        Assert.Contains("无法读取排查结果文件", message);
+        Assert.Contains("表格结构已经发生变化或文件已损坏", message);
         Assert.DoesNotContain("internal parser", message);
     }
 
@@ -692,6 +693,27 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("StageBadgeResources.xaml", window, StringComparison.Ordinal);
         Assert.Equal("过期", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "expired"), string.Empty).CurrentStage);
         Assert.Equal("收仓", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "withdraw"), string.Empty).CurrentStage);
+    }
+
+    [Fact]
+    public async Task PreviewBlocksCommandsImmediatelyButDelaysTheLoadingIndicator()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var vm = Create(preview: _ => { started.SetResult(); release.Task.GetAwaiter().GetResult(); return Preview([1]); });
+
+        var reading = vm.PreviewAsync("C:\\filled.xlsx");
+        await started.Task;
+        Assert.True(vm.IsBusy);
+        Assert.False(vm.IsReadingPlan);
+        Assert.False(vm.PreviewCommand.CanExecute(null));
+        Assert.False(vm.ExportCommand.CanExecute(null));
+        await Task.Delay(220);
+        Assert.True(vm.IsReadingPlan);
+        release.SetResult();
+        await reading;
+        Assert.False(vm.IsBusy);
+        Assert.False(vm.IsReadingPlan);
     }
 
     private static TodayInspectionViewModel Create(

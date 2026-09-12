@@ -9,7 +9,8 @@ public enum BulkInspectionSubmissionOutcome
     Submitted,
     AlreadySubmitted,
     RequiresOverStockConfirmation,
-    OverStockConfirmationStale
+    OverStockConfirmationStale,
+    NoValidRows
 }
 
 public sealed record OverStockConfirmation(long TaskId, long ProductId, int EffectiveStockQty, int TotalCheckedQty);
@@ -20,14 +21,16 @@ public sealed record BulkInspectionSubmissionRequest(
     DateOnly CheckDate,
     DateOnly BusinessDate,
     DateTime SubmittedAtUtc,
-    IReadOnlyCollection<OverStockConfirmation>? OverStockConfirmations = null);
+    IReadOnlyCollection<OverStockConfirmation>? OverStockConfirmations = null,
+    bool AllowPartialSubmission = false);
 
 public sealed record BulkInspectionSubmissionTaskResult(long TaskId, long InspectionId);
 
 public sealed record BulkInspectionSubmissionResult(
     BulkInspectionSubmissionOutcome Outcome,
     IReadOnlyList<BulkInspectionSubmissionTaskResult> Tasks,
-    IReadOnlyList<OverStockConfirmation> OverStockConfirmations)
+    IReadOnlyList<OverStockConfirmation> OverStockConfirmations,
+    IReadOnlyList<InspectionSubmissionSkip>? Skipped = null)
 {
     public bool Submitted => Outcome == BulkInspectionSubmissionOutcome.Submitted;
 }
@@ -44,6 +47,10 @@ public sealed class BulkInspectionSubmissionUseCase
         if (context.ChangeTracker.HasChanges())
         {
             throw new InvalidOperationException("StoreDbContext must have no pending changes before a bulk inspection submission.");
+        }
+        if (request.AllowPartialSubmission)
+        {
+            return SubmitPartial(context, request, taskIds);
         }
 
         using var transaction = context.Database.BeginTransaction();
@@ -71,7 +78,7 @@ public sealed class BulkInspectionSubmissionUseCase
             var warnings = new List<OverStockConfirmation>();
             foreach (var task in tasks)
             {
-                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc));
+                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, AllowPartialSubmission: request.AllowPartialSubmission));
                 if (result.RequiresOverStockConfirmation)
                 {
                     warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
@@ -102,7 +109,7 @@ public sealed class BulkInspectionSubmissionUseCase
                 foreach (var warning in currentWarnings)
                 {
                     var task = tasks.Single(candidate => candidate.Id == warning.TaskId);
-                    var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, warning.EffectiveStockQty, warning.TotalCheckedQty));
+                    var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, warning.EffectiveStockQty, warning.TotalCheckedQty, request.AllowPartialSubmission));
                     if (!result.Submitted || result.InspectionId is not long inspectionId)
                     {
                         throw new InvalidOperationException($"Task {task.Id} did not accept its current over-stock confirmation.");
@@ -135,6 +142,38 @@ public sealed class BulkInspectionSubmissionUseCase
     }
 
     public BulkInspectionSubmissionResult Execute(StoreDbContext context, BulkInspectionSubmissionRequest request) => Submit(context, request);
+
+    // Plan imports are row-isolated: each product task has its own authority transaction.
+    // Default/manual bulk remains on the all-or-nothing path above.
+    private BulkInspectionSubmissionResult SubmitPartial(StoreDbContext context, BulkInspectionSubmissionRequest request, long[] taskIds)
+    {
+        using var transaction = context.Database.BeginTransaction();
+        var submitted = new List<BulkInspectionSubmissionTaskResult>();
+        var warnings = new List<OverStockConfirmation>();
+        var skipped = new List<InspectionSubmissionSkip>();
+        var confirmations = (request.OverStockConfirmations ?? Array.Empty<OverStockConfirmation>()).ToDictionary(item => item.TaskId);
+        foreach (var taskId in taskIds)
+        {
+            context.ChangeTracker.Clear();
+            var task = context.Tasks.AsNoTracking().SingleOrDefault(item => item.Id == taskId);
+            if (task is null || task.Status != "open") { skipped.Add(new(0, "该任务状态已经变化，本次已跳过，请重新导出最新计划。")); continue; }
+            confirmations.TryGetValue(task.Id, out var confirmation);
+            var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, confirmation?.EffectiveStockQty, confirmation?.TotalCheckedQty, true));
+            if (result.Submitted && result.InspectionId is long inspectionId) submitted.Add(new(task.Id, inspectionId));
+            else if (result.RequiresOverStockConfirmation) warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
+            else if (result.Outcome == InspectionSubmissionOutcome.NoCurrentItems) skipped.AddRange(result.Skipped ?? Array.Empty<InspectionSubmissionSkip>());
+        }
+        var currentWarnings = warnings.OrderBy(item => item.TaskId).ToArray();
+        if (currentWarnings.Length != 0)
+        {
+            transaction.Rollback();
+            context.ChangeTracker.Clear();
+            return new(confirmations.Count == 0 ? BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation : BulkInspectionSubmissionOutcome.OverStockConfirmationStale, Array.Empty<BulkInspectionSubmissionTaskResult>(), currentWarnings, skipped);
+        }
+        transaction.Commit();
+        context.ChangeTracker.Clear();
+        return new(submitted.Count == 0 && skipped.Count != 0 ? BulkInspectionSubmissionOutcome.NoValidRows : BulkInspectionSubmissionOutcome.Submitted, submitted.OrderBy(item => item.TaskId).ToArray(), Array.Empty<OverStockConfirmation>(), skipped);
+    }
 
     private static BulkInspectionSubmissionResult Rollback(StoreDbContext context, Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction, BulkInspectionSubmissionOutcome outcome, IReadOnlyList<OverStockConfirmation> warnings)
     {
@@ -222,12 +261,12 @@ public sealed class BulkInspectionSubmissionUseCase
 
         var items = task.Items.ToDictionary(item => item.Id);
         var draftItems = task.Draft.Items.ToDictionary(item => item.TaskItemId);
-        if (draftItems.Count != items.Count || task.Draft.Items.Any(item => item.DraftId != task.Draft.Id || item.TaskId != task.Id))
+        if (draftItems.Count == 0 || (!request.AllowPartialSubmission && draftItems.Count != items.Count) || draftItems.Count > items.Count || task.Draft.Items.Any(item => item.DraftId != task.Draft.Id || item.TaskId != task.Id || !items.ContainsKey(item.TaskItemId)))
         {
             throw new InvalidOperationException($"Draft {task.Draft.Id} does not exactly cover task {task.Id}.");
         }
 
-        foreach (var item in task.Items)
+        foreach (var item in task.Items.Where(item => !request.AllowPartialSubmission || draftItems.ContainsKey(item.Id)))
         {
             var batch = item.Batch;
             if (item.TaskId != task.Id || item.ProductId != task.ProductId || batch is null || batch.ProductId != task.ProductId ||

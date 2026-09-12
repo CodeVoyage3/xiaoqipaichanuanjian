@@ -73,6 +73,25 @@ public sealed class BulkInspectionSubmissionUseCaseTests
     }
 
     [Fact]
+    public void PartialPlanSkipsStaleTaskButCommitsOtherCurrentTask()
+    {
+        using var database = CreateScenario(1, 1);
+        using (var setup = database.Open())
+        {
+            var staleItem = setup.TaskItems.Single(item => item.TaskId == database.TaskIds.Max());
+            staleItem.RequiresReconfirmation = true;
+            setup.SaveChanges();
+        }
+        using var context = database.Open();
+        var result = new BulkInspectionSubmissionUseCase().Submit(context, new(database.TaskIds, "Inspector", BusinessDate, BusinessDate, Utc, AllowPartialSubmission: true));
+        Assert.True(result.Submitted);
+        Assert.Equal([database.TaskIds.Min()], result.Tasks.Select(item => item.TaskId));
+        Assert.Equal("completed", context.Tasks.Single(task => task.Id == database.TaskIds.Min()).Status);
+        Assert.Equal("open", context.Tasks.Single(task => task.Id == database.TaskIds.Max()).Status);
+        Assert.Single(context.Inspections);
+    }
+
+    [Fact]
     public void RequestAndMixedCompletionConflictsWriteNothing()
     {
         using var database = CreateScenario(1, 1);

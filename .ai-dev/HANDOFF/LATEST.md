@@ -1,3 +1,11 @@
+# 2026-09-12：S19-T01 TECHNICAL_ACCEPTANCE_READY / WAITING USER GUI A～I
+
+最终 candidate=`378c3e5683741210204e5d9b3c31bd3e2094e814`，未 push。回导/部分提交既有定向=`114/114 PASS`；授权后的冷启动、migration 9→10、SchemaUpgradeSnapshot 失败恢复与直接回归=`36/36 PASS`；Release App build=`0 warning / 0 error`；EF 无模型漂移；migration=`10`；`git diff --check=PASS`。
+
+migration 9 及其 Designer blob 未变。migration 10 仅把 `CK_batch_baselines_catchup_window` 扩为数据库兼容范围 `1..30`，业务计算仍为 `ceil(1%)` + `Clamp(1,7)`；旧 `3/7/8/11/30` 原样保留，非法值继续拒绝，升级失败由既有保护快照恢复。正式数据库=`NO ACCESS`，FULL=`NOT_RUN / NO_FULL`，版本/Updater/Installer/发布渠道均未动。
+
+S19-T01=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`；Stage19=`IN_PROGRESS / WAITING_USER_GUI`。下一步仅为用户真实 WPF GUI A～I；PASS 前不得关闭或启动发布。
+
 # 2026-09-12：S19-T01 最小 Schema Change 已授权
 
 用户批准继续 S19-T01：第 9 条 migration 保持原样；新增第 10 条，仅把 `CK_batch_baselines_catchup_window` 扩为 `BETWEEN 1 AND 30`，同步 configuration/ModelSnapshot。业务仍严格为 1% 向上取整并 Clamp(1,7)。

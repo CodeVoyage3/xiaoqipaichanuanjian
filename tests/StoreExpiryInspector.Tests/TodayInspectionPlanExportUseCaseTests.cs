@@ -65,15 +65,15 @@ public sealed class TodayInspectionPlanExportUseCaseTests
         Assert.Equal(OrientationValues.Landscape, worksheet.GetFirstChild<PageSetup>()!.Orientation!.Value);
         Assert.Equal((uint)1, worksheet.GetFirstChild<PageSetup>()!.FitToWidth!.Value);
         Assert.True(worksheet.GetFirstChild<SheetProperties>()!.GetFirstChild<PageSetupProperties>()!.FitToPage!.Value);
-        Assert.Contains(worksheet.GetFirstChild<Columns>()!.Elements<Column>(), column => column.Min?.Value == 13U && column.Max?.Value == 25U && column.Hidden?.Value == true);
+        Assert.DoesNotContain(worksheet.GetFirstChild<Columns>()!.Elements<Column>(), column => column.Min?.Value > 12U);
         Assert.Contains(workbook.DefinedNames!.Elements<DefinedName>(), name => name.Name == "_xlnm.Print_Titles" && name.Text!.Contains("$1:$1"));
         var rows = worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ToArray();
         using var reversedDocument = SpreadsheetDocument.Open(reversedOutput, false);
         var reversedSheet = ((WorksheetPart)reversedDocument.WorkbookPart!.GetPartById(reversedDocument.WorkbookPart.Workbook!.Sheets!.Elements<Sheet>().Single().Id!)).Worksheet!;
-        var reversedRows = reversedSheet.GetFirstChild<SheetData>()!.Elements<Row>().Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(14))).ToArray();
-        Assert.Equal(new[] { "序号", "商品编码", "条码", "商品名称", "大类", "生产日期", "有效日期", "当前阶段", "当前批次累计到货", "历史累计到货最大值", "总库存", "本次排查数量", "格式版本", "TaskId", "TaskItemId", "ProductId", "BatchId", "AttentionVersion", "Task更新时间UTC", "TaskItem总数", "Batch当前状态", "Stage快照", "当前批次累计到货快照", "历史累计到货最大值快照", "商品当前库存快照" }, rows[0].Elements<Cell>().Select(Text).ToArray());
+        var reversedRows = reversedSheet.GetFirstChild<SheetData>()!.Elements<Row>().Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(1))).ToArray();
+        Assert.Equal(new[] { "序号", "商品编码", "条码", "商品名称", "大类", "生产日期", "有效日期", "当前阶段", "当前批次累计到货", "历史累计到货最大值", "总库存", "本次排查数量" }, rows[0].Elements<Cell>().Select(Text).ToArray());
         Assert.Equal(new[] { "0001", "0002", "0002" }, rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(1))).ToArray());
-        Assert.Equal(rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(14))), reversedRows);
+        Assert.Equal(rows.Skip(1).Select(row => Text(row.Elements<Cell>().ElementAt(1))), reversedRows);
         Assert.All(rows.Skip(1), row => Assert.Equal(CellValues.InlineString, row.Elements<Cell>().ElementAt(1).DataType!.Value));
         Assert.Equal("宠物", Text(rows[1].Elements<Cell>().ElementAt(4)));
         Assert.Equal("收仓", Text(rows[1].Elements<Cell>().ElementAt(7)));
@@ -85,26 +85,7 @@ public sealed class TodayInspectionPlanExportUseCaseTests
         Assert.Equal(CellValues.Number, rows[1].Elements<Cell>().ElementAt(6).DataType!.Value);
         Assert.Equal((uint)1, rows[1].Elements<Cell>().ElementAt(6).StyleIndex!.Value);
         Assert.Null(rows[1].Elements<Cell>().ElementAt(11).CellValue);
-        Assert.All(rows.Skip(1), row => Assert.Equal("inspection_plan_v1", Text(row.Elements<Cell>().ElementAt(12))));
-        Assert.All(rows.Skip(1), row => Assert.Equal(CellValues.InlineString, row.Elements<Cell>().ElementAt(13).DataType!.Value));
-        Assert.All(rows.Skip(1), row => Assert.Equal(CellValues.Number, row.Elements<Cell>().ElementAt(17).DataType!.Value));
-        foreach (var (expected, row) in expectedRows.Zip(rows.Skip(1)))
-        {
-            var cells = row.Elements<Cell>().ToArray();
-            Assert.Equal(expected.TaskId.ToString(), Text(cells[13]));
-            Assert.Equal(expected.TaskItemId.ToString(), Text(cells[14]));
-            Assert.Equal(expected.ProductId.ToString(), Text(cells[15]));
-            Assert.Equal(expected.BatchId.ToString(), Text(cells[16]));
-            Assert.Equal(expected.AttentionVersion.ToString(), Text(cells[17]));
-            Assert.Equal(Utc.ToString("O"), Text(cells[18]));
-            Assert.Equal(expected.TaskItemCount.ToString(), Text(cells[19]));
-            Assert.Equal(expected.TrackingStatus, Text(cells[20]));
-            Assert.Equal(expected.Stage, Text(cells[21]));
-            Assert.Equal(expected.CurrentArrivalQty.ToString(), Text(cells[22]));
-            Assert.Equal(expected.MaxArrivalQty.ToString(), Text(cells[23]));
-            Assert.Equal(expected.EffectiveStockQty.ToString(), Text(cells[24]));
-        }
-        Assert.DoesNotContain(rows.Skip(1), row => Text(row.Elements<Cell>().ElementAt(13)) == unselectedTaskId.ToString());
+        Assert.All(rows.Skip(1), row => Assert.Equal(12, row.Elements<Cell>().Count()));
     }
 
     [Fact]

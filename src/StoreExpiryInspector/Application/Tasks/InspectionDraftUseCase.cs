@@ -18,7 +18,8 @@ public sealed record SaveDraftRequest(
     DateTime SavedAtUtc,
     string? InspectorName = null,
     DateOnly? CheckDate = null,
-    IReadOnlyList<SaveDraftItemRequest>? Items = null);
+    IReadOnlyList<SaveDraftItemRequest>? Items = null,
+    bool AllowPartialSubmission = false);
 
 public sealed record ReconfirmItemRequest(
     long TaskId,
@@ -161,6 +162,12 @@ public sealed class InspectionDraftUseCase
             }
 
             var draftItemsByTaskItemId = draft.Items.ToDictionary(item => item.TaskItemId);
+            if (request.AllowPartialSubmission)
+            {
+                var requestedIds = requestedItems.Select(item => item.TaskItemId).ToHashSet();
+                var obsolete = draft.Items.Where(item => !requestedIds.Contains(item.TaskItemId)).ToArray();
+                if (obsolete.Length != 0) { context.DraftItems.RemoveRange(obsolete); foreach (var item in obsolete) draftItemsByTaskItemId.Remove(item.TaskItemId); changed = true; }
+            }
             foreach (var input in requestedItems)
             {
                 var taskItem = taskItemsById[input.TaskItemId];
@@ -193,7 +200,7 @@ public sealed class InspectionDraftUseCase
                 draft.UpdatedAtUtc = request.SavedAtUtc;
             }
 
-            var readiness = BuildReadiness(task, draft, draftItemsByTaskItemId);
+            var readiness = BuildReadiness(task, draft, draftItemsByTaskItemId, request.AllowPartialSubmission);
             if (changed)
             {
                 context.SaveChanges();
@@ -452,7 +459,8 @@ public sealed class InspectionDraftUseCase
     private static InspectionDraftReadiness BuildReadiness(
         ProductTask task,
         InspectionDraft draft,
-        IReadOnlyDictionary<long, InspectionDraftItem> draftItems)
+        IReadOnlyDictionary<long, InspectionDraftItem> draftItems,
+        bool allowPartial = false)
     {
         var filledItemCount = task.Items.Count(item =>
             draftItems.TryGetValue(item.Id, out var draftItem) &&
@@ -462,6 +470,7 @@ public sealed class InspectionDraftUseCase
         var requiresReconfirmationCount = task.Items.Count(item => item.RequiresReconfirmation);
         var hasInspectorName = !string.IsNullOrWhiteSpace(draft.InspectorName);
         var hasCheckDate = draft.CheckDate is not null;
+        // A plan import may intentionally submit only its filled current rows.
         var allItemsFilled = missingItemCount == 0;
         return new(
             currentItemCount,
@@ -471,7 +480,7 @@ public sealed class InspectionDraftUseCase
             hasInspectorName,
             hasCheckDate,
             allItemsFilled,
-            allItemsFilled && hasInspectorName && hasCheckDate && requiresReconfirmationCount == 0);
+            (allowPartial ? filledItemCount > 0 : allItemsFilled) && hasInspectorName && hasCheckDate && requiresReconfirmationCount == 0);
     }
 
     private static void ValidateSaveDraftRequest(SaveDraftRequest request)

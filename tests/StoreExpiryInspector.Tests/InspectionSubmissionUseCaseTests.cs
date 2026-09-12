@@ -1088,6 +1088,54 @@ public sealed class InspectionSubmissionUseCaseTests
         Assert.Equal(before, SnapshotGraph(verify));
     }
 
+    [Fact]
+    public void PartialPlanSubmissionSplitsCompletedCoverageFromSuccessorAndStopsOnlySubmittedZero()
+    {
+        using var scenario = CreateScenario(new int?[] { 0, 3 });
+        using (var context = scenario.Open())
+        {
+            var draft = context.Drafts.Single();
+            context.DraftItems.Remove(context.DraftItems.Single(item => item.TaskItemId == scenario.TaskItemIds[1]));
+            context.SaveChanges();
+            var result = new InspectionSubmissionUseCase().Submit(context, new(scenario.TaskId, scenario.ProductId, BusinessDate, SubmittedAtUtc, AllowPartialSubmission: true));
+            Assert.True(result.Submitted);
+        }
+        using var verify = scenario.Open();
+        var completed = verify.Tasks.Single(task => task.Status == "completed");
+        var inspection = verify.Inspections.Single();
+        var successor = verify.Tasks.Single(task => task.Status == "open");
+        Assert.Equal([scenario.BatchIds[0]], verify.TaskItems.Where(item => item.TaskId == completed.Id).Select(item => item.BatchId));
+        Assert.Equal([scenario.BatchIds[0]], verify.InspectionItems.Where(item => item.InspectionId == inspection.Id).Select(item => item.BatchId));
+        Assert.Equal([scenario.BatchIds[1]], verify.TaskItems.Where(item => item.TaskId == successor.Id).Select(item => item.BatchId));
+        Assert.Equal(2, verify.Batches.Single(batch => batch.Id == scenario.BatchIds[0]).HandledAttentionVersion);
+        Assert.Equal(1, verify.Batches.Single(batch => batch.Id == scenario.BatchIds[1]).HandledAttentionVersion);
+        Assert.Equal("stopped", verify.Batches.Single(batch => batch.Id == scenario.BatchIds[0]).TrackingStatus);
+    }
+
+    [Fact]
+    public void PartialPlanPrunesOneStaleDraftItemAndRebuildsItFromCurrentBatchFacts()
+    {
+        using var scenario = CreateScenario(new int?[] { 2, 3 });
+        using (var setup = scenario.Open())
+        {
+            var stale = setup.Batches.Single(batch => batch.Id == scenario.BatchIds[0]);
+            stale.AttentionVersion++;
+            setup.TaskItems.Single(item => item.Id == scenario.TaskItemIds[0]).AttentionVersion++;
+            setup.SaveChanges();
+        }
+        using (var context = scenario.Open())
+        {
+            var result = new InspectionSubmissionUseCase().Submit(context, new(scenario.TaskId, scenario.ProductId, BusinessDate, SubmittedAtUtc, AllowPartialSubmission: true));
+            Assert.True(result.Submitted);
+        }
+        using var verify = scenario.Open();
+        var inspection = verify.Inspections.Single();
+        var successor = verify.Tasks.Single(task => task.Status == "open");
+        Assert.Equal([scenario.BatchIds[1]], verify.InspectionItems.Where(item => item.InspectionId == inspection.Id).Select(item => item.BatchId));
+        Assert.Equal([scenario.BatchIds[0]], verify.TaskItems.Where(item => item.TaskId == successor.Id).Select(item => item.BatchId));
+        Assert.Equal(3, verify.TaskItems.Single(item => item.TaskId == successor.Id).AttentionVersion);
+    }
+
     private static InspectionSubmissionResult Submit(
         StoreDbContext context,
         Scenario database,
