@@ -1,4 +1,11 @@
-# 2026-09-12 current：S19-T01 TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED
+# 2026-09-12 current：S19-T01 GUI BLOCKER R1 REPAIRED / IMPORT GATE RETEST READY
+
+- 用户现场在 `180 商品 / 180 批次 / 数据异常 0` 后被导入前 SQLite 快照验证阻断；A～I 停止，旧候选作废。根因为 `PreImportSnapshotService` 最新 migration 白名单漏第 10 条。
+- repair=`536bd4126f137328573eaeafb8579e9ff4701bde`，只同步服务/直接测试白名单并补 migration 10 空库成功用例；直接专项=`23/23 PASS`，Release App build=`0 warning / 0 error`。
+- S19-T01=`REPAIR_IMPLEMENTED / IMPORT_GATE_GUI_RETEST_READY / NOT_ACCEPTED`；Stage19=`IN_PROGRESS / NOT_CLOSED`。新 GUI 先只重验 180 批次正式导入，PASS 后再继续 A～I。
+- `FULL=NOT_RUN / NO_FULL`；既有 `36/36`、`114/114` 未重跑；无 migration/schema/业务/UI/版本/Updater/Installer/发布变化；正式数据库=`NO ACCESS`，未 push、未发布。
+
+# 2026-09-12 historical：S19-T01 TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED
 
 - candidate=`378c3e5683741210204e5d9b3c31bd3e2094e814`，未 push；S19-T01=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`，Stage19 等待用户 GUI A～I。
 - 回导/部分提交=`114/114 PASS`（继承且相关代码未再改）；冷启动、migration 9→10、保护快照恢复及直接回归=`36/36 PASS`；Release App build=`0 warning / 0 error`；EF 无漂移；migration=`10`。

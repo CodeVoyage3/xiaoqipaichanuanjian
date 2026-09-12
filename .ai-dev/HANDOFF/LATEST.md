@@ -1,4 +1,10 @@
-# 2026-09-12：S19-T01 TECHNICAL_ACCEPTANCE_READY / WAITING USER GUI A～I
+# 2026-09-12：S19-T01 GUI BLOCKER R1 REPAIRED / IMPORT GATE RETEST READY
+
+用户现场在商品 Excel 成功识别 `180 商品 / 180 批次 / 数据异常 0` 后，被“导入前 SQLite 快照未通过验证”阻断，A～I 已立即停止，旧 GUI 候选作废。根因为 `PreImportSnapshotService.RequiredMigrationIds` 漏第 10 条 migration，导致当前库与白名单无法 `SequenceEqual`；不是用户数据或隔离环境问题。
+
+blocker 发现时 S19-T01 已退回 `GUI_BLOCKER_FOUND / REPAIR_REQUIRED / NOT_ACCEPTED`。repair implementation=`536bd4126f137328573eaeafb8579e9ff4701bde`，仅同步服务与直接测试的 migration 10 白名单并补最新空库用例。直接专项=`23/23 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`；既有 `36/36`、`114/114` 未重跑；正式数据库=`NO ACCESS`。当前为 `REPAIR_IMPLEMENTED / IMPORT_GATE_GUI_RETEST_READY / NOT_ACCEPTED`；先只重验 180 批次正式导入，PASS 后再继续 A～I。Stage19 不关闭，不推 main，不发布。
+
+# 2026-09-12 historical：S19-T01 TECHNICAL_ACCEPTANCE_READY / WAITING USER GUI A～I
 
 最终 candidate=`378c3e5683741210204e5d9b3c31bd3e2094e814`，未 push。回导/部分提交既有定向=`114/114 PASS`；授权后的冷启动、migration 9→10、SchemaUpgradeSnapshot 失败恢复与直接回归=`36/36 PASS`；Release App build=`0 warning / 0 error`；EF 无模型漂移；migration=`10`；`git diff --check=PASS`。
 

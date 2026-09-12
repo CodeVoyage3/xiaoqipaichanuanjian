@@ -2,7 +2,11 @@
 
 日期：2026-09-12（Asia/Shanghai）
 
-Stage19 = `IN_PROGRESS / S19_T01_TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI`
+Stage19 = `IN_PROGRESS / S19_T01_IMPORT_GATE_GUI_RETEST_READY / NOT_CLOSED`
+
+## 2026-09-12 GUI blocker R1
+
+用户现场在 180 商品/批次均正常识别后，被漏列 migration 10 的导入前快照白名单误阻断；A～I 已停止，状态曾退回 `GUI_BLOCKER_FOUND / REPAIR_REQUIRED / NOT_ACCEPTED`。最小 repair=`536bd4126f137328573eaeafb8579e9ff4701bde`，直接专项=`23/23 PASS`，Release App build=`0 warning / 0 error`，无 migration/schema/业务/UI/版本/发布链变化。新 GUI 先只重验 180 批次正式导入，PASS 后再恢复 A～I；Stage19 不关闭。
 
 ## 唯一任务
 
