@@ -24,12 +24,12 @@ The authoritative success receipt is `v1.0.9/m9 -> v1.1.0/m10` through ordinary 
 | 4 | Updater same-schema | PASS |
 | 5 | Updater cross-schema | PASS |
 | 6 | Installer fresh install | PASS |
-| 7 | Installer repair | BLOCKED: historical installer repair coverage predates this m10 cross-schema installer path; no current repair receipt exists. |
+| 7 | Installer repair | BLOCKED: current `InstallerPreflightTests` proves m10 ALLOW (21-test backup/preflight precision run), but no isolated TestMode Setup repair receipt exists. |
 | 8 | Installer previous-version overwrite | PASS (external-16) |
 | 9 | database-protection snapshot | PASS |
 | 10 | failure rollback | NOT_FULLY_VERIFIED/PRODUCT_RISK_ACCEPTED |
-| 11 | manual backup/restore | BLOCKED/MIGRATION_REQUIRED: historical S7 backup/restore tests exist, but no explicit m9-to-m10 restore compatibility design or current receipt exists. |
-| 12 | automatic backup | BLOCKED/MIGRATION_REQUIRED: existing automatic backup behavior is not a proof of cross-schema restore compatibility; no current m9-to-m10 matrix cell exists. |
+| 11 | manual backup/restore | PASS for backup create and m10-to-m10 restore (`S7T01LocalDatabaseBackupTests` + `S7T02DatabaseRestoreTests`, 21/21 precision run); m9-to-m10 restore is `PASS(expected BLOCK)/MIGRATION_REQUIRED`, not an allowed compatibility path. |
+| 12 | automatic backup | BLOCKED: metadata and external-16 business fixtures include auto-backup records, but no direct current automatic-backup creation/artifact test was found. Cross-schema restore remains `PASS(expected BLOCK)/MIGRATION_REQUIRED`. |
 | 13 | pre-import snapshot | PASS |
 | 14 | pending recovery/hard-kill | PASS (existing precise gate; no rerun) |
 | 15 | manifest source/target permission | PASS |
@@ -37,7 +37,7 @@ The authoritative success receipt is `v1.0.9/m9 -> v1.1.0/m10` through ordinary 
 | 17 | normal candidate ACK | PASS (external-16) |
 | 18 | rollback old-version ACK | NOT_FULLY_VERIFIED/PRODUCT_RISK_ACCEPTED |
 
-Only the explicitly named rollback-risk dispositions are accepted without a PASS. All `BLOCKED` rows remain publication blockers unless a separate authorized release decision changes them; they are not silently treated as N/A.
+`UNKNOWN` and unresolved `BLOCKED` rows prohibit publication. A deliberately designed compatibility refusal, recorded as `PASS(expected BLOCK)/MIGRATION_REQUIRED`, is a safe matrix outcome rather than an unknown release gap. Only the explicitly named rollback-risk dispositions are accepted without a PASS.
 
 ## Permanent baseline
 
