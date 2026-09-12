@@ -1,6 +1,8 @@
+using StoreExpiryInspector.Application.Updates;
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.UpdateSafety;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -15,7 +17,7 @@ public sealed class V110InstallerE2EBusinessDataTests
         var mode = Environment.GetEnvironmentVariable("S9_T07_E2E_BUSINESS_MODE");
         Assert.False(string.IsNullOrWhiteSpace(database));
         Assert.False(string.IsNullOrWhiteSpace(evidence));
-        Assert.True(mode is "seed" or "fingerprint");
+        Assert.True(mode is "seed" or "fingerprint" or "validate");
 
         database = Path.GetFullPath(database!);
         var dataRoot = Path.GetDirectoryName(Path.GetDirectoryName(database))!;
@@ -26,7 +28,16 @@ public sealed class V110InstallerE2EBusinessDataTests
             .UseSqlite($"Data Source={database};Foreign Keys=True;Pooling=False")
             .Options);
         if (mode == "seed") Seed(context);
-        File.WriteAllText(evidence!, S8T03ImportPerformanceTests.BusinessFingerprint(database));
+        var fingerprint = S8T03ImportPerformanceTests.BusinessFingerprint(database);
+        if (mode == "validate")
+        {
+            var migrations = UpgradeHealthAck.VerifyDatabase(database, includeWal: true);
+            Assert.True(migrations.SequenceEqual(CurrentSchemaIdentity.Migrations, StringComparer.Ordinal));
+            File.WriteAllText(evidence!, System.Text.Json.JsonSerializer.Serialize(new { migrationCount = migrations.Count, integrity = "ok", foreignKeys = 0, businessFingerprint = fingerprint }));
+            return;
+        }
+
+        File.WriteAllText(evidence!, fingerprint);
     }
 
     private static void Seed(StoreDbContext context)

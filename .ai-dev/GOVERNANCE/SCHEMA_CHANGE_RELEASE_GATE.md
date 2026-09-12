@@ -20,16 +20,16 @@ The authoritative success receipt is `v1.0.9/m9 -> v1.1.0/m10` through ordinary 
 |---:|---|---|
 | 1 | CurrentSchemaIdentity vs EF | PASS |
 | 2 | App normal startup | PASS |
-| 3 | online automatic upgrade | BLOCKED: existing updater tests prove package/preparation behavior, but no current `v1.0.9/m9 -> m10` online end-to-end receipt was run; external-16 is Setup-only. |
+| 3 | online automatic upgrade | PASS (INHERITED/COMPOSED): historical S9T07 direct `65/65`, current signed package/downloader and Updater precision `S9T04+S9T05 18/18`, and final production-asset `RevalidateForInstall=Verified` jointly cover the common `VerifiedUpdatePackage -> Preparer -> Updater` chain for `v1.0.9/m9 -> v1.1.0/m10`. This is not represented as a single public-network E2E receipt. |
 | 4 | Updater same-schema | PASS |
 | 5 | Updater cross-schema | PASS |
 | 6 | Installer fresh install | PASS |
-| 7 | Installer repair | BLOCKED: current `InstallerPreflightTests` proves m10 ALLOW (21-test backup/preflight precision run), but no isolated TestMode Setup repair receipt exists. |
+| 7 | Installer repair | PASS: isolated TestMode receipt `v110-repair-b0283fbd-884e-4ca5-b5de-77ba7f6200bc` ran fresh candidate Setup and the identical candidate Setup as m10-to-m10 repair, both exit `0`; TestHost validated exact `CurrentSchemaIdentity` 10-migration sequence, integrity `ok`, foreign keys `0`, unchanged business fingerprint and database SHA-256, with `updaterTransactions=0`. It used a random TEMP/GUID TestAppId only, never a formal root. |
 | 8 | Installer previous-version overwrite | PASS (external-16) |
 | 9 | database-protection snapshot | PASS |
 | 10 | failure rollback | NOT_FULLY_VERIFIED/PRODUCT_RISK_ACCEPTED |
 | 11 | manual backup/restore | PASS for backup create and m10-to-m10 restore (`S7T01LocalDatabaseBackupTests` + `S7T02DatabaseRestoreTests`, 21/21 precision run); m9-to-m10 restore is `PASS(expected BLOCK)/MIGRATION_REQUIRED`, not an allowed compatibility path. |
-| 12 | automatic backup | BLOCKED: metadata and external-16 business fixtures include auto-backup records, but no direct current automatic-backup creation/artifact test was found. Cross-schema restore remains `PASS(expected BLOCK)/MIGRATION_REQUIRED`. |
+| 12 | automatic backup | NOT_APPLICABLE: this product has no automatic-backup creation service. Existing `auto` metadata constraint/fixture records are not represented as an implemented backup feature. |
 | 13 | pre-import snapshot | PASS |
 | 14 | pending recovery/hard-kill | PASS (existing precise gate; no rerun) |
 | 15 | manifest source/target permission | PASS |

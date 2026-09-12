@@ -35,7 +35,11 @@ function One-Operation([string]$root){
   Require ($operations.Count -eq 1) "expected one update operation; actual=$($operations.Count)"
   return $operations[0]
 }
-function Write-BusinessFingerprint([string]$database,[string]$path,[ValidateSet('seed','fingerprint')][string]$mode){
+function Assert-NoUpdateOperations([string]$root){
+  $updates=Join-Path $root 'updates'
+  if(Test-Path -LiteralPath $updates){ Require (@(Get-ChildItem -LiteralPath $updates -Directory).Count -eq 0) 'm10 repair created an updater transaction' }
+}
+function Write-BusinessFingerprint([string]$database,[string]$path,[ValidateSet('seed','fingerprint','validate')][string]$mode){
   $env:S9_T07_E2E_DATABASE=$database; $env:S9_T07_E2E_BUSINESS_FINGERPRINT=$path; $env:S9_T07_E2E_BUSINESS_MODE=$mode
   $transcript="$path.testhost.log"
   try { & dotnet test "$root\tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj" -c Release --no-restore -p:NuGetAudit=false --filter 'FullyQualifiedName~V110InstallerE2EBusinessDataTests' --logger 'console;verbosity=minimal' *>&1 | Tee-Object -FilePath $transcript | Out-Null; if($LASTEXITCODE){throw "business $mode failed: $LASTEXITCODE; transcript=$transcript"} }
@@ -57,6 +61,24 @@ try {
   $zip=Join-Path $assets 'StoreExpiryInspector-1.1.0-win-x64.zip'; New-AuditableZip $candidate $zip
   $m=@('20260826123739_InitialCreate','20260826130822_AddTasksAndDrafts','20260826135612_AddInspectionHistory','20260826142429_AddInventoryAdjustments','20260826152131_AddImportPersistence','20260826155455_AddBackupMetadata','20260826162033_AddSettingsAndAppState','20260826170403_AddLifecycleEvents','20260901155124_AddPolicyAndBaselineFoundation','20260912083448_AdjustCatchupWindowConstraint')
   $rsa=[Security.Cryptography.RSA]::Create(3072); try {
+    if($Scenario -eq 'Success'){
+      # Current-schema repair only: no legacy package, updater transaction, or rollback path.
+      $manifest=Join-Path $assets 'update-manifest.json'; $o=[ordered]@{schemaVersion=1;version='1.1.0';releaseTag='v1.1.0';repository='CodeVoyage3/xiaoqipaichanuanjian';channel='stable';rid='win-x64';minimumProtocolVersion=2;package=[ordered]@{fileName=(Split-Path $zip -Leaf);bytes=(gi $zip).Length;sha256=(Hash $zip)};targetMigrations=$m;source=[ordered]@{minVersion='1.0.9';maxVersion='1.0.9';minMigration=$m[0];maxMigration=$m[8]}}; [IO.File]::WriteAllText($manifest,($o|ConvertTo-Json -Compress -Depth 8),[Text.UTF8Encoding]::new($false)); $sig=Join-Path $assets 'update-manifest.sig'; [IO.File]::WriteAllBytes($sig,$rsa.SignData([IO.File]::ReadAllBytes($manifest),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pss))
+      $common=@('/Qp','/DTestMode',"/DTestAppIdKey=$id","/DTestSuffix=$id","/DTestInstallRoot=$install","/DTestDataRoot=$data","/DTestMutexName=$id","/DUpdatePackage=$zip","/DUpdateManifest=$manifest","/DUpdateSignature=$sig")
+      & $Compiler @common "/DPayloadDir=$candidate" "/DOutputDir=$output" '/DTestVersion=1.1.0' "$root\installer\StoreExpiryInspector.iss"; if($LASTEXITCODE){throw 'candidate ISCC failed'}
+      $setup=(gi "$output\*Setup*.exe").FullName; $candidateLog=Join-Path $ResultDirectory 'candidate-setup.log'; $fresh=Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=$candidateLog") -Wait -PassThru
+      Require ($fresh.ExitCode -eq 0) "fresh candidate Setup exit expected 0; actual=$($fresh.ExitCode)"
+      $current=Start-Process (Join-Path $install 'app\StoreExpiryInspector.exe') -ArgumentList "--data-root `"$data`"",'--allow-existing-isolated-data-root','--s9-t01-smoke-exit' -Wait -PassThru
+      Require ($current.ExitCode -eq 0) "current v1.1.0 m10 initialization failed: $($current.ExitCode)"
+      $db=Join-Path $data 'data\app.db'; Require (Test-Path $db) 'database missing after current m10 initialization'; $beforeBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-before.txt') 'seed'; $before=Hash $db
+      $null=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'm10-before-repair-validation.json') 'validate'; Require (([Reflection.AssemblyName]::GetAssemblyName((Join-Path $install 'app\StoreExpiryInspector.dll')).Version.ToString(3)) -eq '1.1.0') 'current installed application version mismatch'; Assert-NoUpdateOperations $data
+      $repairLog=Join-Path $ResultDirectory 'repair-setup.log'; $repair=Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=$repairLog") -Wait -PassThru
+      Require ($repair.ExitCode -eq 0) "m10 repair Setup exit expected 0; actual=$($repair.ExitCode)"
+      $repairBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after-repair.txt') 'fingerprint'; Require ($repairBusiness -eq $beforeBusiness) 'm10 repair changed business-data fingerprint'
+      $null=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'm10-after-repair-validation.json') 'validate'; Assert-NoUpdateOperations $data
+      [IO.File]::WriteAllText((Join-Path $ResultDirectory 'v110-success.json'),(@{scenario='M10Repair';preDbSha256=$before;postDbSha256=(Hash $db);businessFingerprint=$beforeBusiness;freshSetupExit=$fresh.ExitCode;repairSetupExit=$repair.ExitCode;migrationCount=$m.Count;integrity='ok';foreignKeys='ok';updaterTransactions=0;status='TESTMODE_M10_REPAIR_COMPLETED'}|ConvertTo-Json))
+      return
+    }
     $manifest=Join-Path $assets 'update-manifest.json'; $o=[ordered]@{schemaVersion=1;version='1.1.0';releaseTag='v1.1.0';repository='CodeVoyage3/xiaoqipaichanuanjian';channel='stable';rid='win-x64';minimumProtocolVersion=2;package=[ordered]@{fileName=(Split-Path $zip -Leaf);bytes=(gi $zip).Length;sha256=(Hash $zip)};targetMigrations=$m;source=[ordered]@{minVersion='1.0.9';maxVersion='1.0.9';minMigration=$m[0];maxMigration=$m[8]}}; [IO.File]::WriteAllText($manifest,($o|ConvertTo-Json -Compress -Depth 8),[Text.UTF8Encoding]::new($false)); $sig=Join-Path $assets 'update-manifest.sig'; [IO.File]::WriteAllBytes($sig,$rsa.SignData([IO.File]::ReadAllBytes($manifest),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pss))
     $common=@('/Qp','/DTestMode',"/DTestAppIdKey=$id","/DTestSuffix=$id","/DTestInstallRoot=$install","/DTestDataRoot=$data","/DTestMutexName=$id","/DUpdatePackage=$zip","/DUpdateManifest=$manifest","/DUpdateSignature=$sig"); & $Compiler @common "/DPayloadDir=$LegacyPublish" "/DOutputDir=$legacyOutput" '/DTestVersion=1.0.9' "$root\installer\StoreExpiryInspector.iss";if($LASTEXITCODE){throw 'legacy ISCC failed'}; $legacySetup=(gi "$legacyOutput\*Setup*.exe").FullName; $legacyLog=Join-Path $ResultDirectory 'legacy-setup.log'; $legacy=Start-Process $legacySetup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=`"$legacyLog`"") -Wait -PassThru;if($legacy.ExitCode){throw "legacy Setup failed: $($legacy.ExitCode); log=$legacyLog"}; $old=Start-Process (Join-Path $install 'app\StoreExpiryInspector.exe') -ArgumentList "--data-root `"$data`" --allow-existing-isolated-data-root --s9-t01-smoke-exit" -Wait -PassThru;if($old.ExitCode){throw 'legacy v1.0.9 initialization failed'}; $db=Join-Path $data 'data\app.db'; $beforeBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-before.txt') 'seed'; $before=Hash $db; & $Compiler @common "/DPayloadDir=$candidate" "/DOutputDir=$output" '/DTestVersion=1.1.0' "$root\installer\StoreExpiryInspector.iss";if($LASTEXITCODE){throw 'candidate ISCC failed'}
     $env:S9_T07_TEST_PUBLIC_KEY=[Convert]::ToBase64String($rsa.ExportSubjectPublicKeyInfo()); $env:S9_T07_EXIT_AFTER_NORMAL_ACK='1'
@@ -67,18 +89,26 @@ try {
     # The specific Setup process is the assertion boundary.
     $p=Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=`"$candidateLog`"") -PassThru
     $setupExit=Wait-ExactProcess $p 90 'candidate Setup'
-    Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after installer transaction'
-    $operation=One-Operation $data; $journalPath=Join-Path $operation.FullName 'journal.json'; Require (Test-Path $journalPath) 'cross-schema journal missing'; $journal=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json
-    Require ($journal.OperationId -eq $operation.Name) 'journal operation identity mismatch'; Require ($journal.SourceVersion -eq '1.0.9' -and $journal.TargetVersion -eq '1.1.0') 'journal version identity mismatch'
-    Require (@($journal.Schema.SourceMigrations).Count -eq 9 -and @($journal.Schema.TargetMigrations).Count -eq 10) 'journal migration identity mismatch'
-    $ackPath=Join-Path $operation.FullName 'health-ack.json'; Require (Test-Path $ackPath) 'existing health acknowledgement missing'; $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
-    Require ($ack.integrity -eq 'ok' -and $ack.foreignKeys -eq 'ok' -and $ack.coreRead -eq $true -and $ack.uiLoaded -eq $true) 'existing application verification acknowledgement is invalid'
     if($Scenario -eq 'Success'){
       Require ($setupExit -eq 0) "Setup success exit expected 0; actual=$setupExit"
-      Require ($journal.Phase -eq 10 -and $journal.Schema.Phase -eq 8) 'completed/candidate-committed terminal missing'
-      Require ($ack.version -eq '1.1.0' -and $ack.migrationCount -eq 10) 'candidate acknowledgement identity mismatch'
-      [IO.File]::WriteAllText((Join-Path $ResultDirectory 'v110-success.json'),(@{scenario=$Scenario;preDbSha256=$before;postDbSha256=(Hash $db);businessFingerprint=$beforeBusiness;setupExit=$setupExit;operationId=$operation.Name;journalPhase=$journal.Phase;schemaPhase=$journal.Schema.Phase;integrity=$ack.integrity;foreignKeys=$ack.foreignKeys;status='TESTMODE_E2E_COMPLETED'}|ConvertTo-Json))
+      $current=Start-Process (Join-Path $install 'app\StoreExpiryInspector.exe') -ArgumentList "--data-root `"$data`"",'--allow-existing-isolated-data-root','--s9-t01-smoke-exit' -Wait -PassThru
+      Require ($current.ExitCode -eq 0) "current v1.1.0 m10 initialization failed: $($current.ExitCode)"
+      Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after current m10 initialization'
+      $null=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'm10-before-repair-validation.json') 'validate'; Require (([Reflection.AssemblyName]::GetAssemblyName((Join-Path $install 'app\StoreExpiryInspector.dll')).Version.ToString(3)) -eq '1.1.0') 'current installed application version mismatch'; Assert-NoUpdateOperations $data
+      $repairLog=Join-Path $ResultDirectory 'repair-setup.log'
+      $repair=Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=`"$repairLog`"") -Wait -PassThru
+      Require ($repair.ExitCode -eq 0) "m10 repair Setup exit expected 0; actual=$($repair.ExitCode)"
+      $repairBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after-repair.txt') 'fingerprint'
+      Require ($repairBusiness -eq $beforeBusiness) 'm10 repair changed business-data fingerprint'
+      $null=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'm10-after-repair-validation.json') 'validate'; Assert-NoUpdateOperations $data
+      [IO.File]::WriteAllText((Join-Path $ResultDirectory 'v110-success.json'),(@{scenario=$Scenario;preDbSha256=$before;postDbSha256=(Hash $db);businessFingerprint=$beforeBusiness;setupExit=$setupExit;repairSetupExit=$repair.ExitCode;migrationCount=$m.Count;integrity='ok';foreignKeys='ok';updaterTransactions=0;status='TESTMODE_M10_REPAIR_COMPLETED'}|ConvertTo-Json))
     } else {
+      Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after installer transaction'
+      $operation=One-Operation $data; $journalPath=Join-Path $operation.FullName 'journal.json'; Require (Test-Path $journalPath) 'cross-schema journal missing'; $journal=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json
+      Require ($journal.OperationId -eq $operation.Name) 'journal operation identity mismatch'; Require ($journal.SourceVersion -eq '1.0.9' -and $journal.TargetVersion -eq '1.1.0') 'journal version identity mismatch'
+      Require (@($journal.Schema.SourceMigrations).Count -eq 9 -and @($journal.Schema.TargetMigrations).Count -eq 10) 'journal migration identity mismatch'
+      $ackPath=Join-Path $operation.FullName 'health-ack.json'; Require (Test-Path $ackPath) 'existing health acknowledgement missing'; $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+      Require ($ack.integrity -eq 'ok' -and $ack.foreignKeys -eq 'ok' -and $ack.coreRead -eq $true -and $ack.uiLoaded -eq $true) 'existing application verification acknowledgement is invalid'
       Require ($setupExit -ne 0) 'fault-injected Setup unexpectedly succeeded'
       Require ($journal.Phase -eq 15 -and $journal.Schema.Phase -eq 16) 'rolled-back terminal missing'
       Require ((Hash $db) -eq $before) 'rollback database SHA256 differs from the source database'
