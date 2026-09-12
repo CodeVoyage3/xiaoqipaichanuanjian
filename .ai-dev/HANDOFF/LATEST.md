@@ -1,4 +1,14 @@
-# 2026-09-12：Stage19 CLOSED / ACCEPTED
+# 2026-09-12：V1.1.0 RELEASE CANDIDATE READY / PUBLISH NOT AUTHORIZED
+
+fresh baseline=`origin/main 3e7c0cdc69698530cc31e1e3298b31639870dfcf`。Stage19 继续 `CLOSED / ACCEPTED`；这是 release preflight repair，不是 Stage20。repair=`e0a3bfc60e0385b930b6f74e99700a3038334333`；candidate product source=`a1f220b3d1a1bdd390cec99f1847ad9c3228f69b`。
+
+App 与 Updater 已统一到 `1.1.0 / 1.1.0.0`。当前 Schema 精确 10 migrations，末条 `20260912083448_AdjustCatchupWindowConstraint`；App/Updater 普通 same-schema 验证不再接受 migration9 静态身份。精准门禁 `12/12 PASS`，migration10 same-schema ACK PASS，真实 v1.0.9 migration9→frozen v1.1.0 migration10 transaction `Completed / CandidateCommitted / snapshot present / ACK PASS / normal Loaded`。Release App/Updater build 均 `0 warning / 0 error`；`FULL=NOT_RUN / NO_FULL`。
+
+`V1.1.0_MANUAL_INSTALL_CROSS_SCHEMA_RISK`：Installer 仍只允许无数据库或精确健康 migration10；migration9=`OlderSchema / BLOCK`。因此 `[点击网盘下载]` 获得的普通 v1.1.0 Setup 对现有 v1.0.9 数据库会安全阻断，不能替代在线 Updater 的 snapshot/ACK/rollback 跨 Schema 协议。禁止为可安装而放宽；等待产品裁决，不新增离线升级协议。
+
+frozen assets、bytes/SHA256、production signature/source eligibility 与门店版 release notes 见 `.ai-dev/ACCEPTANCE/V1.1.0-RELEASE-PREFLIGHT.md`。未 tag `v1.1.0`、未创建 GitHub Release、未上传夸克、未更新 Gitee metadata、未发布 Installer、未改变公网 latest。当前唯一状态=`V1.1.0_RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`，完成后停止。
+
+# 2026-09-12 historical：Stage19 CLOSED / ACCEPTED
 
 用户最终确认 S19-T02 GUI=`PASS`。S19-T02=`CLOSED / ACCEPTED`，final product source=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`，technical=`PASS`，GUI=`PASS`，`FULL=NOT_RUN / NO_FULL`。第二阶段网络失败、同窗 `[点击网盘下载] [重试在线更新] [取消]`、已验证 `pan.quark.cn` 打开、重试无重复窗口/worker且清理 fallback、取消继续运行且不启动安装程序均通过。
 
