@@ -22,7 +22,8 @@ internal static class WpfDialogService
     {
         var dialog = new Window { Owner = owner, Title = "发现新版本", Width = 460, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, Background = FindBrush(owner, "SurfaceBrush") };
         var panel = new StackPanel { Margin = new Thickness(24) };
-        panel.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold });
+        var title = new TextBlock { Text = "发现新版本", FontSize = 18, FontWeight = FontWeights.SemiBold };
+        panel.Children.Add(title);
         panel.Children.Add(new TextBlock { Text = $"{model.CurrentVersionText}\n{model.LatestVersionText}", Margin = new Thickness(0, 12, 0, 0) });
         StackPanel? notes = null;
         if (model.IsInitial && model.HasReleaseNotes)
@@ -40,17 +41,18 @@ internal static class WpfDialogService
         var update = new Button { Content = new TextBlock { Text = model.PrimaryActionText, Foreground = Brushes.White }, Width = 104, Height = 36, Margin = new Thickness(8, 0, 0, 0), Style = FindStyle(owner, "PrimaryButtonStyle") };
         var cancel = new Button { Content = "取消更新", Width = 88, Height = 36, Margin = new Thickness(8, 0, 0, 0), Visibility = Visibility.Collapsed, Style = FindStyle(owner, "SecondaryButtonStyle") };
         var showLaterReminder = false;
-        later.Click += (_, _) => { if (!model.IsBusy) { showLaterReminder = true; dialog.Close(); } };
+        later.Click += (_, _) => { if (model.IsDomesticFallback) { model.ManualDownloadCommand.Execute(null); dialog.Close(); } else if (!model.IsBusy) { showLaterReminder = true; dialog.Close(); } };
         update.Click += (_, _) => model.UpdateRequestedCommand.Execute(null);
-        cancel.Click += (_, _) => model.CancelCommand.Execute(null);
+        cancel.Click += (_, _) => { if (model.IsDomesticFallback) dialog.Close(); else model.CancelCommand.Execute(null); };
         System.ComponentModel.PropertyChangedEventHandler changed = (_, _) =>
         {
-            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { status.Text = model.StatusText; status.Visibility = model.IsInitial ? Visibility.Collapsed : Visibility.Visible; progress.Visibility = model.IsDownloading || model.IsUpdating ? Visibility.Visible : Visibility.Collapsed; progress.IsIndeterminate = model.IsProgressIndeterminate; progress.Value = model.DownloadPercent; notes?.Visibility = model.IsInitial ? Visibility.Visible : Visibility.Collapsed; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.CanCancel ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = model.CancelCommand.CanExecute(null); } });
+            if (dialog.IsVisible && !dialog.Dispatcher.HasShutdownStarted) dialog.Dispatcher.BeginInvoke(() => { if (dialog.IsVisible) { var fallback = model.IsDomesticFallback; title.Text = fallback ? "在线更新下载失败" : "发现新版本"; status.Text = model.StatusText; status.Visibility = model.IsInitial ? Visibility.Collapsed : Visibility.Visible; progress.Visibility = model.IsDownloading || model.IsUpdating ? Visibility.Visible : Visibility.Collapsed; progress.IsIndeterminate = model.IsProgressIndeterminate; progress.Value = model.DownloadPercent; notes?.Visibility = model.IsInitial ? Visibility.Visible : Visibility.Collapsed; later.Content = fallback ? "点击网盘下载" : "稍后提醒"; update.Content = fallback ? "重试在线更新" : new TextBlock { Text = model.PrimaryActionText, Foreground = Brushes.White }; later.Visibility = update.Visibility = model.IsBusy ? Visibility.Collapsed : Visibility.Visible; cancel.Visibility = model.CanCancel || fallback ? Visibility.Visible : Visibility.Collapsed; update.IsEnabled = model.UpdateRequestedCommand.CanExecute(null); cancel.IsEnabled = fallback || model.CancelCommand.CanExecute(null); } });
         };
         model.PropertyChanged += changed;
         dialog.Closing += (_, e) =>
         {
-            if (!model.IsBusy) showLaterReminder = true;
+            if (model.IsDomesticFallback) showLaterReminder = false;
+            else if (!model.IsBusy) showLaterReminder = true;
             else if (model.CanCancel) model.CancelCommand.Execute(null);
             else e.Cancel = true;
         };

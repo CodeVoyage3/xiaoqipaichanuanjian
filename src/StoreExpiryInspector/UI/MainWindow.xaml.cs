@@ -107,6 +107,7 @@ public partial class MainWindow : Window
     private async Task PrepareUpdateAsync(UpdateCheckResult result, UpdateNotificationViewModel model)
     {
         if (IsClosed || model.IsBusy) return;
+        if (_updateWorker is { IsCompleted: false }) return;
         var operationId = Guid.NewGuid().ToString("N");
         _updateDiagnostics?.Add("gui-prepare-start", new { operationId, threadId = Environment.CurrentManagedThreadId, dispatcherThreadId = Dispatcher.Thread.ManagedThreadId, sourceVersion = result.CurrentVersion.ToString(3), targetVersion = result.LatestVersion?.ToString(3), workerAlreadyActive = _updateWorker is { IsCompleted: false } });
         if (result.Release is null)
@@ -135,6 +136,15 @@ public partial class MainWindow : Window
             }, linked.Token), linked.Token);
             var prepared = await _updateWorker;
             _updateDiagnostics?.Add("gui-prepare-result", new { operationId, outcome = prepared.Outcome.ToString(), verified = prepared.Package is not null });
+            if (prepared.Outcome is UpdatePackageOutcome.NetworkUnavailable or UpdatePackageOutcome.RateLimited)
+            {
+                var gitee = await new GiteeManualUpdateChecker().CheckAsync(result.CurrentVersion, linked.Token);
+                if (CanUseDomesticFallback(prepared, result, gitee))
+                {
+                    model.ShowDomesticFallback(() => OpenManualDownload(gitee.ManualDownloadUrl!));
+                    return;
+                }
+            }
             if (prepared.Outcome != UpdatePackageOutcome.Verified || prepared.Package is null || _installPreparedUpdate is null)
             {
                 if (!IsClosed) model.Complete(prepared);
@@ -148,6 +158,11 @@ public partial class MainWindow : Window
         catch (Exception error) { _updateDiagnostics?.Add("gui-prepare-error", new { operationId, error = _updateDiagnostics.SafeError(error) }); if (!IsClosed) model.Complete(new UpdatePackageResult(UpdatePackageOutcome.IoFailure, "更新包准备失败。")); }
         finally { model.CancelRequested -= cancel; _updateDiagnostics?.Add("gui-cts-disposed", new { operationId, tokenId = linked.GetHashCode() }); }
     }
+
+    internal static bool CanUseDomesticFallback(UpdatePackageResult package, UpdateCheckResult github, UpdateCheckResult gitee) =>
+        package.Outcome is UpdatePackageOutcome.NetworkUnavailable or UpdatePackageOutcome.RateLimited &&
+        github.LatestVersion is not null && github.Release is not null && gitee.Outcome == UpdateCheckOutcome.UpdateAvailable &&
+        gitee.LatestVersion == github.LatestVersion && github.Release.Version == github.LatestVersion && gitee.ManualDownloadUrl is not null;
 
     private static void OpenManualDownload(Uri url)
     {
