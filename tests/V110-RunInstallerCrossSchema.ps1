@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$Compiler,[ValidateSet('Success','Failure')][string]$Scenario='Success',[Parameter(Mandatory)][string]$LegacyPublish,[Parameter(Mandatory)][string]$ResultDirectory)
+param([Parameter(Mandatory)][string]$Compiler,[ValidateSet('Success','Failure','Repair')][string]$Scenario='Success',[Parameter(Mandatory)][string]$LegacyPublish,[Parameter(Mandatory)][string]$ResultDirectory)
 
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
@@ -61,7 +61,7 @@ try {
   $zip=Join-Path $assets 'StoreExpiryInspector-1.1.0-win-x64.zip'; New-AuditableZip $candidate $zip
   $m=@('20260826123739_InitialCreate','20260826130822_AddTasksAndDrafts','20260826135612_AddInspectionHistory','20260826142429_AddInventoryAdjustments','20260826152131_AddImportPersistence','20260826155455_AddBackupMetadata','20260826162033_AddSettingsAndAppState','20260826170403_AddLifecycleEvents','20260901155124_AddPolicyAndBaselineFoundation','20260912083448_AdjustCatchupWindowConstraint')
   $rsa=[Security.Cryptography.RSA]::Create(3072); try {
-    if($Scenario -eq 'Success'){
+    if($Scenario -eq 'Repair'){
       # Current-schema repair only: no legacy package, updater transaction, or rollback path.
       $manifest=Join-Path $assets 'update-manifest.json'; $o=[ordered]@{schemaVersion=1;version='1.1.0';releaseTag='v1.1.0';repository='CodeVoyage3/xiaoqipaichanuanjian';channel='stable';rid='win-x64';minimumProtocolVersion=2;package=[ordered]@{fileName=(Split-Path $zip -Leaf);bytes=(gi $zip).Length;sha256=(Hash $zip)};targetMigrations=$m;source=[ordered]@{minVersion='1.0.9';maxVersion='1.0.9';minMigration=$m[0];maxMigration=$m[8]}}; [IO.File]::WriteAllText($manifest,($o|ConvertTo-Json -Compress -Depth 8),[Text.UTF8Encoding]::new($false)); $sig=Join-Path $assets 'update-manifest.sig'; [IO.File]::WriteAllBytes($sig,$rsa.SignData([IO.File]::ReadAllBytes($manifest),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pss))
       $common=@('/Qp','/DTestMode',"/DTestAppIdKey=$id","/DTestSuffix=$id","/DTestInstallRoot=$install","/DTestDataRoot=$data","/DTestMutexName=$id","/DUpdatePackage=$zip","/DUpdateManifest=$manifest","/DUpdateSignature=$sig")
@@ -91,17 +91,9 @@ try {
     $setupExit=Wait-ExactProcess $p 90 'candidate Setup'
     if($Scenario -eq 'Success'){
       Require ($setupExit -eq 0) "Setup success exit expected 0; actual=$setupExit"
-      $current=Start-Process (Join-Path $install 'app\StoreExpiryInspector.exe') -ArgumentList "--data-root `"$data`"",'--allow-existing-isolated-data-root','--s9-t01-smoke-exit' -Wait -PassThru
-      Require ($current.ExitCode -eq 0) "current v1.1.0 m10 initialization failed: $($current.ExitCode)"
-      Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after current m10 initialization'
-      $null=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'm10-before-repair-validation.json') 'validate'; Require (([Reflection.AssemblyName]::GetAssemblyName((Join-Path $install 'app\StoreExpiryInspector.dll')).Version.ToString(3)) -eq '1.1.0') 'current installed application version mismatch'; Assert-NoUpdateOperations $data
-      $repairLog=Join-Path $ResultDirectory 'repair-setup.log'
-      $repair=Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=`"$repairLog`"") -Wait -PassThru
-      Require ($repair.ExitCode -eq 0) "m10 repair Setup exit expected 0; actual=$($repair.ExitCode)"
-      $repairBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after-repair.txt') 'fingerprint'
-      Require ($repairBusiness -eq $beforeBusiness) 'm10 repair changed business-data fingerprint'
-      $null=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'm10-after-repair-validation.json') 'validate'; Assert-NoUpdateOperations $data
-      [IO.File]::WriteAllText((Join-Path $ResultDirectory 'v110-success.json'),(@{scenario=$Scenario;preDbSha256=$before;postDbSha256=(Hash $db);businessFingerprint=$beforeBusiness;setupExit=$setupExit;repairSetupExit=$repair.ExitCode;migrationCount=$m.Count;integrity='ok';foreignKeys='ok';updaterTransactions=0;status='TESTMODE_M10_REPAIR_COMPLETED'}|ConvertTo-Json))
+      Require ($journal.Phase -eq 10 -and $journal.Schema.Phase -eq 8) 'completed/candidate-committed terminal missing'
+      Require ($ack.version -eq '1.1.0' -and $ack.migrationCount -eq 10) 'candidate acknowledgement identity mismatch'
+      [IO.File]::WriteAllText((Join-Path $ResultDirectory 'v110-success.json'),(@{scenario=$Scenario;preDbSha256=$before;postDbSha256=(Hash $db);businessFingerprint=$beforeBusiness;setupExit=$setupExit;operationId=$operation.Name;journalPhase=$journal.Phase;schemaPhase=$journal.Schema.Phase;integrity=$ack.integrity;foreignKeys=$ack.foreignKeys;status='TESTMODE_E2E_COMPLETED'}|ConvertTo-Json))
     } else {
       Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after installer transaction'
       $operation=One-Operation $data; $journalPath=Join-Path $operation.FullName 'journal.json'; Require (Test-Path $journalPath) 'cross-schema journal missing'; $journal=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json

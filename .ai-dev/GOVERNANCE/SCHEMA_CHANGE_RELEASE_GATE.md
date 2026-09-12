@@ -28,7 +28,7 @@ The authoritative success receipt is `v1.0.9/m9 -> v1.1.0/m10` through ordinary 
 | 8 | Installer previous-version overwrite | PASS (external-16) |
 | 9 | database-protection snapshot | PASS |
 | 10 | failure rollback | NOT_FULLY_VERIFIED/PRODUCT_RISK_ACCEPTED |
-| 11 | manual backup/restore | PASS for backup create and m10-to-m10 restore (`S7T01LocalDatabaseBackupTests` + `S7T02DatabaseRestoreTests`, 21/21 precision run); m9-to-m10 restore is `PASS(expected BLOCK)/MIGRATION_REQUIRED`, not an allowed compatibility path. |
+| 11 | manual backup/restore | PASS for backup create and m10-to-m10 restore (`S7T01LocalDatabaseBackupTests` + `S7T02DatabaseRestoreTests`, 15/15 precision run); the separate backup/restore/preflight combined filter was 21/21. m9-to-m10 restore is `PASS(expected BLOCK)/MIGRATION_REQUIRED`, not an allowed compatibility path. |
 | 12 | automatic backup | NOT_APPLICABLE: this product has no automatic-backup creation service. Existing `auto` metadata constraint/fixture records are not represented as an implemented backup feature. |
 | 13 | pre-import snapshot | PASS |
 | 14 | pending recovery/hard-kill | PASS (existing precise gate; no rerun) |
