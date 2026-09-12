@@ -2,9 +2,13 @@
 
 日期：2026-09-12（Asia/Shanghai）
 
-Stage19 = `IN_PROGRESS / S19_T01_FINAL_GUI_RETEST_READY / NOT_CLOSED`
+Stage19 = `IN_PROGRESS / S19-T01_CLOSED / WAITING_S19-T02_NEW_TOPIC / NOT_CLOSED`
 
-## 2026-09-12 R4 final UI repair
+## 2026-09-12 S19-T01 final acceptance
+
+用户最终 GUI 验收=`PASS`；S19-T01=`CLOSED / ACCEPTED`，technical=`PASS`，GUI=`PASS`。R3 真实 GUI 180/80/100 闭环与 R4 三个最终 UI 画面全部通过；`FULL=NOT_RUN / NO_FULL`。Stage19 不关闭，等待用户在新 Codex 话题处理 `S19-T02｜在线更新下载失败国内兜底`；本轮不创建或实施 S19-T02。
+
+## 2026-09-12 R4 final UI repair historical
 
 用户复验发现默认绿色 ProgressBar、原生 ComboBox 与 hover 布局异常三项纯 UI blocker。repair=`27b73f6` 仅加入蓝色自定义不定进度条、五项横向轻量筛选及数量，并把确认窗口改为从创建即固定测量、受控列宽、无结果 ToolTip；不重新判断 valid/stale，不改 PreviewResult、Submit payload 或业务逻辑。精准专项 `4/4 PASS`，Release App build `0 warning / 0 error`，FULL=`NOT_RUN / NO_FULL`。当前 `R4_UI_REPAIR_IMPLEMENTED / FINAL_GUI_RETEST_READY / NOT_ACCEPTED`；用户只复验 A/B/C，Stage19 不关闭。
 

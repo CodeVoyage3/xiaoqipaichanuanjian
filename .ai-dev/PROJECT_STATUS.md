@@ -1,4 +1,13 @@
-# 2026-09-12 current：S19-T01 R4 UI REPAIR / FINAL GUI RETEST READY
+# 2026-09-12 current：S19-T01 CLOSED / ACCEPTED
+
+- 用户最终 GUI 验收=`PASS`；technical=`PASS`。final product source=`27b73f6bf999751b3333713ea74fc330bb8fa75d`，完整包含 R1/R2/R3/R4。
+- R3 真实 GUI：180→填80/空100→提交80成功并关闭窗口→100 open pending→二次导出100；A:L、任意文件名、行级容错、文件级错误提示均 PASS。
+- R4 真实 GUI：居中 overlay、蓝色 indeterminate、处理结果/原因、五项横向筛选、hover 稳定均 PASS。
+- S19-T01=`CLOSED / ACCEPTED`；Stage19=`IN_PROGRESS / S19-T01_CLOSED / WAITING_S19-T02_NEW_TOPIC`。S19-T02 本轮未创建、未实施。
+- `FULL=NOT_RUN / NO_FULL`；本收口轮只做 lineage/diff/governance/status 核对，不重跑既有专项或 build。
+- 正式数据库=`NO ACCESS`；未修改版本号、未 tag、未发布 GitHub Release/Installer/夸克/Gitee。
+
+# 2026-09-12 historical：S19-T01 R4 UI REPAIR / FINAL GUI RETEST READY
 
 - 用户复验发现默认绿色 ProgressBar、原生 ComboBox、hover 后确认窗口/底部布局异常；本轮仅作 UI 返修。
 - repair=`27b73f6`：蓝色自定义不定进度条、五项横向轻量筛选与数量、固定窗口测量/受控列宽并移除结果表 ToolTip；PreviewResult、提交 payload 与业务逻辑不变。
