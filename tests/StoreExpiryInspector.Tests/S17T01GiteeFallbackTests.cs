@@ -146,16 +146,6 @@ public sealed class S17T01GiteeFallbackTests
         Assert.Equal("立即更新", model.PrimaryActionText);
     }
 
-    [Fact]
-    public void AppKeepsTheExistingFirstStageGiteeFallbackWiring()
-    {
-        var app = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "App.xaml.cs"));
-
-        Assert.Contains("var gitee = new GiteeManualUpdateChecker();", app, StringComparison.Ordinal);
-        Assert.Contains("var checker = new GiteeFallbackUpdateChecker(github.CheckAsync, gitee.CheckAsync);", app, StringComparison.Ordinal);
-        Assert.Contains("cancellationToken => checker.CheckAsync(currentVersion, cancellationToken)", app, StringComparison.Ordinal);
-    }
-
     private static async Task<UpdateCheckResult> CheckGiteeAsync(string body, Version current) =>
         await new GiteeManualUpdateChecker(new Handler(_ => Json(body))).CheckAsync(current, CancellationToken.None);
 

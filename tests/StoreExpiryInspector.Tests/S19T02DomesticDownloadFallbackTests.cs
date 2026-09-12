@@ -118,6 +118,8 @@ public sealed class S19T02DomesticDownloadFallbackTests
         var app = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "App.xaml.cs"));
         Assert.Contains("new GiteeFallbackUpdateChecker(github.CheckAsync, gitee.CheckAsync)", app, StringComparison.Ordinal);
         Assert.Contains("mainWindow.ConfigureGiteeManualUpdateCheck(gitee.CheckAsync)", app, StringComparison.Ordinal);
+        Assert.Contains("var gitee = new GiteeManualUpdateChecker();", app, StringComparison.Ordinal);
+        Assert.Contains("cancellationToken => checker.CheckAsync(currentVersion, cancellationToken)", app, StringComparison.Ordinal);
     }
 
     private static string FindRoot()
