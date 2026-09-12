@@ -1,4 +1,12 @@
-# 2026-09-12 current：S19-T01 CLOSED / ACCEPTED
+# 2026-09-12 current：S19-T02 GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED
+
+- fresh `origin/main=43785dfbbf5062e2f7f402584f1059ca025eda34`；正式工作区历史 dirty `1 modified + 4 untracked` 保持未触碰。
+- Stage19=`IN_PROGRESS / S19-T01_CLOSED / S19-T02_GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；S19-T02=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。
+- 第二阶段 fallback 仅允许 `UpdatePackageOutcome.NetworkUnavailable / RateLimited`；Gitee 必须与 GitHub 本次目标版本完全一致并返回现有 checker 验证通过的 `pan.quark.cn` URL。`SizeMismatch` 及所有其他 outcome 均 `NO_DOMESTIC_FALLBACK`。
+- 同一更新窗口切换为“在线更新下载失败”及 `[点击网盘下载] [重试在线更新] [取消]`；不新增窗口、checker、service、协议或依赖，不修改 downloader/Updater/安全门禁/版本/Schema/发布。
+- 下一步：治理提交后从 fresh 基线创建全新 GPT-5.6 Terra / medium / clean worktree 实施；Sol 独立审查。`FULL=NOT_RUN / NO_FULL`。
+
+# 2026-09-12 historical：S19-T01 CLOSED / ACCEPTED
 
 - 用户最终 GUI 验收=`PASS`；technical=`PASS`。final product source=`27b73f6bf999751b3333713ea74fc330bb8fa75d`，完整包含 R1/R2/R3/R4。
 - R3 真实 GUI：180→填80/空100→提交80成功并关闭窗口→100 open pending→二次导出100；A:L、任意文件名、行级容错、文件级错误提示均 PASS。

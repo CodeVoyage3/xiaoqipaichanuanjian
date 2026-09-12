@@ -1,4 +1,12 @@
-# 2026-09-12：S19-T01 CLOSED / ACCEPTED；Stage19 WAITING S19-T02 NEW TOPIC
+# 2026-09-12：S19-T02 治理冻结并授权派发
+
+fresh `origin/main=43785dfbbf5062e2f7f402584f1059ca025eda34`；正式工作区历史 dirty `1 modified + 4 untracked` 保持未触碰。Stage19=`IN_PROGRESS / S19-T01_CLOSED / S19-T02_GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；S19-T02=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。
+
+冻结合同：GitHub 已确认目标版本后，只有包准备/下载 `NetworkUnavailable / RateLimited` 才查询现有 Gitee；只有 GitHub `LatestVersion == Release.Version == Gitee LatestVersion` 且现有 checker 返回合法 `pan.quark.cn` URL，才在同一窗口显示 `[点击网盘下载] [重试在线更新] [取消]`。`SizeMismatch` 和所有其他 outcome 均不得 fallback；Gitee 只提供 URL，不覆盖 GitHub 身份，不进入自动安装链。
+
+允许生产范围仅 `App.xaml.cs`、`MainWindow.xaml.cs`、`UpdateNotificationViewModel.cs`、`WpfDialogService.cs` 及一个最小专项；禁止修改 GitHub/Gitee checker、`SignedUpdatePackageDownloader`、独立 Updater、安全协议、版本、Schema/migration、Installer 或发布。下一步创建全新 GPT-5.6 Terra / medium / clean worktree 实施，Sol 独立审查；`FULL=NOT_RUN / NO_FULL`。
+
+# 2026-09-12 historical：S19-T01 CLOSED / ACCEPTED；Stage19 WAITING S19-T02 NEW TOPIC
 
 用户于 2026-09-12 最终确认 R4 GUI PASS。S19-T01=`CLOSED / ACCEPTED`，technical=`PASS`，GUI=`PASS`；final product source=`27b73f6bf999751b3333713ea74fc330bb8fa75d`，R1/R2/R3/R4 链完整。
 

@@ -2,7 +2,13 @@
 
 日期：2026-09-12（Asia/Shanghai）
 
-Stage19 = `IN_PROGRESS / S19-T01_CLOSED / WAITING_S19-T02_NEW_TOPIC / NOT_CLOSED`
+Stage19 = `IN_PROGRESS / S19-T01_CLOSED / S19-T02_GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_CLOSED`
+
+## 2026-09-12 S19-T02 governance frozen
+
+`S19-T02｜在线更新下载失败国内兜底` 已建立独立 Task/Acceptance，状态=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。仅 GitHub 已确认目标版本后，包准备/下载返回 `NetworkUnavailable` 或 `RateLimited` 才查询现有 Gitee metadata；只有 Gitee 同版本且 URL 已通过现有 `pan.quark.cn` HTTPS 门禁才显示 `[点击网盘下载] [重试在线更新] [取消]`。其余 outcome（含 `SizeMismatch`）全部 `NO_DOMESTIC_FALLBACK`。
+
+S19-T02 允许修改 App 侧在线更新编排、现有更新 ViewModel/Dialog 与最小测试；禁止修改独立 `StoreExpiryInspector.Updater`、GitHub/Gitee checker、`SignedUpdatePackageDownloader`、安全协议、版本、Schema/migration、Installer 或发布状态。`FULL=NOT_RUN / NO_FULL`；技术通过后仍须等待用户 GUI。
 
 ## 2026-09-12 S19-T01 final acceptance
 
@@ -28,9 +34,9 @@ R2 GUI 已通过预览 80/100/0，但正式提交仍因 `InspectionSubmissionUse
 
 用户现场在 180 商品/批次均正常识别后，被漏列 migration 10 的导入前快照白名单误阻断；A～I 已停止，状态曾退回 `GUI_BLOCKER_FOUND / REPAIR_REQUIRED / NOT_ACCEPTED`。最小 repair=`536bd4126f137328573eaeafb8579e9ff4701bde`，直接专项=`23/23 PASS`，Release App build=`0 warning / 0 error`，无 migration/schema/业务/UI/版本/发布链变化。新 GUI 先只重验 180 批次正式导入，PASS 后再恢复 A～I；Stage19 不关闭。
 
-## 唯一任务
+## S19-T01 历史唯一任务合同
 
-`S19-T01｜首次冷启动工作量与排查计划分批回导优化`。本阶段不为形式拆分更多 Task；实现、专项验收与用户真实 WPF GUI 验收均在此卡闭环。
+以下“唯一任务”约束只属于 S19-T01 当时的历史范围：`S19-T01｜首次冷启动工作量与排查计划分批回导优化`。S19-T01 已 `CLOSED / ACCEPTED`，该历史表述不阻止已单独授权的 S19-T02。
 
 ## fresh baseline
 
@@ -65,9 +71,9 @@ R2 GUI 已通过预览 80/100/0，但正式提交仍因 `InspectionSubmissionUse
 - `TodayInspectionViewModel.cs`、`MainWindow.xaml/.cs` 及现有确认窗口，仅用于 loading、门店可读错误与汇总反馈。
 - 直接相关最小测试与本 Stage19 治理/验收文件。
 
-## 禁止范围
+## S19-T01 历史禁止范围
 
-- Schema、migration、ModelSnapshot、依赖、版本号、Updater、Installer、发布渠道。
+- Schema、migration、ModelSnapshot、依赖、版本号、Updater、Installer、发布渠道。这里的“禁止 Updater”只属于 S19-T01 历史范围；S19-T02 可修改 App 侧在线更新编排，但仍禁止修改独立 `StoreExpiryInspector.Updater`。
 - Stage18、正常生命周期阈值、3 天预提醒、库存规则、历史 Revision、备份恢复、其他页面视觉重构。
 - 正式数据库访问；FULL、大库、无关回归；tag/Release、夸克或 Gitee 更新。
 
