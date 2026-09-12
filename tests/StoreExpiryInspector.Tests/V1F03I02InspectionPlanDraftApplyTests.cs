@@ -32,6 +32,21 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         finally { File.Delete(path); }
     }
 
+    [Fact]
+    public void ReaderAcceptsAnArbitrarilyRenamedWorkbook()
+    {
+        var original = CreatePlan(["1"]);
+        var renamed = Path.Combine(Path.GetTempPath(), $"门店随意改名-{Guid.NewGuid():N}.xlsx");
+        try
+        {
+            File.Move(original, renamed);
+            var row = new InspectionPlanResultReader().Read(renamed).Rows.Single();
+            Assert.Equal("P-1", row.ProductCode);
+            Assert.Equal(1, row.CheckedQty);
+        }
+        finally { if (File.Exists(original)) File.Delete(original); if (File.Exists(renamed)) File.Delete(renamed); }
+    }
+
     private static string CreatePlan(string[] quantities, string sheetName = "今日排查计划")
     {
         var path = Path.Combine(Path.GetTempPath(), $"s19-{Guid.NewGuid():N}.xlsx");
