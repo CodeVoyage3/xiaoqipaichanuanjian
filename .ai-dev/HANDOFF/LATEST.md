@@ -1,4 +1,12 @@
-# 2026-09-12：S19-T02 治理冻结并授权派发
+# 2026-09-12：S19-T02 技术验收就绪，等待用户 GUI
+
+最终 implementation=`db36d34d538949504ce3bf3276ee70b8ea2b4fd1`，Sol 独立 `TECHNICAL_REVIEW=PASS`。最终范围精确为 `App.xaml.cs`、`MainWindow.xaml.cs`、`UpdateNotificationViewModel.cs`、`WpfDialogService.cs` 与新增 S19-T02 专项；S17 第一阶段 fallback 和全部安全链保持。S19+S17+S15=`44/44 PASS`；final Release App build=`0 warning / 0 error`；`FULL=NOT_RUN / NO_FULL`。
+
+GUI candidate=`C:\Users\39037\.codex\visualizations\2026\09\12\01a0955b-013b-7531-8012-6e79baa16dd1\S19-T02-GUI-Acceptance\启动S19-T02-GUI验收.cmd`。它在内存稳定模拟 `v1.0.8 → v1.0.9 → NetworkUnavailable → 同版本合法夸克 URL`，不访问正式数据库或真实 GitHub/Gitee；生产 DLL SHA256=`5E4B1A1722E11E38BA82A749192606E49C0B220BE8A1C8A2FDC241AB529919C7`，informational version 绑定 `db36d34`，Sol 独立 smoke PASS。
+
+Stage19=`IN_PROGRESS / S19-T01_CLOSED / S19-T02_TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI`；S19-T02=`IMPLEMENTED / TECHNICAL_ACCEPTANCE_READY / NOT_ACCEPTED`。下一步只由用户验收三按钮、网盘打开、重试与取消；PASS 前不得关闭、push main、tag、Release 或发布。
+
+# 2026-09-12 historical：S19-T02 治理冻结并授权派发
 
 fresh `origin/main=43785dfbbf5062e2f7f402584f1059ca025eda34`；正式工作区历史 dirty `1 modified + 4 untracked` 保持未触碰。Stage19=`IN_PROGRESS / S19-T01_CLOSED / S19-T02_GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；S19-T02=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。
 
