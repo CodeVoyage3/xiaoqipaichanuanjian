@@ -33,7 +33,7 @@ The authoritative success receipt is `v1.0.9/m9 -> v1.1.0/m10` through ordinary 
 | 13 | pre-import snapshot | PASS |
 | 14 | pending recovery/hard-kill | PASS (existing precise gate; no rerun) |
 | 15 | manifest source/target permission | PASS |
-| 16 | release assets/signature/archive | PENDING clean-commit refreeze |
+| 16 | release assets/signature/archive | PASS (clean product source `18230c3`; production RSA-PSS and `RevalidateForInstall`) |
 | 17 | normal candidate ACK | PASS (external-16) |
 | 18 | rollback old-version ACK | NOT_FULLY_VERIFIED/PRODUCT_RISK_ACCEPTED |
 
