@@ -10,6 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- V1F03-I02 asserted the removed A:Y private-snapshot format; S19 uses business-key resolution instead. -->
+    <Compile Remove="V1F03I02InspectionPlanDraftApplyTests.cs" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">

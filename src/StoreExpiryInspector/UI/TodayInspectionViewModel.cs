@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 
@@ -82,6 +83,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private readonly Func<DateTime> _utcNow;
     private bool _isLoadingTasks;
     private bool _isActionBusy;
+    private bool _isReadingPlan;
     private bool _hasLoadedTasks;
     private bool _isBulkSelecting;
     private bool _isBulkSelectionBusy;
@@ -183,6 +185,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsBusy => IsActionBusy;
+    public bool IsReadingPlan { get => _isReadingPlan; private set { if (_isReadingPlan == value) return; _isReadingPlan = value; OnPropertyChanged(); } }
     public bool HasLoadedTasks => _hasLoadedTasks;
     public bool CanUseContent => !IsLoadingTasks && !IsActionBusy && !_isBulkSelectionBusy;
     public int SelectedCount => _selectedTaskIds.Count;
@@ -205,7 +208,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public bool HasInspectorNameError => !string.IsNullOrEmpty(InspectorNameError);
     public bool HasCheckDateError => !string.IsNullOrEmpty(CheckDateError);
     public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"本次共 {_currentPreview.Summary.ProductCount} 个商品 / {_currentPreview.Summary.BatchCount} 个批次，{_currentPreview.ApplicableTaskIds.Count} 条可提交";
-    public string DraftStatusText => _draftResult is null ? "尚未处理排查结果" : CompleteTaskIds.Count == _draftResult.Tasks.Count ? "排查结果已填写完整，可以提交数据。" : "仍有未完成排查项，请填写完整后提交。";
+    public string DraftStatusText => _draftResult is null ? "尚未处理排查结果" : CompleteTaskIds.Count > 0 ? "已保存有效排查结果，可以提交；未填写项目会继续待排查。" : "没有可提交的有效排查结果。";
     public bool HasPreviewIssues => PreviewRows.Any(row => row.HasIssue);
     public string PreviewIssueText => _currentPreview is null ? string.Empty : string.Join("　", new[]
     {
@@ -213,6 +216,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _currentPreview.Summary.ErrorCount > 0 ? $"错误 {_currentPreview.Summary.ErrorCount} 条" : null,
         _currentPreview.Tasks.Count(task => !task.IsApplicable) is var stale && stale > 0 ? $"陈旧/失效 {stale} 条" : null
     }.Where(text => text is not null));
+    public string PreviewDetailText => string.Join(Environment.NewLine, PreviewRows.Where(row => row.HasIssue).Select(row => $"第 {row.RowNumber} 行：{row.Reason}"));
     public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
     public event Action<string>? SubmissionBlocked;
     public event Action<string>? PreviewFailed;
@@ -300,8 +304,12 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public async Task PreviewAsync(string path)
     {
         ResetSession();
-        var preview = await RunAsync("读取排查结果文件失败", () => _preview(path));
-        if (preview is null) { PreviewFailed?.Invoke("无法读取排查结果文件。请确认选择的是最新的今日排查计划，并重新导出后再试。"); return; }
+        var reading = Task.Run(() => DatabaseRuntimeGate.Run(() => _preview(path)));
+        if (await Task.WhenAny(reading, Task.Delay(180)) != reading) IsReadingPlan = true;
+        InspectionPlanPreview? preview;
+        try { preview = await reading; }
+        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "读取排查结果文件失败"; PreviewFailed?.Invoke(FileMessage(exception)); return; }
+        finally { IsReadingPlan = false; }
         _currentPreview = preview;
         PreviewRows.Clear();
         foreach (var row in _currentPreview.File.Rows)
@@ -310,7 +318,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             PreviewRows.Add(new TodayInspectionPreviewRowViewModel(row, reason ?? string.Empty));
         }
         StatusText = _currentPreview.ApplicableTaskIds.Count == 0 ? "预览完成，但没有可提交的数据。请查看错误或陈旧原因。" : "预览完成，请填写排查人和日期后提交数据。";
-        OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(CanSaveDraft)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText));
+        OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(CanSaveDraft)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); OnPropertyChanged(nameof(PreviewDetailText));
     }
 
     public void CancelPreview()
@@ -419,6 +427,13 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = failure; return default; }
         finally { IsActionBusy = false; }
     }
+    private static string FileMessage(Exception exception) => exception switch
+    {
+        FileNotFoundException => "找不到排查结果文件。请确认文件位置后重新选择。",
+        IOException => "文件暂时无法读取，可能还在 Excel 或 WPS 中打开。请先保存并关闭表格，再重新导入。",
+        InvalidDataException => "排查计划的表格结构已经发生变化或文件已损坏，软件无法安全识别。请重新导出最新排查计划。",
+        _ => "这个 Excel 文件无法正常读取，可能已经损坏。请重新导出排查计划后再试。"
+    };
 
     private bool TryGetCheckDate(out DateOnly date)
     {
