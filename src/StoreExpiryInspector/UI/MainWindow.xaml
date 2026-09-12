@@ -2810,7 +2810,6 @@
                                         <TextBlock Text="选择任务导出计划，或导入已填写的排查结果。" Margin="0,4,0,0" Foreground="{DynamicResource SecondaryTextBrush}" />
                                         <TextBlock Text="{Binding TodayInspection.StatusText}" Margin="0,8,0,0" TextWrapping="Wrap" />
                                         <TextBlock Text="正在加载今日任务…" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryTextBrush}" Visibility="{Binding TodayInspection.IsLoadingTasks, Converter={StaticResource BoolToVisibility}}" />
-                                        <TextBlock Text="正在读取排查结果，请稍候。数据较多时可能需要一些时间，请勿关闭软件。" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Visibility="{Binding TodayInspection.IsReadingPlan, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                         <TextBlock Text="大类" VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -2841,6 +2840,18 @@
                                     <Button Content="下一页" Command="{Binding TodayInspection.NextPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" AutomationProperties.Name="下一页今日排查任务" />
                                 </StackPanel>
                             </Grid>
+                        </Border>
+                        <Border Grid.RowSpan="2" Panel.ZIndex="20" Background="#99F4F6F8" IsHitTestVisible="True"
+                                Visibility="{Binding TodayInspection.IsReadingPlan, Converter={StaticResource BoolToVisibility}}"
+                                AutomationProperties.Name="正在读取排查结果">
+                            <Border Width="380" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+                                <StackPanel>
+                                    <TextBlock Text="正在读取排查结果…" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="数据较多时可能需要一些时间，请勿关闭软件" Margin="0,8,0,16" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                    <ProgressBar Height="6" IsIndeterminate="True" AutomationProperties.Name="正在读取排查结果"/>
+                                </StackPanel>
+                            </Border>
                         </Border>
                 </Grid>
 

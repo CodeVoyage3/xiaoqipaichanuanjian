@@ -617,11 +617,11 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void R4ConfirmationWindowUsesSixBusinessColumnsAndRetainsExceptionExpression()
+    public void R4ConfirmationWindowShowsResultReasonAndPreviewFilters()
     {
         var root = FindRepositoryRoot();
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml"));
-        var headers = new[] { "条码", "商品名称", "当前阶段", "生产日期", "有效日期", "本次排查数量" };
+        var headers = new[] { "条码", "商品名称", "当前阶段", "生产日期", "有效日期", "本次排查数量", "处理结果", "原因" };
         foreach (var header in headers)
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.True(headers.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal))
@@ -629,14 +629,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             .All(value => value));
         Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
         Assert.Contains("SizeToContent=\"Height\"", window, StringComparison.Ordinal);
-        Assert.Contains("MaxHeight=\"520\"", window, StringComparison.Ordinal);
+        Assert.Contains("MaxHeight=\"620\"", window, StringComparison.Ordinal);
         Assert.Contains("SizeToContent = System.Windows.SizeToContent.Manual", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("ConfirmationGridHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip\" Value=\"{Binding Reason}\"", window, StringComparison.Ordinal);
         Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
-        Assert.Contains("MaxHeight=\"280\"", window, StringComparison.Ordinal);
-        Assert.DoesNotContain("DataGrid Grid.Row=\"1\" Margin=\"0,8\" MaxHeight=\"280\" VerticalAlignment=\"Top\"", window, StringComparison.Ordinal);
+        Assert.Contains("MaxHeight=\"340\"", window, StringComparison.Ordinal);
         Assert.Contains("<RowDefinition Height=\"*\"/>", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"不晚于今天\"", window, StringComparison.Ordinal);
         Assert.Contains("HasIssue", window, StringComparison.Ordinal);
@@ -658,10 +657,18 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("BorderBrush\" Value=\"{DynamicResource DangerBrush}\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"校验状态\"", window, StringComparison.Ordinal);
         Assert.Contains("OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
-        Assert.DoesNotContain("Header=\"原因\"", window, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding VisiblePreviewRows}\"", window, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding PreviewFilters}\"", window, StringComparison.Ordinal);
+        Assert.Contains("SelectedItem=\"{Binding SelectedPreviewFilter, Mode=TwoWay}\"", window, StringComparison.Ordinal);
+        Assert.Contains("Binding=\"{Binding ResultText}\"", window, StringComparison.Ordinal);
+        Assert.Contains("Text=\"{Binding DisplayReason}\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("草稿", window, StringComparison.Ordinal);
         var mainWindow = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         Assert.Contains("Text=\"大类\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Text=\"正在读取排查结果…\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Text=\"数据较多时可能需要一些时间，请勿关闭软件\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("IsIndeterminate=\"True\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Visibility=\"{Binding TodayInspection.IsReadingPlan, Converter={StaticResource BoolToVisibility}}\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PreviewFailed += ShowTodayPreviewFailure", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("请确认文件未被移动或删除后重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
         Assert.Contains("confirmTodayExpiredInventory: ConfirmTodayExpiredInventory", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
@@ -714,6 +721,63 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         await reading;
         Assert.False(vm.IsBusy);
         Assert.False(vm.IsReadingPlan);
+    }
+
+    [Fact]
+    public async Task PreviewFailureAlwaysClearsTheLoadingIndicator()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var vm = Create(preview: _ =>
+        {
+            started.SetResult();
+            release.Task.GetAwaiter().GetResult();
+            throw new InvalidDataException("损坏文件");
+        });
+
+        var reading = vm.PreviewAsync("C:\\bad.xlsx");
+        await started.Task;
+        await Task.Delay(220);
+        Assert.True(vm.IsReadingPlan);
+        release.SetResult();
+        await reading;
+
+        Assert.False(vm.IsBusy);
+        Assert.False(vm.IsReadingPlan);
+        Assert.False(vm.HasPreview);
+    }
+
+    [Fact]
+    public async Task PreviewFiltersFixedMixedResultWithoutChangingSourceOrSubmitPayload()
+    {
+        var rows = new List<InspectionPlanRow> { Row(1, 1) };
+        rows.AddRange(Enumerable.Range(2, 80).Select(id => Row(id, 1)));
+        rows.AddRange(Enumerable.Range(82, 98).Select(id => Row(id, null)));
+        rows.Add(Row(180, 1, ["本次排查数量只能填写0或正整数"]));
+        var reasons = Enumerable.Range(2, 80).ToDictionary(id => (long)id, _ => "该批次状态已经变化，请重新导出最新计划");
+        IReadOnlyCollection<long>? submittedTaskIds = null;
+        var vm = Create(
+            preview: _ => Preview([1], rows, reasons),
+            submit: request => { submittedTaskIds = request.TaskIds; return new(BulkInspectionSubmissionOutcome.Submitted, [new(1, 101)], []); });
+
+        await vm.PreviewAsync("C:\\mixed.xlsx");
+        var originalRows = vm.PreviewRows.ToArray();
+        var originalSummary = vm.PreviewSummaryText;
+
+        Assert.Equal(180, vm.VisiblePreviewRows.Count);
+        vm.SelectedPreviewFilter = "有效"; Assert.Single(vm.VisiblePreviewRows);
+        vm.SelectedPreviewFilter = "未填写"; Assert.Equal(98, vm.VisiblePreviewRows.Count);
+        vm.SelectedPreviewFilter = "状态变化"; Assert.Equal(80, vm.VisiblePreviewRows.Count);
+        vm.SelectedPreviewFilter = "填写错误"; Assert.Single(vm.VisiblePreviewRows);
+        vm.SelectedPreviewFilter = "全部"; Assert.Equal(180, vm.VisiblePreviewRows.Count);
+        Assert.Equal(originalRows, vm.PreviewRows);
+        Assert.Equal(originalSummary, vm.PreviewSummaryText);
+        Assert.Equal("—", originalRows[0].DisplayReason);
+        Assert.Equal("本次未填写，已跳过", originalRows[81].DisplayReason);
+
+        vm.InspectorName = "检查员";
+        await vm.SubmitAsync();
+        Assert.Equal([1], submittedTaskIds);
     }
 
     private static TodayInspectionViewModel Create(
