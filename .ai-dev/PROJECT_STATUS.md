@@ -1,3 +1,10 @@
+# 2026-09-12 current：S19-T01 BLOCKED / SCHEMA CHANGE AUTHORIZATION REQUIRED
+
+- Sol isolated 冷启动专项=`5/11 PASS，6/11 FAIL`：现有 `CK_batch_baselines_catchup_window` 只允许 `3..30`，拒绝新合同的 `1..7`。
+- candidate=`520bcb9a0557b7a002a6188e5ad2b4f115e66339`，未 push；回导/部分提交定向回归 `114/114 PASS` 不能覆盖该 schema blocker。
+- Stage19=`IN_PROGRESS / S19_T01_BLOCKED_SCHEMA_AUTH_REQUIRED`；S19-T01=`BLOCKED / NOT_ACCEPTED`。需用户授权最小 migration 后才能继续。
+- 正式 dirty 工作区与正式数据库未触碰；FULL=`NOT_RUN / NO_FULL`；未改版本、tag/Release、夸克或 Gitee。
+
 # 2026-09-12 current：Stage19 / S19-T01 GOVERNANCE_FROZEN
 
 - fresh `origin/main=43d82ec3d0a6e09a0964a81ce0d531e888fd5abc`；stable/latest=`v1.0.9`，PRODUCT SOURCE=`9bf4ee71f1579097d816032d867041c0519cf789`；Stage18 保持 `CLOSED`。
