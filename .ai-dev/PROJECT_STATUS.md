@@ -1,3 +1,9 @@
+# 2026-09-12 current：S19-T01 MINIMAL SCHEMA CHANGE AUTHORIZED
+
+- 用户授权新增第 10 条 migration；第 9 条保持不可变。唯一 schema 变化为 `CK_batch_baselines_catchup_window: 3..30 → 1..30`，同步 configuration/ModelSnapshot；生产业务仍只生成 `1..7`。
+- 必须完成旧值保留、新值/非法值约束、migration `9→10` 无漂移及既有 Schema Update 失败回滚专项。
+- Stage19=`IN_PROGRESS / S19_T01_MINIMAL_SCHEMA_CHANGE_AUTHORIZED`；S19-T01=`IMPLEMENTATION_RESUMED / NOT_ACCEPTED`。FULL=`NOT_RUN / NO_FULL`；正式数据库、版本与发布链继续冻结。
+
 # 2026-09-12 current：S19-T01 BLOCKED / SCHEMA CHANGE AUTHORIZATION REQUIRED
 
 - Sol isolated 冷启动专项=`5/11 PASS，6/11 FAIL`：现有 `CK_batch_baselines_catchup_window` 只允许 `3..30`，拒绝新合同的 `1..7`。
