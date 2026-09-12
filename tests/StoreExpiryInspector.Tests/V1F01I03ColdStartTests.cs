@@ -24,7 +24,7 @@ public sealed class V1F01I03ColdStartTests
             Add(context, "P", 5, Day.AddDays(20), Day.AddDays(-340)); // 20%.
             Add(context, "P", 5, Day.AddDays(7), Day.AddDays(-353)); // withdraw.
             Add(context, "P", 5, Day, Day.AddDays(-360)); // expiry today.
-            Add(context, "P", 5, Day.AddDays(-2), Day.AddDays(-102)); // 100 days => ceil(1)=1, historical.
+            Add(context, "P", 5, Day.AddDays(-2), Day.AddDays(-102)); // 100 days => ceil(1)=1, outside catch-up window.
             Add(context, "P", 5, Day.AddDays(-4), Day.AddDays(-100)); // historical.
             Add(context, "ZERO", 0, Day.AddDays(-1), Day.AddDays(-100));
             context.SaveChanges();
@@ -36,10 +36,10 @@ public sealed class V1F01I03ColdStartTests
         using var verify = database.Open();
         var baselines = verify.BatchBaselines.AsNoTracking().OrderBy(item => item.Id).ToArray();
         Assert.Equal(7, baselines.Length);
-        Assert.Equal(3, baselines.Count(item => item.SourceTaskId.HasValue));
+        Assert.Equal(2, baselines.Count(item => item.SourceTaskId.HasValue));
         Assert.Single(verify.Tasks.AsNoTracking());
         Assert.Equal(ExpiryStageCalculator.Expired, verify.Tasks.Single().HighestStage);
-        Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 1 && item.CatchupSource == "historical_window");
+        Assert.Equal(2, baselines.Count(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredHistoricalBaseline));
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.StockZeroBaseline && item.SourceTaskId is null);
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.Discount50Baseline && item.SourceTaskId is null);
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.Discount20Baseline && item.SourceTaskId is null);

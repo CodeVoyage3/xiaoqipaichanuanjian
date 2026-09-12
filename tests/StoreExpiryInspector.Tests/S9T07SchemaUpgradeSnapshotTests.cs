@@ -446,11 +446,11 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     }
 
     [Fact]
-    public void CleanMigration9DatabaseCreatesBoundSnapshotAndRejectsNonPrefix()
+    public void CleanMigration10DatabaseCreatesBoundSnapshotAndRejectsNonPrefix()
     {
         var root = CreateCleanRoot(); var operation = Guid.NewGuid().ToString(); Directory.CreateDirectory(Path.Combine(root, "updates", operation));
         var snapshot = SchemaUpgradeSnapshots.Create(root, operation, "1.0.0", ExpectedMigrations);
-        Assert.Equal(9, snapshot.SourceMigrations.Count); Assert.True(File.Exists(snapshot.SnapshotPath));
+        Assert.Equal(10, snapshot.SourceMigrations.Count); Assert.True(File.Exists(snapshot.SnapshotPath));
         Assert.True(SchemaUpgradeSnapshots.IsStrictPrefix(snapshot.SourceMigrations, [.. snapshot.SourceMigrations, "20260905120000_Fixture"]));
         Assert.False(SchemaUpgradeSnapshots.IsStrictPrefix(snapshot.SourceMigrations, ["20260905120000_Fixture", .. snapshot.SourceMigrations]));
     }
@@ -947,6 +947,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     [
         "20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory",
         "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata",
-        "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation"
+        "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation",
+        "20260912083448_AdjustCatchupWindowConstraint"
     ];
 }

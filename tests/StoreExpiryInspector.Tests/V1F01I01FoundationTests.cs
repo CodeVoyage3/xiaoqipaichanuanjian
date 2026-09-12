@@ -77,7 +77,6 @@ public sealed class V1F01I01FoundationTests
 
         Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO scope_baselines (scope_key, policy_code, policy_version, created_import_id, business_date, created_at_utc, is_completed) VALUES ('food', 'food_expiry', 1, {import.Id}, '2026-09-01', '2026-09-01T00:00:00Z', 0)"));
         Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO scope_baselines (scope_key, policy_code, policy_version, created_import_id, business_date, created_at_utc, is_completed) VALUES ('food', 'not_v1', 1, {import.Id}, '2026-09-01', '2026-09-01T00:00:00Z', 0)"));
-        Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition, catchup_window_days) VALUES ({baseline.Id}, {batch.Id}, 'expired', 'expired_catchup_task', 2)"));
         Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition) VALUES ({baseline.Id}, {batch.Id}, 'withdraw', 'withdraw_task')"));
         Assert.Equal(1, context.ScopeBaselines.Count());
         Assert.Equal(1, context.BatchBaselines.Count());
@@ -104,7 +103,78 @@ public sealed class V1F01I01FoundationTests
             Assert.Empty(context.Inspections);
             Assert.Empty(context.ScopeBaselines);
             Assert.Empty(context.BatchBaselines);
-            Assert.Equal(9, context.Database.GetAppliedMigrations().Count());
+            Assert.Equal(10, context.Database.GetAppliedMigrations().Count());
         }
+    }
+
+    [Fact]
+    public void Migration10UpgradesHistoricalCatchupWindowsAndRejectsInvalidNewFactsWithoutPartialRollback()
+    {
+        using var database = SqliteTestDatabase.CreateEmpty();
+        string migration9;
+        using (var context = database.Open())
+        {
+            migration9 = context.Database.GetMigrations().Single(value => value.EndsWith("_AddPolicyAndBaselineFoundation", StringComparison.Ordinal));
+            context.Database.Migrate(migration9);
+            SeedHistoricalCatchupFacts(context, [3, 7, 8, 11, 30]);
+        }
+
+        using (var context = database.Open())
+        {
+            context.Database.Migrate();
+            Assert.Equal([3, 7, 8, 11, 30], context.BatchBaselines.OrderBy(value => value.CatchupWindowDays).Select(value => value.CatchupWindowDays).ToArray());
+            Assert.Equal(10, context.Database.GetAppliedMigrations().Count());
+            Assert.Empty(context.Database.GetPendingMigrations());
+            Assert.Contains("BETWEEN 1 AND 30", SqliteTestDatabase.ReadTableSql(context, "batch_baselines"));
+
+            var baselineId = context.ScopeBaselines.Single().Id;
+            var taskId = context.Tasks.Single().Id;
+            var productId = context.Products.Single().Id;
+            foreach (var window in new[] { 1, 2, 7 })
+            {
+                var batchId = AddBatch(context, productId, 100 + window);
+                context.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition, catchup_window_days, source_task_id, catchup_source) VALUES ({baselineId}, {batchId}, 'expired', 'expired_catchup_task', {window}, {taskId}, 'historical_window')");
+            }
+
+            var invalidBatchId = AddBatch(context, productId, 200);
+            Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition, catchup_window_days, source_task_id, catchup_source) VALUES ({baselineId}, {invalidBatchId}, 'expired', 'expired_catchup_task', 0, {taskId}, 'historical_window')"));
+            Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition, catchup_window_days, source_task_id, catchup_source) VALUES ({baselineId}, {invalidBatchId}, 'expired', 'expired_catchup_task', 31, {taskId}, 'historical_window')"));
+            var nonCatchupBatchId = AddBatch(context, productId, 201);
+            Assert.Throws<SqliteException>(() => context.Database.ExecuteSql($"INSERT INTO batch_baselines (baseline_id, batch_id, stage_at_baseline, cold_start_disposition, catchup_window_days) VALUES ({baselineId}, {nonCatchupBatchId}, 'expired', 'expired_historical_baseline', 1)"));
+
+            Assert.Throws<SqliteException>(() => context.Database.Migrate(migration9));
+            Assert.Equal(10, context.Database.GetAppliedMigrations().Count());
+            Assert.Equal(1, context.BatchBaselines.Count(value => value.CatchupWindowDays == 1));
+            Assert.Contains("BETWEEN 1 AND 30", SqliteTestDatabase.ReadTableSql(context, "batch_baselines"));
+        }
+    }
+
+    private static void SeedHistoricalCatchupFacts(StoreDbContext context, int[] windows)
+    {
+        var import = new ImportRecord { SourceFileName = "migration9.xlsx", SourceFileSha256 = new string('b', 64), ParsedAtUtc = DateTime.UtcNow, Status = "confirmed" };
+        var product = new Product { ProductCode = "SKU-MIGRATION10" };
+        context.Imports.Add(import);
+        context.Products.Add(product);
+        context.SaveChanges();
+        var task = new ProductTask { ProductId = product.Id };
+        var baseline = new ScopeBaseline { ScopeKey = "migration10", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, CreatedImportId = import.Id, BusinessDate = new DateOnly(2026, 9, 12) };
+        context.Tasks.Add(task);
+        context.ScopeBaselines.Add(baseline);
+        context.SaveChanges();
+        foreach (var window in windows)
+        {
+            var batchId = AddBatch(context, product.Id, window);
+            context.BatchBaselines.Add(new BatchBaseline { BaselineId = baseline.Id, BatchId = batchId, StageAtBaseline = ExpiryStageCalculator.Expired, ColdStartDisposition = ColdStartDispositions.ExpiredCatchupTask, CatchupWindowDays = window, SourceTaskId = task.Id, CatchupSource = "historical_window" });
+        }
+
+        context.SaveChanges();
+    }
+
+    private static long AddBatch(StoreDbContext context, long productId, int dayOffset)
+    {
+        var batch = new Batch { ProductId = productId, ExpiryDate = new DateOnly(2027, 1, 1).AddDays(dayOffset), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 };
+        context.Batches.Add(batch);
+        context.SaveChanges();
+        return batch.Id;
     }
 }
