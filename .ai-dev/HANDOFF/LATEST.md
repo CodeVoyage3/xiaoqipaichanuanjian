@@ -1,12 +1,14 @@
-# 2026-09-12：V1.1.0 RELEASE CANDIDATE READY / PUBLISH NOT AUTHORIZED
+# 2026-09-13：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 
-fresh baseline=`origin/main 3e7c0cdc69698530cc31e1e3298b31639870dfcf`。Stage19 继续 `CLOSED / ACCEPTED`；这是 release preflight repair，不是 Stage20。repair=`e0a3bfc60e0385b930b6f74e99700a3038334333`；candidate product source=`a1f220b3d1a1bdd390cec99f1847ad9c3228f69b`。
+fresh GitHub verification 已确认 release-time governance/main=`28ec20a5ecb51183f9e3d661e9fa83b63b99259b`；annotated tag `v1.1.0` 解引用到精确 product source `18230c3e6013a098874426575e6a14c202fa7f7c`。GitHub Release ID=`387675986`，<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.1.0>，`draft=false`、`prerelease=false`。
 
-App 与 Updater 已统一到 `1.1.0 / 1.1.0.0`。当前 Schema 精确 10 migrations，末条 `20260912083448_AdjustCatchupWindowConstraint`；App/Updater 普通 same-schema 验证不再接受 migration9 静态身份。精准门禁 `12/12 PASS`，migration10 same-schema ACK PASS，真实 v1.0.9 migration9→frozen v1.1.0 migration10 transaction `Completed / CandidateCommitted / snapshot present / ACK PASS / normal Loaded`。Release App/Updater build 均 `0 warning / 0 error`；`FULL=NOT_RUN / NO_FULL`。
+四项公开正式资产的 GitHub remote bytes/SHA256 与冻结值逐项全等：`StoreExpiryInspector-1.1.0-win-x64.zip`=`109443235` / `283BC33CD742D41F79EB1ADF22F76084DD83E6E30C437D93DEB894562671AC7D`；`StoreExpiryInspector-Setup-1.1.0.exe`=`149778454` / `4CF42A105E2B48C5A5424E9715A999FBA66456AEE870441ECAEC396984EAA3DD`；`update-manifest.json`=`916` / `4989612C3028260D56BB442F4EBEDD7314CBDA3549A0A64300FBBA00126C3F56`；`update-manifest.sig`=`384` / `2AE88FCB606AF4F341A9A3EE03F4BE7106BFCE8D16BAA42615E83562ACB0D317`。
 
-`V1.1.0_MANUAL_INSTALL_CROSS_SCHEMA_RISK`：Installer 仍只允许无数据库或精确健康 migration10；migration9=`OlderSchema / BLOCK`。因此 `[点击网盘下载]` 获得的普通 v1.1.0 Setup 对现有 v1.0.9 数据库会安全阻断，不能替代在线 Updater 的 snapshot/ACK/rollback 跨 Schema 协议。禁止为可安装而放宽；等待产品裁决，不新增离线升级协议。
+App/Updater=`1.1.0 / 1.1.0.0`，migration=`10`。夸克正式分享为 <https://pan.quark.cn/s/a71f5cbeefce>；Gitee Raw `latest.json` fresh HTTP `200`，仍为 `version/releaseNotes/manualDownloadUrl` 三字段，线上 `version=1.1.0` 且 URL 指向该正式分享。
 
-frozen assets、bytes/SHA256、production signature/source eligibility 与门店版 release notes 见 `.ai-dev/ACCEPTANCE/V1.1.0-RELEASE-PREFLIGHT.md`。未 tag `v1.1.0`、未创建 GitHub Release、未上传夸克、未更新 Gitee metadata、未发布 Installer、未改变公网 latest。当前唯一状态=`V1.1.0_RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`，完成后停止。
+Stage19 继续 `CLOSED / ACCEPTED`。`FAULT_INJECTION_ROLLBACK=NOT_FULLY_VERIFIED / PRODUCT_RISK_ACCEPTED`：保留已证明的旧程序树、migration9 数据库、数据库 SHA/业务指纹、integrity/FK 恢复事实，不把完整真实 v1.0.9 rollback ACK/coreRead/uiLoaded/candidate identity compatibility 记为 PASS。`FULL=NOT_RUN / NO_FULL`。
+
+当前状态=`V1.1.0_RELEASED / PUBLIC_REMOTE_VERIFIED`。下一阶段仅规划 `Stage20｜Release Builder`，`Stage20=NOT_STARTED`。本轮只是发布后治理收口：未修改生产代码、测试、Installer、版本或 migration，未 build/test、重建、重签、重新上传或修改任何 GitHub/Gitee/夸克远端状态。
 
 # 2026-09-12 historical：Stage19 CLOSED / ACCEPTED
 

@@ -1,11 +1,10 @@
-# 2026-09-12 current：V1.1.0 RELEASE CANDIDATE READY / PUBLISH NOT AUTHORIZED
+# 2026-09-13 current：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 
-- fresh baseline=`origin/main 3e7c0cdc69698530cc31e1e3298b31639870dfcf`；Stage19 保持 `CLOSED / ACCEPTED`；本轮不是 Stage20、无产品功能扩展。
-- migration identity repair=`e0a3bfc60e0385b930b6f74e99700a3038334333`；v1.1.0 candidate product source=`a1f220b3d1a1bdd390cec99f1847ad9c3228f69b`。
-- App/Updater=`1.1.0 / 1.1.0.0`；EF migration=`10`，末条 `20260912083448_AdjustCatchupWindowConstraint`。普通 same-schema migration10 verification/ACK PASS；精确 v1.0.9 migration9→v1.1.0 migration10 snapshot/ACK/normal-launch transaction PASS。
-- Installer 仅无数据库或精确健康 migration10 `ALLOW`；migration9=`OlderSchema / BLOCK`，未知/更高/乱序=`BLOCK`。`V1.1.0_MANUAL_INSTALL_CROSS_SCHEMA_RISK`：网盘普通 Setup 对现有 v1.0.9 数据库会安全阻断，等待产品裁决，不放宽门禁。
-- 精准门禁=`12/12 PASS`；Release App/Updater build 均 `0 warning / 0 error`；production manifest signature/source eligibility/archive audit=`PASS`；`FULL=NOT_RUN / NO_FULL`。
-- 四项 frozen assets 仅在本地，详见 `.ai-dev/ACCEPTANCE/V1.1.0-RELEASE-PREFLIGHT.md`。未 tag、未 Release、未上传夸克、未更新 Gitee 或公网 latest；状态=`V1.1.0_RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`。
+- fresh GitHub verification：release-time governance/main=`28ec20a5ecb51183f9e3d661e9fa83b63b99259b`；annotated tag `v1.1.0` 解引用到精确 product source `18230c3e6013a098874426575e6a14c202fa7f7c`。GitHub Release ID=`387675986`，`draft=false`、`prerelease=false`。
+- 四项公开正式资产的 GitHub remote bytes/SHA256 与冻结值全等：`StoreExpiryInspector-1.1.0-win-x64.zip`=`109443235` / `283BC33CD742D41F79EB1ADF22F76084DD83E6E30C437D93DEB894562671AC7D`；`StoreExpiryInspector-Setup-1.1.0.exe`=`149778454` / `4CF42A105E2B48C5A5424E9715A999FBA66456AEE870441ECAEC396984EAA3DD`；`update-manifest.json`=`916` / `4989612C3028260D56BB442F4EBEDD7314CBDA3549A0A64300FBBA00126C3F56`；`update-manifest.sig`=`384` / `2AE88FCB606AF4F341A9A3EE03F4BE7106BFCE8D16BAA42615E83562ACB0D317`。
+- App/Updater=`1.1.0 / 1.1.0.0`；migration=`10`。夸克正式分享=<https://pan.quark.cn/s/a71f5cbeefce>；Gitee Raw `latest.json` fresh HTTP `200`，保持三字段协议且 `version=1.1.0`、`manualDownloadUrl` 指向该正式分享。
+- Stage19 继续 `CLOSED / ACCEPTED`。`FAULT_INJECTION_ROLLBACK=NOT_FULLY_VERIFIED / PRODUCT_RISK_ACCEPTED`；已证明的程序树、migration9 数据库、数据库 SHA/业务指纹及 integrity/FK 恢复事实保留，不将完整旧版 ACK 记为 PASS。`FULL=NOT_RUN / NO_FULL`。
+- 当前状态=`V1.1.0_RELEASED / PUBLIC_REMOTE_VERIFIED`。下一阶段规划为 `Stage20｜Release Builder`，但 `Stage20=NOT_STARTED`；本收口仅更新治理文档，未修改产品、测试、版本、migration、Installer 或任何远端发布状态，未运行 build/test/publish。
 
 # 2026-09-12 historical：Stage19 CLOSED / ACCEPTED
 
