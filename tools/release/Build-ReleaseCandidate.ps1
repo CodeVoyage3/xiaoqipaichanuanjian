@@ -218,10 +218,9 @@ try {
 
   $gate = 'PRODUCTION_REVALIDATION'
   $revalidation = Join-Path $run 'production-revalidation.json'
-  $env:S20_RELEASE_ASSET_DIR = $assets; $env:S20_RELEASE_VERSION = $Version; $env:S20_RELEASE_SOURCE_VERSION = [string]$contract.source.minVersion
-  $env:S20_RELEASE_SOURCE_MIGRATION = [string]$contract.source.minMigration; $env:S20_RELEASE_REVALIDATION_RESULT = $revalidation
+  $env:S20_RELEASE_ASSET_DIR = $assets; $env:S20_RELEASE_VERSION = $Version; $env:S20_RELEASE_REVALIDATION_RESULT = $revalidation
   try { Native-Checked 'production RevalidateForInstall' 'dotnet' @('test',(Join-Path $source 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj'),'-c','Release','--no-restore','-p:NuGetAudit=false','--filter','FullyQualifiedName~ReleaseCandidateBuilderTests.ProductionTrustAnchorRevalidatesReleaseCandidate','--logger','console;verbosity=minimal') $source }
-  finally { 'S20_RELEASE_ASSET_DIR','S20_RELEASE_VERSION','S20_RELEASE_SOURCE_VERSION','S20_RELEASE_SOURCE_MIGRATION','S20_RELEASE_REVALIDATION_RESULT' | ForEach-Object { Remove-Item "Env:$_" -ErrorAction SilentlyContinue } }
+  finally { 'S20_RELEASE_ASSET_DIR','S20_RELEASE_VERSION','S20_RELEASE_REVALIDATION_RESULT' | ForEach-Object { Remove-Item "Env:$_" -ErrorAction SilentlyContinue } }
   Require (Test-Path -LiteralPath $revalidation -PathType Leaf) 'production revalidation did not produce output'
   $receipt.productionRevalidateForInstall = (Get-Content -Raw $revalidation | ConvertFrom-Json).outcome
   Require ($receipt.productionRevalidateForInstall -eq 'Verified') 'production RevalidateForInstall did not return Verified'

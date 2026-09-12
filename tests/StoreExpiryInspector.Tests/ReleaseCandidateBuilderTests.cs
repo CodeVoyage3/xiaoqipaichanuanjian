@@ -58,16 +58,25 @@ public sealed class ReleaseCandidateBuilderTests
         var assets = Environment.GetEnvironmentVariable("S20_RELEASE_ASSET_DIR");
         if (string.IsNullOrWhiteSpace(assets)) return;
 
-        var version = Environment.GetEnvironmentVariable("S20_RELEASE_VERSION")!;
-        var sourceVersion = Environment.GetEnvironmentVariable("S20_RELEASE_SOURCE_VERSION")!;
-        var sourceMigration = Environment.GetEnvironmentVariable("S20_RELEASE_SOURCE_MIGRATION")!;
+        var versionText = Environment.GetEnvironmentVariable("S20_RELEASE_VERSION")!;
         var resultPath = Environment.GetEnvironmentVariable("S20_RELEASE_REVALIDATION_RESULT")!;
-        var result = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options).PrepareEmbedded(
-            Path.Combine(assets, $"StoreExpiryInspector-{version}-win-x64.zip"),
-            Path.Combine(assets, "update-manifest.json"),
-            Path.Combine(assets, "update-manifest.sig"),
-            Version.Parse(sourceVersion), sourceMigration, CancellationToken.None);
-        File.WriteAllText(resultPath, JsonSerializer.Serialize(new { outcome = result.Outcome.ToString() }));
+        var packagePath = Path.Combine(assets, $"StoreExpiryInspector-{versionText}-win-x64.zip");
+        var manifest = File.ReadAllBytes(Path.Combine(assets, "update-manifest.json"));
+        using var document = JsonDocument.Parse(manifest);
+        var root = document.RootElement;
+        var source = root.GetProperty("source");
+        var version = Version.Parse(root.GetProperty("version").GetString()!);
+        var migrations = root.GetProperty("targetMigrations").EnumerateArray().Select(item => item.GetString()!).ToArray();
+        var package = new VerifiedUpdatePackage(assets, packagePath, version,
+            root.GetProperty("package").GetProperty("sha256").GetString()!, migrations,
+            manifest, File.ReadAllBytes(Path.Combine(assets, "update-manifest.sig")),
+            new CheckedRelease(version, 1, root.GetProperty("releaseTag").GetString()!,
+                ["update-manifest.json", "update-manifest.sig", Path.GetFileName(packagePath)]),
+            root.GetProperty("minimumProtocolVersion").GetInt32(),
+            Version.Parse(source.GetProperty("minVersion").GetString()!), Version.Parse(source.GetProperty("maxVersion").GetString()!),
+            source.GetProperty("minMigration").GetString(), source.GetProperty("maxMigration").GetString());
+        var result = new SignedUpdatePackageDownloader(options: ProductionUpdateTrustAnchor.Options).RevalidateForInstall(package, CancellationToken.None);
+        File.WriteAllText(resultPath, JsonSerializer.Serialize(new { outcome = result.Outcome.ToString(), result.Message }));
         Assert.Equal(UpdatePackageOutcome.Verified, result.Outcome);
     }
 
