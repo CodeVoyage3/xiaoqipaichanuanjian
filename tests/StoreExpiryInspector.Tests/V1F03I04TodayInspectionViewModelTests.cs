@@ -695,6 +695,27 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Equal("收仓", new TodayInspectionPreviewRowViewModel(Row(1, 1, stage: "withdraw"), string.Empty).CurrentStage);
     }
 
+    [Fact]
+    public async Task PreviewBlocksCommandsImmediatelyButDelaysTheLoadingIndicator()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var vm = Create(preview: _ => { started.SetResult(); release.Task.GetAwaiter().GetResult(); return Preview([1]); });
+
+        var reading = vm.PreviewAsync("C:\\filled.xlsx");
+        await started.Task;
+        Assert.True(vm.IsBusy);
+        Assert.False(vm.IsReadingPlan);
+        Assert.False(vm.PreviewCommand.CanExecute(null));
+        Assert.False(vm.ExportCommand.CanExecute(null));
+        await Task.Delay(220);
+        Assert.True(vm.IsReadingPlan);
+        release.SetResult();
+        await reading;
+        Assert.False(vm.IsBusy);
+        Assert.False(vm.IsReadingPlan);
+    }
+
     private static TodayInspectionViewModel Create(
         Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>? export = null,
         Func<string, InspectionPlanPreview>? preview = null,

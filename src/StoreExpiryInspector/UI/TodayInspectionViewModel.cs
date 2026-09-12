@@ -305,13 +305,15 @@ public sealed class TodayInspectionViewModel : ViewModelBase
 
     public async Task PreviewAsync(string path)
     {
+        if (IsActionBusy) return;
         ResetSession();
+        IsActionBusy = true;
         var reading = Task.Run(() => DatabaseRuntimeGate.Run(() => _preview(path)));
         if (await Task.WhenAny(reading, Task.Delay(180)) != reading) IsReadingPlan = true;
         InspectionPlanPreview? preview;
         try { preview = await reading; }
         catch (Exception exception) { _logException?.Invoke(exception); StatusText = "读取排查结果文件失败"; PreviewFailed?.Invoke(FileMessage(exception)); return; }
-        finally { IsReadingPlan = false; }
+        finally { IsReadingPlan = false; IsActionBusy = false; }
         _currentPreview = preview;
         PreviewRows.Clear();
         foreach (var row in _currentPreview.File.Rows)
