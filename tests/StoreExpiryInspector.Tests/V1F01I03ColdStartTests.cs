@@ -24,7 +24,7 @@ public sealed class V1F01I03ColdStartTests
             Add(context, "P", 5, Day.AddDays(20), Day.AddDays(-340)); // 20%.
             Add(context, "P", 5, Day.AddDays(7), Day.AddDays(-353)); // withdraw.
             Add(context, "P", 5, Day, Day.AddDays(-360)); // expiry today.
-            Add(context, "P", 5, Day.AddDays(-4), Day.AddDays(-105)); // 101 days => ceil(3.03)=4, inclusive catchup.
+            Add(context, "P", 5, Day.AddDays(-2), Day.AddDays(-102)); // 100 days => ceil(1)=1, historical.
             Add(context, "P", 5, Day.AddDays(-4), Day.AddDays(-100)); // historical.
             Add(context, "ZERO", 0, Day.AddDays(-1), Day.AddDays(-100));
             context.SaveChanges();
@@ -39,7 +39,7 @@ public sealed class V1F01I03ColdStartTests
         Assert.Equal(3, baselines.Count(item => item.SourceTaskId.HasValue));
         Assert.Single(verify.Tasks.AsNoTracking());
         Assert.Equal(ExpiryStageCalculator.Expired, verify.Tasks.Single().HighestStage);
-        Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 4 && item.CatchupSource == "historical_window");
+        Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 1 && item.CatchupSource == "historical_window");
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.StockZeroBaseline && item.SourceTaskId is null);
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.Discount50Baseline && item.SourceTaskId is null);
         Assert.Contains(baselines, item => item.ColdStartDisposition == ColdStartDispositions.Discount20Baseline && item.SourceTaskId is null);
@@ -176,19 +176,34 @@ public sealed class V1F01I03ColdStartTests
         using var database = SqliteTestDatabase.Create();
         using var context = database.Open();
         var import = AddImport(context);
-        Add(context, "F", 5, Day.AddDays(-3), Day.AddDays(-4)); // lower clamp 3 inclusive.
-        Add(context, "F", 5, Day.AddDays(-4), Day.AddDays(-5)); // lower clamp outside.
-        Add(context, "F", 5, Day.AddDays(-30), Day.AddDays(-1030)); // upper clamp 30 inclusive.
-        Add(context, "F", 5, Day.AddDays(-31), Day.AddDays(-1031)); // upper clamp outside.
+        Add(context, "F", 5, Day.AddDays(-1), Day.AddDays(-31)); // lower clamp 1 inclusive.
+        Add(context, "F", 5, Day.AddDays(-2), Day.AddDays(-32)); // lower clamp outside.
+        Add(context, "F", 5, Day.AddDays(-7), Day.AddDays(-737)); // upper clamp 7 inclusive.
+        Add(context, "F", 5, Day.AddDays(-8), Day.AddDays(-738)); // upper clamp outside.
         context.Products.Add(new Product { ProductCode = "PET", CategoryCode = "pet", PolicyCode = ExpiryPolicies.Pet, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, EffectiveStockQty = 5, LastSeenImportId = import.Id }); context.SaveChanges();
         context.Batches.Add(new Batch { ProductId = context.Products.Single(p => p.ProductCode == "PET").Id, ProductionDate = Day.AddDays(-100), ExpiryDate = Day.AddDays(-1), ShelfLifeValue = 12, ShelfLifeUnit = "M", CurrentArrivalQty = 1, MaxArrivalQty = 1 }); context.SaveChanges();
         Assert.True(Execute(context, import.Id).Started);
         Assert.True(new ColdStartScopeBaselineUseCase().Execute(context, new("pet", ExpiryPolicies.Pet, 1, import.Id, Day, Utc)).Started);
         Assert.Equal(2, context.ScopeBaselines.Count());
         var facts = context.BatchBaselines.OrderBy(item => item.BatchId).ToArray();
-        Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 3);
-        Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 30);
+        Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 1);
+        Assert.Contains(facts, item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask && item.CatchupWindowDays == 7);
         Assert.Equal(2, facts.Count(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredHistoricalBaseline));
+    }
+
+    [Fact]
+    public void OnePercentCatchupUsesCeilingMinimumAndSevenDayMaximum()
+    {
+        using var database = SqliteTestDatabase.Create();
+        using var context = database.Open();
+        var import = AddImport(context);
+        Add(context, "A", 5, Day.AddDays(-1), Day.AddDays(-31));
+        Add(context, "B", 5, Day.AddDays(-2), Day.AddDays(-182));
+        Add(context, "C", 5, Day.AddDays(-4), Day.AddDays(-369));
+        Add(context, "D", 5, Day.AddDays(-7), Day.AddDays(-737));
+        context.SaveChanges();
+        Assert.True(Execute(context, import.Id).Started);
+        Assert.Equal([1, 2, 4, 7], context.BatchBaselines.Where(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask).OrderBy(item => item.CatchupWindowDays).Select(item => item.CatchupWindowDays));
     }
 
     [Fact]
@@ -293,7 +308,7 @@ public sealed class V1F01I03RealSampleTests
         var baselineBatches = verify.BatchBaselines.AsNoTracking().ToArray();
         Assert.Equal(baselineBatches.Length, baselineBatches.Select(item => item.BatchId).Distinct().Count());
         Assert.All(baselineBatches.Where(item => item.ColdStartDisposition is ColdStartDispositions.WithdrawTask or ColdStartDispositions.ExpiredTodayTask or ColdStartDispositions.ExpiredCatchupTask), item => Assert.True(item.SourceTaskId.HasValue));
-        Assert.All(baselineBatches.Where(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask), item => Assert.InRange(item.CatchupWindowDays!.Value, 3, 30));
+        Assert.All(baselineBatches.Where(item => item.ColdStartDisposition == ColdStartDispositions.ExpiredCatchupTask), item => Assert.InRange(item.CatchupWindowDays!.Value, 1, 7));
         Assert.DoesNotContain(baselineBatches.Join(verify.Batches.Include(batch => batch.Product), item => item.BatchId, batch => batch.Id, (item, batch) => batch), batch => batch.Product.ExpiryManagementStatus != ExpiryManagementStatus.Managed);
         Assert.Empty(verify.Inspections);
         Assert.Empty(verify.InspectionItemRevisions);
