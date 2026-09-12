@@ -60,7 +60,8 @@ public sealed class PreImportSnapshotService
         "20260826155455_AddBackupMetadata",
         "20260826162033_AddSettingsAndAppState",
         "20260826170403_AddLifecycleEvents",
-        "20260901155124_AddPolicyAndBaselineFoundation"
+        "20260901155124_AddPolicyAndBaselineFoundation",
+        "20260912083448_AdjustCatchupWindowConstraint"
     };
 
     private const string EfMigrationsLockTable = "__EFMigrationsLock";

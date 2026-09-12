@@ -43,8 +43,24 @@ public sealed class PreImportSnapshotServiceTests
         "20260826155455_AddBackupMetadata",
         "20260826162033_AddSettingsAndAppState",
         "20260826170403_AddLifecycleEvents",
-        "20260901155124_AddPolicyAndBaselineFoundation"
+        "20260901155124_AddPolicyAndBaselineFoundation",
+        "20260912083448_AdjustCatchupWindowConstraint"
     };
+
+    [Fact]
+    public void CreatesVerifiedSnapshotForLatestEmptyDatabase()
+    {
+        using var database = SqliteTestDatabase.Create();
+
+        var result = new PreImportSnapshotService().Create(
+            database.Path,
+            Path.Combine(database.Directory, "snapshots"));
+
+        Assert.True(result.CanProceed, $"{result.Code}: {result.SafeSummary}");
+        var metadata = Assert.IsType<PreImportSnapshotMetadata>(result.Metadata);
+        Assert.Equal(ExpectedMigrations, metadata.MigrationIds);
+        Assert.True(new PreImportSnapshotService().ValidateSnapshot(metadata));
+    }
 
     [Fact]
     public void CreatesIndependentVerifiedWalSnapshotWithoutChangingSourceRows()
