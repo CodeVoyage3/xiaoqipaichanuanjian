@@ -475,9 +475,12 @@ public partial class App : System.Windows.Application
         }
         if (_updateDiagnostics is not null) currentVersion = _updateDiagnostics.SimulatedSourceVersion;
         var github = new GitHubReleaseUpdateChecker(diagnostics: _updateDiagnostics);
+        var gitee = new GiteeManualUpdateChecker();
+        var checker = new GiteeFallbackUpdateChecker(github.CheckAsync, gitee.CheckAsync);
+        mainWindow.ConfigureGiteeManualUpdateCheck(gitee.CheckAsync);
         _updateDiagnostics?.Add("gui-check-start", new { simulatedSourceVersion = currentVersion.ToString(3), threadId = Environment.CurrentManagedThreadId });
         _updateCheckRuntime = new UpdateCheckRuntime(
-            cancellationToken => github.CheckAsync(currentVersion, cancellationToken),
+            cancellationToken => checker.CheckAsync(currentVersion, cancellationToken),
             result => Dispatcher.BeginInvoke(() =>
             {
                 if (!_explicitExit && !mainWindow.IsClosed && result.Outcome == UpdateCheckOutcome.UpdateAvailable)

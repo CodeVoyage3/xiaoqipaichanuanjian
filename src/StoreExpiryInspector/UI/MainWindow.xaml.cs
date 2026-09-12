@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly SignedUpdatePackageDownloader _updateDownloader;
     private readonly UpdateNetworkDiagnostics? _updateDiagnostics;
     private Task<UpdatePackageResult>? _updateWorker;
+    private Func<Version, CancellationToken, Task<UpdateCheckResult>>? _giteeManualUpdateCheck;
     private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Action, Task<UpdatePackageResult>>? _installPreparedUpdate;
     internal bool IsClosed { get; private set; }
 
@@ -88,6 +89,9 @@ public partial class MainWindow : Window
     internal void ConfigureUpdateInstallation(Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Action, Task<UpdatePackageResult>> installPreparedUpdate) =>
         _installPreparedUpdate = installPreparedUpdate;
 
+    internal void ConfigureGiteeManualUpdateCheck(Func<Version, CancellationToken, Task<UpdateCheckResult>> check) =>
+        _giteeManualUpdateCheck = check;
+
     internal void ShowUpdateAvailable(UpdateCheckResult result) => TryShowUpdateAvailable(result);
 
     internal bool TryShowUpdateAvailable(UpdateCheckResult result, Action<UpdateNotificationViewModel>? show = null)
@@ -136,9 +140,9 @@ public partial class MainWindow : Window
             }, linked.Token), linked.Token);
             var prepared = await _updateWorker;
             _updateDiagnostics?.Add("gui-prepare-result", new { operationId, outcome = prepared.Outcome.ToString(), verified = prepared.Package is not null });
-            if (prepared.Outcome is UpdatePackageOutcome.NetworkUnavailable or UpdatePackageOutcome.RateLimited)
+            var gitee = await CheckDomesticFallbackAsync(prepared, result, _giteeManualUpdateCheck, linked.Token);
+            if (gitee is not null)
             {
-                var gitee = await new GiteeManualUpdateChecker().CheckAsync(result.CurrentVersion, linked.Token);
                 if (CanUseDomesticFallback(prepared, result, gitee))
                 {
                     model.ShowDomesticFallback(() => OpenManualDownload(gitee.ManualDownloadUrl!));
@@ -159,10 +163,16 @@ public partial class MainWindow : Window
         finally { model.CancelRequested -= cancel; _updateDiagnostics?.Add("gui-cts-disposed", new { operationId, tokenId = linked.GetHashCode() }); }
     }
 
-    internal static bool CanUseDomesticFallback(UpdatePackageResult package, UpdateCheckResult github, UpdateCheckResult gitee) =>
+    internal static bool CanQueryDomesticFallback(UpdatePackageResult package, UpdateCheckResult github) =>
         package.Outcome is UpdatePackageOutcome.NetworkUnavailable or UpdatePackageOutcome.RateLimited &&
-        github.LatestVersion is not null && github.Release is not null && gitee.Outcome == UpdateCheckOutcome.UpdateAvailable &&
-        gitee.LatestVersion == github.LatestVersion && github.Release.Version == github.LatestVersion && gitee.ManualDownloadUrl is not null;
+        github.LatestVersion is not null && github.Release?.Version == github.LatestVersion;
+
+    internal static async Task<UpdateCheckResult?> CheckDomesticFallbackAsync(UpdatePackageResult package, UpdateCheckResult github, Func<Version, CancellationToken, Task<UpdateCheckResult>>? check, CancellationToken cancellationToken) =>
+        check is not null && CanQueryDomesticFallback(package, github) ? await check(github.CurrentVersion, cancellationToken) : null;
+
+    internal static bool CanUseDomesticFallback(UpdatePackageResult package, UpdateCheckResult github, UpdateCheckResult gitee) =>
+        CanQueryDomesticFallback(package, github) && gitee.Outcome == UpdateCheckOutcome.UpdateAvailable &&
+        gitee.LatestVersion == github.LatestVersion && github.Release?.Version == github.LatestVersion && gitee.ManualDownloadUrl is not null;
 
     private static void OpenManualDownload(Uri url)
     {
