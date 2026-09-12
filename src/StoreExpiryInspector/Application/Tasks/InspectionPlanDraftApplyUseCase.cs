@@ -37,7 +37,7 @@ public sealed class InspectionPlanDraftApplyUseCase
             context.ChangeTracker.Clear(); var current = Resolve(context, request.Preview.File.Rows); var selected = request.TaskIds.ToHashSet(); var results = new List<AppliedInspectionPlanDraft>();
             foreach (var group in current.Where(row => row.CheckedQty is not null && row.Errors.Count == 0 && row.TaskId is > 0 && selected.Contains(row.TaskId.Value)).GroupBy(row => row.TaskId!.Value))
             {
-                var first = group.First(); var result = drafts.SaveDraft(context, new(group.Key, first.ProductId!.Value, request.BusinessDate, request.SavedAtUtc, inspector, request.CheckDate, group.Select(row => new SaveDraftItemRequest(row.TaskItemId!.Value, row.BatchId!.Value, row.AttentionVersion!.Value, row.CheckedQty)).ToArray()));
+                var first = group.First(); var result = drafts.SaveDraft(context, new(group.Key, first.ProductId!.Value, request.BusinessDate, request.SavedAtUtc, inspector, request.CheckDate, group.Select(row => new SaveDraftItemRequest(row.TaskItemId!.Value, row.BatchId!.Value, row.AttentionVersion!.Value, row.CheckedQty)).ToArray(), true));
                 results.Add(new(group.Key, result.DraftId, result.Changed, result.Readiness));
             }
             transaction.Commit(); return new(results.Any(result => result.Changed), results);

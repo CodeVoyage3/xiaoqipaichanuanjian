@@ -373,7 +373,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             while (true)
             {
                 var intent = _submissionIntent;
-                var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _submit(new(intent.TaskIds, intent.InspectorName, intent.CheckDate, intent.BusinessDate, intent.SubmittedAtUtc, _pendingConfirmations))));
+                var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _submit(new(intent.TaskIds, intent.InspectorName, intent.CheckDate, intent.BusinessDate, intent.SubmittedAtUtc, _pendingConfirmations, true))));
                 if (result.Outcome is BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation or BulkInspectionSubmissionOutcome.OverStockConfirmationStale)
                 {
                     _pendingConfirmations = result.OverStockConfirmations;

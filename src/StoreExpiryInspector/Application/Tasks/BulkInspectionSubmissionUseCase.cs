@@ -20,7 +20,8 @@ public sealed record BulkInspectionSubmissionRequest(
     DateOnly CheckDate,
     DateOnly BusinessDate,
     DateTime SubmittedAtUtc,
-    IReadOnlyCollection<OverStockConfirmation>? OverStockConfirmations = null);
+    IReadOnlyCollection<OverStockConfirmation>? OverStockConfirmations = null,
+    bool AllowPartialSubmission = false);
 
 public sealed record BulkInspectionSubmissionTaskResult(long TaskId, long InspectionId);
 
@@ -71,7 +72,7 @@ public sealed class BulkInspectionSubmissionUseCase
             var warnings = new List<OverStockConfirmation>();
             foreach (var task in tasks)
             {
-                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc));
+                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, AllowPartialSubmission: request.AllowPartialSubmission));
                 if (result.RequiresOverStockConfirmation)
                 {
                     warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
@@ -102,7 +103,7 @@ public sealed class BulkInspectionSubmissionUseCase
                 foreach (var warning in currentWarnings)
                 {
                     var task = tasks.Single(candidate => candidate.Id == warning.TaskId);
-                    var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, warning.EffectiveStockQty, warning.TotalCheckedQty));
+                    var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, warning.EffectiveStockQty, warning.TotalCheckedQty, request.AllowPartialSubmission));
                     if (!result.Submitted || result.InspectionId is not long inspectionId)
                     {
                         throw new InvalidOperationException($"Task {task.Id} did not accept its current over-stock confirmation.");
@@ -222,12 +223,12 @@ public sealed class BulkInspectionSubmissionUseCase
 
         var items = task.Items.ToDictionary(item => item.Id);
         var draftItems = task.Draft.Items.ToDictionary(item => item.TaskItemId);
-        if (draftItems.Count != items.Count || task.Draft.Items.Any(item => item.DraftId != task.Draft.Id || item.TaskId != task.Id))
+        if (draftItems.Count == 0 || (!request.AllowPartialSubmission && draftItems.Count != items.Count) || draftItems.Count > items.Count || task.Draft.Items.Any(item => item.DraftId != task.Draft.Id || item.TaskId != task.Id || !items.ContainsKey(item.TaskItemId)))
         {
             throw new InvalidOperationException($"Draft {task.Draft.Id} does not exactly cover task {task.Id}.");
         }
 
-        foreach (var item in task.Items)
+        foreach (var item in task.Items.Where(item => !request.AllowPartialSubmission || draftItems.ContainsKey(item.Id)))
         {
             var batch = item.Batch;
             if (item.TaskId != task.Id || item.ProductId != task.ProductId || batch is null || batch.ProductId != task.ProductId ||

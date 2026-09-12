@@ -18,7 +18,8 @@ public sealed record InspectionSubmissionRequest(
     DateOnly BusinessDate,
     DateTime SubmittedAtUtc,
     int? ConfirmedEffectiveStockQty = null,
-    int? ConfirmedTotalCheckedQty = null);
+    int? ConfirmedTotalCheckedQty = null,
+    bool AllowPartialSubmission = false);
 
 public sealed record InspectionSubmissionResult(
     InspectionSubmissionOutcome Outcome,
@@ -124,7 +125,7 @@ public sealed class InspectionSubmissionUseCase
                     $"Open task {task.Id} already has a formal inspection.");
             }
 
-            var draftFacts = ValidateOpenTask(task, product, request.BusinessDate);
+            var draftFacts = ValidateOpenTask(task, product, request.BusinessDate, request.AllowPartialSubmission);
             if (draftFacts.TotalCheckedQty > product.EffectiveStockQty)
             {
                 if (request.ConfirmedEffectiveStockQty != product.EffectiveStockQty ||
@@ -264,7 +265,8 @@ public sealed class InspectionSubmissionUseCase
     private static DraftFacts ValidateOpenTask(
         ProductTask task,
         Product product,
-        DateOnly businessDate)
+        DateOnly businessDate,
+        bool allowPartialSubmission)
     {
         if (task.Items.Count == 0)
         {
@@ -330,7 +332,7 @@ public sealed class InspectionSubmissionUseCase
         }
 
         var draftItemsByTaskItemId = draft.Items.ToDictionary(item => item.TaskItemId);
-        if (draftItemsByTaskItemId.Count == 0 || draftItemsByTaskItemId.Count > taskItemsById.Count ||
+        if (draftItemsByTaskItemId.Count == 0 || (!allowPartialSubmission && draftItemsByTaskItemId.Count != taskItemsById.Count) || draftItemsByTaskItemId.Count > taskItemsById.Count ||
             draft.Items.Any(item => item.DraftId != draft.Id || item.TaskId != task.Id || !taskItemsById.ContainsKey(item.TaskItemId)))
         {
             throw new InvalidOperationException($"Draft {draft.Id} does not match the current task items.");
