@@ -1,4 +1,10 @@
-# 2026-09-13：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
+# 2026-09-13：Stage20 / S20-T01 IMPLEMENTATION IN PROGRESS
+
+用户已批准 S20-T01｜Core Release Builder；当前唯一范围是本地候选 Builder、历史 source compatibility contract、receipt schema、一个专项测试文件与 Stage20 治理。基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`，正式工作区历史 `1 modified + 4 untracked` 不触碰。
+
+Version 只校验 Candidate 自身 App/Updater/程序集身份，不覆盖源码 Version；target migrations 只来自 Candidate 的生产 `CurrentSchemaIdentity.Migrations`，并保留 EF `GetMigrations()` 精确等价门禁。成功仍为 `RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`。S20-T02=`NOT_CREATED / NOT_DESIGNED / NOT_IMPLEMENTED`；`FULL=NOT_RUN / NO_FULL`。
+
+# 2026-09-13 historical：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 
 fresh GitHub verification 已确认 release-time governance/main=`28ec20a5ecb51183f9e3d661e9fa83b63b99259b`；annotated tag `v1.1.0` 解引用到精确 product source `18230c3e6013a098874426575e6a14c202fa7f7c`。GitHub Release ID=`387675986`，<https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.1.0>，`draft=false`、`prerelease=false`。
 

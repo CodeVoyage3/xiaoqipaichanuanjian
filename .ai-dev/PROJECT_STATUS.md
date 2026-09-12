@@ -1,4 +1,11 @@
-# 2026-09-13 current：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
+# 2026-09-13 current：Stage20 / S20-T01 IMPLEMENTATION IN PROGRESS
+
+- 用户已批准 S20-T01｜Core Release Builder；仅实施本地候选构建器、历史兼容合同、receipt schema、最小专项与治理。
+- 基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`；正式工作区历史 `1 modified + 4 untracked` 不触碰。
+- Builder 永久停止于 `RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`；不 push/tag/Release/upload，不修改生产代码、Installer、Updater、CurrentSchemaIdentity、migration 或 v1.1.0 历史资产。
+- S20-T02=`NOT_CREATED / NOT_DESIGNED / NOT_IMPLEMENTED`；`FULL=NOT_RUN / NO_FULL`。
+
+# 2026-09-13 historical：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 
 - fresh GitHub verification：release-time governance/main=`28ec20a5ecb51183f9e3d661e9fa83b63b99259b`；annotated tag `v1.1.0` 解引用到精确 product source `18230c3e6013a098874426575e6a14c202fa7f7c`。GitHub Release ID=`387675986`，`draft=false`、`prerelease=false`。
 - 四项公开正式资产的 GitHub remote bytes/SHA256 与冻结值全等：`StoreExpiryInspector-1.1.0-win-x64.zip`=`109443235` / `283BC33CD742D41F79EB1ADF22F76084DD83E6E30C437D93DEB894562671AC7D`；`StoreExpiryInspector-Setup-1.1.0.exe`=`149778454` / `4CF42A105E2B48C5A5424E9715A999FBA66456AEE870441ECAEC396984EAA3DD`；`update-manifest.json`=`916` / `4989612C3028260D56BB442F4EBEDD7314CBDA3549A0A64300FBBA00126C3F56`；`update-manifest.sig`=`384` / `2AE88FCB606AF4F341A9A3EE03F4BE7106BFCE8D16BAA42615E83562ACB0D317`。

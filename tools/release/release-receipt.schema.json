@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StoreExpiryInspector release candidate receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "runId", "status", "mode", "version", "candidateSha", "builderSha",
+    "sourceClean", "builderSourceClean", "rid", "selfContained", "appVersion", "updaterVersion",
+    "currentSchemaIdentity", "migrationCount", "latestMigration", "pdbCount", "nonWindowsRuntimeCount",
+    "zipEntryCount", "archiveAudit", "productionRevalidateForInstall", "signingAlgorithm",
+    "signingFingerprint", "signatureVerified", "authenticodeStatus", "isccExitCode", "assets",
+    "changeImpact", "startedAt", "completedAt", "publishAuthorized", "failedGate", "failureReason"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "format": "uuid" },
+    "status": { "enum": ["RUNNING", "FAILED", "RELEASE_CANDIDATE_READY"] },
+    "mode": { "enum": ["NOT_FOR_PUBLICATION", "RELEASE_CANDIDATE"] },
+    "version": { "type": "string" },
+    "candidateSha": { "type": "string" },
+    "builderSha": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+    "sourceClean": { "type": ["boolean", "null"] },
+    "builderSourceClean": { "type": ["boolean", "null"] },
+    "rid": { "const": "win-x64" },
+    "selfContained": { "const": true },
+    "appVersion": { "type": ["string", "null"] },
+    "updaterVersion": { "type": ["string", "null"] },
+    "currentSchemaIdentity": { "type": ["array", "null"], "items": { "type": "string" } },
+    "migrationCount": { "type": ["integer", "null"], "minimum": 1 },
+    "latestMigration": { "type": ["string", "null"] },
+    "pdbCount": { "type": ["integer", "null"], "minimum": 0 },
+    "nonWindowsRuntimeCount": { "type": ["integer", "null"], "minimum": 0 },
+    "zipEntryCount": { "type": ["integer", "null"], "minimum": 1 },
+    "archiveAudit": { "type": ["string", "null"] },
+    "productionRevalidateForInstall": { "type": ["string", "null"] },
+    "signingAlgorithm": { "type": ["string", "null"] },
+    "signingFingerprint": { "type": ["string", "null"] },
+    "signatureVerified": { "type": ["boolean", "null"] },
+    "authenticodeStatus": { "type": ["string", "null"] },
+    "isccExitCode": { "type": ["integer", "null"] },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fileName", "bytes", "sha256"],
+        "properties": {
+          "fileName": { "type": "string" },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "changeImpact": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["previousRelease", "schemaChanged", "evidenceDisposition", "evidenceReference"],
+      "properties": {
+        "previousRelease": { "type": "string" },
+        "schemaChanged": { "type": "boolean" },
+        "evidenceDisposition": { "enum": ["INHERIT_EXISTING_EVIDENCE", "NEW_SCHEMA_DISPOSITION_REQUIRED"] },
+        "evidenceReference": { "type": ["string", "null"] }
+      }
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": ["string", "null"], "format": "date-time" },
+    "publishAuthorized": { "const": false },
+    "failedGate": { "type": ["string", "null"] },
+    "failureReason": { "type": ["string", "null"] }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "releases": [
+    {
+      "targetVersion": "1.1.0",
+      "previousRelease": "v1.0.9",
+      "minimumProtocolVersion": 2,
+      "source": {
+        "minVersion": "1.0.9",
+        "maxVersion": "1.0.9",
+        "minMigration": "20260901155124_AddPolicyAndBaselineFoundation",
+        "maxMigration": "20260901155124_AddPolicyAndBaselineFoundation"
+      },
+      "schemaEvidence": {
+        "status": "ACCEPTED",
+        "reference": ".ai-dev/GOVERNANCE/SCHEMA_CHANGE_RELEASE_GATE.md"
+      }
+    }
+  ]
+}
