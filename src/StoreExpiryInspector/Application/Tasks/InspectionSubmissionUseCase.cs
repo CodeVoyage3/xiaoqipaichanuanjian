@@ -152,7 +152,9 @@ public sealed class InspectionSubmissionUseCase
                 CheckDate = draftFacts.CheckDate,
                 SubmittedAtUtc = request.SubmittedAtUtc
             };
-            foreach (var item in task.Items.OrderBy(item => item.Id))
+            var submittedItems = task.Items.Where(item => draftFacts.ItemsByTaskItemId.ContainsKey(item.Id)).OrderBy(item => item.Id).ToArray();
+            var remainingItems = task.Items.Except(submittedItems).ToArray();
+            foreach (var item in submittedItems)
             {
                 var draftItem = draftFacts.ItemsByTaskItemId[item.Id];
                 var inspectionItem = new InspectionItem
@@ -173,7 +175,7 @@ public sealed class InspectionSubmissionUseCase
             context.Inspections.Add(inspection);
             context.SaveChanges();
 
-            foreach (var item in task.Items.OrderBy(item => item.Id))
+            foreach (var item in submittedItems)
             {
                 var inspectionItem = inspection.Items.Single(inspectionItem =>
                     inspectionItem.BatchId == item.BatchId);
@@ -193,7 +195,7 @@ public sealed class InspectionSubmissionUseCase
                         request.SubmittedAtUtc));
             }
 
-            foreach (var item in task.Items)
+            foreach (var item in submittedItems)
             {
                 item.Batch.HandledAttentionVersion = item.Batch.AttentionVersion;
             }
@@ -205,6 +207,13 @@ public sealed class InspectionSubmissionUseCase
             context.DraftItems.RemoveRange(task.Draft!.Items.ToArray());
             context.Drafts.Remove(task.Draft);
             context.SaveChanges();
+
+            // Complete exactly the submitted coverage, then rebuild the still-current remainder as the product's only open task.
+            var successor = remainingItems.Where(item => item.Batch.TrackingStatus == "active" && item.Batch.CurrentStage == item.Stage && item.Batch.AttentionVersion == item.AttentionVersion && item.Batch.HandledAttentionVersion < item.Batch.AttentionVersion && !item.RequiresReconfirmation)
+                .Select(item => new ProductTaskBatchResult(item.BatchId, item.Stage, item.AttentionVersion, false)).ToArray();
+            if (remainingItems.Length != 0) context.TaskItems.RemoveRange(remainingItems);
+            context.SaveChanges();
+            if (successor.Length != 0) new ProductTaskAggregator().Aggregate(context, new(product.Id, successor, request.SubmittedAtUtc));
 
             transaction?.Commit();
             return new(
@@ -321,14 +330,14 @@ public sealed class InspectionSubmissionUseCase
         }
 
         var draftItemsByTaskItemId = draft.Items.ToDictionary(item => item.TaskItemId);
-        if (draftItemsByTaskItemId.Count != taskItemsById.Count ||
-            draft.Items.Any(item => item.DraftId != draft.Id || item.TaskId != task.Id))
+        if (draftItemsByTaskItemId.Count == 0 || draftItemsByTaskItemId.Count > taskItemsById.Count ||
+            draft.Items.Any(item => item.DraftId != draft.Id || item.TaskId != task.Id || !taskItemsById.ContainsKey(item.TaskItemId)))
         {
             throw new InvalidOperationException($"Draft {draft.Id} does not match the current task items.");
         }
 
         var totalCheckedQty = 0;
-        foreach (var taskItem in task.Items)
+        foreach (var taskItem in task.Items.Where(item => draftItemsByTaskItemId.ContainsKey(item.Id)))
         {
             if (!draftItemsByTaskItemId.TryGetValue(taskItem.Id, out var draftItem))
             {

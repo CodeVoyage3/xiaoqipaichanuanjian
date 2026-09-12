@@ -462,6 +462,7 @@ public sealed class InspectionDraftUseCase
         var requiresReconfirmationCount = task.Items.Count(item => item.RequiresReconfirmation);
         var hasInspectorName = !string.IsNullOrWhiteSpace(draft.InspectorName);
         var hasCheckDate = draft.CheckDate is not null;
+        // A plan import may intentionally submit only its filled current rows.
         var allItemsFilled = missingItemCount == 0;
         return new(
             currentItemCount,
@@ -471,7 +472,7 @@ public sealed class InspectionDraftUseCase
             hasInspectorName,
             hasCheckDate,
             allItemsFilled,
-            allItemsFilled && hasInspectorName && hasCheckDate && requiresReconfirmationCount == 0);
+            filledItemCount > 0 && hasInspectorName && hasCheckDate && requiresReconfirmationCount == 0);
     }
 
     private static void ValidateSaveDraftRequest(SaveDraftRequest request)

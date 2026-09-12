@@ -16,11 +16,9 @@ public sealed record TodayInspectionPlanExportResult(string OutputPath, int Task
 
 public sealed class TodayInspectionPlanExportUseCase
 {
-    private const string FormatVersion = "inspection_plan_v1";
     private static readonly string[] Headers =
     [
-        "序号", "商品编码", "条码", "商品名称", "大类", "生产日期", "有效日期", "当前阶段", "当前批次累计到货", "历史累计到货最大值", "总库存", "本次排查数量",
-        "格式版本", "TaskId", "TaskItemId", "ProductId", "BatchId", "AttentionVersion", "Task更新时间UTC", "TaskItem总数", "Batch当前状态", "Stage快照", "当前批次累计到货快照", "历史累计到货最大值快照", "商品当前库存快照"
+        "序号", "商品编码", "条码", "商品名称", "大类", "生产日期", "有效日期", "当前阶段", "当前批次累计到货", "历史累计到货最大值", "总库存", "本次排查数量"
     ];
 
     public TodayInspectionPlanExportResult Execute(StoreDbContext context, TodayInspectionPlanExportRequest request)
@@ -214,14 +212,13 @@ public sealed class TodayInspectionPlanExportUseCase
             var rowIndex = (uint)(index + 2);
             sheetData.Append(new Row(
                 NumberCell(1, rowIndex, index + 1), TextCell(2, rowIndex, row.ProductCode), TextCell(3, rowIndex, row.Barcode), TextCell(4, rowIndex, row.ProductName), TextCell(5, rowIndex, row.CategoryName),
-                DateCell(6, rowIndex, row.ProductionDate), DateCell(7, rowIndex, row.ExpiryDate), TextCell(8, rowIndex, ExpiryStageCalculator.ToDisplay(row.Stage)), NumberCell(9, rowIndex, row.CurrentArrivalQty), NumberCell(10, rowIndex, row.MaxArrivalQty), NumberCell(11, rowIndex, row.EffectiveStockQty), BlankCell(12, rowIndex),
-                TextCell(13, rowIndex, FormatVersion), TextCell(14, rowIndex, row.TaskId.ToString(CultureInfo.InvariantCulture)), TextCell(15, rowIndex, row.TaskItemId.ToString(CultureInfo.InvariantCulture)), TextCell(16, rowIndex, row.ProductId.ToString(CultureInfo.InvariantCulture)), TextCell(17, rowIndex, row.BatchId.ToString(CultureInfo.InvariantCulture)), NumberCell(18, rowIndex, row.AttentionVersion), TextCell(19, rowIndex, NormalizeUtc(row.TaskUpdatedAtUtc).ToString("O", CultureInfo.InvariantCulture)), NumberCell(20, rowIndex, row.TaskItemCount), TextCell(21, rowIndex, row.TrackingStatus), TextCell(22, rowIndex, row.Stage), NumberCell(23, rowIndex, row.CurrentArrivalQty), NumberCell(24, rowIndex, row.MaxArrivalQty), NumberCell(25, rowIndex, row.EffectiveStockQty)));
+                DateCell(6, rowIndex, row.ProductionDate), DateCell(7, rowIndex, row.ExpiryDate), TextCell(8, rowIndex, ExpiryStageCalculator.ToDisplay(row.Stage)), NumberCell(9, rowIndex, row.CurrentArrivalQty), NumberCell(10, rowIndex, row.MaxArrivalQty), NumberCell(11, rowIndex, row.EffectiveStockQty), BlankCell(12, rowIndex)));
         }
 
         sheetPart.Worksheet = new Worksheet(
             new SheetProperties(new PageSetupProperties { FitToPage = true }),
             new SheetViews(new SheetView(new Pane { VerticalSplit = 1D, TopLeftCell = "A2", ActivePane = PaneValues.BottomLeft, State = PaneStateValues.Frozen }) { WorkbookViewId = 0U }),
-            new Columns(Enumerable.Range(1, 12).Select(index => new Column { Min = (uint)index, Max = (uint)index, Width = index is 3 or 4 ? 20D : 14D, CustomWidth = true }).Append(new Column { Min = 13U, Max = 25U, Hidden = true })),
+            new Columns(Enumerable.Range(1, 12).Select(index => new Column { Min = (uint)index, Max = (uint)index, Width = index is 3 or 4 ? 20D : 14D, CustomWidth = true })),
             sheetData,
             new AutoFilter { Reference = $"A1:L{rows.Count + 1}" },
             new PageMargins { Left = 0.25D, Right = 0.25D, Top = 0.5D, Bottom = 0.5D, Header = 0.2D, Footer = 0.2D },
@@ -236,7 +233,6 @@ public sealed class TodayInspectionPlanExportUseCase
     private static Cell BlankCell(int column, uint row) => new() { CellReference = CellReference(column, row) };
     private static Cell DateCell(int column, uint row, DateOnly? value) => value is null ? BlankCell(column, row) : new Cell { CellReference = CellReference(column, row), StyleIndex = 1U, DataType = CellValues.Number, CellValue = new CellValue((value.Value.DayNumber - new DateOnly(1899, 12, 30).DayNumber).ToString(CultureInfo.InvariantCulture)) };
     private static string CellReference(int column, uint row) => $"{(char)('A' + column - 1)}{row}";
-    private static DateTime NormalizeUtc(DateTime value) => value.Kind switch { DateTimeKind.Local => value.ToUniversalTime(), DateTimeKind.Utc => value, _ => DateTime.SpecifyKind(value, DateTimeKind.Utc) };
 
     private sealed record TaskRow(long Id, long ProductId, string Status, DateTime UpdatedAtUtc);
     private sealed record ProductRow(long Id, string ProductCode, string? ProductName, string? Barcode, string CategoryCode, string? PolicyCode, int? PolicyVersion, ExpiryManagementStatus ExpiryManagementStatus, int EffectiveStockQty);
