@@ -54,9 +54,10 @@ public sealed class TodayInspectionPreviewRowViewModel(InspectionPlanRow row, st
     public string ProductionDate => row.ProductionDate ?? string.Empty;
     public string ExpiryDate => row.ExpiryDate ?? row.BatchDisplay ?? string.Empty;
     public string CheckedQtyText => row.CheckedQty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-    public string StatusText => row.Errors.Count != 0 ? "数据错误"
-        : !string.IsNullOrWhiteSpace(taskReason) ? "需要重新导出"
+    public string StatusText => IsStateChanged ? "需要重新导出"
+        : row.Errors.Count != 0 ? "数据错误"
         : row.CheckedQty is null ? "未填写" : "可提交";
+    private bool IsStateChanged => !string.IsNullOrWhiteSpace(taskReason) || row.Errors.Any(error => error.Contains("状态已经变化", StringComparison.Ordinal) || error.Contains("无法匹配当前", StringComparison.Ordinal));
     public string Reason => string.Join("；", row.Errors.Append(taskReason).Where(value => !string.IsNullOrWhiteSpace(value)));
     public bool HasIssue => !string.IsNullOrWhiteSpace(Reason);
 }
@@ -207,7 +208,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public string CheckDateError { get => _checkDateError; private set { if (_checkDateError == value) return; _checkDateError = value; OnPropertyChanged(); } }
     public bool HasInspectorNameError => !string.IsNullOrEmpty(InspectorNameError);
     public bool HasCheckDateError => !string.IsNullOrEmpty(CheckDateError);
-    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"本次共 {_currentPreview.Summary.ProductCount} 个商品 / {_currentPreview.Summary.BatchCount} 个批次，{_currentPreview.ApplicableTaskIds.Count} 条可提交";
+    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"本次共 {_currentPreview.Summary.ProductCount} 个商品 / {_currentPreview.Summary.BatchCount} 个批次，{PreviewRows.Count(row => row.StatusText == "可提交")} 条可提交";
     public string DraftStatusText => _draftResult is null ? "尚未处理排查结果" : CompleteTaskIds.Count > 0 ? "已保存有效排查结果，可以提交；未填写项目会继续待排查。" : "没有可提交的有效排查结果。";
     public bool HasPreviewIssues => PreviewRows.Any(row => row.HasIssue);
     public string PreviewIssueText => _currentPreview is null ? string.Empty : string.Join("　", new[]
@@ -387,6 +388,11 @@ public sealed class TodayInspectionViewModel : ViewModelBase
                         return;
                     }
                     continue;
+                }
+                if (result.Outcome == BulkInspectionSubmissionOutcome.NoValidRows)
+                {
+                    StatusText = $"没有有效排查结果已提交；状态变化 {result.Skipped?.Count ?? 0} 条，请重新导出最新计划。";
+                    return;
                 }
                 StatusText = result.Outcome == BulkInspectionSubmissionOutcome.AlreadySubmitted ? "任务已提交过，正在刷新页面。" : "提交已成功，正在刷新页面。";
                 RemoveSelectedTaskIds(intent.TaskIds);

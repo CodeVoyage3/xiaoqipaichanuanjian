@@ -9,8 +9,11 @@ public enum InspectionSubmissionOutcome
 {
     Submitted,
     AlreadySubmitted,
-    RequiresOverStockConfirmation
+    RequiresOverStockConfirmation,
+    NoCurrentItems
 }
+
+public sealed record InspectionSubmissionSkip(long TaskItemId, string Reason);
 
 public sealed record InspectionSubmissionRequest(
     long TaskId,
@@ -25,13 +28,15 @@ public sealed record InspectionSubmissionResult(
     InspectionSubmissionOutcome Outcome,
     long? InspectionId,
     int EffectiveStockQty,
-    int TotalCheckedQty)
+    int TotalCheckedQty,
+    IReadOnlyList<InspectionSubmissionSkip>? Skipped = null)
 {
     public string Status => Outcome switch
     {
         InspectionSubmissionOutcome.Submitted => "submitted",
         InspectionSubmissionOutcome.AlreadySubmitted => "already_submitted",
         InspectionSubmissionOutcome.RequiresOverStockConfirmation => "requires_over_stock_confirmation",
+        InspectionSubmissionOutcome.NoCurrentItems => "no_current_items",
         _ => throw new InvalidOperationException("Unknown inspection submission outcome.")
     };
 
@@ -126,6 +131,11 @@ public sealed class InspectionSubmissionUseCase
             }
 
             var draftFacts = ValidateOpenTask(task, product, request.BusinessDate, request.AllowPartialSubmission);
+            if (draftFacts.ItemsByTaskItemId.Count == 0)
+            {
+                transaction?.Commit();
+                return new(InspectionSubmissionOutcome.NoCurrentItems, null, product.EffectiveStockQty, 0, draftFacts.Skipped);
+            }
             if (draftFacts.TotalCheckedQty > product.EffectiveStockQty)
             {
                 if (request.ConfirmedEffectiveStockQty != product.EffectiveStockQty ||
@@ -210,8 +220,8 @@ public sealed class InspectionSubmissionUseCase
             context.SaveChanges();
 
             // Complete exactly the submitted coverage, then rebuild the still-current remainder as the product's only open task.
-            var successor = remainingItems.Where(item => item.Batch.TrackingStatus == "active" && item.Batch.CurrentStage == item.Stage && item.Batch.AttentionVersion == item.AttentionVersion && item.Batch.HandledAttentionVersion < item.Batch.AttentionVersion && !item.RequiresReconfirmation)
-                .Select(item => new ProductTaskBatchResult(item.BatchId, item.Stage, item.AttentionVersion, false)).ToArray();
+            var successor = remainingItems.Where(item => item.Batch.TrackingStatus == "active" && item.Batch.HandledAttentionVersion < item.Batch.AttentionVersion && IsInspectableStage(item.Batch.CurrentStage))
+                .Select(item => new ProductTaskBatchResult(item.BatchId, item.Batch.CurrentStage, item.Batch.AttentionVersion, false)).ToArray();
             if (remainingItems.Length != 0) context.TaskItems.RemoveRange(remainingItems);
             context.SaveChanges();
             if (successor.Length != 0) new ProductTaskAggregator().Aggregate(context, new(product.Id, successor, request.SubmittedAtUtc));
@@ -221,7 +231,8 @@ public sealed class InspectionSubmissionUseCase
                 InspectionSubmissionOutcome.Submitted,
                 inspection.Id,
                 product.EffectiveStockQty,
-                draftFacts.TotalCheckedQty);
+                draftFacts.TotalCheckedQty,
+                draftFacts.Skipped);
         }
         catch
         {
@@ -289,7 +300,7 @@ public sealed class InspectionSubmissionUseCase
             }
 
             if (item.AttentionVersion < 0 || item.Batch.AttentionVersion < 0 ||
-                item.AttentionVersion != item.Batch.AttentionVersion)
+                (!allowPartialSubmission && item.AttentionVersion != item.Batch.AttentionVersion))
             {
                 throw new InvalidOperationException(
                     $"Task item {item.Id} and batch {item.BatchId} have inconsistent attention versions.");
@@ -339,6 +350,8 @@ public sealed class InspectionSubmissionUseCase
         }
 
         var totalCheckedQty = 0;
+        var valid = new Dictionary<long, InspectionDraftItem>();
+        var skipped = new List<InspectionSubmissionSkip>();
         foreach (var taskItem in task.Items.Where(item => draftItemsByTaskItemId.ContainsKey(item.Id)))
         {
             if (!draftItemsByTaskItemId.TryGetValue(taskItem.Id, out var draftItem))
@@ -353,27 +366,27 @@ public sealed class InspectionSubmissionUseCase
                     $"Task item {taskItem.Id} has no checked quantity.");
             }
 
-            if (taskItem.RequiresReconfirmation)
+            if (!allowPartialSubmission)
             {
-                throw new InvalidOperationException(
-                    $"Task item {taskItem.Id} requires reconfirmation.");
+                if (taskItem.RequiresReconfirmation) throw new InvalidOperationException($"Task item {taskItem.Id} requires reconfirmation.");
+                if (draftItem.ConfirmedAttentionVersion != taskItem.AttentionVersion || draftItem.ConfirmedAttentionVersion != taskItem.Batch.AttentionVersion) throw new InvalidOperationException($"Draft item {draftItem.Id} has a stale attention version.");
             }
-
-            if (draftItem.ConfirmedAttentionVersion != taskItem.AttentionVersion ||
-                draftItem.ConfirmedAttentionVersion != taskItem.Batch.AttentionVersion)
+            else if (taskItem.RequiresReconfirmation || draftItem.ConfirmedAttentionVersion != taskItem.AttentionVersion || draftItem.ConfirmedAttentionVersion != taskItem.Batch.AttentionVersion || taskItem.Batch.TrackingStatus != "active" || taskItem.Batch.HandledAttentionVersion >= taskItem.Batch.AttentionVersion || taskItem.Stage != taskItem.Batch.CurrentStage)
             {
-                throw new InvalidOperationException(
-                    $"Draft item {draftItem.Id} has a stale attention version.");
+                skipped.Add(new(taskItem.Id, "该行对应批次状态已经变化，本次已跳过，请重新导出最新计划。"));
+                continue;
             }
 
             totalCheckedQty = checked(totalCheckedQty + checkedQty);
+            valid.Add(taskItem.Id, draftItem);
         }
 
         return new(
             normalizedInspectorName,
             checkDate,
             totalCheckedQty,
-            draftItemsByTaskItemId);
+            valid,
+            skipped);
     }
 
     private static void ValidateInspectionOwnership(
@@ -418,6 +431,12 @@ public sealed class InspectionSubmissionUseCase
         }
     }
 
+    private static bool IsInspectableStage(string stage)
+    {
+        try { return ExpiryStageCalculator.GetStagePriority(stage) > 0; }
+        catch (ArgumentException) { return false; }
+    }
+
     private static void EnsureCleanContext(StoreDbContext context)
     {
         if (context.ChangeTracker.HasChanges())
@@ -431,5 +450,6 @@ public sealed class InspectionSubmissionUseCase
         string InspectorName,
         DateOnly CheckDate,
         int TotalCheckedQty,
-        IReadOnlyDictionary<long, InspectionDraftItem> ItemsByTaskItemId);
+        IReadOnlyDictionary<long, InspectionDraftItem> ItemsByTaskItemId,
+        IReadOnlyList<InspectionSubmissionSkip> Skipped);
 }

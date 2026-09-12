@@ -9,7 +9,8 @@ public enum BulkInspectionSubmissionOutcome
     Submitted,
     AlreadySubmitted,
     RequiresOverStockConfirmation,
-    OverStockConfirmationStale
+    OverStockConfirmationStale,
+    NoValidRows
 }
 
 public sealed record OverStockConfirmation(long TaskId, long ProductId, int EffectiveStockQty, int TotalCheckedQty);
@@ -28,7 +29,8 @@ public sealed record BulkInspectionSubmissionTaskResult(long TaskId, long Inspec
 public sealed record BulkInspectionSubmissionResult(
     BulkInspectionSubmissionOutcome Outcome,
     IReadOnlyList<BulkInspectionSubmissionTaskResult> Tasks,
-    IReadOnlyList<OverStockConfirmation> OverStockConfirmations)
+    IReadOnlyList<OverStockConfirmation> OverStockConfirmations,
+    IReadOnlyList<InspectionSubmissionSkip>? Skipped = null)
 {
     public bool Submitted => Outcome == BulkInspectionSubmissionOutcome.Submitted;
 }
@@ -145,28 +147,32 @@ public sealed class BulkInspectionSubmissionUseCase
     // Default/manual bulk remains on the all-or-nothing path above.
     private BulkInspectionSubmissionResult SubmitPartial(StoreDbContext context, BulkInspectionSubmissionRequest request, long[] taskIds)
     {
+        using var transaction = context.Database.BeginTransaction();
         var submitted = new List<BulkInspectionSubmissionTaskResult>();
         var warnings = new List<OverStockConfirmation>();
+        var skipped = new List<InspectionSubmissionSkip>();
         var confirmations = (request.OverStockConfirmations ?? Array.Empty<OverStockConfirmation>()).ToDictionary(item => item.TaskId);
         foreach (var taskId in taskIds)
         {
-            try
-            {
-                context.ChangeTracker.Clear();
-                var task = context.Tasks.AsNoTracking().SingleOrDefault(item => item.Id == taskId);
-                if (task is null || task.Status != "open") continue;
-                confirmations.TryGetValue(task.Id, out var confirmation);
-                var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, confirmation?.EffectiveStockQty, confirmation?.TotalCheckedQty, true));
-                if (result.Submitted && result.InspectionId is long inspectionId) submitted.Add(new(task.Id, inspectionId));
-                else if (result.RequiresOverStockConfirmation) warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
-            }
-            catch (InvalidOperationException) { context.ChangeTracker.Clear(); }
-            catch (KeyNotFoundException) { context.ChangeTracker.Clear(); }
+            context.ChangeTracker.Clear();
+            var task = context.Tasks.AsNoTracking().SingleOrDefault(item => item.Id == taskId);
+            if (task is null || task.Status != "open") { skipped.Add(new(0, "该任务状态已经变化，本次已跳过，请重新导出最新计划。")); continue; }
+            confirmations.TryGetValue(task.Id, out var confirmation);
+            var result = _submissions.Submit(context, new(task.Id, task.ProductId, request.BusinessDate, request.SubmittedAtUtc, confirmation?.EffectiveStockQty, confirmation?.TotalCheckedQty, true));
+            if (result.Submitted && result.InspectionId is long inspectionId) submitted.Add(new(task.Id, inspectionId));
+            else if (result.RequiresOverStockConfirmation) warnings.Add(new(task.Id, task.ProductId, result.EffectiveStockQty, result.TotalCheckedQty));
+            else if (result.Outcome == InspectionSubmissionOutcome.NoCurrentItems) skipped.AddRange(result.Skipped ?? Array.Empty<InspectionSubmissionSkip>());
         }
         var currentWarnings = warnings.OrderBy(item => item.TaskId).ToArray();
-        return currentWarnings.Length != 0
-            ? new(confirmations.Count == 0 ? BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation : BulkInspectionSubmissionOutcome.OverStockConfirmationStale, submitted.OrderBy(item => item.TaskId).ToArray(), currentWarnings)
-            : new(BulkInspectionSubmissionOutcome.Submitted, submitted.OrderBy(item => item.TaskId).ToArray(), Array.Empty<OverStockConfirmation>());
+        if (currentWarnings.Length != 0)
+        {
+            transaction.Rollback();
+            context.ChangeTracker.Clear();
+            return new(confirmations.Count == 0 ? BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation : BulkInspectionSubmissionOutcome.OverStockConfirmationStale, Array.Empty<BulkInspectionSubmissionTaskResult>(), currentWarnings, skipped);
+        }
+        transaction.Commit();
+        context.ChangeTracker.Clear();
+        return new(submitted.Count == 0 && skipped.Count != 0 ? BulkInspectionSubmissionOutcome.NoValidRows : BulkInspectionSubmissionOutcome.Submitted, submitted.OrderBy(item => item.TaskId).ToArray(), Array.Empty<OverStockConfirmation>(), skipped);
     }
 
     private static BulkInspectionSubmissionResult Rollback(StoreDbContext context, Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction, BulkInspectionSubmissionOutcome outcome, IReadOnlyList<OverStockConfirmation> warnings)
