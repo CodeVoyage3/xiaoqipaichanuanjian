@@ -1,6 +1,8 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using StoreExpiryInspector.Application;
+using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
@@ -11,6 +13,90 @@ namespace StoreExpiryInspector.Tests;
 // S19 replaced private A:Y snapshots with the A:L business contract.
 public sealed class V1F03I02InspectionPlanDraftApplyTests
 {
+    [Fact]
+    public void ColdStartZeroAttentionTaskExportsAndFilledResultRemainsApplicable()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var day = new DateOnly(2026, 9, 12);
+        long importId;
+        using (var seed = database.Open())
+        {
+            var import = new ImportRecord { SourceFileName = "cold-start.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = DateTime.UtcNow, ConfirmedAtUtc = DateTime.UtcNow, Status = ImportStatuses.Succeeded };
+            seed.Imports.Add(import); seed.SaveChanges(); importId = import.Id;
+            var product = new Product { ProductCode = "P-COLD", CurrentName = "冷启动商品", CurrentBarcode = "6900000000014", CategoryCode = "food", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, ExcelStockQty = 5, EffectiveStockQty = 5, EffectiveStockSource = "excel", LastSeenImportId = importId };
+            seed.Products.Add(product); seed.SaveChanges();
+            seed.Batches.Add(new Batch { ProductId = product.Id, ProductionDate = day.AddDays(-101), ExpiryDate = day.AddDays(-1), ShelfLifeValue = 100, ShelfLifeUnit = "D", CurrentArrivalQty = 5, MaxArrivalQty = 5, TrackingStatus = "active", AttentionVersion = 0, HandledAttentionVersion = 0 });
+            seed.SaveChanges();
+            Assert.True(new ColdStartScopeBaselineUseCase().Execute(seed, new("food", ExpiryPolicies.Food, 1, importId, day, DateTime.UtcNow)).Started);
+        }
+
+        var path = Path.Combine(database.Directory, "cold-start-plan.xlsx");
+        using (var export = database.Open())
+        {
+            var task = Assert.Single(export.Tasks);
+            var item = Assert.Single(export.TaskItems);
+            var batch = Assert.Single(export.Batches);
+            Assert.Equal("open", task.Status);
+            Assert.Equal(ExpiryStageCalculator.Expired, item.Stage);
+            Assert.Equal(0, item.AttentionVersion);
+            Assert.Equal(ExpiryStageCalculator.Expired, batch.CurrentStage);
+            Assert.Equal(0, batch.AttentionVersion);
+            Assert.Equal(0, batch.HandledAttentionVersion);
+            Assert.False(item.RequiresReconfirmation);
+            Assert.Equal(1, new TodayInspectionPlanExportUseCase().Execute(export, new(path, [task.Id])).RowCount);
+        }
+
+        SetQuantity(path, "3");
+        using var preview = database.Open();
+        var result = new InspectionPlanDraftApplyUseCase().Preview(preview, path);
+        Assert.True(result.Summary == new InspectionPlanPreviewSummary(1, 1, 1, 1, 0, 0), string.Join(" | ", result.File.Rows.SelectMany(row => row.Errors)));
+        Assert.Empty(result.File.Rows.Single().Errors);
+        Assert.Single(result.ApplicableTaskIds);
+    }
+
+    [Theory]
+    [InlineData("task_closed")]
+    [InlineData("attention_mismatch")]
+    [InlineData("stage_mismatch")]
+    [InlineData("reconfirmation")]
+    [InlineData("stock_zero")]
+    [InlineData("tracking_stopped")]
+    [InlineData("item_missing")]
+    public void PreviewKeepsCurrentFactStaleProtections(string mutation)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var target = SeedCurrentTask(database, new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), new DateOnly(2026, 2, 1));
+        using (var mutate = database.Open())
+        {
+            var product = mutate.Products.Single(value => value.Id == target.ProductId);
+            var batch = mutate.Batches.Single(value => value.Id == target.BatchId);
+            var task = mutate.Tasks.Single(value => value.Id == target.TaskId);
+            var item = mutate.TaskItems.Single(value => value.Id == target.TaskItemId);
+            switch (mutation)
+            {
+                case "task_closed": task.Status = "completed"; task.ClosedAtUtc = DateTime.UtcNow; break;
+                case "attention_mismatch": batch.AttentionVersion++; break;
+                case "stage_mismatch": batch.CurrentStage = ExpiryStageCalculator.Expired; break;
+                case "reconfirmation": item.RequiresReconfirmation = true; break;
+                case "stock_zero": product.EffectiveStockQty = 0; break;
+                case "tracking_stopped": batch.TrackingStatus = "stopped"; break;
+                case "item_missing": mutate.TaskItems.Remove(item); break;
+                default: throw new ArgumentOutOfRangeException(nameof(mutation));
+            }
+            mutate.SaveChanges();
+        }
+
+        var path = CreatePlan(["1"]);
+        try
+        {
+            using var context = database.Open();
+            var row = new InspectionPlanDraftApplyUseCase().Preview(context, path).File.Rows.Single();
+            Assert.Contains(row.Errors, value => value.Contains("状态已经变化", StringComparison.Ordinal));
+            Assert.Null(row.TaskId);
+        }
+        finally { File.Delete(path); }
+    }
+
     [Fact]
     public void ReaderDistinguishesBlankZeroInvalidAndDuplicateBusinessRows()
     {
@@ -94,7 +180,21 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
     }
     private static Cell Cell(int column, uint row, string value) => new() { CellReference = $"{(char)('A' + column - 1)}{row}", DataType = CellValues.InlineString, InlineString = new InlineString(new Text(value)) };
 
-    private static (long BatchId, long TaskItemId) SeedCurrentTask(SqliteTestDatabase database, DateOnly? production, DateOnly expiry, DateOnly? otherProduction)
+    private static void SetQuantity(string path, string value)
+    {
+        using var document = SpreadsheetDocument.Open(path, true);
+        var workbook = document.WorkbookPart?.Workbook ?? throw new InvalidOperationException("Workbook is missing.");
+        var sheet = workbook.Sheets?.Elements<Sheet>().Single() ?? throw new InvalidOperationException("Worksheet is missing.");
+        var worksheet = (WorksheetPart)document.WorkbookPart!.GetPartById(sheet.Id!);
+        var data = worksheet.Worksheet?.GetFirstChild<SheetData>() ?? throw new InvalidOperationException("Sheet data is missing.");
+        var cell = data.Elements<Row>().ElementAt(1).Elements<Cell>().ElementAt(11);
+        cell.DataType = CellValues.InlineString;
+        cell.CellValue = null;
+        cell.InlineString = new InlineString(new Text(value));
+        worksheet.Worksheet.Save();
+    }
+
+    private static (long ProductId, long BatchId, long TaskId, long TaskItemId) SeedCurrentTask(SqliteTestDatabase database, DateOnly? production, DateOnly expiry, DateOnly? otherProduction)
     {
         using var context = database.Open();
         var product = new Product { ProductCode = "P-1", CurrentName = "商品", CategoryCode = "食品", PolicyCode = ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, ExcelStockQty = 5, EffectiveStockQty = 5, EffectiveStockSource = "excel" };
@@ -105,6 +205,6 @@ public sealed class V1F03I02InspectionPlanDraftApplyTests
         context.Batches.AddRange(batches); context.SaveChanges();
         var items = batches.Select(batch => new ProductTaskItem { TaskId = task.Id, ProductId = product.Id, BatchId = batch.Id, Stage = ExpiryStageCalculator.Discount50, AttentionVersion = 1 }).ToArray();
         context.TaskItems.AddRange(items); context.SaveChanges();
-        return (batches[0].Id, items[0].Id);
+        return (product.Id, batches[0].Id, task.Id, items[0].Id);
     }
 }
