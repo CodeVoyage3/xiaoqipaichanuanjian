@@ -1,4 +1,12 @@
-# 2026-09-12 current：S19-T01 GUI BLOCKER R1 REPAIRED / IMPORT GATE RETEST READY
+# 2026-09-12 current：S19-T01 GUI BLOCKER R2 REPAIRED / PARTIAL PREVIEW RETEST READY
+
+- 用户现场 180 批次填 80/空 100 后预览为有效 0、未填写 100、状态变化 80；A～I 停止，状态曾退回 `GUI_BLOCKER_FOUND_R2 / REPAIR_REQUIRED / NOT_ACCEPTED`。
+- 隔离库 180 行逐字段核对证明：合法 open cold-start item 为 attention `0/0`，唯一误杀 predicate 是 `HandledAttentionVersion >= AttentionVersion`。
+- repair=`d754f2fff5bb07d98589d0f3d7269eb155671df6` 只删除该冗余条件，其余 stale 安全门禁保留；真实 cold-start 往返及七类 stale 负例=`13/13 PASS`，Release App build=`0 warning / 0 error`。
+- S19-T01=`R2_REPAIR_IMPLEMENTED / PARTIAL_PREVIEW_GUI_RETEST_READY / NOT_ACCEPTED`；新 GUI 只先重验 `有效80 / 未填写100 / 状态变化0`，PASS 后才继续提交及 A～I；Stage19 不关闭。
+- FULL=`NOT_RUN / NO_FULL`；无 migration/schema/业务规则/Excel A:L/部分提交/UI/版本/Updater/Installer/发布变化；正式数据库=`NO ACCESS`，未 push、未发布。
+
+# 2026-09-12 historical：S19-T01 GUI BLOCKER R1 REPAIRED / IMPORT GATE RETEST READY
 
 - 用户现场在 `180 商品 / 180 批次 / 数据异常 0` 后被导入前 SQLite 快照验证阻断；A～I 停止，旧候选作废。根因为 `PreImportSnapshotService` 最新 migration 白名单漏第 10 条。
 - repair=`536bd4126f137328573eaeafb8579e9ff4701bde`，只同步服务/直接测试白名单并补 migration 10 空库成功用例；直接专项=`23/23 PASS`，Release App build=`0 warning / 0 error`。

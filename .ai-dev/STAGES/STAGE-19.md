@@ -2,9 +2,13 @@
 
 日期：2026-09-12（Asia/Shanghai）
 
-Stage19 = `IN_PROGRESS / S19_T01_IMPORT_GATE_GUI_RETEST_READY / NOT_CLOSED`
+Stage19 = `IN_PROGRESS / S19_T01_PARTIAL_PREVIEW_GUI_RETEST_READY / NOT_CLOSED`
 
-## 2026-09-12 GUI blocker R1
+## 2026-09-12 GUI blocker R2
+
+用户现场 180 批次填写 80/空 100 后被全部 80 行 stale 阻断，状态曾退回 `GUI_BLOCKER_FOUND_R2 / REPAIR_REQUIRED / NOT_ACCEPTED`。隔离库逐字段证明唯一误杀条件为合法 cold-start `HandledAttentionVersion=0 >= AttentionVersion=0`。repair=`d754f2fff5bb07d98589d0f3d7269eb155671df6` 仅删除该冗余门禁，保留 open item、stage/attention 一致、reconfirmation、库存与 tracking 等保护；直接专项 `13/13 PASS`，Release App build `0 warning / 0 error`。新 GUI 先只重验预览 `80/100/0`，PASS 后再继续提交及 A～I；Stage19 不关闭。
+
+## 2026-09-12 GUI blocker R1 historical
 
 用户现场在 180 商品/批次均正常识别后，被漏列 migration 10 的导入前快照白名单误阻断；A～I 已停止，状态曾退回 `GUI_BLOCKER_FOUND / REPAIR_REQUIRED / NOT_ACCEPTED`。最小 repair=`536bd4126f137328573eaeafb8579e9ff4701bde`，直接专项=`23/23 PASS`，Release App build=`0 warning / 0 error`，无 migration/schema/业务/UI/版本/发布链变化。新 GUI 先只重验 180 批次正式导入，PASS 后再恢复 A～I；Stage19 不关闭。
 

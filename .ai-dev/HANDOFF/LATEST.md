@@ -1,4 +1,12 @@
-# 2026-09-12：S19-T01 GUI BLOCKER R1 REPAIRED / IMPORT GATE RETEST READY
+# 2026-09-12：S19-T01 GUI BLOCKER R2 REPAIRED / PARTIAL PREVIEW RETEST READY
+
+用户现场已完成 180 批次首次导入/导出，但填 80、空 100 后预览为有效 0、未填写 100、状态变化 80；A～I 再次停止，状态曾退回 `GUI_BLOCKER_FOUND_R2 / REPAIR_REQUIRED / NOT_ACCEPTED`。
+
+R1 隔离库只读证据：180 行均为 task open、item/batch stage=`expired`、item/batch attention=`0`、handled=`0`、RequiresReconfirmation=false、tracking=active。所有 Resolve stale predicate 逐项统计中，只有 `HandledAttentionVersion >= AttentionVersion` 命中 180；其余为 0。repair=`d754f2fff5bb07d98589d0f3d7269eb155671df6` 只删除该冗余条件，保留合法 open item、stage/attention 一致、reconfirmation、库存、managed 和 tracking 门禁。
+
+真实 cold-start `0/0` 导出→填写→回导与 task closed、attention/stage mismatch、reconfirmation、库存 0、停止跟踪、item 缺失负例合计 `13/13 PASS`；Release App build=`0 warning / 0 error`；FULL=`NOT_RUN / NO_FULL`。当前 `R2_REPAIR_IMPLEMENTED / PARTIAL_PREVIEW_GUI_RETEST_READY / NOT_ACCEPTED`。新 GUI 只先重验有效80/未填写100/状态变化0，PASS 后再提交及继续 A～I。未 push、未发布、正式数据库未访问。
+
+# 2026-09-12 historical：S19-T01 GUI BLOCKER R1 REPAIRED / IMPORT GATE RETEST READY
 
 用户现场在商品 Excel 成功识别 `180 商品 / 180 批次 / 数据异常 0` 后，被“导入前 SQLite 快照未通过验证”阻断，A～I 已立即停止，旧 GUI 候选作废。根因为 `PreImportSnapshotService.RequiredMigrationIds` 漏第 10 条 migration，导致当前库与白名单无法 `SequenceEqual`；不是用户数据或隔离环境问题。
 
