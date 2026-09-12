@@ -1,8 +1,10 @@
-# 2026-09-13：Stage20 / S20-T01 IMPLEMENTATION IN PROGRESS
+# 2026-09-13：S20-T01 REPAIR IMPLEMENTED / RETEST AUTHORIZATION REQUIRED
 
 用户已批准 S20-T01｜Core Release Builder；当前唯一范围是本地候选 Builder、历史 source compatibility contract、receipt schema、一个专项测试文件与 Stage20 治理。基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`，正式工作区历史 `1 modified + 4 untracked` 不触碰。
 
 Version 只校验 Candidate 自身 App/Updater/程序集身份，不覆盖源码 Version；target migrations 只来自 Candidate 的生产 `CurrentSchemaIdentity.Migrations`，并保留 EF `GetMigrations()` 精确等价门禁。成功仍为 `RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`。S20-T02=`NOT_CREATED / NOT_DESIGNED / NOT_IMPLEMENTED`；`FULL=NOT_RUN / NO_FULL`。
+
+首次完整 dry run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 在 `PRODUCTION_REVALIDATION` fail closed：之前的 source/version/schema/archive/RSA-PSS 门禁通过，ISCC/Setup/Asset Freeze 未运行，失败 receipt 保留且 `publishAuthorized=false`。根因是专项误用绑定 testhost 版本的 `PrepareEmbedded`；repair=`80952753e7ff266f9866cba5713a6c500869ddc9` 已直接调用生产 `RevalidateForInstall`，原失败三资产定向复验=`Verified`。不得自动重跑；下一步只等待用户授权一个新的独立 `NOT_FOR_PUBLICATION` dry run。
 
 # 2026-09-13 historical：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 

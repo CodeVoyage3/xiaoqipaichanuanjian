@@ -2,7 +2,7 @@
 
 日期：2026-09-13（Asia/Shanghai）
 
-Stage20 = `IN_PROGRESS / S20-T01_IMPLEMENTATION_AUTHORIZED`
+Stage20 = `IN_PROGRESS / S20-T01_REPAIR_IMPLEMENTED / RETEST_AUTHORIZATION_REQUIRED`
 
 ## 唯一当前任务
 
@@ -16,3 +16,9 @@ Stage20 = `IN_PROGRESS / S20-T01_IMPLEMENTATION_AUTHORIZED`
 - Release Contract 只保存历史 source compatibility；target migrations 只取 Candidate 的 `CurrentSchemaIdentity.Migrations`。
 - 流程固定为 publish → ZIP → archive audit → manifest → production RSA-PSS → reverse verify → production RevalidateForInstall → ISCC → Asset Freeze → receipt。
 - 禁止 push、tag、Release、上传、Quark、Gitee、FULL、GUI、fault rollback 或重新执行 migration9→10 正式 E2E。
+
+## 当前门禁
+
+- 首次且唯一获准 dry run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 在 `PRODUCTION_REVALIDATION` 停止；未进入 ISCC、未生成 Setup，失败 receipt 保留且 `publishAuthorized=false`。
+- 根因是专项误用会绑定 testhost EntryAssembly 版本的 `PrepareEmbedded`；修复 `80952753e7ff266f9866cba5713a6c500869ddc9` 已改为直接调用生产 `RevalidateForInstall`，对原失败 ZIP/manifest/signature 定向复验=`Verified`。
+- 不自动重跑完整 dry run；S20-T01 继续 `NOT_ACCEPTED`，等待用户授权新的独立 run。
