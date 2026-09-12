@@ -153,9 +153,15 @@ try {
 
   $gate = 'SCHEMA_IDENTITY'
   $probe = Join-Path $run 'candidate-identity.json'
+  $candidateSchemaAssembly = Join-Path $publish 'StoreExpiryInspector.UpdateSafety.dll'
+  Require (Test-Path -LiteralPath $candidateSchemaAssembly -PathType Leaf) 'candidate schema identity assembly is missing'
   $env:S20_RELEASE_IDENTITY_PROBE = $probe
-  try { Native-Checked 'candidate identity probe' 'dotnet' @('test',(Join-Path $source 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj'),'-c','Release','--no-restore','-p:NuGetAudit=false','--filter','FullyQualifiedName~ReleaseCandidateBuilderTests.CandidateIdentityProbeUsesProductionSchemaAuthority','--logger','console;verbosity=minimal') $source }
-  finally { Remove-Item Env:S20_RELEASE_IDENTITY_PROBE -ErrorAction SilentlyContinue }
+  $env:S20_RELEASE_CANDIDATE_SCHEMA_ASSEMBLY = $candidateSchemaAssembly
+  try { Native-Checked 'candidate identity probe' 'dotnet' @('test',(Join-Path $builderRoot 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj'),'-c','Release','-p:NuGetAudit=false','--filter','FullyQualifiedName~ReleaseCandidateBuilderTests.CandidateIdentityProbeReadsCandidateAssembly','--logger','console;verbosity=minimal') $builderRoot }
+  finally {
+    Remove-Item Env:S20_RELEASE_IDENTITY_PROBE -ErrorAction SilentlyContinue
+    Remove-Item Env:S20_RELEASE_CANDIDATE_SCHEMA_ASSEMBLY -ErrorAction SilentlyContinue
+  }
   Require (Test-Path -LiteralPath $probe -PathType Leaf) 'candidate identity probe did not produce output'
   $identity = Get-Content -Raw $probe | ConvertFrom-Json
   $receipt.currentSchemaIdentity = @($identity.currentSchemaIdentity)
@@ -219,7 +225,7 @@ try {
   $gate = 'PRODUCTION_REVALIDATION'
   $revalidation = Join-Path $run 'production-revalidation.json'
   $env:S20_RELEASE_ASSET_DIR = $assets; $env:S20_RELEASE_VERSION = $Version; $env:S20_RELEASE_REVALIDATION_RESULT = $revalidation
-  try { Native-Checked 'production RevalidateForInstall' 'dotnet' @('test',(Join-Path $source 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj'),'-c','Release','--no-restore','-p:NuGetAudit=false','--filter','FullyQualifiedName~ReleaseCandidateBuilderTests.ProductionTrustAnchorRevalidatesReleaseCandidate','--logger','console;verbosity=minimal') $source }
+  try { Native-Checked 'production RevalidateForInstall' 'dotnet' @('test',(Join-Path $builderRoot 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj'),'-c','Release','-p:NuGetAudit=false','--filter','FullyQualifiedName~ReleaseCandidateBuilderTests.ProductionTrustAnchorRevalidatesReleaseCandidate','--logger','console;verbosity=minimal') $builderRoot }
   finally { 'S20_RELEASE_ASSET_DIR','S20_RELEASE_VERSION','S20_RELEASE_REVALIDATION_RESULT' | ForEach-Object { Remove-Item "Env:$_" -ErrorAction SilentlyContinue } }
   Require (Test-Path -LiteralPath $revalidation -PathType Leaf) 'production revalidation did not produce output'
   $receipt.productionRevalidateForInstall = (Get-Content -Raw $revalidation | ConvertFrom-Json).outcome

@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.UpdateSafety;
+using System.Runtime.Loader;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Xunit;
 
@@ -23,6 +25,8 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.DoesNotContain("-p:Version", builder, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("git push", builder, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("gh release", builder, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Join-Path $source 'tests\\StoreExpiryInspector.Tests", builder, StringComparison.Ordinal);
+        Assert.Contains("S20_RELEASE_CANDIDATE_SCHEMA_ASSEMBLY", builder, StringComparison.Ordinal);
 
         var releases = contract.RootElement.GetProperty("releases").EnumerateArray().ToArray();
         Assert.Equal(releases.Length, releases.Select(item => item.GetProperty("targetVersion").GetString()).Distinct(StringComparer.Ordinal).Count());
@@ -36,20 +40,45 @@ public sealed class ReleaseCandidateBuilderTests
     }
 
     [Fact]
-    public void CandidateIdentityProbeUsesProductionSchemaAuthority()
+    public void CandidateIdentityProbeReadsCandidateAssembly()
     {
         var output = Environment.GetEnvironmentVariable("S20_RELEASE_IDENTITY_PROBE");
         if (string.IsNullOrWhiteSpace(output)) return;
 
+        var assemblyPath = Path.GetFullPath(Environment.GetEnvironmentVariable("S20_RELEASE_CANDIDATE_SCHEMA_ASSEMBLY")!);
+        Assert.True(File.Exists(assemblyPath));
+        var loadContext = new AssemblyLoadContext("S20 candidate schema probe", isCollectible: true);
+        try
+        {
+            var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
+            Assert.Equal(assemblyPath, assembly.Location, ignoreCase: true);
+            var type = assembly.GetType("StoreExpiryInspector.UpdateSafety.CurrentSchemaIdentity", throwOnError: true)!;
+            var migrations = ((IEnumerable<string>)type.GetProperty("Migrations")!.GetValue(null)!).ToArray();
+            var count = (int)type.GetProperty("Count")!.GetValue(null)!;
+            var latestMigration = (string)type.GetProperty("LastMigration")!.GetValue(null)!;
+            Assert.Equal(migrations.Length, count);
+            Assert.Equal(migrations[^1], latestMigration);
+            File.WriteAllText(output, JsonSerializer.Serialize(new
+            {
+                candidateAssemblyPath = assembly.Location,
+                candidateAssemblySha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(assemblyPath))).ToLowerInvariant(),
+                currentSchemaIdentity = migrations,
+                migrationCount = count,
+                latestMigration
+            }));
+        }
+        finally
+        {
+            loadContext.Unload();
+        }
+    }
+
+    [Fact]
+    public void ProductionEfMigrationsMatchCurrentSchemaIdentity()
+    {
         using var context = new StoreDbContextFactory().CreateDbContext([]);
         var ef = context.Database.GetMigrations().OrderBy(id => id, StringComparer.Ordinal).ToArray();
         Assert.True(ef.SequenceEqual(CurrentSchemaIdentity.Migrations, StringComparer.Ordinal));
-        File.WriteAllText(output, JsonSerializer.Serialize(new
-        {
-            currentSchemaIdentity = CurrentSchemaIdentity.Migrations,
-            migrationCount = CurrentSchemaIdentity.Count,
-            latestMigration = CurrentSchemaIdentity.LastMigration
-        }));
     }
 
     [Fact]
