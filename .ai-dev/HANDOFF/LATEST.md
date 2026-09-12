@@ -1,3 +1,9 @@
+# 2026-09-12：S19-T01 最小 Schema Change 已授权
+
+用户批准继续 S19-T01：第 9 条 migration 保持原样；新增第 10 条，仅把 `CK_batch_baselines_catchup_window` 扩为 `BETWEEN 1 AND 30`，同步 configuration/ModelSnapshot。业务仍严格为 1% 向上取整并 Clamp(1,7)。
+
+兼容专项必须覆盖旧值 `3/7/8/11/30` 原样升级、新值 `1/2/7` 可写、`0/31` 拒绝、非 catchup 必须 NULL、migration `9→10` 无额外漂移，以及既有 Schema Update 保护快照/恢复失败回滚。保留候选与已取得的回导/部分提交 `114/114` 证据；相关代码未再修改时不机械重跑。当前仍 `NOT_ACCEPTED`，技术全绿后等待用户 GUI A～I。
+
 # 2026-09-12：S19-T01 BLOCKED / SCHEMA CHANGE AUTHORIZATION REQUIRED
 
 Sol 在最终冷启动专项中确认现有 SQLite `CK_batch_baselines_catchup_window` 仍限定 `catchup_window_days BETWEEN 3 AND 30`，与 S19 的 1%/min1/max7 合同冲突。isolated 测试=`5/11 PASS，6/11 FAIL`，失败均为该检查约束拒绝 1、2、7 天。
