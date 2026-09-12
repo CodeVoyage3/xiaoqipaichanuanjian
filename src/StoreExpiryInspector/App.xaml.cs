@@ -308,7 +308,7 @@ public partial class App : System.Windows.Application
             migrationsCommand.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId;";
             using var migrationsReader = migrationsCommand.ExecuteReader();
             var migrations = new List<string>(); while (migrationsReader.Read()) migrations.Add(migrationsReader.GetString(0));
-            if (schemaLaunchToken is null && (migrations.Count != 9 || migrations[^1] != "20260901155124_AddPolicyAndBaselineFoundation")) { Shutdown(1); return; }
+            if (schemaLaunchToken is null && !migrations.SequenceEqual(StaticMigrations(), StringComparer.Ordinal)) { Shutdown(1); return; }
             if (schemaLaunchToken is null) UpgradeHealthAck.Write(RuntimeDataRoot.RootDirectory, operationId, Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "unknown", migrations.Count, migrations[^1]);
             else UpgradeHealthAck.WriteSchema(RuntimeDataRoot.RootDirectory, operationId, schemaLaunchToken, Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "unknown", migrations);
             MainWindow?.Close();

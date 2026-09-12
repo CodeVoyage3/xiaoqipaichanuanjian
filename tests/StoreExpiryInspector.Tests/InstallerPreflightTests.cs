@@ -23,18 +23,37 @@ public sealed class InstallerPreflightTests
 
         var result = InstallerPreflight.Check(database.Root);
 
-        Assert.Equal(InstallerPreflightCode.CurrentMigration9Healthy, result.Code);
+        Assert.Equal(InstallerPreflightCode.CurrentSchemaHealthy, result.Code);
+        Assert.Equal("current_schema_healthy", result.CodeName);
+        Assert.True(result.Allowed);
         Assert.Equal(before, Fingerprints(database.Path));
     }
 
     [Fact]
-    public void Older_unknown_and_corrupt_databases_are_blocked()
+    public void Migration9_database_is_older_and_blocked()
     {
         using var database = SyntheticDatabase.Create();
         Execute(database.Path, "DELETE FROM __EFMigrationsHistory WHERE MigrationId=(SELECT MAX(MigrationId) FROM __EFMigrationsHistory);");
-        Assert.Equal(InstallerPreflightCode.OlderSchema, InstallerPreflight.Check(database.Root).Code);
+        var result = InstallerPreflight.Check(database.Root);
+        Assert.Equal(InstallerPreflightCode.OlderSchema, result.Code);
+        Assert.False(result.Allowed);
+    }
+
+    [Fact]
+    public void Future_unknown_and_out_of_order_histories_are_blocked()
+    {
+        using var database = SyntheticDatabase.Create();
         Execute(database.Path, "INSERT INTO __EFMigrationsHistory(MigrationId, ProductVersion) VALUES ('99999999999999_Future', '10.0.0');");
         Assert.Equal(InstallerPreflightCode.NewerOrUnknownSchema, InstallerPreflight.Check(database.Root).Code);
+
+        Execute(database.Path, "DELETE FROM __EFMigrationsHistory WHERE MigrationId='99999999999999_Future'; UPDATE __EFMigrationsHistory SET MigrationId='20260826120000_OutOfOrder' WHERE MigrationId='20260826152131_AddImportPersistence';");
+        Assert.Equal(InstallerPreflightCode.NewerOrUnknownSchema, InstallerPreflight.Check(database.Root).Code);
+    }
+
+    [Fact]
+    public void Corrupt_database_is_blocked()
+    {
+        using var database = SyntheticDatabase.Create();
         ClearPool(database.Path);
         File.WriteAllBytes(database.Path, [1, 2, 3]);
         Assert.Equal(InstallerPreflightCode.CorruptOrUnreadable, InstallerPreflight.Check(database.Root).Code);

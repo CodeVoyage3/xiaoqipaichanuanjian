@@ -28,6 +28,8 @@ internal sealed record UpdateJournal(string OperationId, string ProductId, strin
 
 internal static class UpdateTransaction
 {
+    internal static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation", "20260912083448_AdjustCatchupWindowConstraint"];
+
     internal static async Task<int> ResumeAsync(string journalPath)
     {
         try { ValidateJournalLocation(journalPath); }
@@ -388,11 +390,19 @@ internal static class UpdateTransaction
         var migrations = UpgradeHealthAck.VerifyDatabase(Path.Combine(journal.DataRoot, "data", "app.db"), includeWal: true);
         if (schema is null)
         {
-            if (migrations.Count != 9 || migrations[^1] != "20260901155124_AddPolicyAndBaselineFoundation") throw new InvalidDataException("Normal application database state is invalid.");
+            RequireCurrentMigrations(migrations);
             return;
         }
         if (!migrations.SequenceEqual(role == NormalLaunchRole.Candidate ? schema.TargetMigrations : schema.SourceMigrations, StringComparer.Ordinal)) throw new InvalidDataException("Normal application database state is invalid.");
     }
+
+    internal static void RequireCurrentMigrations(IReadOnlyList<string> migrations)
+    {
+        if (!migrations.SequenceEqual(CurrentMigrations, StringComparer.Ordinal)) throw new InvalidDataException("Normal application database state is invalid.");
+    }
+
+    internal static bool IsCurrentMigrationAck(int count, string? lastMigration) =>
+        count == CurrentMigrations.Length && lastMigration == CurrentMigrations[^1];
 
     private static SchemaCandidateIdentity WaitForIdentity(UpdateJournal journal, SchemaUpdateJournal schema, TimeSpan timeout)
     {
@@ -706,7 +716,7 @@ internal static class UpdateTransaction
                     migrations.EnumerateArray().Select(item => item.GetString()).SequenceEqual(schema.TargetMigrations, StringComparer.Ordinal) &&
                     root.GetProperty("migrationCount").GetInt32() == schema.TargetMigrations.Count && root.GetProperty("lastMigration").GetString() == schema.TargetMigrations[^1];
             }
-            else valid &= root.TryGetProperty("migrationCount", out var count) && count.GetInt32() == 9 && root.TryGetProperty("lastMigration", out var last) && last.GetString() == "20260901155124_AddPolicyAndBaselineFoundation";
+            else valid &= root.TryGetProperty("migrationCount", out var count) && root.TryGetProperty("lastMigration", out var last) && IsCurrentMigrationAck(count.GetInt32(), last.GetString());
             ValidateAckLocation(journal, path);
             return valid;
         }

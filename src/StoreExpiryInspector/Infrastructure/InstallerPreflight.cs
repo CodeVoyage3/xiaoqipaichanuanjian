@@ -7,7 +7,7 @@ namespace StoreExpiryInspector.Infrastructure;
 public enum InstallerPreflightCode
 {
     NoDatabase = 1,
-    CurrentMigration9Healthy = 2,
+    CurrentSchemaHealthy = 2,
     OlderSchema = 10,
     NewerOrUnknownSchema = 11,
     CorruptOrUnreadable = 12,
@@ -16,11 +16,11 @@ public enum InstallerPreflightCode
 
 public sealed record InstallerPreflightResult(InstallerPreflightCode Code, string Message)
 {
-    public bool Allowed => Code is InstallerPreflightCode.NoDatabase or InstallerPreflightCode.CurrentMigration9Healthy;
+    public bool Allowed => Code is InstallerPreflightCode.NoDatabase or InstallerPreflightCode.CurrentSchemaHealthy;
     public string CodeName => Code switch
     {
         InstallerPreflightCode.NoDatabase => "no_database",
-        InstallerPreflightCode.CurrentMigration9Healthy => "current_migration_9_healthy",
+        InstallerPreflightCode.CurrentSchemaHealthy => "current_schema_healthy",
         InstallerPreflightCode.OlderSchema => "older_schema",
         InstallerPreflightCode.NewerOrUnknownSchema => "newer_or_unknown_schema",
         InstallerPreflightCode.CorruptOrUnreadable => "corrupt_or_unreadable",
@@ -42,7 +42,8 @@ public static class InstallerPreflight
         "20260826155455_AddBackupMetadata",
         "20260826162033_AddSettingsAndAppState",
         "20260826170403_AddLifecycleEvents",
-        "20260901155124_AddPolicyAndBaselineFoundation"
+        "20260901155124_AddPolicyAndBaselineFoundation",
+        "20260912083448_AdjustCatchupWindowConstraint"
     ];
 
     public static bool TryHandle(string[] arguments, out int exitCode)
@@ -142,7 +143,7 @@ public static class InstallerPreflight
                 return new(InstallerPreflightCode.NewerOrUnknownSchema, "检测到异常 migration 记录。为保护原数据，安装已停止。");
             migrations.Add(reader.GetString(0));
         }
-        if (migrations.SequenceEqual(CurrentMigrations, StringComparer.Ordinal)) return new(InstallerPreflightCode.CurrentMigration9Healthy, "现有数据库为当前 migration9，已通过只读检查。");
+        if (migrations.SequenceEqual(CurrentMigrations, StringComparer.Ordinal)) return new(InstallerPreflightCode.CurrentSchemaHealthy, "现有数据库为当前版本 Schema，已通过只读检查。");
         return migrations.Count < CurrentMigrations.Length && migrations.All(CurrentMigrations.Contains)
             ? new(InstallerPreflightCode.OlderSchema, "检测到旧版数据库。为保护原数据，安装已停止。")
             : new(InstallerPreflightCode.NewerOrUnknownSchema, "检测到未知或更高版本数据库。为保护原数据，安装已停止。");

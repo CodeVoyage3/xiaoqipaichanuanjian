@@ -52,7 +52,7 @@ public sealed class SignedUpdatePackageDownloader
     private const int EntryLimit = 4096;
     private static readonly Regex VersionPattern = new("\\A(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\z", RegexOptions.CultureInvariant);
     private static readonly Regex MigrationPattern = new("\\A[0-9]{14}_[^\\s/\\\\]+\\z", RegexOptions.CultureInvariant);
-    private static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation"];
+    private static readonly string[] CurrentMigrations = ["20260826123739_InitialCreate", "20260826130822_AddTasksAndDrafts", "20260826135612_AddInspectionHistory", "20260826142429_AddInventoryAdjustments", "20260826152131_AddImportPersistence", "20260826155455_AddBackupMetadata", "20260826162033_AddSettingsAndAppState", "20260826170403_AddLifecycleEvents", "20260901155124_AddPolicyAndBaselineFoundation", "20260912083448_AdjustCatchupWindowConstraint"];
     private readonly HttpClient _client;
     private readonly UpdatePackageOptions _options;
     private readonly HttpMessageHandler _handler;
