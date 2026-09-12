@@ -1,3 +1,9 @@
+# 2026-09-12：S19-T01 BLOCKED / SCHEMA CHANGE AUTHORIZATION REQUIRED
+
+Sol 在最终冷启动专项中确认现有 SQLite `CK_batch_baselines_catchup_window` 仍限定 `catchup_window_days BETWEEN 3 AND 30`，与 S19 的 1%/min1/max7 合同冲突。isolated 测试=`5/11 PASS，6/11 FAIL`，失败均为该检查约束拒绝 1、2、7 天。
+
+候选 `520bcb9a0557b7a002a6188e5ad2b4f115e66339` 未 push；正式 dirty 工作区、正式数据库、版本与发布链均未触碰。Stage19=`IN_PROGRESS / S19_T01_BLOCKED_SCHEMA_AUTH_REQUIRED`；S19-T01=`BLOCKED / NOT_ACCEPTED`。下一步必须由用户明确决定是否批准一个最小 migration 把约束改为 `1..7`；未授权前停止。
+
 # 2026-09-12：Stage19 / S19-T01 治理冻结并批准派发
 
 fresh fetch 确认 `origin/main=43d82ec3d0a6e09a0964a81ce0d531e888fd5abc`；stable/latest=`v1.0.9`，PRODUCT SOURCE=`9bf4ee71f1579097d816032d867041c0519cf789`；Stage18=`CLOSED` 且不得重开。fresh tree 不存在 Stage19/S19-T01。
