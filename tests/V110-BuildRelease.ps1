@@ -46,6 +46,7 @@ try {
   $publish = Join-Path $run 'publish'; $assets = Join-Path $run 'assets'
   New-Item -ItemType Directory -Force -Path $publish,$assets | Out-Null
   Checked 'restore' { dotnet restore "$root\StoreExpiryInspector.slnx" -p:NuGetAudit=false }
+  Checked 'win-x64 restore' { dotnet restore "$root\src\StoreExpiryInspector\StoreExpiryInspector.csproj" -r win-x64 -p:NuGetAudit=false }
   Checked 'publish' { dotnet publish "$root\src\StoreExpiryInspector\StoreExpiryInspector.csproj" -c Release --no-restore -p:NuGetAudit=false -p:PublishProfile=WinX64 -p:DebugType=None -p:DebugSymbols=false -o $publish }
   Require ((EntryVersion (Join-Path $publish 'StoreExpiryInspector.dll')) -eq '1.1.0.0') 'app version mismatch'
   Require ((EntryVersion (Join-Path $publish 'Updater\StoreExpiryInspector.Updater.dll')) -eq '1.1.0.0') 'updater version mismatch'
