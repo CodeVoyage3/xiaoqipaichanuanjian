@@ -89,18 +89,18 @@ try {
     # The specific Setup process is the assertion boundary.
     $p=Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/LOG=`"$candidateLog`"") -PassThru
     $setupExit=Wait-ExactProcess $p 90 'candidate Setup'
+    Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after installer transaction'
+    $operation=One-Operation $data; $journalPath=Join-Path $operation.FullName 'journal.json'; Require (Test-Path $journalPath) 'cross-schema journal missing'; $journal=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json
+    Require ($journal.OperationId -eq $operation.Name) 'journal operation identity mismatch'; Require ($journal.SourceVersion -eq '1.0.9' -and $journal.TargetVersion -eq '1.1.0') 'journal version identity mismatch'
+    Require (@($journal.Schema.SourceMigrations).Count -eq 9 -and @($journal.Schema.TargetMigrations).Count -eq 10) 'journal migration identity mismatch'
+    $ackPath=Join-Path $operation.FullName 'health-ack.json'; Require (Test-Path $ackPath) 'existing health acknowledgement missing'; $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+    Require ($ack.integrity -eq 'ok' -and $ack.foreignKeys -eq 'ok' -and $ack.coreRead -eq $true -and $ack.uiLoaded -eq $true) 'existing application verification acknowledgement is invalid'
     if($Scenario -eq 'Success'){
       Require ($setupExit -eq 0) "Setup success exit expected 0; actual=$setupExit"
       Require ($journal.Phase -eq 10 -and $journal.Schema.Phase -eq 8) 'completed/candidate-committed terminal missing'
       Require ($ack.version -eq '1.1.0' -and $ack.migrationCount -eq 10) 'candidate acknowledgement identity mismatch'
       [IO.File]::WriteAllText((Join-Path $ResultDirectory 'v110-success.json'),(@{scenario=$Scenario;preDbSha256=$before;postDbSha256=(Hash $db);businessFingerprint=$beforeBusiness;setupExit=$setupExit;operationId=$operation.Name;journalPhase=$journal.Phase;schemaPhase=$journal.Schema.Phase;integrity=$ack.integrity;foreignKeys=$ack.foreignKeys;status='TESTMODE_E2E_COMPLETED'}|ConvertTo-Json))
     } else {
-      Require (Test-Path $db) 'database missing'; $afterBusiness=Write-BusinessFingerprint $db (Join-Path $ResultDirectory 'business-after.txt') 'fingerprint'; Require ($afterBusiness -eq $beforeBusiness) 'business-data fingerprint differs after installer transaction'
-      $operation=One-Operation $data; $journalPath=Join-Path $operation.FullName 'journal.json'; Require (Test-Path $journalPath) 'cross-schema journal missing'; $journal=Get-Content -LiteralPath $journalPath -Raw|ConvertFrom-Json
-      Require ($journal.OperationId -eq $operation.Name) 'journal operation identity mismatch'; Require ($journal.SourceVersion -eq '1.0.9' -and $journal.TargetVersion -eq '1.1.0') 'journal version identity mismatch'
-      Require (@($journal.Schema.SourceMigrations).Count -eq 9 -and @($journal.Schema.TargetMigrations).Count -eq 10) 'journal migration identity mismatch'
-      $ackPath=Join-Path $operation.FullName 'health-ack.json'; Require (Test-Path $ackPath) 'existing health acknowledgement missing'; $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
-      Require ($ack.integrity -eq 'ok' -and $ack.foreignKeys -eq 'ok' -and $ack.coreRead -eq $true -and $ack.uiLoaded -eq $true) 'existing application verification acknowledgement is invalid'
       Require ($setupExit -ne 0) 'fault-injected Setup unexpectedly succeeded'
       Require ($journal.Phase -eq 15 -and $journal.Schema.Phase -eq 16) 'rolled-back terminal missing'
       Require ((Hash $db) -eq $before) 'rollback database SHA256 differs from the source database'
