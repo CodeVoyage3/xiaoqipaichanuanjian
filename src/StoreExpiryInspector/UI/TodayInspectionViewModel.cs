@@ -185,9 +185,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
     public bool IsBusy => IsActionBusy;
-    public bool IsReadingPlan { get => _isReadingPlan; private set { if (_isReadingPlan == value) return; _isReadingPlan = value; OnPropertyChanged(); } }
+    public bool IsReadingPlan { get => _isReadingPlan; private set { if (_isReadingPlan == value) return; _isReadingPlan = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); RefreshCommands(); } }
     public bool HasLoadedTasks => _hasLoadedTasks;
-    public bool CanUseContent => !IsLoadingTasks && !IsActionBusy && !_isBulkSelectionBusy;
+    public bool CanUseContent => !IsLoadingTasks && !IsActionBusy && !IsReadingPlan && !_isBulkSelectionBusy;
     public int SelectedCount => _selectedTaskIds.Count;
     public int CurrentPage => _currentPage;
     public int TotalCount => _totalCount;
@@ -212,9 +212,10 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public bool HasPreviewIssues => PreviewRows.Any(row => row.HasIssue);
     public string PreviewIssueText => _currentPreview is null ? string.Empty : string.Join("　", new[]
     {
-        _currentPreview.Summary.BlankCount > 0 ? $"未填写 {_currentPreview.Summary.BlankCount} 条" : null,
-        _currentPreview.Summary.ErrorCount > 0 ? $"错误 {_currentPreview.Summary.ErrorCount} 条" : null,
-        _currentPreview.Tasks.Count(task => !task.IsApplicable) is var stale && stale > 0 ? $"陈旧/失效 {stale} 条" : null
+        PreviewRows.Count(row => row.StatusText == "未填写") is var blank && blank > 0 ? $"未填写 {blank} 条" : null,
+        PreviewRows.Count(row => row.StatusText == "需要重新导出") is var stale && stale > 0 ? $"状态变化 {stale} 条" : null,
+        PreviewRows.Count(row => row.StatusText == "数据错误") is var invalid && invalid > 0 ? $"填写错误 {invalid} 条" : null,
+        PreviewRows.Count(row => row.StatusText == "可提交") is var valid && valid > 0 ? $"有效 {valid} 条" : null
     }.Where(text => text is not null));
     public string PreviewDetailText => string.Join(Environment.NewLine, PreviewRows.Where(row => row.HasIssue).Select(row => $"第 {row.RowNumber} 行：{row.Reason}"));
     public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
