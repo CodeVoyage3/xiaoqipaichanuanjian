@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:StoreExpiryInspector.UI"
-        Title="排查结果确认" Width="1080" MinWidth="880" MinHeight="380" MaxHeight="620" SizeToContent="Height"
+        Title="排查结果确认" Width="1080" Height="600" MinWidth="880" MinHeight="500" SizeToContent="Manual"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize" UseLayoutRounding="True" SnapsToDevicePixels="True">
     <Window.Resources>
         <ResourceDictionary>
@@ -25,6 +25,11 @@
         </Style>
         <Style x:Key="ConfirmationCellTextStyle" TargetType="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style>
         <Style x:Key="ConfirmationCellCenterTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ConfirmationCellTextStyle}"><Setter Property="HorizontalAlignment" Value="Center"/></Style>
+        <Style x:Key="PreviewFilterRadioStyle" TargetType="RadioButton">
+            <Setter Property="Height" Value="32"/><Setter Property="Padding" Value="12,0"/><Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/><Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton"><Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource HoverSurfaceBrush}"/></Trigger><Trigger Property="IsChecked" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}"/><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}"/><Setter Property="Foreground" Value="{DynamicResource PrimaryActionBrush}"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}"/><Setter TargetName="Chrome" Property="BorderThickness" Value="2"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+        </Style>
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="16">
@@ -35,28 +40,30 @@
             <TextBlock Text="{Binding StatusText}" Margin="0,3,0,0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding PreviewIssueText}" Margin="0,4,0,0" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                <TextBlock Text="显示" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox ItemsSource="{Binding PreviewFilters}" SelectedItem="{Binding SelectedPreviewFilter, Mode=TwoWay}" Width="120" AutomationProperties.Name="筛选排查结果"/>
+                <RadioButton Content="{Binding AllPreviewFilterText}" Command="{Binding PreviewFilterCommand}" CommandParameter="全部" GroupName="PreviewFilter" IsChecked="True" Style="{StaticResource PreviewFilterRadioStyle}" AutomationProperties.Name="显示全部结果"/>
+                <RadioButton Content="{Binding SubmittablePreviewFilterText}" Command="{Binding PreviewFilterCommand}" CommandParameter="可提交" GroupName="PreviewFilter" Style="{StaticResource PreviewFilterRadioStyle}" AutomationProperties.Name="只显示可提交结果"/>
+                <RadioButton Content="{Binding BlankPreviewFilterText}" Command="{Binding PreviewFilterCommand}" CommandParameter="未填写" GroupName="PreviewFilter" Style="{StaticResource PreviewFilterRadioStyle}" AutomationProperties.Name="只显示未填写结果"/>
+                <RadioButton Content="{Binding StalePreviewFilterText}" Command="{Binding PreviewFilterCommand}" CommandParameter="状态变化" GroupName="PreviewFilter" Style="{StaticResource PreviewFilterRadioStyle}" AutomationProperties.Name="只显示状态变化结果"/>
+                <RadioButton Content="{Binding InvalidPreviewFilterText}" Command="{Binding PreviewFilterCommand}" CommandParameter="填写错误" GroupName="PreviewFilter" Style="{StaticResource PreviewFilterRadioStyle}" AutomationProperties.Name="只显示填写错误结果"/>
             </StackPanel>
         </StackPanel>
-        <DataGrid Grid.Row="1" Margin="0,8" MaxHeight="340" ItemsSource="{Binding VisiblePreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
+        <DataGrid Grid.Row="1" Margin="0,8" ItemsSource="{Binding VisiblePreviewRows}" AutoGenerateColumns="False" CanUserAddRows="False"
                   GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}" HeadersVisibility="Column" SelectionUnit="Cell" SelectionMode="Single"
                   EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"
                   AutomationProperties.Name="排查结果确认明细">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="150" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellTextStyle}"/>
-                <DataGridTemplateColumn Header="商品名称" Width="*" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" VerticalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="当前阶段" Width="76" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><ContentControl Content="{Binding}" ContentTemplate="{StaticResource StageBadgeTemplate}" HorizontalAlignment="Center" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                <DataGridTextColumn Header="生产日期" Binding="{Binding ProductionDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
-                <DataGridTextColumn Header="有效日期" Binding="{Binding ExpiryDate}" Width="105" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
-                <DataGridTextColumn Header="本次排查数量" Binding="{Binding CheckedQtyText}" Width="110" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
-                <DataGridTextColumn Header="处理结果" Binding="{Binding ResultText}" Width="88" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
-                <DataGridTemplateColumn Header="原因" Width="240" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding DisplayReason}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayReason}" VerticalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="125" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellTextStyle}"/>
+                <DataGridTemplateColumn Header="商品名称" Width="160" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="当前阶段" Width="72" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><ContentControl Content="{Binding}" ContentTemplate="{StaticResource StageBadgeTemplate}" HorizontalAlignment="Center" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                <DataGridTextColumn Header="生产日期" Binding="{Binding ProductionDate}" Width="90" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
+                <DataGridTextColumn Header="有效日期" Binding="{Binding ExpiryDate}" Width="90" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
+                <DataGridTextColumn Header="本次排查数量" Binding="{Binding CheckedQtyText}" Width="96" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
+                <DataGridTextColumn Header="处理结果" Binding="{Binding ResultText}" Width="84" HeaderStyle="{StaticResource ConfirmationGridCenterHeaderStyle}" ElementStyle="{StaticResource ConfirmationCellCenterTextStyle}"/>
+                <DataGridTemplateColumn Header="原因" Width="*" HeaderStyle="{StaticResource ConfirmationGridHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding DisplayReason}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
             </DataGrid.Columns>
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
-                    <Setter Property="ToolTip" Value="{Binding Reason}"/>
                     <Style.Triggers><DataTrigger Binding="{Binding HasIssue}" Value="True"><Setter Property="Background" Value="#FFFDE7E7"/></DataTrigger></Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>

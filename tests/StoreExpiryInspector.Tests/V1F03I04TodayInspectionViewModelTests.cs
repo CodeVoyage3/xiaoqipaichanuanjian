@@ -617,7 +617,7 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void R4ConfirmationWindowShowsResultReasonAndPreviewFilters()
+    public void R4UiRepairUsesBlueLoadingButtonsAndStableConfirmationLayout()
     {
         var root = FindRepositoryRoot();
         var window = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml"));
@@ -628,14 +628,15 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             .Zip(headers.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
             .All(value => value));
         Assert.Contains("GridLinesVisibility=\"All\"", window, StringComparison.Ordinal);
-        Assert.Contains("SizeToContent=\"Height\"", window, StringComparison.Ordinal);
-        Assert.Contains("MaxHeight=\"620\"", window, StringComparison.Ordinal);
-        Assert.Contains("SizeToContent = System.Windows.SizeToContent.Manual", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml.cs")), StringComparison.Ordinal);
+        Assert.Contains("Height=\"600\"", window, StringComparison.Ordinal);
+        Assert.Contains("SizeToContent=\"Manual\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("SizeToContent =", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "TodayInspectionConfirmationWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("ConfirmationGridHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", window, StringComparison.Ordinal);
-        Assert.Contains("ToolTip\" Value=\"{Binding Reason}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("ToolTip=", window, StringComparison.Ordinal);
         Assert.Contains("PreviewIssueText", window, StringComparison.Ordinal);
-        Assert.Contains("MaxHeight=\"340\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("MaxHeight=\"340\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Width=\"Auto\"", window, StringComparison.Ordinal);
         Assert.Contains("<RowDefinition Height=\"*\"/>", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"不晚于今天\"", window, StringComparison.Ordinal);
         Assert.Contains("HasIssue", window, StringComparison.Ordinal);
@@ -658,8 +659,13 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.DoesNotContain("Header=\"校验状态\"", window, StringComparison.Ordinal);
         Assert.Contains("OwnedWindows.OfType<TodayInspectionConfirmationWindow>().FirstOrDefault(window => window.IsActive) as Window ?? this", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("ItemsSource=\"{Binding VisiblePreviewRows}\"", window, StringComparison.Ordinal);
-        Assert.Contains("ItemsSource=\"{Binding PreviewFilters}\"", window, StringComparison.Ordinal);
-        Assert.Contains("SelectedItem=\"{Binding SelectedPreviewFilter, Mode=TwoWay}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("ItemsSource=\"{Binding PreviewFilters}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("<ComboBox", window, StringComparison.Ordinal);
+        foreach (var filter in new[] { "全部", "可提交", "未填写", "状态变化", "填写错误" })
+            Assert.Contains($"CommandParameter=\"{filter}\"", window, StringComparison.Ordinal);
+        Assert.Equal(5, Count(window, "Style=\"{StaticResource PreviewFilterRadioStyle}\""));
+        Assert.Contains("Background\" Value=\"{DynamicResource SelectedSurfaceBrush}\"", window, StringComparison.Ordinal);
+        Assert.Contains("BorderBrush\" Value=\"{DynamicResource PrimaryActionBrush}\"", window, StringComparison.Ordinal);
         Assert.Contains("Binding=\"{Binding ResultText}\"", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"{Binding DisplayReason}\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("草稿", window, StringComparison.Ordinal);
@@ -668,6 +674,10 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("Text=\"正在读取排查结果…\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("Text=\"数据较多时可能需要一些时间，请勿关闭软件\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("IsIndeterminate=\"True\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("TodayInspectionIndeterminateProgressBarStyle", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Background=\"#E5EAF1\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Background=\"{DynamicResource PrimaryActionBrush}\"", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("Storyboard.TargetProperty=\"(Canvas.Left)\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("Visibility=\"{Binding TodayInspection.IsReadingPlan, Converter={StaticResource BoolToVisibility}}\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("PreviewFailed += ShowTodayPreviewFailure", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml.cs")), StringComparison.Ordinal);
         Assert.Contains("请确认文件未被移动或删除后重试", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs")), StringComparison.Ordinal);
@@ -765,7 +775,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         var originalSummary = vm.PreviewSummaryText;
 
         Assert.Equal(180, vm.VisiblePreviewRows.Count);
-        vm.SelectedPreviewFilter = "有效"; Assert.Single(vm.VisiblePreviewRows);
+        Assert.Equal("全部 180", vm.AllPreviewFilterText);
+        Assert.Equal("可提交 1", vm.SubmittablePreviewFilterText);
+        Assert.Equal("未填写 98", vm.BlankPreviewFilterText);
+        Assert.Equal("状态变化 80", vm.StalePreviewFilterText);
+        Assert.Equal("填写错误 1", vm.InvalidPreviewFilterText);
+        vm.PreviewFilterCommand.Execute("可提交"); Assert.Single(vm.VisiblePreviewRows);
         vm.SelectedPreviewFilter = "未填写"; Assert.Equal(98, vm.VisiblePreviewRows.Count);
         vm.SelectedPreviewFilter = "状态变化"; Assert.Equal(80, vm.VisiblePreviewRows.Count);
         vm.SelectedPreviewFilter = "填写错误"; Assert.Single(vm.VisiblePreviewRows);

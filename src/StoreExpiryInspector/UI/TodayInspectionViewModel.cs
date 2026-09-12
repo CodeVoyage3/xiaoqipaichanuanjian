@@ -153,6 +153,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         PreviewCommand = new RelayCommand(_ => { }, _ => CanUseContent);
         SaveDraftCommand = new RelayCommand(_ => { _ = SaveDraftAsync(); }, _ => CanUseContent && CanSaveDraft);
         SubmitCommand = new RelayCommand(_ => { _ = SubmitAsync(); }, _ => CanUseContent && CanSaveDraft);
+        PreviewFilterCommand = new RelayCommand(filter => SelectedPreviewFilter = filter as string ?? "全部");
     }
 
     public IReadOnlyList<TodayInspectionTaskViewModel> Tasks { get; private set; } = Array.Empty<TodayInspectionTaskViewModel>();
@@ -176,7 +177,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         }
     }
     public ObservableCollection<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
-    public IReadOnlyList<string> PreviewFilters { get; } = ["全部", "有效", "未填写", "状态变化", "填写错误"];
+    public IReadOnlyList<string> PreviewFilters { get; } = ["全部", "可提交", "未填写", "状态变化", "填写错误"];
     public string SelectedPreviewFilter
     {
         get => _selectedPreviewFilter;
@@ -191,7 +192,12 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     }
     public IReadOnlyList<TodayInspectionPreviewRowViewModel> VisiblePreviewRows => SelectedPreviewFilter == "全部"
         ? PreviewRows
-        : PreviewRows.Where(row => row.ResultText == (SelectedPreviewFilter == "有效" ? "可提交" : SelectedPreviewFilter)).ToArray();
+        : PreviewRows.Where(row => row.ResultText == SelectedPreviewFilter).ToArray();
+    public string AllPreviewFilterText => $"全部 {PreviewRows.Count}";
+    public string SubmittablePreviewFilterText => $"可提交 {PreviewRows.Count(row => row.ResultText == "可提交")}";
+    public string BlankPreviewFilterText => $"未填写 {PreviewRows.Count(row => row.ResultText == "未填写")}";
+    public string StalePreviewFilterText => $"状态变化 {PreviewRows.Count(row => row.ResultText == "状态变化")}";
+    public string InvalidPreviewFilterText => $"填写错误 {PreviewRows.Count(row => row.ResultText == "填写错误")}";
     public RelayCommand ReloadCommand { get; }
     public RelayCommand SelectAllCommand { get; }
     public RelayCommand ClearSelectionCommand { get; }
@@ -199,6 +205,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public RelayCommand PreviewCommand { get; }
     public RelayCommand SaveDraftCommand { get; }
     public RelayCommand SubmitCommand { get; }
+    public RelayCommand PreviewFilterCommand { get; }
     public RelayCommand PreviousPageCommand { get; }
     public RelayCommand NextPageCommand { get; }
     public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.FilledItemCount > 0 && task.Readiness.RequiresReconfirmationCount == 0).Select(task => task.TaskId).ToArray() ?? [];
@@ -342,7 +349,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         }
         StatusText = _currentPreview.ApplicableTaskIds.Count == 0 ? "预览完成，但没有可提交的数据。请查看错误或陈旧原因。" : "预览完成，请填写排查人和日期后提交数据。";
         SelectedPreviewFilter = "全部";
-        OnPropertyChanged(nameof(VisiblePreviewRows)); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(CanSaveDraft)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); OnPropertyChanged(nameof(PreviewDetailText));
+        NotifyPreviewDisplayChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(CanSaveDraft)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); OnPropertyChanged(nameof(PreviewDetailText));
     }
 
     public void CancelPreview()
@@ -513,7 +520,8 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         OnPropertyChanged(nameof(CurrentPage)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext));
         await LoadAsync();
     }
-    private void ResetSession() { _currentPreview = null; _draftResult = null; InvalidateSubmissionIntent(); PreviewRows.Clear(); _selectedPreviewFilter = "全部"; OnPropertyChanged(nameof(SelectedPreviewFilter)); OnPropertyChanged(nameof(VisiblePreviewRows)); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); RefreshCommands(); }
+    private void ResetSession() { _currentPreview = null; _draftResult = null; InvalidateSubmissionIntent(); PreviewRows.Clear(); _selectedPreviewFilter = "全部"; OnPropertyChanged(nameof(SelectedPreviewFilter)); NotifyPreviewDisplayChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); RefreshCommands(); }
+    private void NotifyPreviewDisplayChanged() { OnPropertyChanged(nameof(VisiblePreviewRows)); OnPropertyChanged(nameof(AllPreviewFilterText)); OnPropertyChanged(nameof(SubmittablePreviewFilterText)); OnPropertyChanged(nameof(BlankPreviewFilterText)); OnPropertyChanged(nameof(StalePreviewFilterText)); OnPropertyChanged(nameof(InvalidPreviewFilterText)); }
     private void InvalidateSubmissionIntent() { _submissionIntent = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); }
     private void InvalidateDraftOnFormChange() { if (_draftResult is null) return; _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
     private DateTime RequireUtcNow() { var value = _utcNow(); return value.Kind == DateTimeKind.Utc ? value : throw new InvalidOperationException("权威提交时间必须为 UTC。"); }
@@ -537,7 +545,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         PreviewRows.Clear();
         _selectedPreviewFilter = "全部";
         OnPropertyChanged(nameof(SelectedPreviewFilter));
-        OnPropertyChanged(nameof(VisiblePreviewRows));
+        NotifyPreviewDisplayChanged();
         OnPropertyChanged(nameof(HasPreview));
         OnPropertyChanged(nameof(PreviewSummaryText));
         OnPropertyChanged(nameof(DraftStatusText));

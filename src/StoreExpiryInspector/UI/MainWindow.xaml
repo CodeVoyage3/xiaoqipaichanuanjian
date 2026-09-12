@@ -309,6 +309,37 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="TodayInspectionIndeterminateProgressBarStyle" TargetType="ProgressBar">
+            <Setter Property="Width" Value="300" />
+            <Setter Property="Height" Value="6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid Height="{TemplateBinding Height}" ClipToBounds="True" SnapsToDevicePixels="True">
+                            <Border Background="#E5EAF1" CornerRadius="3" />
+                            <Canvas Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" ClipToBounds="True">
+                                <Border x:Name="ActivitySegment" Canvas.Left="-84" Width="84" Height="{TemplateBinding Height}"
+                                        Background="{DynamicResource PrimaryActionBrush}" CornerRadius="3" />
+                            </Canvas>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsIndeterminate" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard Name="IndeterminateStoryboard">
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActivitySegment" Storyboard.TargetProperty="(Canvas.Left)"
+                                                             From="-84" To="300" Duration="0:0:1.1" RepeatBehavior="Forever" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions><StopStoryboard BeginStoryboardName="IndeterminateStoryboard" /></Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="PendingDataGridStyle"
                TargetType="DataGrid"
                BasedOn="{StaticResource {x:Type DataGrid}}">
@@ -2849,7 +2880,7 @@
                                 <StackPanel>
                                     <TextBlock Text="正在读取排查结果…" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                     <TextBlock Text="数据较多时可能需要一些时间，请勿关闭软件" Margin="0,8,0,16" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
-                                    <ProgressBar Height="6" IsIndeterminate="True" AutomationProperties.Name="正在读取排查结果"/>
+                                    <ProgressBar Style="{StaticResource TodayInspectionIndeterminateProgressBarStyle}" IsIndeterminate="True" AutomationProperties.Name="正在读取排查结果"/>
                                 </StackPanel>
                             </Border>
                         </Border>
