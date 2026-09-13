@@ -1,3 +1,13 @@
+# 2026-09-13：S21-T01 IMPLEMENTED / WAITING_SOL_REVIEW
+
+S21-T01 已在隔离分支 codex/s21-t01-slim-setup 完成实施。baseline=c8b8a7db3e4f5740eb7aa22858cc404d84b9f9fa，implementation=a5bd7388d8d4c701a187ab20775275f518a62166。任务仍为 NOT_ACCEPTED；Stage21 不关闭且不创建 S21-T02。
+
+单一 Installer 以明确参数选择 Slim/Full；Slim 不要求或嵌入 ZIP/manifest/signature，Full 历史分支保留。最低直接版本 1.1.0 取身份验证后的真实 EXE 版本，低版本在 payload 复制前停止；preflight 和 downgrade gate 保留。Builder 仍生成四项发行资产，receipt 升级 v3。
+
+直接专项 8/8 PASS；PowerShell parser、JSON、git diff --check 和 Slim/Full 编译均 PASS。完整 win-x64 payload 的 Slim Setup=75,345,382 bytes，比 v1.1.0 Full 149,778,454 bytes 小 49.69%。production C# diff=0；正式工作区历史 dirty 未触碰。
+
+下一步仅由 Sol 独立审查。禁止自动运行最终 Installer E2E；FULL/GUI/rollback/migration E2E/final Installer E2E=NOT_RUN，不 push main。
+
 # 2026-09-13：Stage20 CLOSED / ACCEPTED
 
 S20-T01=`CLOSED / ACCEPTED`，不得重新打开；S20-T02=`CLOSED / ACCEPTED`；Stage20=`CLOSED / ACCEPTED`。Stage20 到此结束，不创建 S20-T03。
