@@ -2,7 +2,7 @@
 
 日期：2026-09-13（Asia/Shanghai）
 
-Stage20 = `IN_PROGRESS / S20-T01_REPAIR_IMPLEMENTED / SOL_REVIEW_PENDING`
+Stage20 = `IN_PROGRESS / S20-T01_CLOSED / WAITING_PRODUCT_DECISION`
 
 ## 唯一当前任务
 
@@ -17,10 +17,11 @@ Stage20 = `IN_PROGRESS / S20-T01_REPAIR_IMPLEMENTED / SOL_REVIEW_PENDING`
 - 流程固定为 publish → ZIP → archive audit → manifest → production RSA-PSS → reverse verify → production RevalidateForInstall → ISCC → Asset Freeze → receipt。
 - 禁止 push、tag、Release、上传、Quark、Gitee、FULL、GUI、fault rollback 或重新执行 migration9→10 正式 E2E。
 
-## 当前门禁
+## S20-T01 最终裁决
 
-- 首次且唯一获准 dry run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 在 `PRODUCTION_REVALIDATION` 停止；未进入 ISCC、未生成 Setup，失败 receipt 保留且 `publishAuthorized=false`。
+- 首次 dry run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 在 `PRODUCTION_REVALIDATION` 停止；未进入 ISCC、未生成 Setup，失败 receipt 保留且 `publishAuthorized=false`。
 - 根因是专项误用会绑定 testhost EntryAssembly 版本的 `PrepareEmbedded`；修复 `80952753e7ff266f9866cba5713a6c500869ddc9` 已改为直接调用生产 `RevalidateForInstall`，对原失败 ZIP/manifest/signature 定向复验=`Verified`。
 - 第二次 dry run `441570f8-a606-4da0-aaec-868995948fc5` 在 `SCHEMA_IDENTITY` fail closed；其 `FAILED` receipt 原样保留，未进入 ZIP、签名、RevalidateForInstall 或 ISCC。
 - 第二次根因是 Builder 错误要求历史 Candidate 包含未来的 S20-T01 probe。返修改为 Builder HEAD 执行 probe，并通过隔离 AssemblyLoadContext 读取 Candidate assembly 的 `CurrentSchemaIdentity`。
-- 历史 Candidate `18230c3e6013a098874426575e6a14c202fa7f7c` 专项读取 migration count=`10`、latest=`20260912083448_AdjustCatchupWindowConstraint`；完整第三次 dry run=`NOT_RUN`。S20-T01 继续 `NOT_ACCEPTED`，等待 Sol review。
+- 最终 Builder=`108f43234d8e767198a2bab10d28d4772593f3a2`；第三次 dry run `ba98a10b-81c9-4024-a769-6e924766a1c0` 使用 Candidate `18230c3e6013a098874426575e6a14c202fa7f7c`，结果=`RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`、mode=`NOT_FOR_PUBLICATION`、production revalidation=`Verified`、archive/signature=`PASS`、ISCC exit=`0`。
+- `S20-T01=CLOSED / ACCEPTED`；production diff=`0`，`FULL/GUI/rollback/migration E2E=NOT_RUN`。Stage20 不关闭，等待产品决定；S20-T02=`NOT_CREATED / NOT_STARTED`。

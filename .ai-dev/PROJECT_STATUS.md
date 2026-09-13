@@ -1,11 +1,13 @@
-# 2026-09-13 current：S20-T01 REPAIR IMPLEMENTED / SOL REVIEW PENDING
+# 2026-09-13 current：S20-T01 CLOSED / ACCEPTED
 
 - 用户已批准 S20-T01｜Core Release Builder；仅实施本地候选构建器、历史兼容合同、receipt schema、最小专项与治理。
 - 基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`；正式工作区历史 `1 modified + 4 untracked` 不触碰。
 - Builder 永久停止于 `RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`；不 push/tag/Release/upload，不修改生产代码、Installer、Updater、CurrentSchemaIdentity、migration 或 v1.1.0 历史资产。
-- 首次 dry run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 保持 `FAILED/PRODUCTION_REVALIDATION`；第二次 `441570f8-a606-4da0-aaec-868995948fc5` 保持 `FAILED/SCHEMA_IDENTITY`。两份 receipt 均不覆盖。
-- Schema 返修由 Builder HEAD probe 反射读取 Candidate assembly；历史 Candidate `18230c3e6013a098874426575e6a14c202fa7f7c` 专项=`1/1 PASS`、migration=`10`、latest=`20260912083448_AdjustCatchupWindowConstraint`。完整第三次 dry run=`NOT_RUN`；S20-T01=`NOT_ACCEPTED / SOL_REVIEW_PENDING`。
+- 首次 run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 保持 `FAILED/PRODUCTION_REVALIDATION`；第二次 `441570f8-a606-4da0-aaec-868995948fc5` 保持 `FAILED/SCHEMA_IDENTITY`。两份失败 receipt 永久保留、不改写。
+- 最终 Builder=`108f43234d8e767198a2bab10d28d4772593f3a2`；成功 run=`ba98a10b-81c9-4024-a769-6e924766a1c0`，Candidate=`18230c3e6013a098874426575e6a14c202fa7f7c`，结果=`RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`、production revalidation=`Verified`、archive/signature=`PASS`、ISCC exit=`0`。
+- Sol 最终技术验收=`PASS`；S20-T01=`CLOSED / ACCEPTED`。production diff=`0`，正式工作区历史 `1 modified + 4 untracked` 原样保留，`FULL/GUI/rollback/migration E2E=NOT_RUN`。
 - S20-T02=`NOT_CREATED / NOT_DESIGNED / NOT_IMPLEMENTED`；`FULL=NOT_RUN / NO_FULL`。
+- Stage20=`IN_PROGRESS / S20-T01_CLOSED / WAITING_PRODUCT_DECISION`；S20-T02=`NOT_CREATED / NOT_STARTED`，不得自动创建。
 
 # 2026-09-13 historical：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 

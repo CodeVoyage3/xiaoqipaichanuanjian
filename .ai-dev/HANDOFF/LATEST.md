@@ -1,4 +1,4 @@
-# 2026-09-13：S20-T01 REPAIR IMPLEMENTED / SOL REVIEW PENDING
+# 2026-09-13：S20-T01 CLOSED / ACCEPTED
 
 用户已批准 S20-T01｜Core Release Builder；当前唯一范围是本地候选 Builder、历史 source compatibility contract、receipt schema、一个专项测试文件与 Stage20 治理。基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`，正式工作区历史 `1 modified + 4 untracked` 不触碰。
 
@@ -6,7 +6,11 @@ Version 只校验 Candidate 自身 App/Updater/程序集身份，不覆盖源码
 
 首次完整 dry run `2de255bb-3f64-41a7-98fa-5e73a8eaeae8` 保持 `FAILED/PRODUCTION_REVALIDATION`；repair=`80952753e7ff266f9866cba5713a6c500869ddc9` 已直接调用生产 `RevalidateForInstall`，原失败三资产定向复验=`Verified`。第二次完整 dry run `441570f8-a606-4da0-aaec-868995948fc5` 保持 `FAILED/SCHEMA_IDENTITY`：Builder 错误要求历史 Candidate 包含未来 S20-T01 probe。两份失败 receipt 均原样保留。
 
-当前最小返修将 probe 固定在 Builder HEAD 测试程序集，接收 Candidate 编译出的 `StoreExpiryInspector.UpdateSafety.dll`，通过隔离 AssemblyLoadContext 反射读取该 assembly 的 `CurrentSchemaIdentity`。历史 Candidate `18230c3e6013a098874426575e6a14c202fa7f7c` 本身不含 probe，专项仍读取 migration count=`10`、latest=`20260912083448_AdjustCatchupWindowConstraint`，assembly SHA256=`064b6084b240748fe3da78b3417d156babfdf38960c683afa87356c3c56a21bd`。未复制 migration 数组、未正则解析源码、未读取 contract target migrations。`ReleaseCandidateBuilderTests=4/4 PASS`；第三次完整 dry run=`NOT_RUN`。S20-T01=`NOT_ACCEPTED / SOL_REVIEW_PENDING`，不得自行复跑。
+当前最小返修将 probe 固定在 Builder HEAD 测试程序集，接收 Candidate 编译出的 `StoreExpiryInspector.UpdateSafety.dll`，通过隔离 AssemblyLoadContext 反射读取该 assembly 的 `CurrentSchemaIdentity`。历史 Candidate `18230c3e6013a098874426575e6a14c202fa7f7c` 本身不含 probe；未复制 migration 数组、未正则解析源码、未读取 contract target migrations。
+
+最终 Builder=`108f43234d8e767198a2bab10d28d4772593f3a2`。第三次完整 dry run `ba98a10b-81c9-4024-a769-6e924766a1c0`=`RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`：mode=`NOT_FOR_PUBLICATION`、publishAuthorized=`false`、source/builder clean、App/Updater=`1.1.0/1.1.0`、migration=`10`、PDB/非 Windows runtime=`0/0`、ZIP entries=`618`、archive/signature=`PASS`、production revalidation=`Verified`、ISCC exit=`0`。receipt=`C:\Users\39037\.codex\visualizations\2026\09\12\01a0973e-5c5a-7273-92d3-e4c3ff6230f0\S20-T01-authorized-final-dry-run\ba98a10b-81c9-4024-a769-6e924766a1c0\release-receipt.json`；持久 stdout/stderr/process transcript 位于同 run 的 `logs`。
+
+Sol 最终技术验收=`PASS`，S20-T01=`CLOSED / ACCEPTED`。production diff=`0`；正式工作区历史 `1 modified + 4 untracked` 原样保留；`FULL/GUI/rollback/migration E2E=NOT_RUN`。Stage20=`IN_PROGRESS / S20-T01_CLOSED / WAITING_PRODUCT_DECISION`，S20-T02=`NOT_CREATED / NOT_STARTED`，不得自动创建。
 
 # 2026-09-13 historical：V1.1.0 RELEASED / PUBLIC REMOTE VERIFIED
 
