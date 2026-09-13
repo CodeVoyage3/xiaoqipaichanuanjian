@@ -5,20 +5,24 @@ param(
   [string]$Scenario = 'CompileContract',
   [string]$CandidatePublish,
   [string]$V110Publish,
-  [string]$V109Publish
+  [string]$V109Publish,
+  [string]$V112Publish
 )
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 function Require([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 function Hash([string]$Path) { (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash }
+function Tree-Fingerprint([string]$Path) {
+  $entries = @(Get-ChildItem -LiteralPath $Path -File -Recurse | Sort-Object FullName | ForEach-Object { "$( [IO.Path]::GetRelativePath($Path, $_.FullName) )|$(Hash $_.FullName)" })
+  [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($entries -join "`n")))
+}
 function New-GuidRoot { $path = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString()); New-Item -ItemType Directory -Path $path | Out-Null; $path }
 function Run([string]$File, [string[]]$Arguments) { $process = Start-Process -FilePath $File -ArgumentList $Arguments -Wait -PassThru; $process.ExitCode }
 
-function Compile-Setup([string]$Publish, [string]$Version, [string]$Minimum, [string]$Mode, [string]$Install, [string]$Data, [string]$Output, [string]$Assets = '') {
+function Compile-Setup([string]$Publish, [string]$Version, [string]$Minimum, [string]$Mode, [string]$Install, [string]$Data, [string]$Output, [string]$Identity, [string]$Assets = '') {
   New-Item -ItemType Directory -Path $Output | Out-Null
-  $id = [guid]::NewGuid().ToString()
-  $arguments = @('/Qp','/DTestMode',"/DTestAppIdKey=$id","/DTestSuffix=$id","/DTestInstallRoot=$Install","/DTestDataRoot=$Data","/DTestMutexName=$id","/DPayloadDir=$Publish","/DOutputDir=$Output","/DTestVersion=$Version","/DMinimumDirectVersion=$Minimum","/D$Mode")
+  $arguments = @('/Qp','/DTestMode',"/DTestAppIdKey=$Identity","/DTestSuffix=$Identity","/DTestInstallRoot=$Install","/DTestDataRoot=$Data","/DTestMutexName=$Identity","/DPayloadDir=$Publish","/DOutputDir=$Output","/DTestVersion=$Version","/DMinimumDirectVersion=$Minimum","/D$Mode")
   if ($Mode -eq 'CROSS_SCHEMA_FULL') {
     $arguments += @("/DUpdatePackage=$(Join-Path $Assets 'package.zip')","/DUpdateManifest=$(Join-Path $Assets 'update-manifest.json')","/DUpdateSignature=$(Join-Path $Assets 'update-manifest.sig')")
   }
@@ -29,9 +33,16 @@ function Compile-Setup([string]$Publish, [string]$Version, [string]$Minimum, [st
   (Get-ChildItem -LiteralPath $Output -Filter '*Setup*.exe' | Select-Object -First 1).FullName
 }
 
-function Install([string]$Setup) { Run $Setup @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') }
+function Install([string]$Setup, [string]$Log) { Run $Setup @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/LOG=$Log") }
 function Initialize-App([string]$Install, [string]$Data) {
   Run (Join-Path $Install 'app\StoreExpiryInspector.exe') @('--data-root', $Data, '--allow-existing-isolated-data-root', '--s9-t01-smoke-exit')
+}
+function Assert-InstalledIdentity([string]$Install, [string]$Identity, [string]$Version) {
+  $actualVersion = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $Install 'app\StoreExpiryInspector.dll')).Version.ToString(3)
+  Require ($actualVersion -eq $Version) "installed App version mismatch: $actualVersion"
+  $registration = Get-ItemProperty -LiteralPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{$Identity}_is1"
+  Require ($registration.DisplayVersion -eq $Version) 'test registration DisplayVersion mismatch'
+  Require ([IO.Path]::GetFullPath([string]$registration.'Inno Setup: App Path') -eq [IO.Path]::GetFullPath($Install)) 'test registration install root mismatch'
 }
 function Business([string]$Database, [string]$Mode, [string]$Evidence) {
   $env:S9_T07_E2E_DATABASE=$Database; $env:S9_T07_E2E_BUSINESS_MODE=$Mode; $env:S9_T07_E2E_BUSINESS_FINGERPRINT=$Evidence
@@ -58,12 +69,13 @@ Require (-not (Test-Path -LiteralPath $result)) 'ResultDirectory must be fresh'
 $resultId = [guid]::Empty
 Require ([guid]::TryParse((Split-Path -Leaf $result), [ref]$resultId)) 'ResultDirectory leaf must be a GUID'
 New-Item -ItemType Directory -Path $result | Out-Null
+$identity = [guid]::NewGuid().ToString()
 
 if ($Scenario -eq 'CompileContract') {
   $payload = Join-Path $result 'payload'; New-Item -ItemType Directory -Path $payload | Out-Null
   [IO.File]::WriteAllText((Join-Path $payload 'StoreExpiryInspector.exe'), 'compile-only payload')
   $install=New-GuidRoot; $data=New-GuidRoot
-  $slim = Compile-Setup $payload '1.1.1' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'slim')
+  $slim = Compile-Setup $payload '1.1.1' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'slim') $identity
   $slimLog = Get-Content -Raw -LiteralPath (Join-Path $result 'slim\iscc.log')
   Require ($slimLog -notmatch 'package\.zip|update-manifest\.json|update-manifest\.sig') 'Slim compile consumed update assets'
   $missingOutput=Join-Path $result 'full-missing-assets'; New-Item -ItemType Directory -Path $missingOutput | Out-Null
@@ -71,7 +83,7 @@ if ($Scenario -eq 'CompileContract') {
   $null=@(& $Compiler @missing (Join-Path $root 'installer\StoreExpiryInspector.iss') 2>&1); Require ($LASTEXITCODE -ne 0) 'Full compile unexpectedly accepted missing update assets'
   $assets=Join-Path $result 'dummy-assets'; New-Item -ItemType Directory -Path $assets | Out-Null
   'zip','manifest','signature' | ForEach-Object -Begin {$names=@('package.zip','update-manifest.json','update-manifest.sig');$i=0} -Process {[IO.File]::WriteAllText((Join-Path $assets $names[$i++]),$_)}
-  $full = Compile-Setup $payload '1.1.0' '1.0.9' 'CROSS_SCHEMA_FULL' $install $data (Join-Path $result 'full') $assets
+  $full = Compile-Setup $payload '1.1.0' '1.0.9' 'CROSS_SCHEMA_FULL' $install $data (Join-Path $result 'full') $identity $assets
   $slimBytes=(Get-Item -LiteralPath $slim).Length; $fullBytes=(Get-Item -LiteralPath $full).Length
   Require ($fullBytes -gt $slimBytes) 'Full Setup did not grow after embedding the three update assets'
   [IO.File]::WriteAllText((Join-Path $result 'result.json'),([ordered]@{scenario=$Scenario;slimSetup=$slim;slimBytes=$slimBytes;slimEmbeddedUpdateAssets=$false;fullMissingAssetsBlocked=$true;fullSetup=$full;fullBytes=$fullBytes;fullEmbeddedUpdateAssets=$true;status='PASS'}|ConvertTo-Json))
@@ -80,45 +92,66 @@ if ($Scenario -eq 'CompileContract') {
 
 Require (Test-Path -LiteralPath (Join-Path $CandidatePublish 'StoreExpiryInspector.exe') -PathType Leaf) 'CandidatePublish is required'
 $install=New-GuidRoot; $data=New-GuidRoot; $database=Join-Path $data 'data\app.db'; $assets=Join-Path $result 'unused-assets'
-$candidate = Compile-Setup $CandidatePublish '1.1.1' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'candidate')
-$summary=[ordered]@{scenario=$Scenario;install=$install;data=$data;candidateSetup=$candidate;status='FAILED'}
+$candidate = Compile-Setup $CandidatePublish '1.1.1' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'candidate') $identity
+$candidateFile=Get-Item -LiteralPath $candidate
+$summary=[ordered]@{scenario=$Scenario;identity=$identity;install=$install;data=$data;candidateSetup=$candidate;candidateSetupBytes=$candidateFile.Length;candidateSetupSha256=Hash $candidate;status='FAILED'}
 
 if ($Scenario -eq 'Fresh') {
-  $summary.setupExit=Install $candidate; Require ($summary.setupExit -eq 0) 'fresh install failed'
+  $summary.setupExit=Install $candidate (Join-Path $result 'candidate-setup.log'); Require ($summary.setupExit -eq 0) 'fresh install failed'
+  Assert-InstalledIdentity $install $identity '1.1.1'
   Require ((Initialize-App $install $data) -eq 0) 'fresh app initialization failed'
-  $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json')
+  $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require (($summary.validation|ConvertFrom-Json).migrationCount -eq 10) 'fresh migration count mismatch'; $summary.postinstallMutex='ISOLATED_SMOKE_PASS'
 }
 elseif ($Scenario -in @('SameSchema','Repair','HigherBlock','UnsafeWalBlock')) {
   Require (Test-Path -LiteralPath (Join-Path $V110Publish 'StoreExpiryInspector.exe') -PathType Leaf) 'V110Publish is required'
-  $previous=Compile-Setup $V110Publish '1.1.0' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'previous')
-  Require ((Install $previous) -eq 0 -and (Initialize-App $install $data) -eq 0) 'v1.1.0 baseline failed'
+  $previous=Compile-Setup $V110Publish '1.1.0' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'previous') $identity
+  Require ((Install $previous (Join-Path $result 'previous-setup.log')) -eq 0 -and (Initialize-App $install $data) -eq 0) 'v1.1.0 baseline failed'
   if ($Scenario -eq 'HigherBlock') { Add-HigherMigration $database }
   elseif ($Scenario -eq 'UnsafeWalBlock') { New-Item -ItemType Directory -Path ($database + '-wal') | Out-Null }
   else {
     $null=Business $database 'seed' (Join-Path $result 'seed.txt')
     $summary.before=Business $database 'fingerprint' (Join-Path $result 'before.txt')
   }
-  $summary.setupExit=Install $candidate
-  if ($Scenario -in @('HigherBlock','UnsafeWalBlock')) { Require ($summary.setupExit -ne 0) "$Scenario unexpectedly succeeded" }
+  $beforeDb=Hash $database; $beforeTree=Tree-Fingerprint $install; $summary.beforeDbSha256=$beforeDb; $summary.beforeInstallTreeSha256=$beforeTree
+  $summary.setupExit=Install $candidate (Join-Path $result 'candidate-setup.log')
+  if ($Scenario -in @('HigherBlock','UnsafeWalBlock')) {
+    Require ($summary.setupExit -ne 0) "$Scenario unexpectedly succeeded"
+    Require ((Hash $database) -eq $beforeDb -and (Tree-Fingerprint $install) -eq $beforeTree) "$Scenario changed protected state"
+    $summary.afterDbSha256=Hash $database; $summary.afterInstallTreeSha256=Tree-Fingerprint $install
+  }
   else {
     Require ($summary.setupExit -eq 0) "$Scenario install failed"
+    Assert-InstalledIdentity $install $identity '1.1.1'
+    Require ((Initialize-App $install $data) -eq 0) "$Scenario installed app smoke failed"; $summary.postinstallMutex='ISOLATED_SMOKE_PASS'
+    Require ((Hash $database) -eq $beforeDb) "$Scenario changed database bytes"
     $summary.after=Business $database 'fingerprint' (Join-Path $result 'after.txt'); Require ($summary.after -eq $summary.before) "$Scenario changed business data"
-    if ($Scenario -eq 'Repair') { $summary.repairExit=Install $candidate; Require ($summary.repairExit -eq 0) 'repair failed' }
-    $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json')
+    if ($Scenario -eq 'Repair') {
+      $repairDb=Hash $database; $repairBusiness=$summary.after
+      $summary.repairExit=Install $candidate (Join-Path $result 'repair-setup.log'); Require ($summary.repairExit -eq 0) 'repair failed'
+      Assert-InstalledIdentity $install $identity '1.1.1'; Require ((Hash $database) -eq $repairDb) 'repair changed database bytes'
+      $summary.repairBusiness=Business $database 'fingerprint' (Join-Path $result 'repair-after.txt'); Require ($summary.repairBusiness -eq $repairBusiness) 'repair changed business data'
+    }
+    $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require (($summary.validation|ConvertFrom-Json).migrationCount -eq 10) "$Scenario migration count mismatch"; $summary.afterDbSha256=Hash $database
   }
 }
 elseif ($Scenario -eq 'LegacyBlock') {
   Require (Test-Path -LiteralPath (Join-Path $V109Publish 'StoreExpiryInspector.exe') -PathType Leaf) 'V109Publish is required'
-  $legacy=Compile-Setup $V109Publish '1.0.9' '1.0.9' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'legacy')
-  Require ((Install $legacy) -eq 0 -and (Initialize-App $install $data) -eq 0) 'v1.0.9 baseline failed'
-  $null=Business $database 'seed' (Join-Path $result 'seed.txt'); $summary.before=Business $database 'fingerprint' (Join-Path $result 'before.txt'); $app=Join-Path $install 'app\StoreExpiryInspector.exe'; $appHash=Hash $app
-  $summary.setupExit=Install $candidate; Require ($summary.setupExit -ne 0) 'legacy direct upgrade unexpectedly succeeded'
-  Require ((Hash $app) -eq $appHash) 'legacy install tree changed'; $summary.after=Business $database 'fingerprint' (Join-Path $result 'after.txt'); Require ($summary.after -eq $summary.before) 'legacy database changed'
+  $legacy=Compile-Setup $V109Publish '1.0.9' '1.0.9' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'legacy') $identity
+  Require ((Install $legacy (Join-Path $result 'legacy-setup.log')) -eq 0 -and (Initialize-App $install $data) -eq 0) 'v1.0.9 baseline failed'
+  Assert-InstalledIdentity $install $identity '1.0.9'; $null=Business $database 'seed' (Join-Path $result 'seed.txt'); $summary.before=Business $database 'fingerprint' (Join-Path $result 'before.txt'); $beforeDb=Hash $database; $beforeTree=Tree-Fingerprint $install; $summary.beforeDbSha256=$beforeDb; $summary.beforeInstallTreeSha256=$beforeTree
+  $summary.setupExit=Install $candidate (Join-Path $result 'candidate-setup.log'); Require ($summary.setupExit -ne 0) 'legacy direct upgrade unexpectedly succeeded'
+  Require ((Tree-Fingerprint $install) -eq $beforeTree -and (Hash $database) -eq $beforeDb) 'legacy protected state changed'; $summary.after=Business $database 'fingerprint' (Join-Path $result 'after.txt'); Require ($summary.after -eq $summary.before) 'legacy business data changed'
+  $summary.afterDbSha256=Hash $database; $summary.afterInstallTreeSha256=Tree-Fingerprint $install
+  $blockLog=Get-Content -Raw -LiteralPath (Join-Path $result 'candidate-setup.log'); Require ($blockLog.Contains('当前安装版本过旧') -and $blockLog.Contains('v1.1.0')) 'legacy bridge-upgrade prompt missing from Setup log'
 }
 elseif ($Scenario -eq 'DowngradeBlock') {
-  $newer=Compile-Setup $CandidatePublish '1.1.2' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'newer')
-  Require ((Install $newer) -eq 0) 'newer baseline failed'; $app=Join-Path $install 'app\StoreExpiryInspector.exe'; $appHash=Hash $app
-  $summary.setupExit=Install $candidate; Require ($summary.setupExit -ne 0) 'downgrade unexpectedly succeeded'; Require ((Hash $app) -eq $appHash) 'downgrade changed install tree'
+  Require (Test-Path -LiteralPath (Join-Path $V112Publish 'StoreExpiryInspector.exe') -PathType Leaf) 'V112Publish is required'
+  $newer=Compile-Setup $V112Publish '1.1.2' '1.1.0' 'SAME_SCHEMA_SLIM' $install $data (Join-Path $result 'newer') $identity
+  Require ((Install $newer (Join-Path $result 'newer-setup.log')) -eq 0 -and (Initialize-App $install $data) -eq 0) 'newer baseline failed'; Assert-InstalledIdentity $install $identity '1.1.2'
+  $null=Business $database 'seed' (Join-Path $result 'seed.txt'); $summary.before=Business $database 'fingerprint' (Join-Path $result 'before.txt'); $beforeDb=Hash $database; $beforeTree=Tree-Fingerprint $install; $summary.beforeDbSha256=$beforeDb; $summary.beforeInstallTreeSha256=$beforeTree
+  $summary.setupExit=Install $candidate (Join-Path $result 'candidate-setup.log'); Require ($summary.setupExit -ne 0) 'downgrade unexpectedly succeeded'; Require ((Tree-Fingerprint $install) -eq $beforeTree -and (Hash $database) -eq $beforeDb) 'downgrade changed protected state'
+  $summary.after=Business $database 'fingerprint' (Join-Path $result 'after.txt'); Require ($summary.after -eq $summary.before) 'downgrade changed business data'
+  $summary.afterDbSha256=Hash $database; $summary.afterInstallTreeSha256=Tree-Fingerprint $install
 }
 
 Assert-NoUpdaterTransaction $data
