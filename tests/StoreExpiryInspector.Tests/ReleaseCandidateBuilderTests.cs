@@ -31,6 +31,11 @@ public sealed class ReleaseCandidateBuilderTests
 
         var releases = contract.RootElement.GetProperty("releases").EnumerateArray().ToArray();
         Assert.Equal(releases.Length, releases.Select(item => item.GetProperty("targetVersion").GetString()).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(2, contract.RootElement.GetProperty("schemaVersion").GetInt32());
+        var historicalSetup = releases.Single().GetProperty("setupCompatibility");
+        Assert.Equal("CROSS_SCHEMA_FULL", historicalSetup.GetProperty("setupMode").GetString());
+        Assert.Equal("1.0.9", historicalSetup.GetProperty("minimumDirectVersion").GetString());
+        Assert.True(historicalSetup.GetProperty("crossSchemaAllowed").GetBoolean());
 
         using var schema = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools", "release", "release-receipt.schema.json")));
         var required = schema.RootElement.GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
@@ -38,7 +43,10 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Contains("builderSourceClean", required);
         Assert.Contains("mode", required);
         Assert.Contains("publishAuthorized", required);
-        Assert.Equal(2, schema.RootElement.GetProperty("properties").GetProperty("schemaVersion").GetProperty("const").GetInt32());
+        Assert.Contains("setupMode", required);
+        Assert.Contains("minimumDirectSetupVersion", required);
+        Assert.Contains("embeddedUpdateAssets", required);
+        Assert.Equal(3, schema.RootElement.GetProperty("properties").GetProperty("schemaVersion").GetProperty("const").GetInt32());
         var changeImpactRequired = schema.RootElement.GetProperty("properties").GetProperty("changeImpact")
             .GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
         Assert.Contains("baseProductSource", changeImpactRequired);
@@ -51,6 +59,34 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Contains("TEST_ONLY", categories);
         Assert.Contains("UNKNOWN", categories);
         Assert.DoesNotContain("ROLLBACK_EVIDENCE_REUSABLE_PASS", policy.RootElement.GetRawText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SetupCompatibilityProbeRequiresExplicitModeAndValidatesSchemaImpact()
+    {
+        static object Contract(string setupMode, string minimumDirectVersion, bool crossSchemaAllowed, bool accepted = true) => new
+        {
+            setupCompatibility = new { setupMode, minimumDirectVersion, crossSchemaAllowed },
+            schemaEvidence = accepted ? new { status = "ACCEPTED", reference = ".ai-dev/GOVERNANCE/SCHEMA_CHANGE_RELEASE_GATE.md" } : null
+        };
+
+        using var slim = RunSetupModeProbe(new { targetVersion = "1.1.1", schemaChanged = false, contract = Contract("SAME_SCHEMA_SLIM", "1.1.0", false) });
+        Assert.Equal("PASS", slim.RootElement.GetProperty("status").GetString());
+        var slimSetup = slim.RootElement.GetProperty("setupCompatibility");
+        Assert.Equal("SAME_SCHEMA_SLIM", slimSetup.GetProperty("setupMode").GetString());
+        Assert.Equal("1.1.0", slimSetup.GetProperty("minimumDirectSetupVersion").GetString());
+        Assert.False(slimSetup.GetProperty("embeddedUpdateAssets").GetBoolean());
+
+        using var historicalFull = RunSetupModeProbe(new { targetVersion = "1.1.0", schemaChanged = true, contract = Contract("CROSS_SCHEMA_FULL", "1.0.9", true) });
+        Assert.Equal("PASS", historicalFull.RootElement.GetProperty("status").GetString());
+        Assert.True(historicalFull.RootElement.GetProperty("setupCompatibility").GetProperty("embeddedUpdateAssets").GetBoolean());
+
+        using var slimSchemaChange = RunSetupModeProbe(new { targetVersion = "1.1.1", schemaChanged = true, contract = Contract("SAME_SCHEMA_SLIM", "1.1.0", false) });
+        AssertSetupCompatibilityFailed(slimSchemaChange, "schemaChanged");
+        using var fullWithoutSchemaChange = RunSetupModeProbe(new { targetVersion = "1.1.1", schemaChanged = false, contract = Contract("CROSS_SCHEMA_FULL", "1.1.0", true) });
+        AssertSetupCompatibilityFailed(fullWithoutSchemaChange, "schemaChanged");
+        using var unapprovedFull = RunSetupModeProbe(new { targetVersion = "1.1.1", schemaChanged = true, contract = Contract("CROSS_SCHEMA_FULL", "1.1.0", true, accepted: false) });
+        AssertSetupCompatibilityFailed(unapprovedFull, "accepted explicit");
     }
 
     [Fact]
@@ -251,9 +287,15 @@ public sealed class ReleaseCandidateBuilderTests
     private static JsonDocument RunRepositoryProbe(string repository, string previousRelease, string candidateSha) =>
         RunChangeImpactProbe(new { repository, previousRelease, candidateSha });
 
-    private static JsonDocument RunChangeImpactProbe(object input)
+    private static JsonDocument RunChangeImpactProbe(object input) =>
+        RunBuilderProbe(input, "S20T02", "S20_RELEASE_CHANGE_IMPACT_INPUT", "S20_RELEASE_CHANGE_IMPACT_PROBE");
+
+    private static JsonDocument RunSetupModeProbe(object input) =>
+        RunBuilderProbe(input, "S21T01", "S21_RELEASE_SETUP_MODE_INPUT", "S21_RELEASE_SETUP_MODE_PROBE");
+
+    private static JsonDocument RunBuilderProbe(object input, string temporaryName, string inputVariable, string outputVariable)
     {
-        var temporary = Path.Combine(Path.GetTempPath(), "S20T02", Guid.NewGuid().ToString("N"));
+        var temporary = Path.Combine(Path.GetTempPath(), temporaryName, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(temporary);
         try
         {
@@ -274,8 +316,8 @@ public sealed class ReleaseCandidateBuilderTests
             start.ArgumentList.Add("0.0.0");
             start.ArgumentList.Add("-CandidateSha");
             start.ArgumentList.Add(new string('0', 40));
-            start.Environment["S20_RELEASE_CHANGE_IMPACT_INPUT"] = inputPath;
-            start.Environment["S20_RELEASE_CHANGE_IMPACT_PROBE"] = outputPath;
+            start.Environment[inputVariable] = inputPath;
+            start.Environment[outputVariable] = outputPath;
             using var process = Process.Start(start)!;
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
@@ -317,6 +359,13 @@ public sealed class ReleaseCandidateBuilderTests
         var reason = result.RootElement.GetProperty("failureReason").GetString();
         Assert.False(string.IsNullOrWhiteSpace(reason));
         if (reasonFragment is not null) Assert.Contains(reasonFragment, reason!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AssertSetupCompatibilityFailed(JsonDocument result, string reasonFragment)
+    {
+        Assert.Equal("FAILED", result.RootElement.GetProperty("status").GetString());
+        Assert.Equal("SETUP_COMPATIBILITY", result.RootElement.GetProperty("failedGate").GetString());
+        Assert.Contains(reasonFragment, result.RootElement.GetProperty("failureReason").GetString()!, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string CreateProbeRepository()

@@ -5,14 +5,15 @@
   "additionalProperties": false,
   "required": [
     "schemaVersion", "runId", "status", "mode", "version", "candidateSha", "builderSha",
-    "sourceClean", "builderSourceClean", "rid", "selfContained", "appVersion", "updaterVersion",
+    "sourceClean", "builderSourceClean", "rid", "selfContained", "setupMode", "minimumDirectSetupVersion",
+    "embeddedUpdateAssets", "appVersion", "updaterVersion",
     "currentSchemaIdentity", "migrationCount", "latestMigration", "pdbCount", "nonWindowsRuntimeCount",
     "zipEntryCount", "archiveAudit", "productionRevalidateForInstall", "signingAlgorithm",
     "signingFingerprint", "signatureVerified", "authenticodeStatus", "isccExitCode", "assets",
     "changeImpact", "startedAt", "completedAt", "publishAuthorized", "failedGate", "failureReason"
   ],
   "properties": {
-    "schemaVersion": { "const": 2 },
+    "schemaVersion": { "const": 3 },
     "runId": { "type": "string", "format": "uuid" },
     "status": { "enum": ["RUNNING", "FAILED", "RELEASE_CANDIDATE_READY"] },
     "mode": { "enum": ["NOT_FOR_PUBLICATION", "RELEASE_CANDIDATE"] },
@@ -23,6 +24,9 @@
     "builderSourceClean": { "type": ["boolean", "null"] },
     "rid": { "const": "win-x64" },
     "selfContained": { "const": true },
+    "setupMode": { "enum": ["SAME_SCHEMA_SLIM", "CROSS_SCHEMA_FULL", null] },
+    "minimumDirectSetupVersion": { "type": ["string", "null"], "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "embeddedUpdateAssets": { "type": ["boolean", "null"] },
     "appVersion": { "type": ["string", "null"] },
     "updaterVersion": { "type": ["string", "null"] },
     "currentSchemaIdentity": { "type": ["array", "null"], "items": { "type": "string" } },

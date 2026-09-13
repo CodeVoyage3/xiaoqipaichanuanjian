@@ -4,6 +4,18 @@
 #ifndef OutputDir
   #define OutputDir "installer-output"
 #endif
+#ifdef SAME_SCHEMA_SLIM
+  #ifdef CROSS_SCHEMA_FULL
+    #error Define exactly one Setup mode.
+  #endif
+#else
+  #ifndef CROSS_SCHEMA_FULL
+    #error Define exactly one Setup mode: SAME_SCHEMA_SLIM or CROSS_SCHEMA_FULL.
+  #endif
+#endif
+#ifndef MinimumDirectVersion
+  #error MinimumDirectVersion is required.
+#endif
 #define AppIdKey "8F90E64E-5B0D-4FA8-A854-EEA2F4D1EC14"
 #define AppId "{{" + AppIdKey + "}"
 #define AppName "门店效期排查软件"
@@ -37,14 +49,16 @@
   #endif
   #define OutputName "StoreExpiryInspector-Setup-" + AppVersion
 #endif
-#ifndef UpdatePackage
-  #error UpdatePackage must be the frozen StoreExpiryInspector win-x64 zip.
-#endif
-#ifndef UpdateManifest
-  #error UpdateManifest must be the frozen signed update manifest.
-#endif
-#ifndef UpdateSignature
-  #error UpdateSignature must be the frozen update manifest signature.
+#ifdef CROSS_SCHEMA_FULL
+  #ifndef UpdatePackage
+    #error UpdatePackage must be the frozen StoreExpiryInspector win-x64 zip.
+  #endif
+  #ifndef UpdateManifest
+    #error UpdateManifest must be the frozen signed update manifest.
+  #endif
+  #ifndef UpdateSignature
+    #error UpdateSignature must be the frozen update manifest signature.
+  #endif
 #endif
 
 [Setup]
@@ -82,9 +96,11 @@ SetupMutex=StoreExpiryInspector.S9T02.Setup.{#AppIdKey}
 [Files]
 Source: "{#PayloadDir}\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: ShouldInstallPayload
 Source: "{#PayloadDir}\*"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy recursesubdirs createallsubdirs
-Source: "{#UpdatePackage}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
-Source: "{#UpdateManifest}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
-Source: "{#UpdateSignature}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
+#ifdef CROSS_SCHEMA_FULL
+  Source: "{#UpdatePackage}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
+  Source: "{#UpdateManifest}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
+  Source: "{#UpdateSignature}"; DestDir: "{tmp}\StoreExpiryInspector-preflight"; Flags: dontcopy
+#endif
 
 #ifndef TestMode
 [Icons]
@@ -179,6 +195,22 @@ begin
   end;
 end;
 
+function VersionIsOlderThanMinimum(InstalledVersion: String): Boolean;
+var
+  MinimumVersion: String;
+  Index, InstalledPart, MinimumPart: Integer;
+begin
+  Result := False;
+  MinimumVersion := '{#MinimumDirectVersion}';
+  for Index := 0 to 3 do
+  begin
+    InstalledPart := NextVersionPart(InstalledVersion);
+    MinimumPart := NextVersionPart(MinimumVersion);
+    if InstalledPart < MinimumPart then begin Result := True; exit; end;
+    if InstalledPart > MinimumPart then exit;
+  end;
+end;
+
 function IsExistingVersionNewer(): Boolean;
 var
   Version: String;
@@ -220,6 +252,12 @@ begin
      not GetVersionNumbersString(AddBackslash(ExistingInstallRoot) + 'app\StoreExpiryInspector.exe', AppVersion)) then
   begin
     SuppressibleMsgBox('已安装程序树无法验证。为保护程序和数据，安装已停止。', mbError, MB_OK, IDOK);
+    Result := False;
+    exit;
+  end;
+  if WasInstalled and VersionIsOlderThanMinimum(AppVersion) then
+  begin
+    SuppressibleMsgBox('当前安装版本过旧，不能直接升级到 v{#AppVersion}，请先升级到 v{#MinimumDirectVersion} 后再安装。', mbError, MB_OK, IDOK);
     Result := False;
     exit;
   end;
@@ -328,9 +366,11 @@ begin
     exit;
   end;
   ExtractTemporaryFiles('*');
-  ExtractTemporaryFile(ExtractFileName('{#UpdatePackage}'));
-  ExtractTemporaryFile(ExtractFileName('{#UpdateManifest}'));
-  ExtractTemporaryFile(ExtractFileName('{#UpdateSignature}'));
+  #ifdef CROSS_SCHEMA_FULL
+    ExtractTemporaryFile(ExtractFileName('{#UpdatePackage}'));
+    ExtractTemporaryFile(ExtractFileName('{#UpdateManifest}'));
+    ExtractTemporaryFile(ExtractFileName('{#UpdateSignature}'));
+  #endif
   PreflightExe := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\StoreExpiryInspector.exe');
   if not Exec(PreflightExe, '--installer-preflight --data-root "' + ExpandConstant('{#DataRoot}') + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
@@ -339,15 +379,19 @@ begin
   end;
   if ResultCode = 10 then
   begin
-    PackageFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdatePackage}');
-    ManifestFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateManifest}');
-    SignatureFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateSignature}');
-    ResultFile := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\operation.txt');
-    if not Exec(PreflightExe, '--installer-cross-schema --data-root "' + ExpandConstant('{#DataRoot}') + '" --install-root "' + ExistingInstallRoot + '" --package "' + PackageFile + '" --manifest "' + ManifestFile + '" --signature "' + SignatureFile + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
-    begin Result := '旧版数据无法通过安全离线升级验证，安装已停止。'; exit; end;
-    LoadStringFromFile(ResultFile, CrossSchemaOperation);
-    if not IsGuidText(CrossSchemaOperation) then begin Result := '离线升级操作身份无效，安装已停止。'; exit; end;
-    CrossSchemaUpgrade := True;
+    #ifdef CROSS_SCHEMA_FULL
+      PackageFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdatePackage}');
+      ManifestFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateManifest}');
+      SignatureFile := AddBackslash(ExpandConstant('{tmp}\StoreExpiryInspector-preflight')) + ExtractFileName('{#UpdateSignature}');
+      ResultFile := ExpandConstant('{tmp}\StoreExpiryInspector-preflight\operation.txt');
+      if not Exec(PreflightExe, '--installer-cross-schema --data-root "' + ExpandConstant('{#DataRoot}') + '" --install-root "' + ExistingInstallRoot + '" --package "' + PackageFile + '" --manifest "' + ManifestFile + '" --signature "' + SignatureFile + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+      begin Result := '旧版数据无法通过安全离线升级验证，安装已停止。'; exit; end;
+      LoadStringFromFile(ResultFile, CrossSchemaOperation);
+      if not IsGuidText(CrossSchemaOperation) then begin Result := '离线升级操作身份无效，安装已停止。'; exit; end;
+      CrossSchemaUpgrade := True;
+    #else
+      Result := '现有数据库版本过旧，不能由此安装包直接升级。请先安装要求的桥接版本。';
+    #endif
   end
   else if ResultCode = 11 then Result := '检测到未知或更高版本数据库。为保护原数据，安装已停止。'
   else if ResultCode = 12 then Result := '数据库或 WAL 状态不可安全验证。为保护原数据，安装已停止。'
@@ -401,6 +445,7 @@ var
   ResultCode: Integer;
   PreflightExe, PackageFile, ManifestFile, SignatureFile, UpdaterPath, JournalPath: String;
 begin
+  #ifdef CROSS_SCHEMA_FULL
   if (CurStep = ssInstall) and CrossSchemaUpgrade then
   begin
     ReleaseInstallMutexForApplicationLaunch;
@@ -416,6 +461,7 @@ begin
     if not Exec(PreflightExe, '--installer-cross-schema-result --data-root "' + ExpandConstant('{#DataRoot}') + '" --operation "' + CrossSchemaOperation + '" --install-root "' + ExistingInstallRoot + '"', ExpandConstant('{tmp}\StoreExpiryInspector-preflight'), SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
       RaiseException('安全离线升级终态未通过验证，安装已停止。');
   end;
+  #endif
   #ifndef TestMode
   if (CurStep = ssPostInstall) and not WasInstalled then
   begin

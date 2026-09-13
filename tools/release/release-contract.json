@@ -1,10 +1,15 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "releases": [
     {
       "targetVersion": "1.1.0",
       "previousRelease": "v1.0.9",
       "minimumProtocolVersion": 2,
+      "setupCompatibility": {
+        "setupMode": "CROSS_SCHEMA_FULL",
+        "minimumDirectVersion": "1.0.9",
+        "crossSchemaAllowed": true
+      },
       "source": {
         "minVersion": "1.0.9",
         "maxVersion": "1.0.9",

@@ -67,7 +67,7 @@ try {
   $env:V110_RELEASE_ASSET_DIR = $assets
   try { Checked 'production revalidation' { dotnet test "$root\tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj" -c Release --no-restore -p:NuGetAudit=false --filter 'FullyQualifiedName~V110ReleaseAssetTests' --logger 'console;verbosity=minimal' } }
   finally { Remove-Item Env:V110_RELEASE_ASSET_DIR -ErrorAction SilentlyContinue }
-  Checked 'ISCC' { & $Compiler "/DPayloadDir=$publish" "/DOutputDir=$assets" "/DAppVersion=$version" "/DUpdatePackage=$zip" "/DUpdateManifest=$manifest" "/DUpdateSignature=$signature" "$root\installer\StoreExpiryInspector.iss" }
+  Checked 'ISCC' { & $Compiler "/DPayloadDir=$publish" "/DOutputDir=$assets" "/DAppVersion=$version" '/DCROSS_SCHEMA_FULL' '/DMinimumDirectVersion=1.0.9' "/DUpdatePackage=$zip" "/DUpdateManifest=$manifest" "/DUpdateSignature=$signature" "$root\installer\StoreExpiryInspector.iss" }
   $setup = Get-ChildItem -LiteralPath $assets -File -Filter '*Setup*.exe' | Select-Object -First 1
   Require ($null -ne $setup) 'Setup output missing'
   $evidence = [ordered]@{version=$version;productVersion='1.1.0.0';sourceVersion='1.0.9';sourceMigration=$sourceMigration;targetMigrationCount=$targetMigrations.Count;minimumProtocolVersion=2;sourceHead=$head;sourceClean=$true;productionSpkiSha256=$spki;productionRevalidateForInstall='Verified';assets=@(Get-ChildItem -LiteralPath $assets -File | Sort-Object Name | ForEach-Object { [ordered]@{name=$_.Name;bytes=$_.Length;sha256=(Hash $_.FullName)} })}

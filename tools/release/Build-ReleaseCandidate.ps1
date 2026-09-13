@@ -157,6 +157,27 @@ function Get-ChangeImpact([string]$Repository, [string]$PreviousRelease, [string
   $baseSha = Resolve-BaseProductSource $Repository $PreviousRelease $TargetSha
   return Change-ImpactFromEntries $PreviousRelease $baseSha $TargetSha @(Git-ChangeEntries $Repository $baseSha $TargetSha) $Policy
 }
+function Resolve-SetupCompatibility($Contract, [bool]$SchemaChanged, [string]$TargetVersion) {
+  Require ($null -ne $Contract.PSObject.Properties['setupCompatibility']) 'release contract setupCompatibility is missing'
+  $setup = $Contract.setupCompatibility
+  Require ($null -ne $setup.PSObject.Properties['setupMode'] -and $null -ne $setup.PSObject.Properties['minimumDirectVersion'] -and
+    $null -ne $setup.PSObject.Properties['crossSchemaAllowed']) 'setupCompatibility fields are incomplete'
+  Require ($setup.crossSchemaAllowed -is [bool]) 'crossSchemaAllowed must be boolean'
+  $setupMode = [string]$setup.setupMode
+  $minimumDirectVersion = [string]$setup.minimumDirectVersion
+  Require ($setupMode -in @('SAME_SCHEMA_SLIM','CROSS_SCHEMA_FULL')) "unsupported setupMode: $setupMode"
+  Require ($minimumDirectVersion -match '^\d+\.\d+\.\d+$' -and ([Version]$minimumDirectVersion).ToString(3) -eq $minimumDirectVersion -and
+    ([Version]$minimumDirectVersion -le [Version]$TargetVersion)) 'minimumDirectVersion must be an exact three-part version no newer than targetVersion'
+  if ($setupMode -eq 'SAME_SCHEMA_SLIM') {
+    Require (-not $SchemaChanged) 'SAME_SCHEMA_SLIM is forbidden when schemaChanged is true'
+    Require (-not [bool]$setup.crossSchemaAllowed) 'SAME_SCHEMA_SLIM must set crossSchemaAllowed=false'
+  } else {
+    Require $SchemaChanged 'CROSS_SCHEMA_FULL requires schemaChanged=true'
+    Require ([bool]$setup.crossSchemaAllowed) 'CROSS_SCHEMA_FULL must set crossSchemaAllowed=true'
+    Require ($Contract.schemaEvidence.status -eq 'ACCEPTED' -and -not [string]::IsNullOrWhiteSpace([string]$Contract.schemaEvidence.reference)) 'CROSS_SCHEMA_FULL requires an accepted explicit schema compatibility contract'
+  }
+  return [ordered]@{ setupMode=$setupMode; minimumDirectSetupVersion=$minimumDirectVersion; embeddedUpdateAssets=($setupMode -eq 'CROSS_SCHEMA_FULL') }
+}
 function Include-PackageFile([string]$Relative) {
   if ($Relative.EndsWith('.pdb', [StringComparison]::OrdinalIgnoreCase)) { return $false }
   if ($Relative.StartsWith('runtimes/', [StringComparison]::OrdinalIgnoreCase) -and -not $Relative.StartsWith('runtimes/win-x64/', [StringComparison]::OrdinalIgnoreCase)) { return $false }
@@ -222,10 +243,22 @@ if ($env:S20_RELEASE_CHANGE_IMPACT_PROBE -and $env:S20_RELEASE_CHANGE_IMPACT_INP
   [IO.File]::WriteAllText($env:S20_RELEASE_CHANGE_IMPACT_PROBE, ($probeResult | ConvertTo-Json -Depth 12), [Text.UTF8Encoding]::new($false))
   return
 }
+if ($env:S21_RELEASE_SETUP_MODE_PROBE -and $env:S21_RELEASE_SETUP_MODE_INPUT) {
+  try {
+    $probeInput = Get-Content -Raw $env:S21_RELEASE_SETUP_MODE_INPUT | ConvertFrom-Json
+    $setup = Resolve-SetupCompatibility $probeInput.contract ([bool]$probeInput.schemaChanged) ([string]$probeInput.targetVersion)
+    $probeResult = [ordered]@{ status='PASS'; failedGate=$null; setupCompatibility=$setup; failureReason=$null }
+  } catch {
+    $probeResult = [ordered]@{ status='FAILED'; failedGate='SETUP_COMPATIBILITY'; setupCompatibility=$null; failureReason=$_.Exception.Message }
+  }
+  [IO.File]::WriteAllText($env:S21_RELEASE_SETUP_MODE_PROBE, ($probeResult | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+  return
+}
 
 $receipt = [ordered]@{
-  schemaVersion = 2; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
+  schemaVersion = 3; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
   builderSha = $null; sourceClean = $null; builderSourceClean = $null; rid = 'win-x64'; selfContained = $true
+  setupMode = $null; minimumDirectSetupVersion = $null; embeddedUpdateAssets = $null
   appVersion = $null; updaterVersion = $null; currentSchemaIdentity = $null; migrationCount = $null; latestMigration = $null
   pdbCount = $null; nonWindowsRuntimeCount = $null; zipEntryCount = $null; archiveAudit = $null
   productionRevalidateForInstall = $null; signingAlgorithm = $null; signingFingerprint = $null; signatureVerified = $null
@@ -318,6 +351,11 @@ try {
   $receipt.changeImpact.schemaChanged = $schemaChanged
   $receipt.changeImpact.schemaEvidenceDisposition = if ($schemaChanged -and -not $contract.schemaEvidence) { 'NEW_SCHEMA_DISPOSITION_REQUIRED' } else { 'INHERIT_EXISTING_EVIDENCE' }
   $receipt.changeImpact.schemaEvidenceReference = $evidenceReference
+  $setupCompatibility = Resolve-SetupCompatibility $contract $schemaChanged $Version
+  $receipt.setupMode = $setupCompatibility.setupMode
+  $receipt.minimumDirectSetupVersion = $setupCompatibility.minimumDirectSetupVersion
+  $receipt.embeddedUpdateAssets = $setupCompatibility.embeddedUpdateAssets
+  Write-Receipt
 
   $gate = 'ZIP'
   $zip = Join-Path $assets "StoreExpiryInspector-$Version-win-x64.zip"
@@ -378,7 +416,9 @@ try {
   Require (Test-Path -LiteralPath $Compiler -PathType Leaf) 'ISCC is unavailable; configure STORE_EXPIRY_ISCC'
   $setup = Join-Path $assets "StoreExpiryInspector-Setup-$Version.exe"
   $stdout = Join-Path $logs 'iscc.stdout.log'; $stderr = Join-Path $logs 'iscc.stderr.log'; $processReceipt = Join-Path $logs 'iscc-process.json'
-  $isccArguments = @("/DPayloadDir=`"$publish`"","/DOutputDir=`"$assets`"","/DAppVersion=$Version","/DUpdatePackage=`"$zip`"","/DUpdateManifest=`"$manifest`"","/DUpdateSignature=`"$signature`"","`"$(Join-Path $source 'installer\StoreExpiryInspector.iss')`"")
+  $isccArguments = @("/DPayloadDir=`"$publish`"","/DOutputDir=`"$assets`"","/DAppVersion=$Version","/D$($receipt.setupMode)","/DMinimumDirectVersion=$($receipt.minimumDirectSetupVersion)")
+  if ($receipt.embeddedUpdateAssets) { $isccArguments += @("/DUpdatePackage=`"$zip`"","/DUpdateManifest=`"$manifest`"","/DUpdateSignature=`"$signature`"") }
+  $isccArguments += "`"$(Join-Path $source 'installer\StoreExpiryInspector.iss')`""
   $process = Start-Process -FilePath $Compiler -ArgumentList $isccArguments -WorkingDirectory $source -RedirectStandardOutput $stdout -RedirectStandardError $stderr -WindowStyle Hidden -PassThru
   [IO.File]::WriteAllText($processReceipt, ([ordered]@{ runId=$runId; pid=$process.Id; startedAt=$process.StartTime.ToUniversalTime().ToString('O'); executable=[IO.Path]::GetFullPath($Compiler); workingDirectory=$source; status='RUNNING' } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
   $process.WaitForExit(); $process.Refresh(); $receipt.isccExitCode = $process.ExitCode
