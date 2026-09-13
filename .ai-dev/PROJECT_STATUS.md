@@ -1,11 +1,12 @@
-# 2026-09-13 current：S21-T01 IMPLEMENTED / WAITING_SOL_REVIEW
+# 2026-09-13 current：Stage21 CLOSED / ACCEPTED
 
-- Stage21 当前只做 S21-T01；S21-T02 不创建。状态为 IMPLEMENTED / DIRECT_CHECKS_PASS / NOT_ACCEPTED。
-- baseline=c8b8a7db3e4f5740eb7aa22858cc404d84b9f9fa；implementation=a5bd7388d8d4c701a187ab20775275f518a62166；正式工作区原有 1 modified + 4 untracked 未触碰。
-- 单一 Installer 显式支持 SAME_SCHEMA_SLIM / CROSS_SCHEMA_FULL；真实 EXE 最低版本门禁和既有 preflight、安全、降级门禁保留。
-- Release Contract 显式授权 setupCompatibility；receipt schemaVersion=3；没有新增正式 v1.1.1 release 条目。
-- 直接专项 8/8 PASS；Slim/Full 编译 PASS；完整 payload Slim Setup=75,345,382 bytes，较 v1.1.0 Full 减少 49.69%；解析和 diff 检查 PASS。
-- production C# diff=0；FULL/GUI/rollback/migration E2E/final Installer E2E=NOT_RUN。下一步等待 Sol review；不 push main、不关闭任务。
+- S21-T01=`CLOSED / ACCEPTED`；Stage21=`CLOSED / ACCEPTED`；S21-T02=`NOT_CREATED / NOT_STARTED`，不得创建。
+- baseline=`c8b8a7db3e4f5740eb7aa22858cc404d84b9f9fa`；final implementation=`e4573ff06b1a6d7f0823be95c7297fcc3a0abdbb`；Sol 最终技术验收=`PASS`。
+- 单一 Installer 显式支持 `SAME_SCHEMA_SLIM` / `CROSS_SCHEMA_FULL`。v1.1.1 Slim：minimumDirectVersion=1.1.0、embeddedUpdateAssets=false；Cross-schema Full 仅在明确兼容合同下允许。
+- S21 direct=12/12 PASS；Harness=5/5 PASS；Installer A–G 全部符合预期；git diff --check=PASS。旧 S16 版本断言精确排除且源文件 unchanged，记入 future cleanup。
+- production Slim Setup=75,345,382 bytes / SHA256 `F5E746D7A01A58DA738C0B19189E1B4CC47FACC0C603EAB99EAEC93129280E27`，较 v1.1.0 Full 减少 49.69%。
+- production App/Updater C#、migration、CurrentSchemaIdentity diff=0；正式工作区历史 1 modified + 4 untracked 原样保留。`FULL=NOT_RUN / NO_FULL`；GUI、fault rollback、migration9→10 正式 E2E、online Updater E2E、backup/restore=`NOT_RUN`。
+- 未泛化未来 Schema upgrade、未缩小在线 ZIP、未修改 self-contained/在线更新协议、未合并 App/Updater runtime；约 83.7 MB runtime 重复=`OUT_OF_SCOPE / FUTURE REVIEW`。
 
 # 2026-09-13 current：Stage20 CLOSED / ACCEPTED
 
