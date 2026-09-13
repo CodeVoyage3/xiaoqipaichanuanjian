@@ -12,7 +12,7 @@
     "changeImpact", "startedAt", "completedAt", "publishAuthorized", "failedGate", "failureReason"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "runId": { "type": "string", "format": "uuid" },
     "status": { "enum": ["RUNNING", "FAILED", "RELEASE_CANDIDATE_READY"] },
     "mode": { "enum": ["NOT_FOR_PUBLICATION", "RELEASE_CANDIDATE"] },
@@ -54,12 +54,50 @@
     "changeImpact": {
       "type": ["object", "null"],
       "additionalProperties": false,
-      "required": ["previousRelease", "schemaChanged", "evidenceDisposition", "evidenceReference"],
+      "required": [
+        "previousRelease", "baseProductSource", "candidateSha", "changedFileCount", "changedFiles",
+        "categories", "unknownFiles", "requiredEvidence", "reusableEvidence", "schemaChanged",
+        "schemaEvidenceDisposition", "schemaEvidenceReference"
+      ],
       "properties": {
         "previousRelease": { "type": "string" },
-        "schemaChanged": { "type": "boolean" },
-        "evidenceDisposition": { "enum": ["INHERIT_EXISTING_EVIDENCE", "NEW_SCHEMA_DISPOSITION_REQUIRED"] },
-        "evidenceReference": { "type": ["string", "null"] }
+        "baseProductSource": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "candidateSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "changedFileCount": { "type": "integer", "minimum": 0 },
+        "changedFiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "categories"],
+            "properties": {
+              "status": { "type": "string", "pattern": "^[ACDMRTUXB][0-9]*$" },
+              "path": { "type": "string" },
+              "oldPath": { "type": "string" },
+              "newPath": { "type": "string" },
+              "categories": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "$ref": "#/$defs/impactCategory" }
+              }
+            },
+            "oneOf": [
+              { "required": ["path"] },
+              { "required": ["oldPath", "newPath"] }
+            ]
+          }
+        },
+        "categories": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/impactCategory" }
+        },
+        "unknownFiles": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "requiredEvidence": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/requiredEvidence" } },
+        "reusableEvidence": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/reusableEvidence" } },
+        "schemaChanged": { "type": ["boolean", "null"] },
+        "schemaEvidenceDisposition": { "enum": ["NOT_EVALUATED", "INHERIT_EXISTING_EVIDENCE", "NEW_SCHEMA_DISPOSITION_REQUIRED"] },
+        "schemaEvidenceReference": { "type": ["string", "null"] }
       }
     },
     "startedAt": { "type": "string", "format": "date-time" },
@@ -67,5 +105,30 @@
     "publishAuthorized": { "const": false },
     "failedGate": { "type": ["string", "null"] },
     "failureReason": { "type": ["string", "null"] }
+  },
+  "$defs": {
+    "impactCategory": {
+      "enum": [
+        "GOVERNANCE_ONLY", "RELEASE_TOOLING", "TEST_ONLY", "UI", "BUSINESS_LOGIC",
+        "EXCEL_IMPORT_EXPORT", "DATABASE_SCHEMA", "BACKUP_RESTORE", "UPDATE_PACKAGE_SECURITY",
+        "UPDATER_TRANSACTION", "INSTALLER", "UNKNOWN"
+      ]
+    },
+    "requiredEvidence": {
+      "enum": [
+        "BACKUP_RESTORE_EVIDENCE_REQUIRED", "BUSINESS_LOGIC_EVIDENCE_REQUIRED",
+        "EXCEL_IMPORT_EXPORT_EVIDENCE_REQUIRED", "GUI_EVIDENCE_REQUIRED", "INSTALLER_EVIDENCE_REQUIRED",
+        "RELEASE_BUILDER_EVIDENCE_REQUIRED", "SCHEMA_RELEASE_EVIDENCE_REQUIRED",
+        "UPDATE_PACKAGE_SECURITY_EVIDENCE_REQUIRED", "UPDATER_TRANSACTION_EVIDENCE_REQUIRED"
+      ]
+    },
+    "reusableEvidence": {
+      "enum": [
+        "BACKUP_RESTORE_EVIDENCE_REUSABLE", "BUSINESS_LOGIC_EVIDENCE_REUSABLE",
+        "EXCEL_IMPORT_EXPORT_EVIDENCE_REUSABLE", "GUI_EVIDENCE_REUSABLE", "INSTALLER_EVIDENCE_REUSABLE",
+        "RELEASE_BUILDER_EVIDENCE_REUSABLE", "SCHEMA_RELEASE_EVIDENCE_REUSABLE",
+        "UPDATE_PACKAGE_SECURITY_EVIDENCE_REUSABLE", "UPDATER_TRANSACTION_EVIDENCE_REUSABLE"
+      ]
+    }
   }
 }

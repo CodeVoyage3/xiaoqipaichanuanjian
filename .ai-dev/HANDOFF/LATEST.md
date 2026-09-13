@@ -1,4 +1,14 @@
-# 2026-09-13：S20-T01 CLOSED / ACCEPTED
+# 2026-09-13：S20-T02 IMPLEMENTED / WAITING SOL REVIEW
+
+S20-T01 永久 `CLOSED / ACCEPTED`。S20-T02 已在 fresh `origin/main=870eb4cb0d38cb196d404bce6b0e70cff8376202` 的独立 worktree 实施，只包含 diff → category → evidence impact → receipt schema v2；production diff=`0`，正式工作区历史 `1 modified + 4 untracked` 未触碰。
+
+previous product source 只由 Release Contract 的 `previousRelease` 解析：必须是本地 annotated tag、peel 为完整 commit、且为 Candidate ancestor。Git diff 使用 raw `-z`，记录稳定排序的 status/path 或 oldPath/newPath/categories；非普通 mode、未知路径、缺失/lightweight tag 或非 ancestor 均 `FAILED / CHANGE_IMPACT`。
+
+实际 `v1.0.9` peel=`9bf4ee71f1579097d816032d867041c0519cf789`，Candidate=`18230c3e6013a098874426575e6a14c202fa7f7c`，61 changed files、0 UNKNOWN；categories=`BACKUP_RESTORE/BUSINESS_LOGIC/DATABASE_SCHEMA/EXCEL_IMPORT_EXPORT/GOVERNANCE_ONLY/INSTALLER/RELEASE_TOOLING/TEST_ONLY/UI/UPDATER_TRANSACTION/UPDATE_PACKAGE_SECURITY`。九类 evidence 均为 REQUIRED，本样本 reusableEvidence 为空；这不表示 evidence 已 PASS，也未自动执行测试。
+
+S20-T02/Builder 直接专项=`3/3 PASS`；`FULL/GUI/rollback/migration E2E/Installer E2E/Updater transaction E2E/完整 Builder dry run=NOT_RUN`。S20-T02=`IMPLEMENTED / NOT_ACCEPTED / WAITING_SOL_REVIEW`；Stage20 不关闭，不 push。
+
+# 2026-09-13 historical：S20-T01 CLOSED / ACCEPTED
 
 用户已批准 S20-T01｜Core Release Builder；当前唯一范围是本地候选 Builder、历史 source compatibility contract、receipt schema、一个专项测试文件与 Stage20 治理。基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`，正式工作区历史 `1 modified + 4 untracked` 不触碰。
 

@@ -40,6 +40,123 @@ function Native-Checked([string]$Name, [string]$File, [string[]]$Arguments, [str
   try { & $File @Arguments; if ($LASTEXITCODE -ne 0) { throw "$Name failed with exit $LASTEXITCODE" } }
   finally { Pop-Location }
 }
+function Native-CapturedText([string]$Name, [string]$File, [string[]]$Arguments, [string]$WorkingDirectory) {
+  $start = [Diagnostics.ProcessStartInfo]::new($File)
+  $start.WorkingDirectory = $WorkingDirectory
+  $start.UseShellExecute = $false
+  $start.RedirectStandardOutput = $true
+  $start.RedirectStandardError = $true
+  foreach ($argument in $Arguments) { $null = $start.ArgumentList.Add($argument) }
+  $process = [Diagnostics.Process]::Start($start)
+  $stdout = $process.StandardOutput.ReadToEndAsync()
+  $stderr = $process.StandardError.ReadToEndAsync()
+  $process.WaitForExit()
+  $output = $stdout.GetAwaiter().GetResult()
+  $errorOutput = $stderr.GetAwaiter().GetResult()
+  if ($process.ExitCode -ne 0) { throw "$Name failed with exit $($process.ExitCode)`n$errorOutput" }
+  return $output
+}
+function Sorted-Unique([string[]]$Values) {
+  $set = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
+  foreach ($value in @($Values)) { if (-not [string]::IsNullOrWhiteSpace($value)) { $null = $set.Add($value) } }
+  return @($set)
+}
+function Path-Categories([string]$Path, $Policy) {
+  if ([string]::IsNullOrWhiteSpace($Path) -or $Path.Contains('\') -or $Path.StartsWith('/', [StringComparison]::Ordinal) -or
+      ($Path.Split('/') | Where-Object { $_ -in @('', '.', '..') })) { return @('UNKNOWN') }
+  $exact = @($Policy.exactRules | Where-Object { [string]::Equals([string]$_.path, $Path, [StringComparison]::Ordinal) })
+  if ($exact.Count -eq 1) { return @(Sorted-Unique @($exact[0].categories)) }
+  if ($exact.Count -gt 1) { return @('UNKNOWN') }
+  $prefixes = @($Policy.prefixRules | Where-Object { $Path.StartsWith([string]$_.prefix, [StringComparison]::Ordinal) })
+  if ($prefixes.Count -gt 0) {
+    $longest = ($prefixes | ForEach-Object { ([string]$_.prefix).Length } | Measure-Object -Maximum).Maximum
+    return @(Sorted-Unique @($prefixes | Where-Object { ([string]$_.prefix).Length -eq $longest } | ForEach-Object { @($_.categories) }))
+  }
+  if ($Path.StartsWith([string]$Policy.testFallback.prefix, [StringComparison]::Ordinal) -and
+      $Path.EndsWith([string]$Policy.testFallback.suffix, [StringComparison]::OrdinalIgnoreCase)) {
+    return @(Sorted-Unique @($Policy.testFallback.categories))
+  }
+  return @('UNKNOWN')
+}
+function Git-ChangeEntries([string]$Repository, [string]$BaseSha, [string]$TargetSha) {
+  $raw = Native-CapturedText 'change impact diff' 'git' @('-c',"safe.directory=$Repository",'-C',$Repository,'diff','--raw','-z','--find-renames','--find-copies',$BaseSha,$TargetSha,'--') $Repository
+  $tokens = $raw.Split([char]0)
+  $entries = @()
+  for ($index = 0; $index -lt $tokens.Length -and -not [string]::IsNullOrEmpty($tokens[$index]);) {
+    $header = $tokens[$index++]
+    $parts = @($header.Split(' ', [StringSplitOptions]::RemoveEmptyEntries))
+    Require ($parts.Count -eq 5 -and $parts[0].StartsWith(':', [StringComparison]::Ordinal)) "malformed raw diff header: $header"
+    $status = $parts[4]
+    Require ($status -match '^[ACDMRTUXB][0-9]*$') "unsupported raw diff status: $status"
+    $entry = [ordered]@{ status=$status; oldMode=$parts[0].Substring(1); newMode=$parts[1] }
+    if ($status[0] -in @('R','C')) {
+      Require ($index + 1 -lt $tokens.Length) 'raw diff rename/copy paths are incomplete'
+      $entry.oldPath = $tokens[$index++]; $entry.newPath = $tokens[$index++]
+    } else {
+      Require ($index -lt $tokens.Length) 'raw diff path is incomplete'
+      $entry.path = $tokens[$index++]
+    }
+    $entries += [pscustomobject]$entry
+  }
+  return @($entries)
+}
+function Resolve-BaseProductSource([string]$Repository, [string]$PreviousRelease, [string]$TargetSha) {
+  Require (-not [string]::IsNullOrWhiteSpace($PreviousRelease)) 'release contract previousRelease is missing'
+  $tagRef = "refs/tags/$PreviousRelease"
+  $tagType = Native-Text 'git' @('-c',"safe.directory=$Repository",'-C',$Repository,'cat-file','-t',$tagRef) $Repository
+  Require ($tagType -eq 'tag') "previousRelease must be an annotated tag: $PreviousRelease"
+  $baseSha = (Native-Text 'git' @('-c',"safe.directory=$Repository",'-C',$Repository,'rev-parse',"$tagRef^{commit}") $Repository).ToLowerInvariant()
+  Require ($baseSha -match '^[0-9a-f]{40}$') "previousRelease did not peel to a full commit SHA: $PreviousRelease"
+  Push-Location $Repository
+  try {
+    & git -c "safe.directory=$Repository" -C $Repository merge-base --is-ancestor $baseSha $TargetSha
+    Require ($LASTEXITCODE -eq 0) "baseProductSource is not an ancestor of CandidateSha: $baseSha"
+  } finally { Pop-Location }
+  return $baseSha
+}
+function Change-ImpactFromEntries([string]$PreviousRelease, [string]$BaseSha, [string]$TargetSha, [object[]]$Entries, $Policy) {
+  $allCategories = @()
+  $unknown = @()
+  $changed = foreach ($entry in @($Entries)) {
+    [string[]]$paths = if ($entry.status[0] -in @('R','C')) { [string]$entry.oldPath; [string]$entry.newPath } else { [string]$entry.path }
+    $pathCategories = [Collections.Generic.List[object]]::new()
+    foreach ($path in $paths) { $pathCategories.Add(@(Path-Categories $path $Policy)) }
+    $categories = @($pathCategories | ForEach-Object { @($_) })
+    $regularModes = @('000000','100644','100755')
+    $specialObject = $entry.status[0] -eq 'T' -or [string]$entry.oldMode -notin $regularModes -or [string]$entry.newMode -notin $regularModes
+    if ($specialObject) { $categories += 'UNKNOWN'; $unknown += $paths }
+    else {
+      for ($pathIndex = 0; $pathIndex -lt $paths.Count; $pathIndex++) {
+        if (@($pathCategories[$pathIndex]) -contains 'UNKNOWN') { $unknown += $paths[$pathIndex] }
+      }
+    }
+    $categories = @(Sorted-Unique $categories)
+    $allCategories += $categories
+    if ($entry.status[0] -in @('R','C')) {
+      [ordered]@{ status=[string]$entry.status; oldPath=[string]$entry.oldPath; newPath=[string]$entry.newPath; categories=$categories }
+    } else {
+      [ordered]@{ status=[string]$entry.status; path=[string]$entry.path; categories=$categories }
+    }
+  }
+  $changed = @($changed | Sort-Object @{Expression={ if ($_.path) { $_.path } else { $_.newPath } }}, @{Expression={$_.oldPath}}, @{Expression={$_.status}} -CaseSensitive)
+  $categories = @(Sorted-Unique $allCategories)
+  $requiredEvidence = @()
+  $reusableEvidence = @()
+  foreach ($mapping in @($Policy.evidenceMappings)) {
+    if ($categories -contains [string]$mapping.category) { $requiredEvidence += [string]$mapping.required }
+    else { $reusableEvidence += [string]$mapping.reusable }
+  }
+  return [ordered]@{
+    previousRelease=$PreviousRelease; baseProductSource=$BaseSha; candidateSha=$TargetSha
+    changedFileCount=$changed.Count; changedFiles=$changed; categories=$categories; unknownFiles=@(Sorted-Unique $unknown)
+    requiredEvidence=@(Sorted-Unique $requiredEvidence); reusableEvidence=@(Sorted-Unique $reusableEvidence)
+    schemaChanged=$null; schemaEvidenceDisposition='NOT_EVALUATED'; schemaEvidenceReference=$null
+  }
+}
+function Get-ChangeImpact([string]$Repository, [string]$PreviousRelease, [string]$TargetSha, $Policy) {
+  $baseSha = Resolve-BaseProductSource $Repository $PreviousRelease $TargetSha
+  return Change-ImpactFromEntries $PreviousRelease $baseSha $TargetSha @(Git-ChangeEntries $Repository $baseSha $TargetSha) $Policy
+}
 function Include-PackageFile([string]$Relative) {
   if ($Relative.EndsWith('.pdb', [StringComparison]::OrdinalIgnoreCase)) { return $false }
   if ($Relative.StartsWith('runtimes/', [StringComparison]::OrdinalIgnoreCase) -and -not $Relative.StartsWith('runtimes/win-x64/', [StringComparison]::OrdinalIgnoreCase)) { return $false }
@@ -89,8 +206,25 @@ function Audit-Archive([string]$Path) {
 }
 function Authenticode([string]$Path) { (Get-AuthenticodeSignature -LiteralPath $Path).Status.ToString() }
 
+$changeImpactPolicy = Get-Content -Raw (Join-Path $PSScriptRoot 'change-impact-policy.json') | ConvertFrom-Json
+if ($env:S20_RELEASE_CHANGE_IMPACT_PROBE -and $env:S20_RELEASE_CHANGE_IMPACT_INPUT) {
+  try {
+    $probeInput = Get-Content -Raw $env:S20_RELEASE_CHANGE_IMPACT_INPUT | ConvertFrom-Json
+    $impact = if ($probeInput.entries) {
+      Change-ImpactFromEntries ([string]$probeInput.previousRelease) ([string]$probeInput.baseProductSource) ([string]$probeInput.candidateSha) @($probeInput.entries) $changeImpactPolicy
+    } else {
+      Get-ChangeImpact ([string]$probeInput.repository) ([string]$probeInput.previousRelease) ([string]$probeInput.candidateSha) $changeImpactPolicy
+    }
+    $probeResult = [ordered]@{ status=if (@($impact.unknownFiles).Count -eq 0) { 'PASS' } else { 'FAILED' }; failedGate=if (@($impact.unknownFiles).Count -eq 0) { $null } else { 'CHANGE_IMPACT' }; changeImpact=$impact; failureReason=if (@($impact.unknownFiles).Count -eq 0) { $null } else { 'one or more changed paths have UNKNOWN impact' } }
+  } catch {
+    $probeResult = [ordered]@{ status='FAILED'; failedGate='CHANGE_IMPACT'; changeImpact=$null; failureReason=$_.Exception.Message }
+  }
+  [IO.File]::WriteAllText($env:S20_RELEASE_CHANGE_IMPACT_PROBE, ($probeResult | ConvertTo-Json -Depth 12), [Text.UTF8Encoding]::new($false))
+  return
+}
+
 $receipt = [ordered]@{
-  schemaVersion = 1; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
+  schemaVersion = 2; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
   builderSha = $null; sourceClean = $null; builderSourceClean = $null; rid = 'win-x64'; selfContained = $true
   appVersion = $null; updaterVersion = $null; currentSchemaIdentity = $null; migrationCount = $null; latestMigration = $null
   pdbCount = $null; nonWindowsRuntimeCount = $null; zipEntryCount = $null; archiveAudit = $null
@@ -129,6 +263,13 @@ try {
 
   $gate = 'CANDIDATE_SOURCE'
   Native-Checked 'candidate commit lookup' 'git' @('-c',"safe.directory=$builderRoot",'-C',$builderRoot,'cat-file','-e',"$CandidateSha^{commit}") $builderRoot
+  $gate = 'CHANGE_IMPACT'
+  $receipt.changeImpact = Get-ChangeImpact $builderRoot ([string]$contract.previousRelease) $CandidateSha $changeImpactPolicy
+  $receipt.changeImpact.schemaEvidenceReference = if ($contract.schemaEvidence) { [string]$contract.schemaEvidence.reference } else { $null }
+  Write-Receipt
+  Require (@($receipt.changeImpact.unknownFiles).Count -eq 0) 'one or more changed paths have UNKNOWN impact'
+
+  $gate = 'CANDIDATE_SOURCE'
   Native-Checked 'candidate worktree creation' 'git' @('-c',"safe.directory=$builderRoot",'-C',$builderRoot,'worktree','add','--detach',$source,$CandidateSha) $builderRoot
   $actualSha = (Native-Text 'git' @('-c',"safe.directory=$source",'-C',$source,'rev-parse','HEAD') $source).ToLowerInvariant()
   Require ($actualSha -eq $CandidateSha) 'candidate worktree HEAD does not match CandidateSha'
@@ -174,7 +315,9 @@ try {
   if ($schemaChanged) {
     Require ($contract.schemaEvidence.status -eq 'ACCEPTED' -and (Test-Path -LiteralPath (Join-Path $source $evidenceReference) -PathType Leaf)) 'schema changed without a complete accepted disposition'
   }
-  $receipt.changeImpact = [ordered]@{ previousRelease=[string]$contract.previousRelease; schemaChanged=$schemaChanged; evidenceDisposition=if ($schemaChanged -and -not $contract.schemaEvidence) { 'NEW_SCHEMA_DISPOSITION_REQUIRED' } else { 'INHERIT_EXISTING_EVIDENCE' }; evidenceReference=$evidenceReference }
+  $receipt.changeImpact.schemaChanged = $schemaChanged
+  $receipt.changeImpact.schemaEvidenceDisposition = if ($schemaChanged -and -not $contract.schemaEvidence) { 'NEW_SCHEMA_DISPOSITION_REQUIRED' } else { 'INHERIT_EXISTING_EVIDENCE' }
+  $receipt.changeImpact.schemaEvidenceReference = $evidenceReference
 
   $gate = 'ZIP'
   $zip = Join-Path $assets "StoreExpiryInspector-$Version-win-x64.zip"

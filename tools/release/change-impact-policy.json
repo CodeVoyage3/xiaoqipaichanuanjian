@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    "GOVERNANCE_ONLY",
+    "RELEASE_TOOLING",
+    "TEST_ONLY",
+    "UI",
+    "BUSINESS_LOGIC",
+    "EXCEL_IMPORT_EXPORT",
+    "DATABASE_SCHEMA",
+    "BACKUP_RESTORE",
+    "UPDATE_PACKAGE_SECURITY",
+    "UPDATER_TRANSACTION",
+    "INSTALLER",
+    "UNKNOWN"
+  ],
+  "exactRules": [
+    {
+      "path": "tools/release/release-contract.json",
+      "categories": ["RELEASE_TOOLING", "UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "tools/release/release-receipt.schema.json",
+      "categories": ["RELEASE_TOOLING"]
+    },
+    {
+      "path": "tools/release/change-impact-policy.json",
+      "categories": ["RELEASE_TOOLING"]
+    },
+    {
+      "path": "tools/release/Build-ReleaseCandidate.ps1",
+      "categories": ["RELEASE_TOOLING"]
+    },
+    {
+      "path": "tests/StoreExpiryInspector.Tests/ReleaseCandidateBuilderTests.cs",
+      "categories": ["RELEASE_TOOLING", "TEST_ONLY"]
+    },
+    {
+      "path": "tests/StoreExpiryInspector.Tests/StoreExpiryInspector.Tests.csproj",
+      "categories": ["TEST_ONLY"]
+    },
+    {
+      "path": "tests/V110-BuildRelease.ps1",
+      "categories": ["RELEASE_TOOLING", "TEST_ONLY"]
+    },
+    {
+      "path": "tests/V110-RunInstallerCrossSchema.ps1",
+      "categories": ["TEST_ONLY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/App.xaml",
+      "categories": ["UI"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/App.xaml.cs",
+      "categories": ["BUSINESS_LOGIC", "UI", "UPDATE_PACKAGE_SECURITY", "UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/StoreExpiryInspector.csproj",
+      "categories": ["BACKUP_RESTORE", "BUSINESS_LOGIC", "DATABASE_SCHEMA", "EXCEL_IMPORT_EXPORT", "UI", "UPDATE_PACKAGE_SECURITY", "UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector.Updater/StoreExpiryInspector.Updater.csproj",
+      "categories": ["UPDATE_PACKAGE_SECURITY", "UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector.UpdateSafety/CurrentSchemaIdentity.cs",
+      "categories": ["DATABASE_SCHEMA", "UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Tasks/TodayInspectionPlanExportUseCase.cs",
+      "categories": ["BUSINESS_LOGIC", "EXCEL_IMPORT_EXPORT"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Infrastructure/InstallerPreflight.cs",
+      "categories": ["INSTALLER"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Infrastructure/DatabaseInitializer.cs",
+      "categories": ["DATABASE_SCHEMA"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Infrastructure/StoreDbContext.cs",
+      "categories": ["DATABASE_SCHEMA"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Infrastructure/StoreDbContextFactory.cs",
+      "categories": ["DATABASE_SCHEMA"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Domain/ExpiryStageCalculator.cs",
+      "categories": ["BUSINESS_LOGIC"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Domain/ExpiryPolicyCalculator.cs",
+      "categories": ["BUSINESS_LOGIC"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Domain/ExpiryPolicies.cs",
+      "categories": ["BUSINESS_LOGIC"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Domain/ExpiryManagementStatus.cs",
+      "categories": ["BUSINESS_LOGIC"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Domain/ColdStartDispositions.cs",
+      "categories": ["BUSINESS_LOGIC"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/GitHubReleaseUpdateChecker.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/GiteeManualUpdateChecker.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/PreReleaseTransportHandler.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/ProductionUpdateTrustAnchor.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/SignedUpdatePackageDownloader.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/UpdateCheckRuntime.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/UpdateNetworkDiagnostics.cs",
+      "categories": ["UPDATE_PACKAGE_SECURITY"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/PendingUpdateRecovery.cs",
+      "categories": ["UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/SchemaUpgradeSnapshot.cs",
+      "categories": ["DATABASE_SCHEMA", "UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/UpdateInstallationPreparer.cs",
+      "categories": ["UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/UpdaterLaunch.cs",
+      "categories": ["UPDATER_TRANSACTION"]
+    },
+    {
+      "path": "src/StoreExpiryInspector/Application/Updates/UpgradeHealthAck.cs",
+      "categories": ["UPDATER_TRANSACTION"]
+    }
+  ],
+  "prefixRules": [
+    { "prefix": ".ai-dev/", "categories": ["GOVERNANCE_ONLY"] },
+    { "prefix": "docs/", "categories": ["GOVERNANCE_ONLY"] },
+    { "prefix": "tools/release/", "categories": ["RELEASE_TOOLING"] },
+    { "prefix": "src/StoreExpiryInspector/Properties/PublishProfiles/", "categories": ["RELEASE_TOOLING"] },
+    { "prefix": "src/StoreExpiryInspector/UI/", "categories": ["UI"] },
+    { "prefix": "src/StoreExpiryInspector/Application/Imports/", "categories": ["BUSINESS_LOGIC", "EXCEL_IMPORT_EXPORT"] },
+    { "prefix": "src/StoreExpiryInspector/Infrastructure/Excel/", "categories": ["EXCEL_IMPORT_EXPORT"] },
+    { "prefix": "src/StoreExpiryInspector/Application/Backups/", "categories": ["BACKUP_RESTORE", "BUSINESS_LOGIC"] },
+    { "prefix": "src/StoreExpiryInspector/Infrastructure/Backups/", "categories": ["BACKUP_RESTORE"] },
+    { "prefix": "src/StoreExpiryInspector/Migrations/", "categories": ["DATABASE_SCHEMA"] },
+    { "prefix": "src/StoreExpiryInspector/Infrastructure/Configurations/", "categories": ["DATABASE_SCHEMA"] },
+    { "prefix": "src/StoreExpiryInspector.UpdateSafety/", "categories": ["UPDATE_PACKAGE_SECURITY", "UPDATER_TRANSACTION"] },
+    { "prefix": "src/StoreExpiryInspector.Updater/", "categories": ["UPDATER_TRANSACTION"] },
+    { "prefix": "src/StoreExpiryInspector/Application/Tasks/", "categories": ["BUSINESS_LOGIC"] },
+    { "prefix": "src/StoreExpiryInspector/Application/Reminders/", "categories": ["BUSINESS_LOGIC"] },
+    { "prefix": "src/StoreExpiryInspector/Application/", "categories": ["BUSINESS_LOGIC"] },
+    { "prefix": "src/StoreExpiryInspector/Domain/", "categories": ["BUSINESS_LOGIC", "DATABASE_SCHEMA"] },
+    { "prefix": "installer/", "categories": ["INSTALLER"] }
+  ],
+  "testFallback": {
+    "prefix": "tests/",
+    "suffix": ".cs",
+    "categories": ["TEST_ONLY"]
+  },
+  "evidenceMappings": [
+    { "category": "BACKUP_RESTORE", "required": "BACKUP_RESTORE_EVIDENCE_REQUIRED", "reusable": "BACKUP_RESTORE_EVIDENCE_REUSABLE" },
+    { "category": "BUSINESS_LOGIC", "required": "BUSINESS_LOGIC_EVIDENCE_REQUIRED", "reusable": "BUSINESS_LOGIC_EVIDENCE_REUSABLE" },
+    { "category": "DATABASE_SCHEMA", "required": "SCHEMA_RELEASE_EVIDENCE_REQUIRED", "reusable": "SCHEMA_RELEASE_EVIDENCE_REUSABLE" },
+    { "category": "EXCEL_IMPORT_EXPORT", "required": "EXCEL_IMPORT_EXPORT_EVIDENCE_REQUIRED", "reusable": "EXCEL_IMPORT_EXPORT_EVIDENCE_REUSABLE" },
+    { "category": "INSTALLER", "required": "INSTALLER_EVIDENCE_REQUIRED", "reusable": "INSTALLER_EVIDENCE_REUSABLE" },
+    { "category": "RELEASE_TOOLING", "required": "RELEASE_BUILDER_EVIDENCE_REQUIRED", "reusable": "RELEASE_BUILDER_EVIDENCE_REUSABLE" },
+    { "category": "UI", "required": "GUI_EVIDENCE_REQUIRED", "reusable": "GUI_EVIDENCE_REUSABLE" },
+    { "category": "UPDATE_PACKAGE_SECURITY", "required": "UPDATE_PACKAGE_SECURITY_EVIDENCE_REQUIRED", "reusable": "UPDATE_PACKAGE_SECURITY_EVIDENCE_REUSABLE" },
+    { "category": "UPDATER_TRANSACTION", "required": "UPDATER_TRANSACTION_EVIDENCE_REQUIRED", "reusable": "UPDATER_TRANSACTION_EVIDENCE_REUSABLE" }
+  ]
+}

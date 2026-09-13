@@ -1,4 +1,13 @@
-# 2026-09-13 current：S20-T01 CLOSED / ACCEPTED
+# 2026-09-13 current：S20-T02 IMPLEMENTED / WAITING SOL REVIEW
+
+- S20-T01 永久保持 `CLOSED / ACCEPTED`；Stage20=`IN_PROGRESS / S20-T01_CLOSED / S20-T02_IMPLEMENTED / WAITING_SOL_REVIEW`。
+- S20-T02 仅实现 previous product source → CandidateSha 的 diff、声明式分类、evidence impact 与 receipt schema v2；不执行受影响测试。
+- fresh baseline=`origin/main@870eb4cb0d38cb196d404bce6b0e70cff8376202`；production diff=`0`，正式工作区历史 `1 modified + 4 untracked` 原样保留。
+- `v1.0.9` annotated tag peel=`9bf4ee71f1579097d816032d867041c0519cf789`，为 Candidate `18230c3e6013a098874426575e6a14c202fa7f7c` ancestor；实际 diff 61 files、0 UNKNOWN、11 categories。
+- S20-T02/Builder 直接专项=`3/3 PASS`。`FULL/GUI/rollback/migration E2E/Installer E2E/Updater transaction E2E/完整 Builder dry run=NOT_RUN`。
+- S20-T02=`IMPLEMENTED / NOT_ACCEPTED`；不 push、不关闭，等待 Sol review。
+
+# 2026-09-13 historical：S20-T01 CLOSED / ACCEPTED
 
 - 用户已批准 S20-T01｜Core Release Builder；仅实施本地候选构建器、历史兼容合同、receipt schema、最小专项与治理。
 - 基线 `origin/main=b5b147707a67dde6cca0aed8e9180531c36d3296`；正式工作区历史 `1 modified + 4 untracked` 不触碰。
