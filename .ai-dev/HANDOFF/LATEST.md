@@ -1,12 +1,16 @@
-# 2026-09-13：S20-T02 IMPLEMENTED / WAITING SOL REVIEW
+# 2026-09-13：Stage20 CLOSED / ACCEPTED
 
-S20-T01 永久 `CLOSED / ACCEPTED`。S20-T02 已在 fresh `origin/main=870eb4cb0d38cb196d404bce6b0e70cff8376202` 的独立 worktree 实施，只包含 diff → category → evidence impact → receipt schema v2；production diff=`0`，正式工作区历史 `1 modified + 4 untracked` 未触碰。
+S20-T01=`CLOSED / ACCEPTED`，不得重新打开；S20-T02=`CLOSED / ACCEPTED`；Stage20=`CLOSED / ACCEPTED`。Stage20 到此结束，不创建 S20-T03。
+
+Stage20 最终交付：Core Release Builder 接受 `Version + CandidateSha`，只生成本地候选并停在 `RELEASE_CANDIDATE_READY / PUBLISH_NOT_AUTHORIZED`；Change Impact 比较上一正式 product source 与 Candidate，输出职责变化、required evidence、历史 frozen evidence 复用资格，并对未知变更 fail closed。Stage20 不自动执行测试、GUI、FULL、rollback 或发布。
+
+S20-T02 implementation=`7cfc67ec3266b2431f4b13faf4edb7ed4b1662d8`，基于 fresh `origin/main=870eb4cb0d38cb196d404bce6b0e70cff8376202`；只包含 diff → category → evidence impact → receipt schema v2；production diff=`0`，正式工作区历史 `1 modified + 4 untracked` 未触碰。
 
 previous product source 只由 Release Contract 的 `previousRelease` 解析：必须是本地 annotated tag、peel 为完整 commit、且为 Candidate ancestor。Git diff 使用 raw `-z`，记录稳定排序的 status/path 或 oldPath/newPath/categories；非普通 mode、未知路径、缺失/lightweight tag 或非 ancestor 均 `FAILED / CHANGE_IMPACT`。
 
 实际 `v1.0.9` peel=`9bf4ee71f1579097d816032d867041c0519cf789`，Candidate=`18230c3e6013a098874426575e6a14c202fa7f7c`，61 changed files、0 UNKNOWN；categories=`BACKUP_RESTORE/BUSINESS_LOGIC/DATABASE_SCHEMA/EXCEL_IMPORT_EXPORT/GOVERNANCE_ONLY/INSTALLER/RELEASE_TOOLING/TEST_ONLY/UI/UPDATER_TRANSACTION/UPDATE_PACKAGE_SECURITY`。九类 evidence 均为 REQUIRED，本样本 reusableEvidence 为空；这不表示 evidence 已 PASS，也未自动执行测试。
 
-S20-T02/Builder 直接专项=`3/3 PASS`；`FULL/GUI/rollback/migration E2E/Installer E2E/Updater transaction E2E/完整 Builder dry run=NOT_RUN`。S20-T02=`IMPLEMENTED / NOT_ACCEPTED / WAITING_SOL_REVIEW`；Stage20 不关闭，不 push。
+S20-T02/Builder 直接专项=`3/3 PASS`；PowerShell parser、policy JSON、receipt schema JSON、`git diff --check` 均 PASS。`FULL=NOT_RUN / NO_FULL`；`GUI/rollback/migration E2E/Installer E2E/Updater transaction E2E/完整 Builder dry run=NOT_RUN`。Sol 最终技术验收=`PASS`；历史样本九类全部 REQUIRED 仅是该版本真实变化结果，不代表未来候选固定要求。
 
 # 2026-09-13 historical：S20-T01 CLOSED / ACCEPTED
 
