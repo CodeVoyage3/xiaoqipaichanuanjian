@@ -164,8 +164,9 @@ elseif ($Scenario -in @('SameSchema','Repair','HigherBlock','UnsafeWalBlock')) {
   else {
     Require ($summary.setupExit -eq 0) "$Scenario install failed"
     Assert-InstalledIdentity $install $identity '1.1.1'
-    Require ((Initialize-App $install $data) -eq 0) "$Scenario installed app smoke failed"; $summary.postinstallMutex='ISOLATED_SMOKE_PASS'
     Require ((Hash $database) -eq $beforeDb) "$Scenario changed database bytes"
+    $summary.afterDbSha256=Hash $database
+    Require ((Initialize-App $install $data) -eq 0) "$Scenario installed app smoke failed"; $summary.postinstallMutex='ISOLATED_SMOKE_PASS'
     $summary.after=Business $database 'fingerprint' (Join-Path $result 'after.txt'); Require ($summary.after -eq $summary.before) "$Scenario changed business data"
     if ($Scenario -eq 'Repair') {
       $repairDb=Hash $database; $repairBusiness=$summary.after
@@ -173,7 +174,7 @@ elseif ($Scenario -in @('SameSchema','Repair','HigherBlock','UnsafeWalBlock')) {
       Assert-InstalledIdentity $install $identity '1.1.1'; Require ((Hash $database) -eq $repairDb) 'repair changed database bytes'
       $summary.repairBusiness=Business $database 'fingerprint' (Join-Path $result 'repair-after.txt'); Require ($summary.repairBusiness -eq $repairBusiness) 'repair changed business data'
     }
-    $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require ($summary.validation.migrationCount -eq 10) "$Scenario migration count mismatch"; $summary.afterDbSha256=Hash $database
+    $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require ($summary.validation.migrationCount -eq 10) "$Scenario migration count mismatch"; $summary.finalDbSha256=Hash $database
   }
 }
 elseif ($Scenario -eq 'LegacyBlock') {
