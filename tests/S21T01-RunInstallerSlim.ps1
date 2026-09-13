@@ -1,12 +1,17 @@
 param(
   [Parameter(Mandatory)][string]$Compiler,
   [Parameter(Mandatory)][string]$ResultDirectory,
-  [ValidateSet('CompileContract','Fresh','SameSchema','Repair','LegacyBlock','HigherBlock','UnsafeWalBlock','DowngradeBlock')]
+  [ValidateSet('HarnessProbe','EvidenceReplay','CompileContract','Fresh','SameSchema','Repair','LegacyBlock','HigherBlock','UnsafeWalBlock','DowngradeBlock')]
   [string]$Scenario = 'CompileContract',
   [string]$CandidatePublish,
   [string]$V110Publish,
   [string]$V109Publish,
-  [string]$V112Publish
+  [string]$V112Publish,
+  [ValidateSet('ChineseConsole','MachineReadable','NonZero','Missing','Malformed')]
+  [string]$HarnessProbeCase = 'MachineReadable',
+  [string]$ExistingInstallRoot,
+  [string]$ExistingDataRoot,
+  [string]$ExistingIdentity
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,12 +49,24 @@ function Assert-InstalledIdentity([string]$Install, [string]$Identity, [string]$
   Require ($registration.DisplayVersion -eq $Version) 'test registration DisplayVersion mismatch'
   Require ([IO.Path]::GetFullPath([string]$registration.'Inno Setup: App Path') -eq [IO.Path]::GetFullPath($Install)) 'test registration install root mismatch'
 }
+function Read-ValidationResult([int]$ExitCode, [object[]]$ConsoleOutput, [string]$Evidence, [string]$Transcript) {
+  $ConsoleOutput | Set-Content -LiteralPath $Transcript -Encoding utf8
+  Require ($ExitCode -eq 0) "validation process failed: $ExitCode; transcript=$Transcript"
+  Require (Test-Path -LiteralPath $Evidence -PathType Leaf) "validation JSON missing: $Evidence"
+  try { Get-Content -Raw -LiteralPath $Evidence | ConvertFrom-Json -ErrorAction Stop }
+  catch { throw "validation JSON malformed: $Evidence; $($_.Exception.Message)" }
+}
 function Business([string]$Database, [string]$Mode, [string]$Evidence) {
   $env:S9_T07_E2E_DATABASE=$Database; $env:S9_T07_E2E_BUSINESS_MODE=$Mode; $env:S9_T07_E2E_BUSINESS_FINGERPRINT=$Evidence
   try {
-    & dotnet test (Join-Path $root 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj') -c Release -p:NuGetAudit=false --filter 'FullyQualifiedName~V110InstallerE2EBusinessDataTests.SeedOrFingerprintIsLimitedToTheExplicitTemporaryInstallerDatabase' --logger 'console;verbosity=minimal'
-    Require ($LASTEXITCODE -eq 0) "business probe failed: $Mode"
+    $console = @(& dotnet test (Join-Path $root 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj') -c Release -p:NuGetAudit=false --filter 'FullyQualifiedName~V110InstallerE2EBusinessDataTests.SeedOrFingerprintIsLimitedToTheExplicitTemporaryInstallerDatabase' --logger 'console;verbosity=minimal' 2>&1)
+    $exitCode = $LASTEXITCODE
   } finally { 'S9_T07_E2E_DATABASE','S9_T07_E2E_BUSINESS_MODE','S9_T07_E2E_BUSINESS_FINGERPRINT' | ForEach-Object { Remove-Item "Env:$_" -ErrorAction SilentlyContinue } }
+  $transcript = "$Evidence.transcript.log"
+  if ($Mode -eq 'validate') { return (Read-ValidationResult $exitCode $console $Evidence $transcript) }
+  $console | Set-Content -LiteralPath $transcript -Encoding utf8
+  Require ($exitCode -eq 0) "business probe failed: $Mode; transcript=$transcript"
+  Require (Test-Path -LiteralPath $Evidence -PathType Leaf) "business evidence missing: $Evidence"
   (Get-Content -Raw -LiteralPath $Evidence).Trim()
 }
 function Add-HigherMigration([string]$Database) {
@@ -70,6 +87,31 @@ $resultId = [guid]::Empty
 Require ([guid]::TryParse((Split-Path -Leaf $result), [ref]$resultId)) 'ResultDirectory leaf must be a GUID'
 New-Item -ItemType Directory -Path $result | Out-Null
 $identity = [guid]::NewGuid().ToString()
+
+if ($Scenario -eq 'HarnessProbe') {
+  $evidence=Join-Path $result 'validation.json'; $transcript=Join-Path $result 'validation.transcript.log'
+  if ($HarnessProbeCase -ne 'Missing') {
+    $content=if($HarnessProbeCase -eq 'Malformed'){'{invalid'}else{'{"migrationCount":10,"integrity":"ok","foreignKeys":0}'}
+    [IO.File]::WriteAllText($evidence,$content,[Text.UTF8Encoding]::new($false))
+  }
+  $exitCode=if($HarnessProbeCase -eq 'NonZero'){7}else{0}; $console=if($HarnessProbeCase -eq 'ChineseConsole'){@('正在运行验证','测试已通过')}else{@('validation transcript')}
+  try { $parsed=Read-ValidationResult $exitCode $console $evidence $transcript; $probe=[ordered]@{case=$HarnessProbeCase;status='PASS';migrationCount=$parsed.migrationCount;reason=$null} }
+  catch { $probe=[ordered]@{case=$HarnessProbeCase;status='FAILED';migrationCount=$null;reason=$_.Exception.Message} }
+  [IO.File]::WriteAllText((Join-Path $result 'result.json'),($probe|ConvertTo-Json),[Text.UTF8Encoding]::new($false)); return
+}
+
+if ($Scenario -eq 'EvidenceReplay') {
+  $install=[IO.Path]::GetFullPath($ExistingInstallRoot); $data=[IO.Path]::GetFullPath($ExistingDataRoot)
+  $replayGuid=[guid]::Empty; Require ([guid]::TryParse([IO.Path]::GetRelativePath([IO.Path]::GetTempPath(),$install),[ref]$replayGuid)) 'replay install root must be a TEMP/GUID directory'
+  $replayGuid=[guid]::Empty; Require ([guid]::TryParse([IO.Path]::GetRelativePath([IO.Path]::GetTempPath(),$data),[ref]$replayGuid)) 'replay data root must be a TEMP/GUID directory'
+  $database=Join-Path $data 'data\app.db'; $beforeDb=Hash $database; $beforeTree=Tree-Fingerprint $install
+  Assert-InstalledIdentity $install $ExistingIdentity '1.1.1'; Assert-NoUpdaterTransaction $data
+  $validation=Business $database 'validate' (Join-Path $result 'validation.json')
+  $afterDb=Hash $database; $afterTree=Tree-Fingerprint $install
+  Require ($beforeDb -eq $afterDb) 'evidence replay changed database bytes'; Require ($beforeTree -eq $afterTree) 'evidence replay changed install tree'; Assert-NoUpdaterTransaction $data
+  $replay=[ordered]@{scenario=$Scenario;status='PASS';productChain='ALREADY_COMPLETED';harnessEvidenceReplay='PASS';appVersion='1.1.1';beforeDbSha256=$beforeDb;afterDbSha256=$afterDb;beforeInstallTreeSha256=$beforeTree;afterInstallTreeSha256=$afterTree;updaterTransactions=0;validation=$validation}
+  [IO.File]::WriteAllText((Join-Path $result 'result.json'),($replay|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false)); return
+}
 
 if ($Scenario -eq 'CompileContract') {
   $payload = Join-Path $result 'payload'; New-Item -ItemType Directory -Path $payload | Out-Null
@@ -100,7 +142,7 @@ if ($Scenario -eq 'Fresh') {
   $summary.setupExit=Install $candidate (Join-Path $result 'candidate-setup.log'); Require ($summary.setupExit -eq 0) 'fresh install failed'
   Assert-InstalledIdentity $install $identity '1.1.1'
   Require ((Initialize-App $install $data) -eq 0) 'fresh app initialization failed'
-  $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require (($summary.validation|ConvertFrom-Json).migrationCount -eq 10) 'fresh migration count mismatch'; $summary.postinstallMutex='ISOLATED_SMOKE_PASS'
+  $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require ($summary.validation.migrationCount -eq 10) 'fresh migration count mismatch'; $summary.postinstallMutex='ISOLATED_SMOKE_PASS'
 }
 elseif ($Scenario -in @('SameSchema','Repair','HigherBlock','UnsafeWalBlock')) {
   Require (Test-Path -LiteralPath (Join-Path $V110Publish 'StoreExpiryInspector.exe') -PathType Leaf) 'V110Publish is required'
@@ -131,7 +173,7 @@ elseif ($Scenario -in @('SameSchema','Repair','HigherBlock','UnsafeWalBlock')) {
       Assert-InstalledIdentity $install $identity '1.1.1'; Require ((Hash $database) -eq $repairDb) 'repair changed database bytes'
       $summary.repairBusiness=Business $database 'fingerprint' (Join-Path $result 'repair-after.txt'); Require ($summary.repairBusiness -eq $repairBusiness) 'repair changed business data'
     }
-    $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require (($summary.validation|ConvertFrom-Json).migrationCount -eq 10) "$Scenario migration count mismatch"; $summary.afterDbSha256=Hash $database
+    $summary.validation=Business $database 'validate' (Join-Path $result 'validation.json'); Require ($summary.validation.migrationCount -eq 10) "$Scenario migration count mismatch"; $summary.afterDbSha256=Hash $database
   }
 }
 elseif ($Scenario -eq 'LegacyBlock') {
