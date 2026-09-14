@@ -2,7 +2,7 @@
 
 日期：2026-09-14（Asia/Shanghai）
 
-Stage22 = `IN_PROGRESS / S22-T01_CLOSED / S22-T02_GUI_R1_TECHNICAL_PASS_USER_GUI_RETEST_PENDING`
+Stage22 = `CLOSED / ACCEPTED`
 
 ## 产品目标
 
@@ -11,7 +11,7 @@ Stage22 = `IN_PROGRESS / S22-T01_CLOSED / S22-T02_GUI_R1_TECHNICAL_PASS_USER_GUI
 Stage22 只允许两张 Task：
 
 1. S22-T01｜商品明细与商品详情：`CLOSED / ACCEPTED`。
-2. S22-T02｜导入差异与异常中心：`IMPLEMENTED / GUI_R1_TECHNICAL_PASS / USER_GUI_RETEST_PENDING / NOT_ACCEPTED`。
+2. S22-T02｜导入差异与异常中心：`CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS`。
 
 不得创建 S22-T03。
 
@@ -46,4 +46,13 @@ Stage22 只允许两张 Task：
 - migrationCount 保持 `10`，migration11 不创建；详见 `../TASKS/S22-T02.md` 与 `../ACCEPTANCE/S22-T02.md`。
 - final implementation=`8ccc5e84b5aad8c3eae740c764506ef502662e7c`；Sol 独立定向门禁 `63/63 + 36/36 PASS`，Release App build `0 warning / 0 error`，禁止范围 diff=`0`。
 - 当前只待用户本人真实 WPF GUI 验收；未获明确 GUI PASS 前不得 `CLOSED / ACCEPTED`。
-- 用户首轮 GUI=`FAIL`；纯 GUI 返修 R1 已通过定向 32/32 与 Release build 0/0，并生成完整页、1024×600、七项指标隔离截图；当前等待用户复验，仍 `NOT_ACCEPTED`。
+- 用户首轮 GUI=`FAIL`；纯 GUI 返修 R1 已通过定向 32/32 与 Release build 0/0，并生成完整页、1024×600、七项指标隔离截图。
+- 用户最终真实 WPF GUI=`PASS`；S22-T02 正式 `CLOSED / ACCEPTED`。
+
+## Stage22 正式收口
+
+- S22-T01=`CLOSED / ACCEPTED`：商品明细与商品详情。
+- S22-T02=`CLOSED / ACCEPTED`：导入差异与异常即时摘要。
+- S22-T03=`NOT_CREATED / DOES_NOT_EXIST`。
+- Stage22 最终=`CLOSED / ACCEPTED`；未引入 migration11，migrationCount 保持 `10`。
+- final S22-T02 implementation=`ba02834c03dec5b40a3d0886771afc7fddc0d837`；正式版本保持 `v1.1.0`；Release 治理未启动。
