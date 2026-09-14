@@ -25,7 +25,9 @@ public enum ShellPage
     TodayInspection,
     BackupRestore,
     InspectionDetail,
-    FutureExpiryRisk
+    FutureExpiryRisk,
+    ProductCatalog,
+    ProductCatalogDetail
 }
 
 public abstract class ViewModelBase : INotifyPropertyChanged
@@ -1133,14 +1135,16 @@ public sealed class ShellViewModel : ViewModelBase
         Func<ImportPreviewIdentity, ImportConfirmationResult>? importPreviewConfirmation = null,
         Func<ImportConfirmationContract, DateTime, ConfirmedImportResult>? importExecutor = null,
         Func<string?, IReadOnlyList<long>>? todayTaskIdsLoader = null,
-        Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? todayOpenTaskIdsLoader = null)
+        Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? todayOpenTaskIdsLoader = null,
+        Func<ProductCatalogRequest, ProductCatalogPage>? productCatalogLoader = null,
+        Func<long, ProductCatalogDetail?>? productCatalogDetailLoader = null)
     {
         _logger = new LocalFileLogger(RuntimeDataRoot.LogDirectory);
         var logger = logException ?? LogException;
         var hasInjectedReadDependency = dashboardLoader is not null || taskLoader is not null || categoryLoader is not null
             || historyListLoader is not null || historyDetailLoader is not null || historyRevisionLoader is not null || historyEdit is not null
             || backupLoader is not null || backupCreator is not null || backupRestorer is not null || importParser is not null || importPreviewConfirmation is not null || importExecutor is not null || todayTaskIdsLoader is not null || todayOpenTaskIdsLoader is not null
-            || detailLoader is not null || saveDraft is not null || reconfirmItem is not null || clearDraft is not null || adjustInventory is not null || submit is not null;
+            || detailLoader is not null || saveDraft is not null || reconfirmItem is not null || clearDraft is not null || adjustInventory is not null || submit is not null || productCatalogLoader is not null || productCatalogDetailLoader is not null;
         var contextFactory = defaultContextFactory ?? (() => DatabaseInitializer.CreateContext());
         var loadDashboard = dashboardLoader ?? (hasInjectedReadDependency
             ? FailClosedLoader<InspectionDashboardResult>("dashboardLoader")
@@ -1174,6 +1178,8 @@ public sealed class ShellViewModel : ViewModelBase
         var loadDetail = detailLoader ?? (hasInjectedReadDependency
             ? FailClosedLoader<long, InspectionTaskDetailResult>("detailLoader")
             : CreateDetailLoader(contextFactory));
+        var loadProductCatalog = productCatalogLoader ?? (hasInjectedReadDependency ? FailClosedLoader<ProductCatalogRequest, ProductCatalogPage>("productCatalogLoader") : CreateProductCatalogLoader(contextFactory));
+        var loadProductCatalogDetail = productCatalogDetailLoader ?? (hasInjectedReadDependency ? FailClosedLoader<long, ProductCatalogDetail?>("productCatalogDetailLoader") : CreateProductCatalogDetailLoader(contextFactory));
         var saveDraftAction = saveDraft ?? (hasInjectedReadDependency
             ? FailClosedLoader<SaveDraftRequest, SaveDraftResult>("saveDraft")
             : CreateSaveDraftLoader(contextFactory));
@@ -1285,12 +1291,14 @@ public sealed class ShellViewModel : ViewModelBase
             goBack: ReturnFromDetailAsync,
             submit: submitInspection);
         FutureRisk = new FutureExpiryRiskViewModel(loadFutureRisk, logger);
+        ProductCatalog = new ProductCatalogViewModel(loadProductCatalog, loadProductCatalogDetail, logger);
         NavigateHomeCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
         NavigateTasksCommand = new RelayCommand(_ => NavigateTo(ShellPage.PendingTasks), _ => CanNavigate);
         SearchTasksCommand = new RelayCommand(_ => { _ = SearchDashboardAsync(); }, _ => CanNavigate);
         ClearDashboardSearchCommand = new RelayCommand(_ => { _ = ClearDashboardSearchAsync(); }, _ => CanNavigate);
         NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => CanNavigate);
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => CanNavigate);
+        NavigateProductCatalogCommand = new RelayCommand(_ => NavigateTo(ShellPage.ProductCatalog), _ => CanNavigate);
         NavigateTodayInspectionCommand = new RelayCommand(_ => NavigateTo(ShellPage.TodayInspection), _ => CanNavigate);
         NavigateBackupRestoreCommand = new RelayCommand(_ => NavigateTo(ShellPage.BackupRestore), _ => CanNavigate);
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
@@ -1307,6 +1315,9 @@ public sealed class ShellViewModel : ViewModelBase
             if (parts.Length == 2 && int.TryParse(parts[0], out var days)) OpenFutureRisk(days, parts[1]);
         }, _ => CanNavigate);
         ReturnFromFutureRiskCommand = new RelayCommand(_ => NavigateTo(ShellPage.Dashboard), _ => CanNavigate);
+        OpenProductCatalogDetailCommand = new RelayCommand(parameter => { if (parameter is ProductCatalogItem item) { CurrentPage = ShellPage.ProductCatalogDetail; _ = ProductCatalog.OpenAsync(item.ProductId); } }, _ => CanNavigate);
+        ReturnFromProductCatalogCommand = new RelayCommand(_ => { ProductCatalog.ClearDetail(); NavigateTo(ShellPage.ProductCatalog); }, _ => CanNavigate);
+        OpenProductTaskCommand = new RelayCommand(_ => { if (ProductCatalog.Selected?.Product.OpenTaskId is long id) OpenDetail(id); }, _ => CanNavigate);
         History.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(History.IsEditBusy))
@@ -1362,6 +1373,7 @@ public sealed class ShellViewModel : ViewModelBase
     public InspectionDetailViewModel Detail { get; }
 
     public FutureExpiryRiskViewModel FutureRisk { get; }
+    public ProductCatalogViewModel ProductCatalog { get; }
 
     public RelayCommand NavigateHomeCommand { get; }
 
@@ -1374,6 +1386,7 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand NavigateHistoryCommand { get; }
 
     public RelayCommand NavigateImportCommand { get; }
+    public RelayCommand NavigateProductCatalogCommand { get; }
 
     public RelayCommand NavigateTodayInspectionCommand { get; }
 
@@ -1386,6 +1399,9 @@ public sealed class ShellViewModel : ViewModelBase
     public RelayCommand OpenFutureRiskCommand { get; }
 
     public RelayCommand ReturnFromFutureRiskCommand { get; }
+    public RelayCommand OpenProductCatalogDetailCommand { get; }
+    public RelayCommand ReturnFromProductCatalogCommand { get; }
+    public RelayCommand OpenProductTaskCommand { get; }
 
     public ShellPage CurrentPage
     {
@@ -1407,6 +1423,8 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsBackupRestoreVisible));
             OnPropertyChanged(nameof(IsInspectionDetailVisible));
             OnPropertyChanged(nameof(IsFutureExpiryRiskVisible));
+            OnPropertyChanged(nameof(IsProductCatalogVisible));
+            OnPropertyChanged(nameof(IsProductCatalogDetailVisible));
             OnPropertyChanged(nameof(IsHomeSectionVisible));
             OnPropertyChanged(nameof(IsStandardHeaderVisible));
             OnPropertyChanged(nameof(PageTitle));
@@ -1429,10 +1447,12 @@ public sealed class ShellViewModel : ViewModelBase
     public bool IsInspectionDetailVisible => CurrentPage == ShellPage.InspectionDetail;
 
     public bool IsFutureExpiryRiskVisible => CurrentPage == ShellPage.FutureExpiryRisk;
+    public bool IsProductCatalogVisible => CurrentPage == ShellPage.ProductCatalog;
+    public bool IsProductCatalogDetailVisible => CurrentPage == ShellPage.ProductCatalogDetail;
 
     public bool IsHomeSectionVisible => CurrentPage is ShellPage.Dashboard or ShellPage.FutureExpiryRisk;
 
-    public bool IsStandardHeaderVisible => CurrentPage is not (ShellPage.InspectionDetail or ShellPage.FutureExpiryRisk);
+    public bool IsStandardHeaderVisible => CurrentPage is not (ShellPage.InspectionDetail or ShellPage.FutureExpiryRisk or ShellPage.ProductCatalogDetail);
 
     public string PageTitle => CurrentPage switch
     {
@@ -1440,6 +1460,8 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.PendingTasks => "待排查任务",
         ShellPage.History => "排查历史",
         ShellPage.Import => "数据导入",
+        ShellPage.ProductCatalog => "商品明细",
+        ShellPage.ProductCatalogDetail => "商品详情",
         ShellPage.TodayInspection => "今日排查",
         ShellPage.BackupRestore => "数据备份与恢复",
         ShellPage.InspectionDetail => "排查详情",
@@ -1453,6 +1475,8 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.PendingTasks => "查看当前需要完成效期排查的商品",
         ShellPage.History => "查看已完成的正式排查记录及修改留痕",
         ShellPage.Import => "导入最新的商品效期 Excel，更新商品与批次数据",
+        ShellPage.ProductCatalog => "查看系统当前所有商品的汇总信息，点击详情查看批次",
+        ShellPage.ProductCatalogDetail => "先看商品整体情况，再查看各批次明细",
         ShellPage.TodayInspection => "导出今日计划、回导结果并集中提交已完成排查",
         ShellPage.BackupRestore => "创建经过验证的本地备份，或从应用备份安全恢复",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
@@ -1510,6 +1534,7 @@ public sealed class ShellViewModel : ViewModelBase
         var enteredHistory = page == ShellPage.History && CurrentPage != ShellPage.History;
         var enteredTodayInspection = page == ShellPage.TodayInspection && CurrentPage != ShellPage.TodayInspection;
         var enteredBackupRestore = page == ShellPage.BackupRestore && CurrentPage != ShellPage.BackupRestore;
+        var enteredProductCatalog = page == ShellPage.ProductCatalog && CurrentPage != ShellPage.ProductCatalog;
         CurrentPage = page;
         if (enteredHistory)
         {
@@ -1523,6 +1548,7 @@ public sealed class ShellViewModel : ViewModelBase
         {
             _ = BackupRestore.LoadAsync();
         }
+        if (enteredProductCatalog) _ = ProductCatalog.LoadAsync();
     }
 
     public void OpenDetail(long taskId)
@@ -1532,8 +1558,8 @@ public sealed class ShellViewModel : ViewModelBase
             return;
         }
 
-        _detailReturnPage = CurrentPage == ShellPage.PendingTasks
-            ? ShellPage.PendingTasks
+        _detailReturnPage = CurrentPage == ShellPage.PendingTasks ? ShellPage.PendingTasks
+            : CurrentPage == ShellPage.ProductCatalogDetail ? ShellPage.ProductCatalogDetail
             : ShellPage.Dashboard;
         CurrentPage = ShellPage.InspectionDetail;
         _ = Detail.LoadAsync(taskId);
@@ -1589,6 +1615,8 @@ public sealed class ShellViewModel : ViewModelBase
         using var context = contextFactory();
         return new InspectionTaskQuery().SearchOpenTasks(context, request);
     };
+    private static Func<ProductCatalogRequest, ProductCatalogPage> CreateProductCatalogLoader(Func<StoreDbContext> contextFactory) => request => { using var context = contextFactory(); return new ProductCatalogQuery().Search(context, request); };
+    private static Func<long, ProductCatalogDetail?> CreateProductCatalogDetailLoader(Func<StoreDbContext> contextFactory) => id => { using var context = contextFactory(); return new ProductCatalogQuery().GetDetail(context, id); };
 
     private static Func<FutureExpiryRiskRequest, FutureExpiryRiskPage> CreateFutureExpiryRiskLoader(Func<StoreDbContext> contextFactory) => request =>
     {
