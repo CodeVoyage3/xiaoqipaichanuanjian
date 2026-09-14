@@ -2895,7 +2895,13 @@
                     <TextBlock Grid.Row="1" Text="正在加载商品明细…" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ProductCatalog.IsLoading, Converter={StaticResource BoolToVisibility}}" />
                     <TextBlock Grid.Row="1" Text="暂无符合条件的商品。" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ProductCatalog.HasNoItems, Converter={StaticResource BoolToVisibility}}" />
                     <TextBlock Grid.Row="1" Text="{Binding ProductCatalog.Error}" Foreground="{DynamicResource DangerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ProductCatalog.HasError, Converter={StaticResource BoolToVisibility}}" />
-                    <Grid Grid.Row="2" Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding ProductCatalog.PageText}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" /><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="‹  上一页" Command="{Binding ProductCatalog.PreviousPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="96" /><Button Content="下一页  ›" Command="{Binding ProductCatalog.NextPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="96" Margin="8,0,0,0" /></StackPanel></Grid>
+                    <Border Grid.Row="2" Margin="0,12,0,0" Padding="0,12,0,22" BorderBrush="{DynamicResource TableDividerBrush}" BorderThickness="0,1,0,0">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding ProductCatalog.PageText}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Content="‹  上一页" Command="{Binding ProductCatalog.PreviousPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="96" /><Button Content="下一页  ›" Command="{Binding ProductCatalog.NextPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="96" Margin="8,0,0,0" /></StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
 
                 <Grid Visibility="{Binding IsProductCatalogDetailVisible, Converter={StaticResource BoolToVisibility}}">
