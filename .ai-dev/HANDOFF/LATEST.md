@@ -2,13 +2,15 @@
 
 fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=`IN_PROGRESS / S22-T01_UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST / NOT_ACCEPTED`；S22-T02=`NOT_CREATED / NOT_STARTED`。
 
-用户确认零 migration 产品口径：当前总库存只取 `Product.EffectiveStockQty`；批次级不得显示当前库存，`CurrentArrivalQty` 如展示只能命名“累计到货”；取消批次号/批次伪字段，以生产日期 + 到期日期识别；删除商品级保质期/总效期及独立商品概览；最近排查日期降为辅助信息；最近导入信息只显示最近一次；无待办批次操作显示 `—`。
+用户确认零 migration 产品口径：当前总库存只取 `Product.EffectiveStockQty`；批次级不得显示当前库存，`CurrentArrivalQty` 如展示只能命名“累计到货”；取消批次号/批次伪字段，以生产日期 + 到期日期识别；删除商品级保质期/总效期及独立商品概览；最近排查日期降为辅助信息；最近导入日期只在详情顶部身份区显示；无待办批次操作显示 `—`。
 
 两张确认 PNG 是 S22-T01 主要 UI 结构参考；只复用当前 WPF 控件/资源/样式，不引入新 UI 框架、WebView、复杂动画或主题重构。原型示例不构成业务规则，正式阶段只允许正常、5折、2折、收仓、过期。
 
 governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`。Terra / medium / clean worktree 已实施；Sol 独立审查后，S22 专项=`1/1 PASS`、导航聚焦回归=`2/2 PASS`、Release App build=`PASS / 0 error`（仅 `NU1900`）。Schema/migration/版本/Installer/Updater/Release diff=`0`，migrationCount=`10`，正式 dirty 工作区未变化，未 push，`FULL=NOT_RUN / NO_FULL`。
 
 用户首轮 GUI=`FAIL` 后的纯 WPF UI 返修已完成；本轮聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`，累计返修差异仅 `MainWindow.xaml`。商品明细已删除“最近导入”列并扩宽商品名称、条码、编码及风险阶段；详情身份区已改为商品编码/商品条码/大类/最近导入四栏，KPI 与业务链不变。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03 导航回归=`2/2 PASS`，`FULL=NOT_RUN / NO_FULL`。R6 商品明细/商品详情两张 TEMP/GUID 隔离截图已生成并等待用户复验；用户 GUI PASS 前不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
+
+R7 聚焦返修 final=`6713578e6dce4ec6c2524212e974aaaf5e97e177`，累计产品差异仍仅 `MainWindow.xaml`。商品详情底部“最近导入信息”整块已删除；排查详情普通固定操作栏的重复“修正库存”已删除，只保留顶部紧邻当前库存的入口，既有超库存处置与库存修正 UseCase 未改。Release App build=`PASS / 0 error`（仅 `NU1900`）；S18-T03=`2/2 PASS`；库存修正 ViewModel 专项=`24/24 PASS`；顶部入口实窗打开编辑器后取消=`PASS / NO MUTATION`。旧 S4-T10 静态审计固定搜索提示次数断言为 2、R6 基线实际为 3，故该组合=`3/4`，未为凑绿修改测试。`FULL=NOT_RUN / NO_FULL`；R7 两张隔离截图等待用户复验，状态不变。
 
 # 2026-09-13：Stage21 CLOSED / ACCEPTED
 
