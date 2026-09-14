@@ -1,3 +1,13 @@
+# 2026-09-14 current：Stage22 / S22-T01 GOVERNANCE_FROZEN
+
+- fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；正式版本保持 `v1.1.0`；migrationCount=`10`。
+- Stage22=`IN_PROGRESS / S22-T01_GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；S22-T01=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。
+- S22-T02=`NOT_CREATED / NOT_STARTED`；不得创建 S22-T03。
+- 用户确认零 migration：当前总库存=`Product.EffectiveStockQty`；批次无“当前库存”、无伪批次号；可选“累计到货”；删除商品概览/保质期/总效期；最近导入信息只显示最近一次；无待办批次操作=`—`。
+- 两张用户确认 PNG 冻结页面结构、层级、导航、筛选、列表、KPI、批次和最近导入区域；示例业务数据不构成规则，阶段仅正常/5折/2折/收仓/过期。
+- 生产实现仅允许全新 GPT-5.6 Terra / medium / clean worktree；Sol 独立验收，最终等待用户真实 WPF GUI PASS。
+- `NO_SCHEMA_CHANGE / NO_MIGRATION11`；`FULL=NOT_RUN / NO_FULL`；不改版本、Installer、Updater、Release Contract 或任何发布状态。
+
 # 2026-09-13 current：Stage21 CLOSED / ACCEPTED
 
 - S21-T01=`CLOSED / ACCEPTED`；Stage21=`CLOSED / ACCEPTED`；S21-T02=`NOT_CREATED / NOT_STARTED`，不得创建。
