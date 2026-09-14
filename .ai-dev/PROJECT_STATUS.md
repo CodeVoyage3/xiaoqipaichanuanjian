@@ -9,7 +9,7 @@
 - S22 专项=`1/1 PASS`；导航聚焦回归=`2/2 PASS`；Release App build=`PASS / 0 error`（仅 `NU1900`）；禁止范围 diff=`0`；正式 dirty 工作区未变化；未 push。
 - `NO_SCHEMA_CHANGE / NO_MIGRATION11`；`FULL=NOT_RUN / NO_FULL`；不改版本、Installer、Updater、Release Contract 或任何发布状态。
 - 用户首轮 GUI=`FAIL`：功能骨架保留，仅返修冻结原型对应的 WPF 视觉层级、控件样式、Badge、KPI、表格、提示卡、导航对齐与两张复验截图；不得改 Query/业务/测试语义。
-- UI 返修 final=`2691c3aa690563f96679ba837a11d2839345462f`，仅改 `MainWindow.xaml`；Release App build=`PASS / 0 error`，S18-T03=`2/2 PASS`，`FULL=NOT_RUN`。两张 TEMP/GUID 隔离截图已生成，等待用户复验；未自行 GUI PASS/ACCEPTED/CLOSED。
+- 聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`，累计返修差异仍仅 `MainWindow.xaml`：商品明细删除“最近导入”列并扩宽关键字段；详情身份区改为商品编码/商品条码/大类/最近导入四栏。Release App build=`PASS / 0 error`，S18-T03=`2/2 PASS`，`FULL=NOT_RUN`。R6 两张 TEMP/GUID 隔离截图已生成，等待用户复验；未自行 GUI PASS/ACCEPTED/CLOSED。
 
 # 2026-09-13 current：Stage21 CLOSED / ACCEPTED
 

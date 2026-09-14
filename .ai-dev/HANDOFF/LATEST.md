@@ -8,7 +8,7 @@ fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=
 
 governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`。Terra / medium / clean worktree 已实施；Sol 独立审查后，S22 专项=`1/1 PASS`、导航聚焦回归=`2/2 PASS`、Release App build=`PASS / 0 error`（仅 `NU1900`）。Schema/migration/版本/Installer/Updater/Release diff=`0`，migrationCount=`10`，正式 dirty 工作区未变化，未 push，`FULL=NOT_RUN / NO_FULL`。
 
-用户首轮 GUI=`FAIL` 后的纯 WPF UI 返修已完成，final=`2691c3aa690563f96679ba837a11d2839345462f`，返修差异仅 `MainWindow.xaml`。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03 导航回归=`2/2 PASS`，`FULL=NOT_RUN / NO_FULL`。商品明细/商品详情两张 TEMP/GUID 隔离截图已生成并等待用户复验；用户 GUI PASS 前不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
+用户首轮 GUI=`FAIL` 后的纯 WPF UI 返修已完成；本轮聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`，累计返修差异仅 `MainWindow.xaml`。商品明细已删除“最近导入”列并扩宽商品名称、条码、编码及风险阶段；详情身份区已改为商品编码/商品条码/大类/最近导入四栏，KPI 与业务链不变。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03 导航回归=`2/2 PASS`，`FULL=NOT_RUN / NO_FULL`。R6 商品明细/商品详情两张 TEMP/GUID 隔离截图已生成并等待用户复验；用户 GUI PASS 前不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
 
 # 2026-09-13：Stage21 CLOSED / ACCEPTED
 
