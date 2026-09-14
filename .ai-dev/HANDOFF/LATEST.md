@@ -12,6 +12,8 @@ governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c
 
 R7 聚焦返修 final=`6713578e6dce4ec6c2524212e974aaaf5e97e177`，累计产品差异仍仅 `MainWindow.xaml`。商品详情底部“最近导入信息”整块已删除；排查详情普通固定操作栏的重复“修正库存”已删除，只保留顶部紧邻当前库存的入口，既有超库存处置与库存修正 UseCase 未改。Release App build=`PASS / 0 error`（仅 `NU1900`）；S18-T03=`2/2 PASS`；库存修正 ViewModel 专项=`24/24 PASS`；顶部入口实窗打开编辑器后取消=`PASS / NO MUTATION`。旧 S4-T10 静态审计固定搜索提示次数断言为 2、R6 基线实际为 3，故该组合=`3/4`，未为凑绿修改测试。`FULL=NOT_RUN / NO_FULL`；R7 两张隔离截图等待用户复验，状态不变。
 
+R8 小幅返修 final=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`，仍仅 `MainWindow.xaml`。商品明细分页改为独立 Footer，使用现有 `TableDividerBrush`、12 DIP 上内边距和 22 DIP 底部内边距；左右内容垂直居中，中间表格 `*` 行自动缩短。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03=`2/2 PASS`；1024×600 DIP、150% DPI 实窗为 1536×900 px，分页按钮完整可见，测得按钮至窗口底边约 29.3 DIP（含非客户区）。`FULL=NOT_RUN / NO_FULL`；不改分页逻辑、Query、Schema、测试语义或 migration，继续等待用户 GUI 复验。
+
 # 2026-09-13：Stage21 CLOSED / ACCEPTED
 
 S21-T01=`CLOSED / ACCEPTED`；Stage21=`CLOSED / ACCEPTED`；S21-T02=`NOT_CREATED / NOT_STARTED`，不得创建。baseline=`c8b8a7db3e4f5740eb7aa22858cc404d84b9f9fa`，final implementation=`e4573ff06b1a6d7f0823be95c7297fcc3a0abdbb`，Sol 最终技术验收=`PASS`。

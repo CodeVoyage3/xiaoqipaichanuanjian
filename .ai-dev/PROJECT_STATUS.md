@@ -11,6 +11,7 @@
 - 用户首轮 GUI=`FAIL`：功能骨架保留，仅返修冻结原型对应的 WPF 视觉层级、控件样式、Badge、KPI、表格、提示卡、导航对齐与两张复验截图；不得改 Query/业务/测试语义。
 - 聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`，累计返修差异仍仅 `MainWindow.xaml`：商品明细删除“最近导入”列并扩宽关键字段；详情身份区改为商品编码/商品条码/大类/最近导入四栏。Release App build=`PASS / 0 error`，S18-T03=`2/2 PASS`，`FULL=NOT_RUN`。R6 两张 TEMP/GUID 隔离截图已生成，等待用户复验；未自行 GUI PASS/ACCEPTED/CLOSED。
 - R7 聚焦返修 final=`6713578e6dce4ec6c2524212e974aaaf5e97e177`，仍仅改 `MainWindow.xaml`：删除商品详情底部“最近导入信息”卡片及排查详情普通固定底栏重复“修正库存”，顶部入口和既有库存修正链保持。Release App build=`PASS / 0 error`；导航=`2/2 PASS`；库存修正专项=`24/24 PASS`；`FULL=NOT_RUN`。两张 R7 隔离截图等待用户复验；未自行 GUI PASS/ACCEPTED/CLOSED。
+- R8 小幅返修 final=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`，仅将商品明细分页行改为独立 Footer：顶部轻分隔、12 DIP 上留白、22 DIP 底部留白，页码与按钮垂直居中；表格 `*` 行自动让位。Release App build=`PASS / 0 error`；导航=`2/2 PASS`；1024×600 DIP / 150% 实窗分页完整可见；`FULL=NOT_RUN`。继续等待用户 GUI 复验。
 
 # 2026-09-13 current：Stage21 CLOSED / ACCEPTED
 
