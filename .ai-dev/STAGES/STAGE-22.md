@@ -2,7 +2,7 @@
 
 日期：2026-09-14（Asia/Shanghai）
 
-Stage22 = `IN_PROGRESS / S22-T01_UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST`
+Stage22 = `IN_PROGRESS / S22-T01_CLOSED / S22-T02_NEXT_NOT_STARTED`
 
 ## 产品目标
 
@@ -10,8 +10,8 @@ Stage22 = `IN_PROGRESS / S22-T01_UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST
 
 Stage22 只允许两张 Task：
 
-1. S22-T01｜商品明细与商品详情：当前唯一授权实施范围。
-2. S22-T02｜导入差异与异常中心：`NOT_CREATED / NOT_STARTED`，只有 S22-T01 `CLOSED / ACCEPTED` 后才允许另行建立。
+1. S22-T01｜商品明细与商品详情：`CLOSED / ACCEPTED`。
+2. S22-T02｜导入差异与异常中心：`NOT_CREATED / NOT_STARTED / NEXT`，必须在全新 Codex Sol 话题中从 fresh `origin/main` 审计后另行启动。
 
 不得创建 S22-T03。
 
@@ -34,4 +34,4 @@ Stage22 只允许两张 Task：
 - 不修改版本、tag、GitHub Release、latest、Quark、Gitee、Installer、Updater 或 Release Contract。
 - 实现必须复用现有 WPF 控件、资源、样式和页面组织；禁止新增大型 UI 框架、WebView、浏览器渲染、复杂动画、玻璃/云母或主题大改。
 - `FULL=NOT_RUN / NO_FULL`。只运行 S22-T01 专项、直接相关旧回归和必要 Release App build。
-- Sol 技术 PASS 与用户真实 WPF GUI PASS 缺一不可；用户 GUI PASS 前 S22-T01 不得 `CLOSED / ACCEPTED`。
+- S22-T01 已取得 Sol 技术 PASS 与用户真实 WPF GUI PASS，现为 `CLOSED / ACCEPTED`；Stage22 因 S22-T02 尚未启动而保持 `IN_PROGRESS`。

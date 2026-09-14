@@ -1,17 +1,17 @@
-# 2026-09-14 current：Stage22 / S22-T01 UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST
+# 2026-09-14 current：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 
 - fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；正式版本保持 `v1.1.0`；migrationCount=`10`。
-- Stage22=`IN_PROGRESS / S22-T01_UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST / NOT_ACCEPTED`。
-- S22-T02=`NOT_CREATED / NOT_STARTED`；不得创建 S22-T03。
+- Stage22=`IN_PROGRESS / S22-T01_CLOSED / S22-T02_NEXT_NOT_STARTED`；S22-T01=`CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS`。
+- S22-T02=`NOT_CREATED / NOT_STARTED / NEXT`；不得在当前话题创建或实施；不得创建 S22-T03。
 - 用户确认零 migration：当前总库存=`Product.EffectiveStockQty`；批次无“当前库存”、无伪批次号；可选“累计到货”；删除商品概览/保质期/总效期；最近导入日期只在详情顶部身份区显示；无待办批次操作=`—`。
 - 两张用户确认 PNG 冻结页面结构、层级、导航、筛选、列表、KPI、批次和最近导入区域；示例业务数据不构成规则，阶段仅正常/5折/2折/收仓/过期。
-- governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`；Terra / medium / clean worktree 实施，Sol 独立验收=`PASS`，最终等待用户真实 WPF GUI PASS。
-- S22 专项=`1/1 PASS`；导航聚焦回归=`2/2 PASS`；Release App build=`PASS / 0 error`（仅 `NU1900`）；禁止范围 diff=`0`；正式 dirty 工作区未变化；未 push。
+- final implementation=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`；accepted pre-closeout candidate=`4cb8ec526c0e0271088818e4772d9313ef9c422b`；Terra / medium / clean worktree 实施，Sol 独立技术验收=`PASS`，用户最终真实 WPF GUI=`PASS`。
+- S22 专项=`1/1 PASS`；导航聚焦回归=`2/2 PASS`；Release App build=`PASS / 0 error`（仅 `NU1900`）；库存修正专项=`24/24 PASS`；禁止范围 diff=`0`；正式 dirty 工作区未变化。
 - `NO_SCHEMA_CHANGE / NO_MIGRATION11`；`FULL=NOT_RUN / NO_FULL`；不改版本、Installer、Updater、Release Contract 或任何发布状态。
 - 用户首轮 GUI=`FAIL`：功能骨架保留，仅返修冻结原型对应的 WPF 视觉层级、控件样式、Badge、KPI、表格、提示卡、导航对齐与两张复验截图；不得改 Query/业务/测试语义。
-- 聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`，累计返修差异仍仅 `MainWindow.xaml`：商品明细删除“最近导入”列并扩宽关键字段；详情身份区改为商品编码/商品条码/大类/最近导入四栏。Release App build=`PASS / 0 error`，S18-T03=`2/2 PASS`，`FULL=NOT_RUN`。R6 两张 TEMP/GUID 隔离截图已生成，等待用户复验；未自行 GUI PASS/ACCEPTED/CLOSED。
-- R7 聚焦返修 final=`6713578e6dce4ec6c2524212e974aaaf5e97e177`，仍仅改 `MainWindow.xaml`：删除商品详情底部“最近导入信息”卡片及排查详情普通固定底栏重复“修正库存”，顶部入口和既有库存修正链保持。Release App build=`PASS / 0 error`；导航=`2/2 PASS`；库存修正专项=`24/24 PASS`；`FULL=NOT_RUN`。两张 R7 隔离截图等待用户复验；未自行 GUI PASS/ACCEPTED/CLOSED。
-- R8 小幅返修 final=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`，仅将商品明细分页行改为独立 Footer：顶部轻分隔、12 DIP 上留白、22 DIP 底部留白，页码与按钮垂直居中；表格 `*` 行自动让位。Release App build=`PASS / 0 error`；导航=`2/2 PASS`；1024×600 DIP / 150% 实窗分页完整可见；`FULL=NOT_RUN`。继续等待用户 GUI 复验。
+- 聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`：商品明细删除“最近导入”列并扩宽关键字段；详情身份区改为商品编码/商品条码/大类/最近导入四栏。Release App build=`PASS / 0 error`，S18-T03=`2/2 PASS`，`FULL=NOT_RUN`。
+- R7 final=`6713578e6dce4ec6c2524212e974aaaf5e97e177`：删除商品详情底部“最近导入信息”卡片及排查详情普通固定底栏重复“修正库存”，顶部入口和既有库存修正链保持。库存修正专项=`24/24 PASS`；顶部入口=`PASS / NO MUTATION`。
+- R8 final implementation=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`：商品明细独立 Footer 使用顶部轻分隔、12 DIP 上留白、22 DIP 底部留白，页码与按钮垂直居中；1024×600 DIP / 150% 实窗完整可见。用户最终 GUI=`PASS`，S22-T01 已正式 `CLOSED / ACCEPTED`。
 
 # 2026-09-13 current：Stage21 CLOSED / ACCEPTED
 

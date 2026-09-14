@@ -1,18 +1,14 @@
-# 2026-09-14：Stage22 / S22-T01 UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST
+# 2026-09-14：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 
-fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=`IN_PROGRESS / S22-T01_UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST / NOT_ACCEPTED`；S22-T02=`NOT_CREATED / NOT_STARTED`。
+fresh integration baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；final implementation=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`；accepted pre-closeout candidate=`4cb8ec526c0e0271088818e4772d9313ef9c422b`。最终 `origin/main` 是包含本收口记录的提交；下一话题必须 fresh resolve，不得依赖旧话题 SHA。
 
-用户确认零 migration 产品口径：当前总库存只取 `Product.EffectiveStockQty`；批次级不得显示当前库存，`CurrentArrivalQty` 如展示只能命名“累计到货”；取消批次号/批次伪字段，以生产日期 + 到期日期识别；删除商品级保质期/总效期及独立商品概览；最近排查日期降为辅助信息；最近导入日期只在详情顶部身份区显示；无待办批次操作显示 `—`。
+S22-T01=`CLOSED / ACCEPTED`：`TECHNICAL PASS / USER GUI PASS / FINAL ACCEPTED`。最终用户已确认商品明细、商品详情、排查详情库存修正入口和分页 Footer 的真实 GUI PASS。S22 专项=`1/1 PASS`；导航=`2/2 PASS`；Release App build=`PASS / 0 error`（仅 `NU1900`）；库存修正专项=`24/24 PASS`；顶部入口=`PASS / NO MUTATION`。旧 S4-T10 固定搜索提示次数断言按既有 disposition 保留，不属于本卡生产缺陷。
 
-两张确认 PNG 是 S22-T01 主要 UI 结构参考；只复用当前 WPF 控件/资源/样式，不引入新 UI 框架、WebView、复杂动画或主题重构。原型示例不构成业务规则，正式阶段只允许正常、5折、2折、收仓、过期。
+migrationCount=`10`；migration11=`NOT_CREATED`；Schema/Version/Installer/Updater/Release diff=`0`；正式版本仍为 `v1.1.0`；未启动 Release；`FULL=NOT_RUN / NO_FULL`。正式数据库未访问，原始正式 dirty 工作区保持，未跟踪 TEMP、测试输出或 GUI 验收临时文件。
 
-governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`。Terra / medium / clean worktree 已实施；Sol 独立审查后，S22 专项=`1/1 PASS`、导航聚焦回归=`2/2 PASS`、Release App build=`PASS / 0 error`（仅 `NU1900`）。Schema/migration/版本/Installer/Updater/Release diff=`0`，migrationCount=`10`，正式 dirty 工作区未变化，未 push，`FULL=NOT_RUN / NO_FULL`。
+Stage22=`IN_PROGRESS / S22-T01_CLOSED / S22-T02_NEXT_NOT_STARTED`。S22-T02=`NOT_CREATED / NOT_STARTED / NEXT`；当前话题不得创建 Task、Terra 或生产实现。
 
-用户首轮 GUI=`FAIL` 后的纯 WPF UI 返修已完成；本轮聚焦返修 final=`803ffb985330886164391c0ea0aa5d9236d5888e`，累计返修差异仅 `MainWindow.xaml`。商品明细已删除“最近导入”列并扩宽商品名称、条码、编码及风险阶段；详情身份区已改为商品编码/商品条码/大类/最近导入四栏，KPI 与业务链不变。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03 导航回归=`2/2 PASS`，`FULL=NOT_RUN / NO_FULL`。R6 商品明细/商品详情两张 TEMP/GUID 隔离截图已生成并等待用户复验；用户 GUI PASS 前不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
-
-R7 聚焦返修 final=`6713578e6dce4ec6c2524212e974aaaf5e97e177`，累计产品差异仍仅 `MainWindow.xaml`。商品详情底部“最近导入信息”整块已删除；排查详情普通固定操作栏的重复“修正库存”已删除，只保留顶部紧邻当前库存的入口，既有超库存处置与库存修正 UseCase 未改。Release App build=`PASS / 0 error`（仅 `NU1900`）；S18-T03=`2/2 PASS`；库存修正 ViewModel 专项=`24/24 PASS`；顶部入口实窗打开编辑器后取消=`PASS / NO MUTATION`。旧 S4-T10 静态审计固定搜索提示次数断言为 2、R6 基线实际为 3，故该组合=`3/4`，未为凑绿修改测试。`FULL=NOT_RUN / NO_FULL`；R7 两张隔离截图等待用户复验，状态不变。
-
-R8 小幅返修 final=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`，仍仅 `MainWindow.xaml`。商品明细分页改为独立 Footer，使用现有 `TableDividerBrush`、12 DIP 上内边距和 22 DIP 底部内边距；左右内容垂直居中，中间表格 `*` 行自动缩短。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03=`2/2 PASS`；1024×600 DIP、150% DPI 实窗为 1536×900 px，分页按钮完整可见，测得按钮至窗口底边约 29.3 DIP（含非客户区）。`FULL=NOT_RUN / NO_FULL`；不改分页逻辑、Query、Schema、测试语义或 migration，继续等待用户 GUI 复验。
+下一步只能在全新 Codex Sol 话题中从 fresh `origin/main` 审计后决定是否启动 S22-T02。首轮审计 `ImportPlan / ImportRecord / ImportIssue / Workbook / Product / Batch / ProductTask`，继续优先争取零 migration；未经用户批准不得创建 migration11。
 
 # 2026-09-13：Stage21 CLOSED / ACCEPTED
 
