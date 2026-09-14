@@ -6,6 +6,8 @@ final implementation=`8ccc5e84b5aad8c3eae740c764506ef502662e7c`。Sol 独立定�
 
 下一步由用户双击 `docs/S22-T02-开始验收.cmd`，按 `docs/S22-T02-GUI验收步骤.md` 完成真实 WPF GUI 验收。入口只用 TEMP/GUID 隔离数据库并自动生成/复制专用 Excel 路径；fixture 端到端固定数字 `6/6 PASS`、外部持久生成 `1/1 PASS`、CMD/PowerShell 编码与语法检查 PASS。用户明确 PASS 后才允许治理收口、集成与 `CLOSED / ACCEPTED`；当前未 push。
 
+用户首次入口因 stale `CodexSandboxOffline` NuGet 资产路径在 fixture 编译前失败；已修复为当前用户 NuGet cache 强制 restore。精确使用 `C:\Users\39037\.nuget\packages` 复验 restore PASS、fixture `1/1 PASS`、Release App build `0 warning / 0 error`。该入口失败不记生产失败；真实 GUI 仍待用户重试。
+
 # 2026-09-14 historical：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 
 fresh integration baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；final implementation=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`；accepted pre-closeout candidate=`4cb8ec526c0e0271088818e4772d9313ef9c422b`。最终 `origin/main` 是包含本收口记录的提交；下一话题必须 fresh resolve，不得依赖旧话题 SHA。

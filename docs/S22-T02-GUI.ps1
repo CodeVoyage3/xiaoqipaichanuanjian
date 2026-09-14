@@ -6,6 +6,12 @@ $tests = Join-Path $repoRoot 'tests\StoreExpiryInspector.Tests\StoreExpiryInspec
 $instructions = Join-Path $PSScriptRoot 'S22-T02-GUI验收步骤.md'
 $dataRoot = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
 $workbook = Join-Path $dataRoot 'S22-T02-请导入此文件.xlsx'
+$userPackages = Join-Path $env:USERPROFILE '.nuget\packages'
+
+if (-not (Test-Path -LiteralPath $userPackages -PathType Container)) { throw "未找到当前用户 NuGet 缓存：$userPackages" }
+$env:NUGET_PACKAGES = $userPackages
+& dotnet restore $tests --packages $userPackages --ignore-failed-sources --force-evaluate -p:NuGetAudit=false
+if ($LASTEXITCODE -ne 0) { throw '当前用户依赖资产刷新失败。' }
 
 try {
     $env:S22_T02_GUI_ROOT = $dataRoot
