@@ -433,6 +433,14 @@
                TargetType="ComboBox"
                BasedOn="{StaticResource TodayCategoryComboBoxStyle}">
             <Setter Property="Height" Value="40" />
+            <Setter Property="ItemTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Label}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <DataTemplate x:Key="ProductCatalogTaskBadgeTemplate">
