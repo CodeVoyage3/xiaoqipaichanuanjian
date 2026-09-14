@@ -2722,7 +2722,6 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Width="10" Height="10" Fill="{Binding Foreground, ElementName=DraftFooterStatusText}" Margin="4,0,10,0" />
@@ -2742,11 +2741,6 @@
                                             Style="{StaticResource LinkButtonStyle}"
                                             Margin="16,0,8,0" />
                                     <Button Grid.Column="2"
-                                            Content="修正库存"
-                                            Command="{Binding Detail.OpenInventoryCommand}"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Margin="0,0,12,0" />
-                                    <Button Grid.Column="3"
                                             Content="{Binding Detail.SubmitButtonText}"
                                             Command="{Binding Detail.SubmitCommand}"
                                             Style="{StaticResource PrimaryButtonStyle}"
@@ -2990,7 +2984,6 @@
                                 </Grid>
                             </Border>
                             <TextBlock Margin="0,10,0,0" Text="{Binding ProductCatalog.Selected.LastInspectionText, StringFormat=最近排查日期：{0}}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                            <Border Margin="0,12,0,0" Padding="14" Style="{StaticResource PageSectionBorderStyle}"><StackPanel><TextBlock Text="最近导入信息" FontSize="16" FontWeight="SemiBold" /><Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><StackPanel><TextBlock Text="导入日期" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.Product.LastImportText}" FontWeight="SemiBold" Margin="0,4,0,0" /></StackPanel><StackPanel Grid.Column="1"><TextBlock Text="Excel库存" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.ExcelStockText}" FontWeight="SemiBold" Margin="0,4,0,0" /></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="当前有效库存" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.Product.EffectiveStockQty}" FontWeight="SemiBold" Margin="0,4,0,0" /></StackPanel></Grid></StackPanel></Border>
                             <TextBlock Text="{Binding ProductCatalog.Error}" Foreground="{DynamicResource DangerBrush}" Visibility="{Binding ProductCatalog.HasError, Converter={StaticResource BoolToVisibility}}" />
                 </StackPanel></ScrollViewer></Grid>
 
