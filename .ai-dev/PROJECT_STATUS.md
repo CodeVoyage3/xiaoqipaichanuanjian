@@ -1,4 +1,12 @@
-# 2026-09-14 current：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
+# 2026-09-14：S22-T02 GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED
+
+fresh `origin/main=022ee5691cda9aa4184b7ba93599be0eab4bf3a6`；原始正式工作树仍为旧 HEAD `a6a47f2a255f3eaad5687a7700d72818d0ee5898`、behind 159、历史 `1 modified + 4 untracked`，未触碰。Stage22=`IN_PROGRESS / S22-T01_CLOSED / S22-T02_GOVERNANCE_FROZEN_IMPLEMENTATION_AUTHORIZED`；S22-T02=`GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。
+
+冻结口径：库存采用本次 ExcelStockQty 对比上一次有效 ExcelStockQty；已有商品 before>0/after=0 才算变0。缺失以最近成功未撤销导入为基准，按缺失批次计数；缺失待办是其 open task 只读子集。首次导入无历史基准项显示 `—`；异常取成功提交后实际 ImportIssue。首版仅本次即时摘要，无历史回看、复杂钻取或新导航。
+
+migrationCount=`10`；migration11=`NOT_CREATED / FORBIDDEN`；Version/Installer/Updater/Release 均冻结；`FULL=NOT_RUN / NO_FULL`。下一步仅由当前 Sol 主话题内全新 GPT-5.6 Terra / medium / standard / clean worktree 实施，随后 Sol 独立技术验收并交用户真实 WPF GUI 验收。
+
+# 2026-09-14 historical：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 
 - fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；正式版本保持 `v1.1.0`；migrationCount=`10`。
 - Stage22=`IN_PROGRESS / S22-T01_CLOSED / S22-T02_NEXT_NOT_STARTED`；S22-T01=`CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS`。

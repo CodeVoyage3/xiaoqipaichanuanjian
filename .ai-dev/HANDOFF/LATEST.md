@@ -1,4 +1,10 @@
-# 2026-09-14：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
+# 2026-09-14：S22-T02 已冻结并授权 Terra 实施
+
+fresh baseline=`origin/main@022ee5691cda9aa4184b7ba93599be0eab4bf3a6`。S22-T02=`GOVERNANCE_FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`；库存采用方案 A，缺失按上一成功未撤销导入的缺失批次，缺失待办只读 open task，首次无基准项显示 `—`，异常取提交后实际 ImportIssue。首版仅本次即时摘要，migrationCount 保持10，无 migration11。
+
+下一步由当前 Sol 主话题内全新 GPT-5.6 Terra / medium / standard / clean worktree 实施；Terra 不得扩 scope、修改治理状态、push main 或发布。返回后由 Sol 独立审查和最小门禁，最终 GUI 由用户本人验收。正式 dirty 工作树历史 `1 modified + 4 untracked` 必须保持原样；`FULL=NOT_RUN / NO_FULL`。
+
+# 2026-09-14 historical：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 
 fresh integration baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；final implementation=`9d5ab1872f1f12795bce2d3617e9fbe80acb70ce`；accepted pre-closeout candidate=`4cb8ec526c0e0271088818e4772d9313ef9c422b`。最终 `origin/main` 是包含本收口记录的提交；下一话题必须 fresh resolve，不得依赖旧话题 SHA。
 
