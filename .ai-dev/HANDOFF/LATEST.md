@@ -1,6 +1,6 @@
-# 2026-09-14：Stage22 / S22-T01 GUI_FAIL / UI_REWORK_AUTHORIZED
+# 2026-09-14：Stage22 / S22-T01 UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST
 
-fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=`IN_PROGRESS / S22-T01_GUI_FAIL / UI_REWORK_AUTHORIZED`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / USER_GUI_FAIL / UI_REWORK_AUTHORIZED / NOT_ACCEPTED`；S22-T02=`NOT_CREATED / NOT_STARTED`。
+fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=`IN_PROGRESS / S22-T01_UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / UI_REWORK_IMPLEMENTED / WAITING_USER_GUI_RETEST / NOT_ACCEPTED`；S22-T02=`NOT_CREATED / NOT_STARTED`。
 
 用户确认零 migration 产品口径：当前总库存只取 `Product.EffectiveStockQty`；批次级不得显示当前库存，`CurrentArrivalQty` 如展示只能命名“累计到货”；取消批次号/批次伪字段，以生产日期 + 到期日期识别；删除商品级保质期/总效期及独立商品概览；最近排查日期降为辅助信息；最近导入信息只显示最近一次；无待办批次操作显示 `—`。
 
@@ -8,7 +8,7 @@ fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=
 
 governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`。Terra / medium / clean worktree 已实施；Sol 独立审查后，S22 专项=`1/1 PASS`、导航聚焦回归=`2/2 PASS`、Release App build=`PASS / 0 error`（仅 `NU1900`）。Schema/migration/版本/Installer/Updater/Release diff=`0`，migrationCount=`10`，正式 dirty 工作区未变化，未 push，`FULL=NOT_RUN / NO_FULL`。
 
-用户首轮 GUI=`FAIL`。下一步只返修冻结原型对应的 WPF 视觉层级、统一控件样式、表格可读性、Stage/Task Badge、身份卡、5 项 KPI、黄色提示卡、排序提示、最近导入辅助卡和导航对齐；不得修改业务逻辑、Schema、Query、测试语义、版本或发布链。返修后只运行必要 build 与 UI/导航回归，并提供商品明细/商品详情两张新截图。用户 GUI PASS 前不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
+用户首轮 GUI=`FAIL` 后的纯 WPF UI 返修已完成，final=`2691c3aa690563f96679ba837a11d2839345462f`，返修差异仅 `MainWindow.xaml`。Release App build=`PASS / 0 error`（仅 `NU1900`），S18-T03 导航回归=`2/2 PASS`，`FULL=NOT_RUN / NO_FULL`。商品明细/商品详情两张 TEMP/GUID 隔离截图已生成并等待用户复验；用户 GUI PASS 前不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
 
 # 2026-09-13：Stage21 CLOSED / ACCEPTED
 
