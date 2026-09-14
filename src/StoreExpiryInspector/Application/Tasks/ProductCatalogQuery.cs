@@ -11,7 +11,7 @@ public sealed record ProductCatalogItem(long ProductId, string? Name, string Cod
 { public string NearestExpiryText => NearestExpiry?.ToString("yyyy-MM-dd") ?? "—"; public string LastImportText => LastImportAtUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—"; }
 public sealed record ProductCatalogPage(IReadOnlyList<ProductCatalogItem> Items, int TotalCount, int Page, int PageSize);
 public sealed record ProductCatalogBatch(long BatchId, DateOnly? ProductionDate, DateOnly ExpiryDate, int CurrentArrivalQty, string Stage, bool IsPending)
-{ public string TaskStatus => IsPending ? "待排查" : "—"; public string ProductionDateText => ProductionDate?.ToString("yyyy-MM-dd") ?? "—"; public string ExpiryDateText => ExpiryDate.ToString("yyyy-MM-dd"); }
+{ public string TaskStatus => IsPending ? "待处理" : "正常"; public string ProductionDateText => ProductionDate?.ToString("yyyy-MM-dd") ?? "—"; public string ExpiryDateText => ExpiryDate.ToString("yyyy-MM-dd"); }
 public sealed record ProductCatalogDetail(ProductCatalogItem Product, IReadOnlyList<ProductCatalogBatch> Batches, int? ExcelStockQty, DateTime? LastInspectionAtUtc)
 { public string ExcelStockText => ExcelStockQty?.ToString() ?? "—"; public string LastInspectionText => LastInspectionAtUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—"; }
 

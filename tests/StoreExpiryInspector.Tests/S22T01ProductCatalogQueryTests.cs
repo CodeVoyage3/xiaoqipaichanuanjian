@@ -27,6 +27,9 @@ public sealed class S22T01ProductCatalogQueryTests
         Assert.Equal(9, item.EffectiveStockQty); Assert.Equal(ExpiryStageCalculator.Discount50, item.HighestStage); Assert.Equal(new DateOnly(2026, 9, 20), item.NearestExpiry);
         Assert.Equal("2026-09-20", item.NearestExpiryText); Assert.Equal("5折", new ProductCatalogViewModel(_ => new([], 0, 1, 50), _ => null).Stages.Single(option => option.Value == ExpiryStageCalculator.Discount50).Label);
         Assert.Equal("2026-09-14", item.LastImportText); Assert.Empty(new ProductCatalogQuery().Search(context, new(Stage: ExpiryStageCalculator.Expired)).Items);
+        context.Batches.Add(new Batch { ProductId = product.Id, ExpiryDate = new DateOnly(2026, 9, 18), TrackingStatus = "active", CurrentStage = ExpiryStageCalculator.Discount20 }); context.SaveChanges();
+        Assert.Empty(new ProductCatalogQuery().Search(context, new(Stage: ExpiryStageCalculator.Discount50)).Items);
+        Assert.Equal(ExpiryStageCalculator.Discount20, Assert.Single(new ProductCatalogQuery().Search(context, new(Stage: ExpiryStageCalculator.Discount20)).Items).HighestStage);
         var detail = new ProductCatalogQuery().GetDetail(context, product.Id)!;
         Assert.Equal("12", detail.ExcelStockText); Assert.True(detail.Batches.Single(batch => batch.IsPending).IsPending); Assert.Contains(detail.Batches, batch => !batch.IsPending && batch.TaskStatus == "—");
     }
