@@ -3065,10 +3065,11 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="0,0,24,0">
                                         <TextBlock Text="文件来源" FontSize="16" FontWeight="SemiBold" />
-                                        <Button Content="选择 Excel 文件"
-                                                Click="SelectExcel_Click"
-                                                IsEnabled="{Binding Import.CanSelectFile}"
-                                                Style="{StaticResource SecondaryButtonStyle}"
+                                         <Button Content="选择 Excel 文件"
+                                                 Click="SelectExcel_Click"
+                                                 IsEnabled="{Binding Import.CanSelectFile}"
+                                                 Visibility="{Binding Import.IsSucceeded, Converter={StaticResource InverseBoolToVisibility}}"
+                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Width="180"
                                                 HorizontalAlignment="Left"
                                                 Margin="0,16,0,0"
@@ -3177,32 +3178,69 @@
                                  </Grid>
                              </Border>
 
-                             <Border Margin="0,12,0,0" Padding="16" Style="{StaticResource PageSectionBorderStyle}" AutomationProperties.Name="本次数据变化" Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
+                             <Border Margin="0,12,0,0"
+                                     Padding="16"
+                                     Style="{StaticResource PageSectionBorderStyle}"
+                                     AutomationProperties.Name="本次数据变化"
+                                     Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
                                  <StackPanel>
-                                     <TextBlock Text="本次数据变化" FontSize="16" FontWeight="SemiBold" />
-                                     <TextBlock Text="{Binding Import.DifferenceSummaryStatusText}" Margin="0,4,0,0" Foreground="{DynamicResource WarningTextBrush}" Visibility="{Binding Import.HasDifferenceSummaryFailure, Converter={StaticResource BoolToVisibility}}" />
-                                     <Grid Margin="0,12,0,0">
-                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                         <StackPanel Grid.Column="0"><TextBlock Text="新增商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="1"><TextBlock Text="新增批次" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewBatchCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="2"><TextBlock Text="库存增加" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockIncreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="3"><TextBlock Text="库存减少" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockDecreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
-                                     </Grid>
-                                     <Grid Margin="0,12,0,0">
-                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                         <StackPanel Grid.Column="0"><TextBlock Text="库存变为 0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockBecameZeroCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="1"><TextBlock Text="本次未出现（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /><TextBlock Text="{Binding Import.MissingBatchHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
-                                         <StackPanel Grid.Column="2"><TextBlock Text="未出现仍有待办（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingOpenTaskBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" /><TextBlock Text="{Binding Import.MissingOpenTaskHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
-                                     </Grid>
+                                     <TextBlock Text="本次数据变化" FontSize="18" FontWeight="SemiBold" />
+                                     <TextBlock Text="与上一次有效导入对比"
+                                                Margin="0,4,0,0"
+                                                FontSize="12"
+                                                Foreground="{DynamicResource SecondaryTextBrush}" />
+                                     <TextBlock Text="{Binding Import.DifferenceSummaryStatusText}"
+                                                Margin="0,6,0,0"
+                                                Foreground="{DynamicResource WarningTextBrush}"
+                                                Visibility="{Binding Import.HasDifferenceSummaryFailure, Converter={StaticResource BoolToVisibility}}" />
+
+                                     <UniformGrid Columns="4" Margin="0,14,0,0">
+                                         <Border Margin="0,0,8,0" Padding="14,12" MinHeight="88" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="新增商品指标">
+                                             <StackPanel><TextBlock Text="新增商品" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.NewProductCount}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
+                                         </Border>
+                                         <Border Margin="0,0,8,0" Padding="14,12" MinHeight="88" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="新增批次指标">
+                                             <StackPanel><TextBlock Text="新增批次" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.NewBatchCount}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
+                                         </Border>
+                                         <Border Margin="0,0,8,0" Padding="14,12" MinHeight="88" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="库存增加指标">
+                                             <StackPanel><TextBlock Text="库存增加" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.StockIncreaseCountText}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" /></StackPanel>
+                                         </Border>
+                                         <Border Padding="14,12" MinHeight="88" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="库存减少指标">
+                                             <StackPanel><TextBlock Text="库存减少" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.StockDecreaseCountText}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
+                                         </Border>
+                                     </UniformGrid>
+
+                                     <UniformGrid Columns="3" Margin="0,8,0,0">
+                                         <Border Margin="0,0,8,0" Padding="14,12" MinHeight="104" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="库存变为零指标">
+                                             <StackPanel><TextBlock Text="库存变为 0" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.StockBecameZeroCountText}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
+                                         </Border>
+                                         <Border Margin="0,0,8,0" Padding="14,12" MinHeight="104" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="本次未出现指标">
+                                             <StackPanel><TextBlock Text="本次未出现" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.MissingBatchCountText}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding Import.MissingBatchHintText}" Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" /></StackPanel>
+                                         </Border>
+                                         <Border Padding="14,12" MinHeight="104" Background="{DynamicResource WarningSurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" AutomationProperties.Name="未出现仍有待办指标">
+                                             <StackPanel><TextBlock Text="未出现仍有待办" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" /><TextBlock Text="{Binding Import.MissingOpenTaskBatchCountText}" Margin="0,6,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /><TextBlock Text="{Binding Import.MissingOpenTaskHintText}" Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" /></StackPanel>
+                                         </Border>
+                                     </UniformGrid>
                                  </StackPanel>
                              </Border>
 
                              <Border Margin="0,12,0,0"
                                     Padding="16"
-                                    Style="{StaticResource PageSectionBorderStyle}"
-                                    AutomationProperties.Name="导入影响摘要与异常行"
-                                    Visibility="{Binding Import.HasPreview, Converter={StaticResource BoolToVisibility}}">
-                                <StackPanel>
+                                    AutomationProperties.Name="导入影响摘要">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource PageSectionBorderStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding Import.HasPreview}" Value="True" />
+                                                    <Condition Binding="{Binding Import.IsSucceeded}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                 <StackPanel>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -3267,33 +3305,31 @@
                                         </StackPanel>
                                     </Grid>
 
-                                    <Grid Margin="0,16,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Import.PreviewIssueSummaryTitle}" FontSize="16" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Import.PreviewIssueCountText, StringFormat=（{0} 条）}"
-                                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                                       Margin="8,2,0,0" />
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="异常行不会阻止其他有效数据导入"
-                                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                                   FontSize="12"
-                                                   VerticalAlignment="Center"
-                                                   Visibility="{Binding Import.HasWarningDetails, Converter={StaticResource BoolToVisibility}}" />
-                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0,12,0,0"
+                                    Padding="16"
+                                    Style="{StaticResource PageSectionBorderStyle}"
+                                    AutomationProperties.Name="导入异常"
+                                    Visibility="{Binding Import.HasPreview, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Import.IssueSummaryTitle}" FontSize="16" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Import.IssueCountText, StringFormat=（{0} 条）}"
+                                                   Foreground="{DynamicResource DangerBrush}"
+                                                   Margin="8,2,0,0" />
+                                    </StackPanel>
                                     <DataGrid ItemsSource="{Binding Import.IssueRows}"
                                               AutoGenerateColumns="False"
                                               SelectionMode="Single"
                                               SelectionUnit="Cell"
                                               ClipboardCopyMode="ExcludeHeader"
                                               Height="188"
+                                              Margin="0,12,0,0"
                                               BorderThickness="1"
                                               AutomationProperties.Name="Excel 导入异常行列表"
-                                              Visibility="{Binding Import.HasWarningDetails, Converter={StaticResource BoolToVisibility}}">
+                                              Visibility="{Binding Import.ShowIssueTable, Converter={StaticResource BoolToVisibility}}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="行号" Binding="{Binding ExcelRowNumber}" Width="72" />
                                             <DataGridTextColumn Header="商品编码" Binding="{Binding ProductCode}" Width="156" />
@@ -3301,13 +3337,18 @@
                                             <DataGridTextColumn Header="问题说明" Binding="{Binding Description}" Width="*" />
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                    <TextBlock Text="未发现数据异常"
+                                    <TextBlock Text="{Binding Import.IssueEmptyText}"
                                                Foreground="{DynamicResource SuccessBrush}"
-                                               Margin="0,12,0,0"
-                                               Visibility="{Binding Import.HasWarningDetails, Converter={StaticResource InverseBoolToVisibility}}" />
+                                               Margin="0,10,0,0"
+                                               Visibility="{Binding Import.ShowNoIssueMessage, Converter={StaticResource BoolToVisibility}}" />
+                                    <TextBlock Text="实际异常结果暂不可用"
+                                               Foreground="{DynamicResource WarningTextBrush}"
+                                               Margin="0,10,0,0"
+                                               Visibility="{Binding Import.HasDifferenceSummaryFailure, Converter={StaticResource BoolToVisibility}}" />
                                 </StackPanel>
                             </Border>
-                            <Grid Margin="0,16,0,0">
+                            <Grid Margin="0,16,0,0"
+                                  Visibility="{Binding Import.IsSucceeded, Converter={StaticResource InverseBoolToVisibility}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -3330,6 +3371,29 @@
                                             Style="{StaticResource PrimaryButtonStyle}"
                                             Width="112"
                                             AutomationProperties.Name="确认导入 Excel 数据" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,16,0,0"
+                                  Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="本次导入已完成"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="再次导入"
+                                            Click="SelectExcel_Click"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="104"
+                                            Margin="0,0,12,0"
+                                            AutomationProperties.Name="再次导入 Excel 数据" />
+                                    <Button Content="完成"
+                                            Command="{Binding NavigateHomeCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Width="92"
+                                            AutomationProperties.Name="完成本次导入" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

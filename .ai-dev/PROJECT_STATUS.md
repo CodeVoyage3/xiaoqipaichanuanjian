@@ -1,10 +1,10 @@
-# 2026-09-14：S22-T02 SOL_TECHNICAL_PASS / USER_GUI_PENDING
+# 2026-09-14：S22-T02 GUI_R1_TECHNICAL_PASS / USER_GUI_RETEST_PENDING
 
-fresh `origin/main=022ee5691cda9aa4184b7ba93599be0eab4bf3a6`；原始正式工作树仍为旧 HEAD `a6a47f2a255f3eaad5687a7700d72818d0ee5898`、behind 159、历史 `1 modified + 4 untracked`，未触碰。Stage22=`IN_PROGRESS / S22-T01_CLOSED / S22-T02_SOL_TECHNICAL_PASS_USER_GUI_PENDING`；S22-T02=`IMPLEMENTED / SOL_TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED`。
+fresh `origin/main=022ee5691cda9aa4184b7ba93599be0eab4bf3a6`；原始正式工作树仍为旧 HEAD `a6a47f2a255f3eaad5687a7700d72818d0ee5898`、behind 159、历史 `1 modified + 4 untracked`，未触碰。Stage22=`IN_PROGRESS / S22-T01_CLOSED / S22-T02_GUI_R1_TECHNICAL_PASS_USER_GUI_RETEST_PENDING`；S22-T02=`IMPLEMENTED / GUI_R1_TECHNICAL_PASS / USER_GUI_RETEST_PENDING / NOT_ACCEPTED`。
 
 冻结口径：库存采用本次 ExcelStockQty 对比上一次有效 ExcelStockQty；已有商品 before>0/after=0 才算变0。缺失以最近成功未撤销导入为基准，按缺失批次计数；缺失待办是其 open task 只读子集。首次导入无历史基准项显示 `—`；异常取成功提交后实际 ImportIssue。首版仅本次即时摘要，无历史回看、复杂钻取或新导航。
 
-migrationCount=`10`；migration11=`NOT_CREATED / FORBIDDEN`；Version/Installer/Updater/Release 均冻结；`FULL=NOT_RUN / NO_FULL`。final implementation=`8ccc5e84b5aad8c3eae740c764506ef502662e7c`；Sol 独立定向门禁=`63/63 + 36/36 PASS`，Release App build=`0 warning / 0 error`，禁止范围 diff=`0`。下一步只做用户本人真实 WPF GUI 验收；明确 PASS 前不得收口。
+migrationCount=`10`；migration11=`NOT_CREATED / FORBIDDEN`；Version/Installer/Updater/Release 均冻结；`FULL=NOT_RUN / NO_FULL`。用户首轮 GUI=`FAIL` 后仅做成功态 GUI R1：预览状态清理、七项 4+3 独立卡、零异常空态和成功操作区。返修定向=`32/32 PASS`，Release App build=`0 warning / 0 error`，隔离三截图已生成。下一步只做用户本人 GUI 复验；明确 PASS 前不得收口。
 
 # 2026-09-14 historical：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 

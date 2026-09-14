@@ -258,11 +258,13 @@ public sealed class ImportViewModel : ViewModelBase
 
     public string IssueCountText => IsSucceeded ? ActualIssueCountText : WarningCount.ToString();
 
-    public string IssueSummaryTitle => IsSucceeded ? "数据异常" : "预览提示";
+    public string IssueSummaryTitle => IsSucceeded ? "导入异常" : "预览提示";
 
-    public string PreviewIssueSummaryTitle => "导入前预览提示";
+    public bool ShowIssueTable => IsSucceeded ? DifferenceSummary?.IssueCount > 0 : HasWarningDetails;
 
-    public string PreviewIssueCountText => WarningCount.ToString();
+    public bool ShowNoIssueMessage => IsSucceeded ? DifferenceSummary?.IssueCount == 0 : !HasWarningDetails;
+
+    public string IssueEmptyText => IsSucceeded ? "未发现数据异常" : "未发现预览提示";
 
     public bool HasDifferenceSummaryFailure => _hasDifferenceSummaryFailure;
 
@@ -702,8 +704,9 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasRefreshError));
         OnPropertyChanged(nameof(IssueCountText));
         OnPropertyChanged(nameof(IssueSummaryTitle));
-        OnPropertyChanged(nameof(PreviewIssueSummaryTitle));
-        OnPropertyChanged(nameof(PreviewIssueCountText));
+        OnPropertyChanged(nameof(ShowIssueTable));
+        OnPropertyChanged(nameof(ShowNoIssueMessage));
+        OnPropertyChanged(nameof(IssueEmptyText));
         OnPropertyChanged(nameof(SuccessSummaryText));
         OnPropertyChanged(nameof(ConfirmAvailabilityText));
         ConfirmCommand.RaiseCanExecuteChanged();
@@ -724,8 +727,9 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(ActualIssueCountText));
         OnPropertyChanged(nameof(IssueCountText));
         OnPropertyChanged(nameof(IssueSummaryTitle));
-        OnPropertyChanged(nameof(PreviewIssueSummaryTitle));
-        OnPropertyChanged(nameof(PreviewIssueCountText));
+        OnPropertyChanged(nameof(ShowIssueTable));
+        OnPropertyChanged(nameof(ShowNoIssueMessage));
+        OnPropertyChanged(nameof(IssueEmptyText));
         OnPropertyChanged(nameof(HasDifferenceSummaryFailure));
         OnPropertyChanged(nameof(DifferenceSummaryStatusText));
         OnPropertyChanged(nameof(StockIncreaseCountText));

@@ -1,10 +1,10 @@
-# 2026-09-14：S22-T02 SOL_TECHNICAL_PASS / USER_GUI_PENDING
+# 2026-09-14：S22-T02 GUI_R1_TECHNICAL_PASS / USER_GUI_RETEST_PENDING
 
-fresh baseline=`origin/main@022ee5691cda9aa4184b7ba93599be0eab4bf3a6`。S22-T02=`IMPLEMENTED / SOL_TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED`；库存采用方案 A，缺失按上一成功未撤销导入的缺失批次，缺失待办只读 open task，首次无基准项显示 `—`，异常取提交后实际 ImportIssue。首版仅本次即时摘要，migrationCount 保持10，无 migration11。
+fresh baseline=`origin/main@022ee5691cda9aa4184b7ba93599be0eab4bf3a6`。S22-T02=`IMPLEMENTED / GUI_R1_TECHNICAL_PASS / USER_GUI_RETEST_PENDING / NOT_ACCEPTED`；库存采用方案 A，缺失按上一成功未撤销导入的缺失批次，缺失待办只读 open task，首次无基准项显示 `—`，异常取提交后实际 ImportIssue。首版仅本次即时摘要，migrationCount 保持10，无 migration11。
 
 final implementation=`8ccc5e84b5aad8c3eae740c764506ef502662e7c`。Sol 独立定向门禁=`63/63 + 36/36 PASS`；Release App build=`0 warning / 0 error`；`git diff --check=PASS`；Schema/ModelSnapshot/CurrentSchemaIdentity/Version/Installer/Updater/Release diff=`0`。正式 dirty 工作树历史 `1 modified + 4 untracked` 保持原样；`FULL=NOT_RUN / NO_FULL`；正式数据库未访问。
 
-下一步由用户双击 `docs/S22-T02-开始验收.cmd`，按 `docs/S22-T02-GUI验收步骤.md` 完成真实 WPF GUI 验收。入口只用 TEMP/GUID 隔离数据库并自动生成/复制专用 Excel 路径；fixture 端到端固定数字 `6/6 PASS`、外部持久生成 `1/1 PASS`、CMD/PowerShell 编码与语法检查 PASS。用户明确 PASS 后才允许治理收口、集成与 `CLOSED / ACCEPTED`；当前未 push。
+用户首轮 GUI=`FAIL`：成功页残留预览态且七项指标层级不清。纯 GUI R1 已隐藏预览摘要/提示/取消/确认，改为 4+3 独立指标卡、零异常空态和“再次导入 / 完成”；定向回归=`32/32 PASS`，Release App build=`0 warning / 0 error`，三张 TEMP/GUID 隔离截图已生成。下一步由用户按更新后的 `docs/S22-T02-GUI验收步骤.md` 复验；明确 PASS 前保持 `NOT_ACCEPTED / NOT_CLOSED`，当前未 push。
 
 用户首次入口因 stale `CodexSandboxOffline` NuGet 资产路径在 fixture 编译前失败；已修复为当前用户 NuGet cache 强制 restore。精确使用 `C:\Users\39037\.nuget\packages` 复验 restore PASS、fixture `1/1 PASS`、Release App build `0 warning / 0 error`。该入口失败不记生产失败；真实 GUI 仍待用户重试。
 

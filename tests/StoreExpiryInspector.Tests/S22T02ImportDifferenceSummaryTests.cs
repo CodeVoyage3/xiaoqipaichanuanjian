@@ -163,6 +163,25 @@ public sealed class S22T02ImportDifferenceSummaryTests
     }
 
     [Fact]
+    public void SucceededUiSeparatesSevenMetricCardsFromPreviewActions()
+    {
+        var xaml = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        var viewModel = File.ReadAllText(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "ImportViewModel.cs"));
+
+        Assert.Contains("<UniformGrid Columns=\"4\"", xaml);
+        Assert.Contains("<UniformGrid Columns=\"3\"", xaml);
+        foreach (var name in new[] { "新增商品指标", "新增批次指标", "库存增加指标", "库存减少指标", "库存变为零指标", "本次未出现指标", "未出现仍有待办指标" })
+            Assert.Contains($"AutomationProperties.Name=\"{name}\"", xaml);
+        Assert.Contains("AutomationProperties.Name=\"再次导入 Excel 数据\"", xaml);
+        Assert.Contains("AutomationProperties.Name=\"完成本次导入\"", xaml);
+        Assert.Contains("Visibility=\"{Binding Import.ShowIssueTable", xaml);
+        Assert.Contains("Visibility=\"{Binding Import.ShowNoIssueMessage", xaml);
+        Assert.Contains("<Condition Binding=\"{Binding Import.IsSucceeded}\" Value=\"False\"", xaml);
+        Assert.DoesNotContain("PreviewIssueSummaryTitle", xaml + viewModel);
+        Assert.DoesNotContain("导入前预览提示", xaml + viewModel);
+    }
+
+    [Fact]
     public void SeedsRequestedTemporaryGuiFixture()
     {
         var root = Environment.GetEnvironmentVariable("S22_T02_GUI_ROOT");
@@ -282,6 +301,13 @@ public sealed class S22T02ImportDifferenceSummaryTests
 
     private static ExcelRowDto Row(int number, string code, string name, string barcode, string? production, string expiry, string stock) => new(
         number, "食品", code, barcode, name, production, expiry, "12", "M", "否", "1", stock);
+
+    private static string FindRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "StoreExpiryInspector.slnx"))) return directory.FullName;
+        throw new DirectoryNotFoundException("Repository root was not found.");
+    }
 
     private sealed class SummaryVmFixture : IDisposable
     {
