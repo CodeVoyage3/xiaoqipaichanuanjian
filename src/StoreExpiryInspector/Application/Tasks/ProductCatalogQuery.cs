@@ -7,10 +7,11 @@ using StoreExpiryInspector.Infrastructure.Excel;
 namespace StoreExpiryInspector.Application.Tasks;
 
 public sealed record ProductCatalogRequest(string? SearchText = null, string? CategoryName = null, string? Stage = null, string? TaskStatus = null, int Page = 1, int PageSize = 50);
-public sealed record ProductCatalogItem(long ProductId, string? Name, string Code, string? Barcode, string Category, int BatchCount, int EffectiveStockQty, DateOnly? NearestExpiry, string HighestStage, int PendingCount, DateTime? LastImportAtUtc, long? OpenTaskId);
+public sealed record ProductCatalogItem(long ProductId, string? Name, string Code, string? Barcode, string Category, int BatchCount, int EffectiveStockQty, DateOnly? NearestExpiry, string HighestStage, int PendingCount, DateTime? LastImportAtUtc, long? OpenTaskId)
+{ public string NearestExpiryText => NearestExpiry?.ToString("yyyy-MM-dd") ?? "—"; public string LastImportText => LastImportAtUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—"; }
 public sealed record ProductCatalogPage(IReadOnlyList<ProductCatalogItem> Items, int TotalCount, int Page, int PageSize);
 public sealed record ProductCatalogBatch(long BatchId, DateOnly? ProductionDate, DateOnly ExpiryDate, int CurrentArrivalQty, string Stage, bool IsPending)
-{ public string TaskStatus => IsPending ? "待排查" : "—"; }
+{ public string TaskStatus => IsPending ? "待排查" : "—"; public string ProductionDateText => ProductionDate?.ToString("yyyy-MM-dd") ?? "—"; public string ExpiryDateText => ExpiryDate.ToString("yyyy-MM-dd"); }
 public sealed record ProductCatalogDetail(ProductCatalogItem Product, IReadOnlyList<ProductCatalogBatch> Batches, int? ExcelStockQty, DateTime? LastInspectionAtUtc);
 
 public sealed class ProductCatalogQuery
@@ -43,7 +44,8 @@ public sealed class ProductCatalogQuery
 
     public ProductCatalogDetail? GetDetail(StoreDbContext context, long productId)
     {
-        var product = Search(context, new(PageSize: int.MaxValue)).Items.SingleOrDefault(item => item.ProductId == productId);
+        var productRow = context.Products.AsNoTracking().Where(product => product.Id == productId).Select(product => new { product.Id, product.CurrentName, product.ProductCode, product.CurrentBarcode, product.CategoryCode, product.EffectiveStockQty, BatchCount = product.Batches.Count(), NearestExpiry = product.Batches.Where(batch => batch.TrackingStatus == "active").Select(batch => (DateOnly?)batch.ExpiryDate).Min(), HighestPriority = product.Batches.Where(batch => batch.TrackingStatus == "active").Select(batch => batch.CurrentStage == ExpiryStageCalculator.Expired ? 4 : batch.CurrentStage == ExpiryStageCalculator.Withdraw ? 3 : batch.CurrentStage == ExpiryStageCalculator.Discount20 ? 2 : batch.CurrentStage == ExpiryStageCalculator.Discount50 ? 1 : 0).DefaultIfEmpty().Max(), PendingCount = product.Tasks.Where(task => task.Status == "open").SelectMany(task => task.Items).Count(), OpenTaskId = product.Tasks.Where(task => task.Status == "open").Select(task => (long?)task.Id).FirstOrDefault(), LastImport = product.LastSeenImportId == null ? null : context.Imports.Where(import => import.Id == product.LastSeenImportId && import.Status == ImportStatuses.Succeeded && !import.IsUndone).Select(import => import.ConfirmedAtUtc).FirstOrDefault() }).SingleOrDefault();
+        var product = productRow is null ? null : ToItem(productRow.Id, productRow.CurrentName, productRow.ProductCode, productRow.CurrentBarcode, productRow.CategoryCode, productRow.BatchCount, productRow.EffectiveStockQty, productRow.NearestExpiry, productRow.HighestPriority, productRow.PendingCount, productRow.LastImport, productRow.OpenTaskId);
         if (product is null) return null;
         var openTask = product.OpenTaskId;
         var batches = context.Batches.AsNoTracking().Where(batch => batch.ProductId == productId).Select(batch => new ProductCatalogBatch(batch.Id, batch.ProductionDate, batch.ExpiryDate, batch.CurrentArrivalQty, batch.CurrentStage, openTask != null && context.TaskItems.Any(item => item.TaskId == openTask && item.BatchId == batch.Id))).ToArray()

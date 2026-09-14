@@ -1,6 +1,7 @@
 using StoreExpiryInspector.Application.Imports;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
+using StoreExpiryInspector.UI;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -20,5 +21,6 @@ public sealed class S22T01ProductCatalogQueryTests
         context.SaveChanges();
         var item = Assert.Single(new ProductCatalogQuery().Search(context, new()).Items);
         Assert.Equal(9, item.EffectiveStockQty); Assert.Equal(ExpiryStageCalculator.Discount50, item.HighestStage); Assert.Equal(new DateOnly(2026, 9, 20), item.NearestExpiry);
+        Assert.Equal("2026-09-20", item.NearestExpiryText); Assert.Equal("5折", new ProductCatalogViewModel(_ => new([], 0, 1, 50), _ => null).Stages.Single(option => option.Value == ExpiryStageCalculator.Discount50).Label);
     }
 }

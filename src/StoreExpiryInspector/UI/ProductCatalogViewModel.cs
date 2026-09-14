@@ -15,8 +15,8 @@ public sealed class ProductCatalogViewModel : ViewModelBase
     { _search = search; _detail = detail; _log = log; RefreshCommand = new RelayCommand(_ => { _page = 1; _ = LoadAsync(); }); ClearCommand = new RelayCommand(_ => { SearchText = Category = Stage = TaskStatus = string.Empty; _page = 1; _ = LoadAsync(); }); PreviousPageCommand = new RelayCommand(_ => { if (_page > 1) { _page--; _ = LoadAsync(); } }); NextPageCommand = new RelayCommand(_ => { if (_page * 50 < Total) { _page++; _ = LoadAsync(); } }); }
     public ObservableCollection<ProductCatalogItem> Items { get; } = [];
     public IReadOnlyList<string> Categories { get; } = ["", "食品", "宠物", "日用", "美妆", "家居", "香氛香水", "文具", "潮流玩具", "应季搭配", "赠品小样"];
-    public IReadOnlyList<string> Stages { get; } = ["", ExpiryStageCalculator.None, ExpiryStageCalculator.Discount50, ExpiryStageCalculator.Discount20, ExpiryStageCalculator.Withdraw, ExpiryStageCalculator.Expired];
-    public IReadOnlyList<string> TaskStatuses { get; } = ["", "open", "none"];
+    public IReadOnlyList<CatalogOption> Stages { get; } = [new("全部阶段", ""), new("正常", ExpiryStageCalculator.None), new("5折", ExpiryStageCalculator.Discount50), new("2折", ExpiryStageCalculator.Discount20), new("收仓", ExpiryStageCalculator.Withdraw), new("过期", ExpiryStageCalculator.Expired)];
+    public IReadOnlyList<CatalogOption> TaskStatuses { get; } = [new("全部状态", ""), new("有待办", "open"), new("无待办", "none")];
     public RelayCommand RefreshCommand { get; } public RelayCommand ClearCommand { get; } public RelayCommand PreviousPageCommand { get; } public RelayCommand NextPageCommand { get; }
     public string SearchText { get => _searchText; set { if (_searchText == value) return; _searchText = value; OnPropertyChanged(); } }
     public string Category { get => _category; set { if (_category == value) return; _category = value; OnPropertyChanged(); } }
@@ -25,7 +25,9 @@ public sealed class ProductCatalogViewModel : ViewModelBase
     public bool IsLoading { get => _loading; private set { _loading = value; OnPropertyChanged(); } } public bool HasError { get => _hasError; private set { _hasError = value; OnPropertyChanged(); } } public string Error { get => _error; private set { _error = value; OnPropertyChanged(); } }
     public int Total { get => _total; private set { _total = value; OnPropertyChanged(); OnPropertyChanged(nameof(PageText)); } } public string PageText => $"第 {_page} 页 · 共 {Total} 个商品";
     public ProductCatalogDetail? Selected { get => _selected; private set { _selected = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasOpenTask)); } } public bool HasOpenTask => Selected?.Product.OpenTaskId is not null;
-    public async Task LoadAsync() { IsLoading = true; HasError = false; try { var result = await Task.Run(() => _search(new(SearchText, Category, Stage, TaskStatus, _page))); Items.Clear(); foreach (var item in result.Items) Items.Add(item); Total = result.TotalCount; } catch (Exception ex) { _log?.Invoke(ex); HasError = true; Error = "商品明细加载失败"; } finally { IsLoading = false; } }
+    public bool HasNoItems => !IsLoading && !HasError && Items.Count == 0;
+    public async Task LoadAsync() { IsLoading = true; HasError = false; Error = string.Empty; try { var result = await Task.Run(() => _search(new(SearchText, Category, Stage, TaskStatus, _page))); Items.Clear(); foreach (var item in result.Items) Items.Add(item); Total = result.TotalCount; OnPropertyChanged(nameof(HasNoItems)); } catch (Exception ex) { _log?.Invoke(ex); Items.Clear(); HasError = true; Error = "商品明细加载失败"; OnPropertyChanged(nameof(HasNoItems)); } finally { IsLoading = false; OnPropertyChanged(nameof(HasNoItems)); } }
     public async Task OpenAsync(long productId) { IsLoading = true; try { Selected = await Task.Run(() => _detail(productId)); } catch (Exception ex) { _log?.Invoke(ex); HasError = true; Error = "商品详情加载失败"; } finally { IsLoading = false; } }
     public void ClearDetail() => Selected = null;
 }
+public sealed record CatalogOption(string Label, string Value);
