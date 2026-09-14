@@ -1,13 +1,14 @@
-# 2026-09-14 current：Stage22 / S22-T01 WAITING_USER_GUI
+# 2026-09-14 current：Stage22 / S22-T01 GUI_FAIL / UI_REWORK_AUTHORIZED
 
 - fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`；正式版本保持 `v1.1.0`；migrationCount=`10`。
-- Stage22=`IN_PROGRESS / S22-T01_TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / WAITING_USER_GUI / NOT_ACCEPTED`。
+- Stage22=`IN_PROGRESS / S22-T01_GUI_FAIL / UI_REWORK_AUTHORIZED`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / USER_GUI_FAIL / UI_REWORK_AUTHORIZED / NOT_ACCEPTED`。
 - S22-T02=`NOT_CREATED / NOT_STARTED`；不得创建 S22-T03。
 - 用户确认零 migration：当前总库存=`Product.EffectiveStockQty`；批次无“当前库存”、无伪批次号；可选“累计到货”；删除商品概览/保质期/总效期；最近导入信息只显示最近一次；无待办批次操作=`—`。
 - 两张用户确认 PNG 冻结页面结构、层级、导航、筛选、列表、KPI、批次和最近导入区域；示例业务数据不构成规则，阶段仅正常/5折/2折/收仓/过期。
 - governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`；Terra / medium / clean worktree 实施，Sol 独立验收=`PASS`，最终等待用户真实 WPF GUI PASS。
 - S22 专项=`1/1 PASS`；导航聚焦回归=`2/2 PASS`；Release App build=`PASS / 0 error`（仅 `NU1900`）；禁止范围 diff=`0`；正式 dirty 工作区未变化；未 push。
 - `NO_SCHEMA_CHANGE / NO_MIGRATION11`；`FULL=NOT_RUN / NO_FULL`；不改版本、Installer、Updater、Release Contract 或任何发布状态。
+- 用户首轮 GUI=`FAIL`：功能骨架保留，仅返修冻结原型对应的 WPF 视觉层级、控件样式、Badge、KPI、表格、提示卡、导航对齐与两张复验截图；不得改 Query/业务/测试语义。
 
 # 2026-09-13 current：Stage21 CLOSED / ACCEPTED
 
