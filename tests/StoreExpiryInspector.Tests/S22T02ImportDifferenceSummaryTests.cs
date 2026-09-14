@@ -17,8 +17,10 @@ public sealed class S22T02ImportDifferenceSummaryTests
         using var context = database.Open();
         var baseline = Import("2026-09-01");
         var undone = Import("2026-09-02", undone: true);
+        var failed = Import("2026-09-02", status: "Failed");
+        var unconfirmed = Import("2026-09-02", status: ImportStatuses.Succeeded, confirmed: false);
         var future = Import("2026-09-04");
-        context.Imports.AddRange(baseline, undone, future);
+        context.Imports.AddRange(baseline, undone, failed, unconfirmed, future);
         context.SaveChanges();
 
         var present = Product("P", 5, 99, baseline.Id);
@@ -158,10 +160,10 @@ public sealed class S22T02ImportDifferenceSummaryTests
         Assert.Contains(plan.NewBatches, batch => batch.BatchKey.ProductionDate == new DateOnly(2026, 1, 1));
     }
 
-    private static ImportRecord Import(string confirmedAtUtc, bool undone = false) => new()
+    private static ImportRecord Import(string confirmedAtUtc, bool undone = false, string? status = null, bool confirmed = true) => new()
     {
         SourceFileName = "test.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = DateTime.Parse(confirmedAtUtc + "T00:00:00Z"),
-        ConfirmedAtUtc = DateTime.Parse(confirmedAtUtc + "T00:00:00Z"), Status = undone ? ImportStatuses.Undone : ImportStatuses.Succeeded,
+        ConfirmedAtUtc = confirmed ? DateTime.Parse(confirmedAtUtc + "T00:00:00Z") : null, Status = status ?? (undone ? ImportStatuses.Undone : ImportStatuses.Succeeded),
         IsUndone = undone, UndoneAtUtc = undone ? DateTime.Parse(confirmedAtUtc + "T01:00:00Z") : null
     };
 

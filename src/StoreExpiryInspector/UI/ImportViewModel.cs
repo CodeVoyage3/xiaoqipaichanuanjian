@@ -260,6 +260,10 @@ public sealed class ImportViewModel : ViewModelBase
 
     public string IssueSummaryTitle => IsSucceeded ? "数据异常" : "预览提示";
 
+    public string PreviewIssueSummaryTitle => "导入前预览提示";
+
+    public string PreviewIssueCountText => WarningCount.ToString();
+
     public bool HasDifferenceSummaryFailure => _hasDifferenceSummaryFailure;
 
     public string DifferenceSummaryStatusText => HasDifferenceSummaryFailure ? "导入已成功提交，但本次数据变化摘要读取失败。" : string.Empty;
@@ -698,6 +702,8 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasRefreshError));
         OnPropertyChanged(nameof(IssueCountText));
         OnPropertyChanged(nameof(IssueSummaryTitle));
+        OnPropertyChanged(nameof(PreviewIssueSummaryTitle));
+        OnPropertyChanged(nameof(PreviewIssueCountText));
         OnPropertyChanged(nameof(SuccessSummaryText));
         OnPropertyChanged(nameof(ConfirmAvailabilityText));
         ConfirmCommand.RaiseCanExecuteChanged();
@@ -718,6 +724,8 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(ActualIssueCountText));
         OnPropertyChanged(nameof(IssueCountText));
         OnPropertyChanged(nameof(IssueSummaryTitle));
+        OnPropertyChanged(nameof(PreviewIssueSummaryTitle));
+        OnPropertyChanged(nameof(PreviewIssueCountText));
         OnPropertyChanged(nameof(HasDifferenceSummaryFailure));
         OnPropertyChanged(nameof(DifferenceSummaryStatusText));
         OnPropertyChanged(nameof(StockIncreaseCountText));

@@ -3273,8 +3273,8 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Import.IssueSummaryTitle}" FontSize="16" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Import.IssueCountText, StringFormat=（{0} 条）}"
+                                            <TextBlock Text="{Binding Import.PreviewIssueSummaryTitle}" FontSize="16" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Import.PreviewIssueCountText, StringFormat=（{0} 条）}"
                                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                                        Margin="8,2,0,0" />
                                         </StackPanel>
