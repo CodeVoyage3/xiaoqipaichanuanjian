@@ -1426,6 +1426,7 @@ public sealed class ShellViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsProductCatalogVisible));
             OnPropertyChanged(nameof(IsProductCatalogDetailVisible));
             OnPropertyChanged(nameof(IsHomeSectionVisible));
+            OnPropertyChanged(nameof(IsProductCatalogSectionVisible));
             OnPropertyChanged(nameof(IsStandardHeaderVisible));
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(PageSubtitle));
@@ -1451,6 +1452,7 @@ public sealed class ShellViewModel : ViewModelBase
     public bool IsProductCatalogDetailVisible => CurrentPage == ShellPage.ProductCatalogDetail;
 
     public bool IsHomeSectionVisible => CurrentPage is ShellPage.Dashboard or ShellPage.FutureExpiryRisk;
+    public bool IsProductCatalogSectionVisible => CurrentPage is ShellPage.ProductCatalog or ShellPage.ProductCatalogDetail;
 
     public bool IsStandardHeaderVisible => CurrentPage is not (ShellPage.InspectionDetail or ShellPage.FutureExpiryRisk or ShellPage.ProductCatalogDetail);
 

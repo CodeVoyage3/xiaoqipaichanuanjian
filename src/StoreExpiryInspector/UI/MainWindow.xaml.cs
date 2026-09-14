@@ -238,6 +238,7 @@ public partial class MainWindow : Window
         NavigationTasksText.Visibility = textVisibility;
         NavigationHistoryText.Visibility = textVisibility;
         NavigationImportText.Visibility = textVisibility;
+        NavigationProductCatalogText.Visibility = textVisibility;
         NavigationTodayInspectionText.Visibility = textVisibility;
         NavigationBackupText.Visibility = textVisibility;
         NavigationSettingsText.Visibility = textVisibility;
@@ -255,6 +256,7 @@ public partial class MainWindow : Window
             NavigationTasksButton,
             NavigationHistoryButton,
             NavigationImportButton,
+            NavigationProductCatalogButton,
             NavigationTodayInspectionButton,
             NavigationBackupButton,
             NavigationSettingsButton
