@@ -3,7 +3,9 @@ using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.Infrastructure.Excel;
 using StoreExpiryInspector.UI;
+using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -160,6 +162,86 @@ public sealed class S22T02ImportDifferenceSummaryTests
         Assert.Contains(plan.NewBatches, batch => batch.BatchKey.ProductionDate == new DateOnly(2026, 1, 1));
     }
 
+    [Fact]
+    public void SeedsRequestedTemporaryGuiFixture()
+    {
+        var root = Environment.GetEnvironmentVariable("S22_T02_GUI_ROOT");
+        var ownsRoot = string.IsNullOrWhiteSpace(root);
+        root ??= Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Assert.True(Guid.TryParse(Path.GetFileName(root), out _));
+        Assert.StartsWith(Path.GetTempPath(), root, StringComparison.OrdinalIgnoreCase);
+
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "data"));
+            Directory.CreateDirectory(Path.Combine(root, "backups", "pre-import"));
+            Directory.CreateDirectory(Path.Combine(root, "logs"));
+            var databasePath = Path.Combine(root, "data", "app.db");
+            DatabaseInitializer.Initialize(databasePath);
+            using var context = DatabaseInitializer.CreateContext(databasePath);
+            var baseline = Import(DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd"));
+            context.Imports.Add(baseline);
+            context.SaveChanges();
+
+            var existing = Enumerable.Range(0, 11).Select(index =>
+            {
+                var stock = index == 1 ? 10 : index == 10 ? 40 : index % 10 == 0 ? 0 : 30;
+                return Product($"S8T03-{index:D6}", stock, index == 1 ? 99 : stock, baseline.Id);
+            }).ToArray();
+            var missing = Product("S22-T02-MISSING", 6, 6, baseline.Id);
+            context.Products.AddRange(existing.Append(missing));
+            context.SaveChanges();
+            context.Batches.AddRange(existing.Select((product, index) =>
+                FixtureBatch(
+                    product,
+                    index % 10 is 0 or 1 ? new DateOnly(2026, 9, 9) : new DateOnly(2027, 9, 4),
+                    index % 10 is 0 or 1 ? 10 : index % 10 == 2 ? 1 : 12,
+                    index % 10 is 0 or 1 ? "D" : index % 10 == 2 ? "Y" : "M",
+                    baseline.Id)));
+            var missingBatch = FixtureBatch(missing, DateOnly.FromDateTime(DateTime.Today).AddDays(14), 12, "M", baseline.Id);
+            context.Batches.Add(missingBatch);
+            context.SaveChanges();
+            var task = new ProductTask { ProductId = missing.Id, Status = "open", HighestStage = "discount_50" };
+            context.Tasks.Add(task);
+            context.SaveChanges();
+            context.TaskItems.Add(new ProductTaskItem { TaskId = task.Id, ProductId = missing.Id, BatchId = missingBatch.Id, Stage = "discount_50" });
+            context.SaveChanges();
+
+            var workbookPath = Path.Combine(root, "S22-T02-请导入此文件.xlsx");
+            S8T03ImportPerformanceTests.WriteWorkbook(workbookPath, products: 12, batchesPerProduct: 1, seed: false);
+            foreach (var category in new[] { "宠物", "日用", "美妆", "家居", "香氛香水", "文具", "潮流玩具", "应季搭配", "赠品小样" })
+                ReplaceWorksheetText(workbookPath, category, "食品");
+            Assert.True(File.Exists(workbookPath));
+            Assert.Equal(12, context.Products.Count());
+            Assert.Single(context.Tasks.Where(value => value.Status == "open"));
+            context.Dispose();
+
+            if (ownsRoot)
+            {
+                var coordinator = new DataImportCoordinator(
+                    () => DatabaseInitializer.CreateContext(databasePath),
+                    Path.Combine(root, "backups", "pre-import"));
+                var preview = coordinator.Parse(workbookPath);
+                var confirmation = coordinator.Confirm(preview.Identity);
+                Assert.True(confirmation.CanConfirm);
+                var result = coordinator.Execute(confirmation.Contract!, DateTime.UtcNow);
+                Assert.True(result.Succeeded, result.Code);
+                var summary = coordinator.Summarize(preview.Plan, result.ImportId!.Value);
+                Assert.Equal(1, summary.NewProductCount);
+                Assert.Equal(1, summary.NewBatchCount);
+                Assert.Equal(1, summary.StockIncreaseCount);
+                Assert.Equal(1, summary.StockDecreaseCount);
+                Assert.Equal(1, summary.StockBecameZeroCount);
+                Assert.Equal(1, summary.MissingBatchCount);
+                Assert.Equal(1, summary.MissingOpenTaskBatchCount);
+            }
+        }
+        finally
+        {
+            if (ownsRoot && Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static ImportRecord Import(string confirmedAtUtc, bool undone = false, string? status = null, bool confirmed = true) => new()
     {
         SourceFileName = "test.xlsx", SourceFileSha256 = new string('a', 64), ParsedAtUtc = DateTime.Parse(confirmedAtUtc + "T00:00:00Z"),
@@ -178,6 +260,23 @@ public sealed class S22T02ImportDifferenceSummaryTests
         ProductId = productId, ProductionDate = production, ExpiryDate = production == new DateOnly(2026, 1, 1) ? new DateOnly(2026, 12, 31) : production.AddYears(1), ShelfLifeValue = 12, ShelfLifeUnit = "M",
         CurrentArrivalQty = 1, MaxArrivalQty = 1, LastSeenImportId = importId
     };
+
+    private static Batch FixtureBatch(Product product, DateOnly expiry, int shelfLife, string unit, long importId) => new()
+    {
+        ProductId = product.Id, ProductionDate = new DateOnly(2026, 1, 1), ExpiryDate = expiry,
+        ShelfLifeValue = shelfLife, ShelfLifeUnit = unit, CurrentArrivalQty = 1, MaxArrivalQty = 1, LastSeenImportId = importId
+    };
+
+    private static void ReplaceWorksheetText(string path, string before, string after)
+    {
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Update);
+        var entry = archive.GetEntry("xl/worksheets/sheet1.xml")!;
+        string xml;
+        using (var reader = new StreamReader(entry.Open(), Encoding.UTF8)) xml = reader.ReadToEnd();
+        entry.Delete();
+        using var writer = new StreamWriter(archive.CreateEntry("xl/worksheets/sheet1.xml").Open(), new UTF8Encoding(false));
+        writer.Write(xml.Replace($">{before}<", $">{after}<", StringComparison.Ordinal));
+    }
 
     private static ExcelClassificationResult Classify(params ExcelRowDto[] rows) => new ExcelFileClassifier().Classify(new ExcelWorkbookDto("test.xlsx", string.Empty, "Sheet1", Array.Empty<string>(), rows));
 

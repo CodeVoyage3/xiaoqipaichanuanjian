@@ -4,7 +4,7 @@ fresh baseline=`origin/main@022ee5691cda9aa4184b7ba93599be0eab4bf3a6`。S22-T02=
 
 final implementation=`8ccc5e84b5aad8c3eae740c764506ef502662e7c`。Sol 独立定向门禁=`63/63 + 36/36 PASS`；Release App build=`0 warning / 0 error`；`git diff --check=PASS`；Schema/ModelSnapshot/CurrentSchemaIdentity/Version/Installer/Updater/Release diff=`0`。正式 dirty 工作树历史 `1 modified + 4 untracked` 保持原样；`FULL=NOT_RUN / NO_FULL`；正式数据库未访问。
 
-下一步只做用户本人真实 WPF GUI 验收。用户明确 PASS 后才允许治理收口、集成与 `CLOSED / ACCEPTED`；当前未 push。
+下一步由用户双击 `docs/S22-T02-开始验收.cmd`，按 `docs/S22-T02-GUI验收步骤.md` 完成真实 WPF GUI 验收。入口只用 TEMP/GUID 隔离数据库并自动生成/复制专用 Excel 路径；fixture 端到端固定数字 `6/6 PASS`、外部持久生成 `1/1 PASS`、CMD/PowerShell 编码与语法检查 PASS。用户明确 PASS 后才允许治理收口、集成与 `CLOSED / ACCEPTED`；当前未 push。
 
 # 2026-09-14 historical：Stage22 IN_PROGRESS / S22-T01 CLOSED ACCEPTED / S22-T02 NEXT
 
