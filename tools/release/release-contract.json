@@ -20,6 +20,26 @@
         "status": "ACCEPTED",
         "reference": ".ai-dev/GOVERNANCE/SCHEMA_CHANGE_RELEASE_GATE.md"
       }
+    },
+    {
+      "targetVersion": "1.1.1",
+      "previousRelease": "v1.1.0",
+      "minimumProtocolVersion": 2,
+      "setupCompatibility": {
+        "setupMode": "SAME_SCHEMA_SLIM",
+        "minimumDirectVersion": "1.1.0",
+        "crossSchemaAllowed": false
+      },
+      "source": {
+        "minVersion": "1.1.0",
+        "maxVersion": "1.1.0",
+        "minMigration": "20260912083448_AdjustCatchupWindowConstraint",
+        "maxMigration": "20260912083448_AdjustCatchupWindowConstraint"
+      },
+      "schemaEvidence": {
+        "status": "ACCEPTED",
+        "reference": ".ai-dev/ACCEPTANCE/S21-T01.md"
+      }
     }
   ]
 }

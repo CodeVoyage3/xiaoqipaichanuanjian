@@ -32,10 +32,22 @@ public sealed class ReleaseCandidateBuilderTests
         var releases = contract.RootElement.GetProperty("releases").EnumerateArray().ToArray();
         Assert.Equal(releases.Length, releases.Select(item => item.GetProperty("targetVersion").GetString()).Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(2, contract.RootElement.GetProperty("schemaVersion").GetInt32());
-        var historicalSetup = releases.Single().GetProperty("setupCompatibility");
+        var historicalSetup = releases.Single(item => item.GetProperty("targetVersion").GetString() == "1.1.0").GetProperty("setupCompatibility");
         Assert.Equal("CROSS_SCHEMA_FULL", historicalSetup.GetProperty("setupMode").GetString());
         Assert.Equal("1.0.9", historicalSetup.GetProperty("minimumDirectVersion").GetString());
         Assert.True(historicalSetup.GetProperty("crossSchemaAllowed").GetBoolean());
+        var currentRelease = releases.Single(item => item.GetProperty("targetVersion").GetString() == "1.1.1");
+        Assert.Equal("v1.1.0", currentRelease.GetProperty("previousRelease").GetString());
+        Assert.Equal(2, currentRelease.GetProperty("minimumProtocolVersion").GetInt32());
+        var currentSetup = currentRelease.GetProperty("setupCompatibility");
+        Assert.Equal("SAME_SCHEMA_SLIM", currentSetup.GetProperty("setupMode").GetString());
+        Assert.Equal("1.1.0", currentSetup.GetProperty("minimumDirectVersion").GetString());
+        Assert.False(currentSetup.GetProperty("crossSchemaAllowed").GetBoolean());
+        var currentSource = currentRelease.GetProperty("source");
+        Assert.Equal("1.1.0", currentSource.GetProperty("minVersion").GetString());
+        Assert.Equal("1.1.0", currentSource.GetProperty("maxVersion").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, currentSource.GetProperty("minMigration").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, currentSource.GetProperty("maxMigration").GetString());
 
         using var schema = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools", "release", "release-receipt.schema.json")));
         var required = schema.RootElement.GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
