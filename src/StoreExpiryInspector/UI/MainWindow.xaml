@@ -3146,6 +3146,33 @@
                              </Border>
 
                              <Border Margin="0,12,0,0"
+                                     Padding="16"
+                                     Style="{StaticResource PageSectionBorderStyle}"
+                                     AutomationProperties.Name="本次数据变化"
+                                     Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
+                                 <StackPanel>
+                                     <TextBlock Text="本次数据变化" FontSize="16" FontWeight="SemiBold" />
+                                     <Grid Margin="0,12,0,0">
+                                         <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                         </Grid.ColumnDefinitions>
+                                         <StackPanel Grid.Column="0"><TextBlock Text="新增商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="1"><TextBlock Text="新增批次" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewBatchCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="2"><TextBlock Text="库存增加" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockIncreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="3"><TextBlock Text="库存减少" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockDecreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
+                                     </Grid>
+                                     <Grid Margin="0,12,0,0">
+                                         <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                         </Grid.ColumnDefinitions>
+                                         <StackPanel Grid.Column="0"><TextBlock Text="库存变为 0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockBecameZeroCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="1"><TextBlock Text="本次未出现（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /><TextBlock Text="{Binding Import.MissingBatchHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
+                                         <StackPanel Grid.Column="2"><TextBlock Text="未出现仍有待办（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingOpenTaskBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" /><TextBlock Text="{Binding Import.MissingOpenTaskHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
+                                     </Grid>
+                                 </StackPanel>
+                             </Border>
+
+                             <Border Margin="0,12,0,0"
                                      Padding="14,12"
                                      Background="{DynamicResource SuccessSurfaceBrush}"
                                      BorderBrush="{DynamicResource SuccessBrush}"

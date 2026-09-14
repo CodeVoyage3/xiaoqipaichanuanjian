@@ -81,6 +81,12 @@ public sealed class DataImportCoordinator
                 occurredAtUtc));
     }
 
+    public ImportDifferenceSummary Summarize(ImportPlan plan, long importId)
+    {
+        using var context = _createContext();
+        return new ImportDifferenceSummaryQuery().Read(context, plan, importId);
+    }
+
     private static DateTime AsUtc(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,
@@ -94,6 +100,7 @@ public sealed class ImportViewModel : ViewModelBase
     private readonly Func<string, ImportPreviewLoadResult> _parsePreview;
     private readonly Func<ImportPreviewIdentity, ImportConfirmationResult> _confirmPreview;
     private readonly Func<ImportConfirmationContract, DateTime, ConfirmedImportResult> _executeImport;
+    private readonly Func<ImportPlan, long, ImportDifferenceSummary>? _summarizeImport;
     private readonly Func<Task> _refreshDashboard;
     private readonly Func<Task> _refreshPendingTasks;
     private readonly Action<Exception>? _logException;
@@ -116,6 +123,7 @@ public sealed class ImportViewModel : ViewModelBase
     private ImportConfirmationContract? _confirmationContract;
     private DateTime? _parsedAtUtc;
     private long? _lastImportId;
+    private ImportDifferenceSummary? _differenceSummary;
 
     public ImportViewModel(
         Func<string, ImportPreviewLoadResult>? parsePreview = null,
@@ -124,12 +132,14 @@ public sealed class ImportViewModel : ViewModelBase
         Func<Task>? refreshDashboard = null,
         Func<Task>? refreshPendingTasks = null,
         Action<Exception>? logException = null,
-        Func<DateTime>? utcNow = null)
+        Func<DateTime>? utcNow = null,
+        Func<ImportPlan, long, ImportDifferenceSummary>? summarizeImport = null)
     {
         var coordinator = new DataImportCoordinator();
         _parsePreview = parsePreview ?? coordinator.Parse;
         _confirmPreview = confirmPreview ?? coordinator.Confirm;
         _executeImport = executeImport ?? coordinator.Execute;
+        _summarizeImport = summarizeImport ?? (executeImport is null ? coordinator.Summarize : null);
         _refreshDashboard = refreshDashboard ?? (() => Task.CompletedTask);
         _refreshPendingTasks = refreshPendingTasks ?? (() => Task.CompletedTask);
         _logException = logException;
@@ -241,6 +251,24 @@ public sealed class ImportViewModel : ViewModelBase
 
     public long? LastImportId => _lastImportId;
 
+    public ImportDifferenceSummary? DifferenceSummary => _differenceSummary;
+
+    public string ActualIssueCountText => DifferenceSummary?.IssueCount.ToString() ?? WarningCount.ToString();
+
+    public string StockIncreaseCountText => DifferenceSummary is null ? "—" : CountText(DifferenceSummary.StockIncreaseCount);
+
+    public string StockDecreaseCountText => DifferenceSummary is null ? "—" : CountText(DifferenceSummary.StockDecreaseCount);
+
+    public string StockBecameZeroCountText => DifferenceSummary is null ? "—" : CountText(DifferenceSummary.StockBecameZeroCount);
+
+    public string MissingBatchCountText => DifferenceSummary is null ? "—" : CountText(DifferenceSummary.MissingBatchCount);
+
+    public string MissingOpenTaskBatchCountText => DifferenceSummary is null ? "—" : CountText(DifferenceSummary.MissingOpenTaskBatchCount);
+
+    public string MissingBatchHintText => DifferenceSummary?.MissingProductCount is int count ? $"涉及 {count} 个商品" : string.Empty;
+
+    public string MissingOpenTaskHintText => DifferenceSummary?.MissingOpenTaskProductCount is int count ? $"涉及 {count} 个商品" : string.Empty;
+
     public int InvolvedProductCount => Preview?.InvolvedProductCount ?? 0;
 
     public int NormalBatchKeyCount => Preview?.NormalBatchKeyCount ?? 0;
@@ -271,7 +299,7 @@ public sealed class ImportViewModel : ViewModelBase
 
     public string SuccessSummaryText => !IsSucceeded || Plan is null
         ? string.Empty
-        : $"本次导入：新增商品 {NewProductCount} 个，更新商品 {UpdatedProductCount} 个；新增批次 {NewBatchCount} 个，更新批次 {UpdatedBatchCount} 个。";
+        : $"本次导入：新增商品 {NewProductCount} 个，更新商品 {UpdatedProductCount} 个；新增批次 {NewBatchCount} 个，更新批次 {UpdatedBatchCount} 个；商品 {InvolvedProductCount} 个，批次 {NormalBatchKeyCount} 个，数据异常 {ActualIssueCountText} 条。";
 
     public string ConfirmAvailabilityText => IsParsing
         ? "正在生成预览…"
@@ -327,6 +355,7 @@ public sealed class ImportViewModel : ViewModelBase
     {
         Interlocked.Increment(ref _operationVersion);
         InvalidatePreview(string.Empty);
+        _differenceSummary = null;
         _requiresReparse = false;
         SetState(ImportPageState.Initial, "请选择要导入的 Excel 文件。", string.Empty);
     }
@@ -360,6 +389,7 @@ public sealed class ImportViewModel : ViewModelBase
             _previewIdentity = loaded.Identity;
             _parsedAtUtc = AsUtc(_utcNow());
             _lastImportId = null;
+            _differenceSummary = null;
             _confirmationContract = null;
             _requiresReparse = false;
             _errorMessage = string.Empty;
@@ -388,6 +418,7 @@ public sealed class ImportViewModel : ViewModelBase
             _confirmationContract = null;
             _parsedAtUtc = null;
             _lastImportId = null;
+            _differenceSummary = null;
             _requiresReparse = true;
             _hasRefreshFailure = false;
             _lastCode = "parse_failed";
@@ -456,6 +487,9 @@ public sealed class ImportViewModel : ViewModelBase
             }
 
             _lastImportId = result.ImportId;
+            _differenceSummary = _summarizeImport is null || _plan is null || result.ImportId is null
+                ? null
+                : await Task.Run(() => DatabaseRuntimeGate.Run(() => _summarizeImport(_plan, result.ImportId.Value)));
             _lastCode = result.Code;
             _errorMessage = string.Empty;
             _requiresReparse = false;
@@ -654,6 +688,15 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(ConfirmationContract));
         OnPropertyChanged(nameof(ParsedAtUtc));
         OnPropertyChanged(nameof(LastImportId));
+        OnPropertyChanged(nameof(DifferenceSummary));
+        OnPropertyChanged(nameof(ActualIssueCountText));
+        OnPropertyChanged(nameof(StockIncreaseCountText));
+        OnPropertyChanged(nameof(StockDecreaseCountText));
+        OnPropertyChanged(nameof(StockBecameZeroCountText));
+        OnPropertyChanged(nameof(MissingBatchCountText));
+        OnPropertyChanged(nameof(MissingOpenTaskBatchCountText));
+        OnPropertyChanged(nameof(MissingBatchHintText));
+        OnPropertyChanged(nameof(MissingOpenTaskHintText));
         OnPropertyChanged(nameof(InvolvedProductCount));
         OnPropertyChanged(nameof(NormalBatchKeyCount));
         OnPropertyChanged(nameof(NewProductCount));
@@ -734,6 +777,8 @@ public sealed class ImportViewModel : ViewModelBase
             .ThenBy(row => row.IssueType, StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static string CountText(int? count) => count?.ToString() ?? "—";
 
     private static string FormatRowNumbers(IReadOnlyList<int> rowNumbers) =>
         string.Join("、", rowNumbers.OrderBy(row => row));
