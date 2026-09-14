@@ -111,6 +111,7 @@ public sealed class ImportViewModel : ViewModelBase
     private bool _canRetry;
     private bool _requiresReparse;
     private bool _hasRefreshFailure;
+    private bool _hasDifferenceSummaryFailure;
     private ImportPageState _state = ImportPageState.Initial;
     private string _selectedFilePath = string.Empty;
     private string _selectedFileName = string.Empty;
@@ -253,7 +254,15 @@ public sealed class ImportViewModel : ViewModelBase
 
     public ImportDifferenceSummary? DifferenceSummary => _differenceSummary;
 
-    public string ActualIssueCountText => DifferenceSummary?.IssueCount.ToString() ?? WarningCount.ToString();
+    public string ActualIssueCountText => DifferenceSummary?.IssueCount.ToString() ?? (IsSucceeded ? "—" : WarningCount.ToString());
+
+    public string IssueCountText => IsSucceeded ? ActualIssueCountText : WarningCount.ToString();
+
+    public string IssueSummaryTitle => IsSucceeded ? "数据异常" : "预览提示";
+
+    public bool HasDifferenceSummaryFailure => _hasDifferenceSummaryFailure;
+
+    public string DifferenceSummaryStatusText => HasDifferenceSummaryFailure ? "导入已成功提交，但本次数据变化摘要读取失败。" : string.Empty;
 
     public string StockIncreaseCountText => DifferenceSummary is null ? "—" : CountText(DifferenceSummary.StockIncreaseCount);
 
@@ -356,6 +365,7 @@ public sealed class ImportViewModel : ViewModelBase
         Interlocked.Increment(ref _operationVersion);
         InvalidatePreview(string.Empty);
         _differenceSummary = null;
+        _hasDifferenceSummaryFailure = false;
         _requiresReparse = false;
         SetState(ImportPageState.Initial, "请选择要导入的 Excel 文件。", string.Empty);
     }
@@ -390,6 +400,7 @@ public sealed class ImportViewModel : ViewModelBase
             _parsedAtUtc = AsUtc(_utcNow());
             _lastImportId = null;
             _differenceSummary = null;
+            _hasDifferenceSummaryFailure = false;
             _confirmationContract = null;
             _requiresReparse = false;
             _errorMessage = string.Empty;
@@ -419,6 +430,7 @@ public sealed class ImportViewModel : ViewModelBase
             _parsedAtUtc = null;
             _lastImportId = null;
             _differenceSummary = null;
+            _hasDifferenceSummaryFailure = false;
             _requiresReparse = true;
             _hasRefreshFailure = false;
             _lastCode = "parse_failed";
@@ -487,18 +499,30 @@ public sealed class ImportViewModel : ViewModelBase
             }
 
             _lastImportId = result.ImportId;
-            _differenceSummary = _summarizeImport is null || _plan is null || result.ImportId is null
-                ? null
-                : await Task.Run(() => DatabaseRuntimeGate.Run(() => _summarizeImport(_plan, result.ImportId.Value)));
             _lastCode = result.Code;
             _errorMessage = string.Empty;
             _requiresReparse = false;
             _hasRefreshFailure = false;
             _refreshErrorMessage = string.Empty;
+            _hasDifferenceSummaryFailure = false;
             CanConfirm = false;
             CanRetry = false;
-            var successMessage = "导入成功";
-            SetState(ImportPageState.Succeeded, successMessage, string.Empty);
+            SetState(ImportPageState.Succeeded, "导入成功", string.Empty);
+            if (_summarizeImport is not null && _plan is not null && result.ImportId is not null)
+            {
+                try
+                {
+                    _differenceSummary = await Task.Run(() => DatabaseRuntimeGate.Run(() => _summarizeImport(_plan, result.ImportId.Value)));
+                }
+                catch (Exception exception)
+                {
+                    LogException(exception);
+                    _differenceSummary = null;
+                    _hasDifferenceSummaryFailure = true;
+                    _lastCode = "summary_read_failed";
+                    SetState(ImportPageState.Succeeded, "导入成功，但本次数据变化摘要读取失败。", string.Empty);
+                }
+            }
             await RefreshPagesAsync(version);
         }
         catch (Exception exception)
@@ -672,6 +696,8 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsFailed));
         OnPropertyChanged(nameof(HasError));
         OnPropertyChanged(nameof(HasRefreshError));
+        OnPropertyChanged(nameof(IssueCountText));
+        OnPropertyChanged(nameof(IssueSummaryTitle));
         OnPropertyChanged(nameof(SuccessSummaryText));
         OnPropertyChanged(nameof(ConfirmAvailabilityText));
         ConfirmCommand.RaiseCanExecuteChanged();
@@ -690,6 +716,10 @@ public sealed class ImportViewModel : ViewModelBase
         OnPropertyChanged(nameof(LastImportId));
         OnPropertyChanged(nameof(DifferenceSummary));
         OnPropertyChanged(nameof(ActualIssueCountText));
+        OnPropertyChanged(nameof(IssueCountText));
+        OnPropertyChanged(nameof(IssueSummaryTitle));
+        OnPropertyChanged(nameof(HasDifferenceSummaryFailure));
+        OnPropertyChanged(nameof(DifferenceSummaryStatusText));
         OnPropertyChanged(nameof(StockIncreaseCountText));
         OnPropertyChanged(nameof(StockDecreaseCountText));
         OnPropertyChanged(nameof(StockBecameZeroCountText));

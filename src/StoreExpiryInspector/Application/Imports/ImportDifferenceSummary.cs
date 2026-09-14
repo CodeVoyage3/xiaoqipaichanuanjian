@@ -23,8 +23,20 @@ public sealed class ImportDifferenceSummaryQuery
         ArgumentNullException.ThrowIfNull(plan);
 
         var issueCount = context.ImportIssues.AsNoTracking().Count(issue => issue.ImportId == importId);
+        var currentConfirmedAtUtc = context.Imports.AsNoTracking()
+            .Where(import => import.Id == importId)
+            .Select(import => import.ConfirmedAtUtc)
+            .SingleOrDefault();
+        if (currentConfirmedAtUtc is null)
+        {
+            return new(plan.NewProductCount, plan.NewBatchCount, null, null, null, null, null, null, null, issueCount);
+        }
+
         var baselineId = context.Imports.AsNoTracking()
-            .Where(import => import.Id != importId && import.Status == ImportStatuses.Succeeded && !import.IsUndone)
+            .Where(import => import.ConfirmedAtUtc != null &&
+                import.Status == ImportStatuses.Succeeded && !import.IsUndone &&
+                (import.ConfirmedAtUtc < currentConfirmedAtUtc ||
+                 import.ConfirmedAtUtc == currentConfirmedAtUtc && import.Id < importId))
             .OrderByDescending(import => import.ConfirmedAtUtc)
             .ThenByDescending(import => import.Id)
             .Select(import => (long?)import.Id)
@@ -39,17 +51,9 @@ public sealed class ImportDifferenceSummaryQuery
             .Where(change => change.FieldName == "ExcelStockQty" && change.Before is int && change.After is int)
             .Select(change => (Before: (int)change.Before!, After: (int)change.After!))
             .ToArray();
-        var missingBatches = context.Batches.AsNoTracking()
-            .Where(batch => batch.LastSeenImportId == baselineId)
-            .Select(batch => new { batch.Id, batch.ProductId })
-            .ToArray();
-        var missingBatchIds = missingBatches.Select(batch => batch.Id).ToArray();
-        var missingOpenTaskBatchIds = context.TaskItems.AsNoTracking()
-            .Where(item => missingBatchIds.Contains(item.BatchId) && item.Task.Status == "open")
-            .Select(item => item.BatchId)
-            .Distinct()
-            .ToArray();
-        var missingById = missingBatches.ToDictionary(batch => batch.Id);
+        var missingBatches = context.Batches.AsNoTracking().Where(batch => batch.LastSeenImportId == baselineId);
+        var missingOpenTaskItems = context.TaskItems.AsNoTracking()
+            .Where(item => item.Task.Status == "open" && item.Batch.LastSeenImportId == baselineId);
 
         return new(
             plan.NewProductCount,
@@ -57,10 +61,10 @@ public sealed class ImportDifferenceSummaryQuery
             stockChanges.Count(change => change.After > change.Before),
             stockChanges.Count(change => change.After < change.Before),
             stockChanges.Count(change => change.Before > 0 && change.After == 0),
-            missingBatches.Length,
+            missingBatches.Select(batch => batch.Id).Distinct().Count(),
             missingBatches.Select(batch => batch.ProductId).Distinct().Count(),
-            missingOpenTaskBatchIds.Length,
-            missingOpenTaskBatchIds.Select(id => missingById[id].ProductId).Distinct().Count(),
+            missingOpenTaskItems.Select(item => item.BatchId).Distinct().Count(),
+            missingOpenTaskItems.Select(item => item.ProductId).Distinct().Count(),
             issueCount);
     }
 }

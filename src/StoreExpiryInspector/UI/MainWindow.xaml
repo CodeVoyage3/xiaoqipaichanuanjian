@@ -3146,33 +3146,6 @@
                              </Border>
 
                              <Border Margin="0,12,0,0"
-                                     Padding="16"
-                                     Style="{StaticResource PageSectionBorderStyle}"
-                                     AutomationProperties.Name="本次数据变化"
-                                     Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
-                                 <StackPanel>
-                                     <TextBlock Text="本次数据变化" FontSize="16" FontWeight="SemiBold" />
-                                     <Grid Margin="0,12,0,0">
-                                         <Grid.ColumnDefinitions>
-                                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                                         </Grid.ColumnDefinitions>
-                                         <StackPanel Grid.Column="0"><TextBlock Text="新增商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="1"><TextBlock Text="新增批次" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewBatchCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="2"><TextBlock Text="库存增加" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockIncreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="3"><TextBlock Text="库存减少" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockDecreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
-                                     </Grid>
-                                     <Grid Margin="0,12,0,0">
-                                         <Grid.ColumnDefinitions>
-                                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                                         </Grid.ColumnDefinitions>
-                                         <StackPanel Grid.Column="0"><TextBlock Text="库存变为 0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockBecameZeroCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
-                                         <StackPanel Grid.Column="1"><TextBlock Text="本次未出现（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /><TextBlock Text="{Binding Import.MissingBatchHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
-                                         <StackPanel Grid.Column="2"><TextBlock Text="未出现仍有待办（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingOpenTaskBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" /><TextBlock Text="{Binding Import.MissingOpenTaskHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
-                                     </Grid>
-                                 </StackPanel>
-                             </Border>
-
-                             <Border Margin="0,12,0,0"
                                      Padding="14,12"
                                      Background="{DynamicResource SuccessSurfaceBrush}"
                                      BorderBrush="{DynamicResource SuccessBrush}"
@@ -3202,6 +3175,26 @@
                                                     Foreground="{DynamicResource PrimaryTextBrush}" />
                                      </StackPanel>
                                  </Grid>
+                             </Border>
+
+                             <Border Margin="0,12,0,0" Padding="16" Style="{StaticResource PageSectionBorderStyle}" AutomationProperties.Name="本次数据变化" Visibility="{Binding Import.IsSucceeded, Converter={StaticResource BoolToVisibility}}">
+                                 <StackPanel>
+                                     <TextBlock Text="本次数据变化" FontSize="16" FontWeight="SemiBold" />
+                                     <TextBlock Text="{Binding Import.DifferenceSummaryStatusText}" Margin="0,4,0,0" Foreground="{DynamicResource WarningTextBrush}" Visibility="{Binding Import.HasDifferenceSummaryFailure, Converter={StaticResource BoolToVisibility}}" />
+                                     <Grid Margin="0,12,0,0">
+                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                         <StackPanel Grid.Column="0"><TextBlock Text="新增商品" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewProductCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="1"><TextBlock Text="新增批次" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.NewBatchCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryActionBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="2"><TextBlock Text="库存增加" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockIncreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="3"><TextBlock Text="库存减少" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockDecreaseCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
+                                     </Grid>
+                                     <Grid Margin="0,12,0,0">
+                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                         <StackPanel Grid.Column="0"><TextBlock Text="库存变为 0" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.StockBecameZeroCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /></StackPanel>
+                                         <StackPanel Grid.Column="1"><TextBlock Text="本次未出现（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource WarningTextBrush}" /><TextBlock Text="{Binding Import.MissingBatchHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
+                                         <StackPanel Grid.Column="2"><TextBlock Text="未出现仍有待办（批次）" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /><TextBlock Text="{Binding Import.MissingOpenTaskBatchCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" /><TextBlock Text="{Binding Import.MissingOpenTaskHintText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" /></StackPanel>
+                                     </Grid>
+                                 </StackPanel>
                              </Border>
 
                              <Border Margin="0,12,0,0"
@@ -3269,8 +3262,8 @@
                                         </StackPanel>
                                         <Border Grid.Column="7" Margin="12,0" Background="{DynamicResource BorderBrush}" Width="1" />
                                         <StackPanel Grid.Column="8">
-                                            <TextBlock Text="数据异常" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
-                                            <TextBlock Text="{Binding Import.WarningCount}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{Binding Import.IssueSummaryTitle}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+                                            <TextBlock Text="{Binding Import.IssueCountText}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Grid>
 
@@ -3280,8 +3273,8 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="数据异常" FontSize="16" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Import.WarningCount, StringFormat=（{0} 条）}"
+                                            <TextBlock Text="{Binding Import.IssueSummaryTitle}" FontSize="16" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Import.IssueCountText, StringFormat=（{0} 条）}"
                                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                                        Margin="8,2,0,0" />
                                         </StackPanel>
