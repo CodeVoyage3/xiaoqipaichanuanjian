@@ -2886,15 +2886,14 @@
                         <DataGrid ItemsSource="{Binding ProductCatalog.Items}" AutoGenerateColumns="False" CanUserAddRows="False" RowHeight="46" ColumnHeaderHeight="42" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderThickness="0" EnableRowVirtualization="True" VirtualizingPanel.VirtualizationMode="Recycling" AutomationProperties.Name="商品明细列表">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="商品名称" Binding="{Binding Name}" Width="2*" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
-                                <DataGridTextColumn Header="商品条码" Binding="{Binding Barcode}" Width="122" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
-                                <DataGridTextColumn Header="商品编码" Binding="{Binding Code}" Width="120" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
+                                <DataGridTextColumn Header="商品条码" Binding="{Binding Barcode}" Width="134" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
+                                <DataGridTextColumn Header="商品编码" Binding="{Binding Code}" Width="130" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
                                 <DataGridTextColumn Header="大类" Binding="{Binding Category}" Width="62" ElementStyle="{StaticResource TableCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                 <DataGridTextColumn Header="批次数" Binding="{Binding BatchCount}" Width="56" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                 <DataGridTextColumn Header="当前总库存" Binding="{Binding EffectiveStockQty}" Width="76" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                 <DataGridTextColumn Header="最近到期日" Binding="{Binding NearestExpiryText}" Width="88" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
-                                <DataGridTemplateColumn Header="最高风险阶段" Width="88" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><ContentControl Content="{Binding}" ContentTemplate="{StaticResource StageBadgeTemplate}" HorizontalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="最高风险阶段" Width="96" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><ContentControl Content="{Binding}" ContentTemplate="{StaticResource StageBadgeTemplate}" HorizontalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="待处理任务" Width="78" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding PendingCount}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding PendingCount}" Value="0"><Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                                <DataGridTextColumn Header="最近导入" Binding="{Binding LastImportText}" Width="88" ElementStyle="{StaticResource TableNumericCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                 <DataGridTemplateColumn Header="操作" Width="66" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="详情  →" Command="{Binding DataContext.OpenProductCatalogDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Style="{StaticResource LinkButtonStyle}" AutomationProperties.Name="查看商品详情" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
@@ -2918,7 +2917,63 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                     <Border Width="48" Height="48" CornerRadius="10" Background="#EEF4FF" BorderBrush="#C8DCF9" BorderThickness="1" VerticalAlignment="Top"><Path Data="{StaticResource ClipboardIcon}" Width="25" Height="25" Stroke="#2563EB" StrokeThickness="1.6" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
-                                    <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><TextBlock Text="{Binding ProductCatalog.Selected.Product.Name}" FontSize="20" FontWeight="SemiBold" /><Grid Grid.Row="1" Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="1.15*" /><ColumnDefinition Width="1.15*" /><ColumnDefinition Width=".8*" /><ColumnDefinition Width="1*" /></Grid.ColumnDefinitions><StackPanel><TextBlock Text="商品编码" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.Product.Code}" /></StackPanel><StackPanel Grid.Column="1"><TextBlock Text="商品条码" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.Product.Barcode}" /></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="大类" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.Product.Category}" /></StackPanel><StackPanel Grid.Column="3"><TextBlock Text="最近导入" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="{Binding ProductCatalog.Selected.Product.LastImportText}" /></StackPanel></Grid></Grid>
+                                    <Grid Grid.Column="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="{Binding ProductCatalog.Selected.Product.Name}"
+                                                   FontSize="20"
+                                                   FontWeight="SemiBold" />
+                                        <Grid Grid.Row="1" Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1.15*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="1.15*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width=".8*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="1*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="商品编码" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding ProductCatalog.Selected.Product.Code}"
+                                                           ToolTip="{Binding ProductCatalog.Selected.Product.Code}"
+                                                           FontSize="15"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource PrimaryTextBrush}"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1" Width="1" Height="34" Margin="14,0" VerticalAlignment="Center" Background="{DynamicResource BorderBrush}" />
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="商品条码" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding ProductCatalog.Selected.Product.Barcode}"
+                                                           ToolTip="{Binding ProductCatalog.Selected.Product.Barcode}"
+                                                           FontSize="15"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource PrimaryTextBrush}"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+                                            <Border Grid.Column="3" Width="1" Height="34" Margin="14,0" VerticalAlignment="Center" Background="{DynamicResource BorderBrush}" />
+                                            <StackPanel Grid.Column="4">
+                                                <TextBlock Text="大类" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <Border Margin="0,4,0,0" Padding="8,2" HorizontalAlignment="Left" Background="{DynamicResource SurfaceSubtleBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                                                    <TextBlock Text="{Binding ProductCatalog.Selected.Product.Category}"
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <Border Grid.Column="5" Width="1" Height="34" Margin="14,0" VerticalAlignment="Center" Background="{DynamicResource BorderBrush}" />
+                                            <StackPanel Grid.Column="6">
+                                                <TextBlock Text="最近导入" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding ProductCatalog.Selected.Product.LastImportText}"
+                                                           FontSize="14"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
                                 </Grid>
                             </Border>
                             <UniformGrid Columns="5" Margin="0,12,0,0">
