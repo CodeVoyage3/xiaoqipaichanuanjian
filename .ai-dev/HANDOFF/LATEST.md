@@ -1,12 +1,14 @@
-# 2026-09-14：Stage22 / S22-T01 GOVERNANCE_FROZEN
+# 2026-09-14：Stage22 / S22-T01 WAITING_USER_GUI
 
-fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=`IN_PROGRESS / S22-T01_GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED`；S22-T01=`GOVERNANCE_FROZEN / IMPLEMENTATION_DISPATCH_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`；S22-T02=`NOT_CREATED / NOT_STARTED`。
+fresh baseline=`origin/main@d97e7bda89c2ab047bf09edb80073c069ed9090b`。Stage22=`IN_PROGRESS / S22-T01_TECHNICAL_ACCEPTANCE_READY / WAITING_USER_GUI`；S22-T01=`IMPLEMENTED / SOL_TECHNICAL_PASS / WAITING_USER_GUI / NOT_ACCEPTED`；S22-T02=`NOT_CREATED / NOT_STARTED`。
 
 用户确认零 migration 产品口径：当前总库存只取 `Product.EffectiveStockQty`；批次级不得显示当前库存，`CurrentArrivalQty` 如展示只能命名“累计到货”；取消批次号/批次伪字段，以生产日期 + 到期日期识别；删除商品级保质期/总效期及独立商品概览；最近排查日期降为辅助信息；最近导入信息只显示最近一次；无待办批次操作显示 `—`。
 
 两张确认 PNG 是 S22-T01 主要 UI 结构参考；只复用当前 WPF 控件/资源/样式，不引入新 UI 框架、WebView、复杂动画或主题重构。原型示例不构成业务规则，正式阶段只允许正常、5折、2折、收仓、过期。
 
-下一步仅允许全新 GPT-5.6 Terra / medium / clean worktree 实施 S22-T01 生产代码和一个最小专项；不得创建 migration11、S22-T02/S22-T03，不得修改版本、Installer、Updater、Release Contract 或发布状态。Terra 返回后由 Sol 独立审查和最小测试；`FULL=NOT_RUN / NO_FULL`。用户真实 WPF GUI PASS 前不得关闭 S22-T01。
+governance=`8a69d09af4db5d3558d4bfbd4c8c97a9ed61095a`；production candidate=`5c0ffec9f1e88d165bb54b3f17355421ba304f24`。Terra / medium / clean worktree 已实施；Sol 独立审查后，S22 专项=`1/1 PASS`、导航聚焦回归=`2/2 PASS`、Release App build=`PASS / 0 error`（仅 `NU1900`）。Schema/migration/版本/Installer/Updater/Release diff=`0`，migrationCount=`10`，正式 dirty 工作区未变化，未 push，`FULL=NOT_RUN / NO_FULL`。
+
+下一步仅为用户真实 WPF GUI 验收；用户 GUI PASS 前 S22-T01 不得 `CLOSED / ACCEPTED`，S22-T02 继续 `NOT_CREATED / NOT_STARTED`。
 
 # 2026-09-13：Stage21 CLOSED / ACCEPTED
 
