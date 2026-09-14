@@ -31,6 +31,6 @@ public sealed class S22T01ProductCatalogQueryTests
         Assert.Empty(new ProductCatalogQuery().Search(context, new(Stage: ExpiryStageCalculator.Discount50)).Items);
         Assert.Equal(ExpiryStageCalculator.Discount20, Assert.Single(new ProductCatalogQuery().Search(context, new(Stage: ExpiryStageCalculator.Discount20)).Items).HighestStage);
         var detail = new ProductCatalogQuery().GetDetail(context, product.Id)!;
-        Assert.Equal("12", detail.ExcelStockText); Assert.True(detail.Batches.Single(batch => batch.IsPending).IsPending); Assert.Contains(detail.Batches, batch => !batch.IsPending && batch.TaskStatus == "—");
+        Assert.Equal("12", detail.ExcelStockText); Assert.Equal("待处理", detail.Batches.Single(batch => batch.IsPending).TaskStatus); Assert.Contains(detail.Batches, batch => !batch.IsPending && batch.TaskStatus == "正常");
     }
 }
