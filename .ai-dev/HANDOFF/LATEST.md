@@ -1,3 +1,15 @@
+# 2026-09-15：v1.1.1 RELEASED / ACCEPTED
+
+正式发布已完成。唯一 PRODUCT SOURCE=`b79629ae044ac648ab6eec8655940bfe998f8c1f`；annotated tag `v1.1.1` tag object=`e011ee1db249ef3e0739d60d12f8f095184a7a1f`，解引用到该精确 source。GitHub Release ID=`388817412`，`draft=false`、`prerelease=false`、stable/latest=`v1.1.1`。
+
+冻结四资产已从 GitHub 公网匿名 fresh 下载并与候选逐项全等：Setup `StoreExpiryInspector-Setup-1.1.1.exe`=`75356358` bytes / SHA256 `5CC4A3C057C9DAC3C436CAB44BA999F2115A2A7229EE3BF09E9C5449DF63BFCB`；ZIP `StoreExpiryInspector-1.1.1-win-x64.zip`=`109462493` / `A75826D1354A1A0CE467AFC09E80601ABF8A6E7CC2C1C57CDCA559D9344A1732`；manifest=`914` / `8E61834C998D4E482CC9EFF4E16CA8E3944EF0D26F19D35EF8C962D36AEF9904`；signature=`384` / `A4AF74B966892F84DFFF54FE3134E0019E107F2683BC45F6997E8953AE378324`。production RSA-PSS/SHA256 verifier=`PASS`，trust fingerprint=`565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC`。
+
+release contract：target=`1.1.1`，migrationCount=`10`，setupCompatibility=`SAME_SCHEMA_SLIM`，minimumDirectVersion=`1.1.0`，crossSchemaAllowed=`false`。TEMP/GUID 最小启动与 Stage22 smoke=`PASS`；targeted=`45/45 + 1/1 PASS`；Release build=`PASS`。A/B/D/E=`EVIDENCE_REUSED / UNCHANGED_PRODUCTION_PATH`；C=`EXISTING_REAL_E2E_EVIDENCE_REUSED + CURRENT_CANDIDATE_PACKAGE_VERIFICATION`；`FULL=NOT_RUN / NO_FULL`；正式数据库=`NO ACCESS`。
+
+夸克正式分享=<https://pan.quark.cn/s/eefc5b1406ea>，同一 Setup 回读和客态分享验证=`PASS`。Gitee metadata commit=`86667613f9eadb4a256bdb46199b12379de321b3`；固定 Raw 匿名 HTTP `200`，三字段精确一致且 `version=1.1.1`。GitHub 仍为唯一自动更新权威。
+
+Stage22 保持 `CLOSED / ACCEPTED`；正式 dirty 工作树原 `1 modified + 4 untracked` 未触碰。v1.1.1=`RELEASED / ACCEPTED`，Release governance=`CLOSED`。
+
 # 2026-09-14：Stage22 CLOSED / ACCEPTED
 
 fresh fetch 收口基线=`origin/main@a6a47f2a255f3eaad5687a7700d72818d0ee5898`。final S22-T02 implementation=`ba02834c03dec5b40a3d0886771afc7fddc0d837`，确认包含此前 implementation `8ccc5e84b5aad8c3eae740c764506ef502662e7c` 与 GUI R1。S22-T01=`CLOSED / ACCEPTED`；S22-T02=`CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS`；S22-T03=`NOT_CREATED`；Stage22=`CLOSED / ACCEPTED`。
