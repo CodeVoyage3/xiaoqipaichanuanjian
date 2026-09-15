@@ -48,6 +48,10 @@
       "categories": ["TEST_ONLY"]
     },
     {
+      "path": "tests/S21T01-RunInstallerSlim.ps1",
+      "categories": ["TEST_ONLY"]
+    },
+    {
       "path": "src/StoreExpiryInspector/App.xaml",
       "categories": ["UI"]
     },
