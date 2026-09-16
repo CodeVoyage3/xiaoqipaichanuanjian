@@ -48,6 +48,18 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Equal("1.1.0", currentSource.GetProperty("maxVersion").GetString());
         Assert.Equal(CurrentSchemaIdentity.LastMigration, currentSource.GetProperty("minMigration").GetString());
         Assert.Equal(CurrentSchemaIdentity.LastMigration, currentSource.GetProperty("maxMigration").GetString());
+        var nextRelease = releases.Single(item => item.GetProperty("targetVersion").GetString() == "1.1.2");
+        Assert.Equal("v1.1.1", nextRelease.GetProperty("previousRelease").GetString());
+        Assert.Equal(2, nextRelease.GetProperty("minimumProtocolVersion").GetInt32());
+        var nextSetup = nextRelease.GetProperty("setupCompatibility");
+        Assert.Equal("SAME_SCHEMA_SLIM", nextSetup.GetProperty("setupMode").GetString());
+        Assert.Equal("1.1.1", nextSetup.GetProperty("minimumDirectVersion").GetString());
+        Assert.False(nextSetup.GetProperty("crossSchemaAllowed").GetBoolean());
+        var nextSource = nextRelease.GetProperty("source");
+        Assert.Equal("1.1.1", nextSource.GetProperty("minVersion").GetString());
+        Assert.Equal("1.1.1", nextSource.GetProperty("maxVersion").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, nextSource.GetProperty("minMigration").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, nextSource.GetProperty("maxMigration").GetString());
 
         using var schema = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools", "release", "release-receipt.schema.json")));
         var required = schema.RootElement.GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
