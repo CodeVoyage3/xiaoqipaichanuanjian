@@ -1,4 +1,4 @@
-# 2026-09-16 current：V111-PERF-01 TECHNICAL_PASS / WAITING_USER_GUI
+# 2026-09-16：V111-PERF-01 CLOSED / ACCEPTED
 
 - fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。
 - 正式 v1.1.1 的约 900 MiB 启动内存已定性为 WPF hardware rendering → D3D9 → Intel graphics 异常大块私有图形分配；软件渲染同机 A/B 已消除 64 MiB WriteCombine。
@@ -10,7 +10,9 @@
 - 专项=`1/1 PASS`；Release build=`0 warning / 0 error`；同机候选 Private WS=`77.8 MiB`、Private Bytes=`117.3 MiB`、VMMap Private Data=`9.1 MiB`、native Heap=`51.1 MiB`、WriteCombine=`0`、64 MiB 块=`0`、空闲 CPU=`0.05%`。
 - 页面切换 287 秒 CPU average/P95/max=`0.116% / 0.418% / 0.847%`；长列表滚动/最大化恢复 104 秒=`0.268% / 0.793% / 1.2%`；全程 Responding。
 - 交互后 VMMap Private WS=`170.2 MiB`、Total Private=`208.9 MiB`、WriteCombine=`0`。`SOL TECHNICAL PASS=PASS`。
-- 下一步只等待用户完整真实 GUI 回执；明确 GUI PASS 前不得 CLOSED/ACCEPTED。
+- 用户完整真实 WPF 回执=`GUI PASS`；`FINAL ACCEPTED=YES`；V111-PERF-01=`CLOSED / ACCEPTED`。
+- 隔离候选进程已结束，TEMP/GUID 数据根已删除，证据保留；正式 dirty 工作区仍未触碰。
+- main integration/push=`NOT_RUN / AUTHORIZATION_PENDING`；Version 保持 1.1.1，Release=`NOT_STARTED`。
 
 # 2026-09-15：v1.1.1 RELEASED / ACCEPTED / PUBLIC REMOTE VERIFIED
 
