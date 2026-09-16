@@ -1,3 +1,12 @@
+# 2026-09-16: S23-T03 AUTHORIZED / IN_PROGRESS
+
+User approved implementation on clean Stage23 continuation a01daf7ca0b1106fc80c81a4b2c9ffca1c0e89fb, retaining accepted T01/T02.
+Top action: option 1 only, rename to 查看待办排查 at original top-right position; visible only with HasOpenTask/OpenTaskId; preserve product-level command and return behavior. No batch-specific navigation.
+Before wheel repair, record real WPF PreviewMouseWheel/MouseWheel source and Handled for top information, body, DataGrid and blank area. Do not infer full cause from static code. Outer product-detail ScrollViewer owns vertical scrolling. Local name/hit-test handling and evidence-led local forwarding allowed. Respect system wheel settings; no raw Delta pixel displacement, double scrolling or boundary jumps; retain DataGrid selection/buttons/keyboard.
+No global DataGrid style or wheel handler, no batch Height/MaxHeight, no query/schema/migration/version/installer/updater/release changes or unrelated UI refactor.
+Only T03 direct WPF STA wheel tests, product-detail/task-detail/return navigation tests, production Release build. FULL NOT_RUN / NO_FULL. Fresh Terra only; Sol does not write production code. Stop USER_GUI_PENDING / NOT_CLOSED / NOT_ACCEPTED. No main merge/push, original dirty or formal DB access, or Stage24.
+Historical notes below do not override this authorization.
+
 # 2026-09-16：S23-T02 CLOSED / ACCEPTED；S23-T03 NOT_STARTED
 
 ## 2026-09-16 最终真实 GUI 回执与治理收口
