@@ -1,3 +1,11 @@
+# 2026-09-16: S23-T03 FINAL PRODUCT DECISION / AUTHORIZED / IN_PROGRESS
+
+This decision supersedes the prior rename option. REMOVE the duplicate top 去排查 button; keep only 返回列表. Preserve batch-row 去排查, OpenProductTaskCommand/OpenTaskId and original product-level inspection navigation/return. No replacement button or header redesign; only minimal alignment if needed.
+Before production wheel repair, runtime-confirm top/body/DataGrid/blank real wheel sources and Handled. Outer product-detail ScrollViewer owns vertical scrolling; make normal blank areas hit-testable; local forwarding only after confirming inner consumption. No global wheel handler/styles, no batch Height/MaxHeight. Respect system wheel steps; no double scrolling/boundary jumps; retain DataGrid selection/buttons/keyboard.
+Production files limited to MainWindow.xaml/MainWindow.xaml.cs unless Sol explains actual necessity. No query semantics/schema/migration/CurrentSchemaIdentity/version/installer/updater/release builder/online changes. Version1.1.2; migration10; migration11 NOT_CREATED.
+Only T03 direct navigation tests, WPF wheel tests, production Release build. FULL NOT_RUN / NO_FULL. Fresh T03 Terra only, never T01/T02 agents; Sol does not write production code. Stop USER_GUI_PENDING / NOT_CLOSED / NOT_ACCEPTED; Stage23 IN_PROGRESS. No main merge/push, original dirty/formal DB access or Stage24. Final delivery includes runtime cause/implementation, commits, files, forbidden diff, GUI launcher and checklist.
+Historical instructions below do not override this final decision.
+
 # 2026-09-16: S23-T03 AUTHORIZED / IN_PROGRESS
 
 User approved implementation on clean Stage23 continuation a01daf7ca0b1106fc80c81a4b2c9ffca1c0e89fb, retaining accepted T01/T02.
