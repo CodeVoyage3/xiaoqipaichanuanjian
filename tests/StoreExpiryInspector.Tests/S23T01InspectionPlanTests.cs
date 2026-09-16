@@ -1,4 +1,5 @@
 using System.IO;
+using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,44 @@ public sealed class S23T01InspectionPlanTests
 {
     private static readonly DateOnly Today = new(2026, 9, 16);
     private static readonly DateTime Utc = new(2026, 9, 16, 1, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public void ThreeDayCardsUseSelectionNotCheckmarksHoverOrFocus()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml")))
+            directory = directory.Parent;
+        Assert.NotNull(directory);
+        var document = XDocument.Load(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var cardStyle = document.Descendants().Single(element => (string?)element.Attribute(x + "Key") == "InspectionPlanCardStyle");
+        var selected = cardStyle.Descendants().Single(element => element.Name.LocalName == "Trigger" && (string?)element.Attribute("Property") == "Tag");
+        Assert.Equal("True", (string?)selected.Attribute("Value"));
+        Assert.Contains(selected.Elements(), element => (string?)element.Attribute("Property") == "BorderBrush" && (string?)element.Attribute("Value") == "{DynamicResource PrimaryActionBrush}");
+        Assert.Contains(selected.Elements(), element => (string?)element.Attribute("Property") == "Background" && (string?)element.Attribute("Value") == "{DynamicResource SelectedSurfaceBrush}");
+        Assert.DoesNotContain(cardStyle.Descendants(), element => element.Name.LocalName == "Trigger" && (string?)element.Attribute("Property") == "IsMouseOver");
+        var focus = cardStyle.Descendants().Single(element => element.Name.LocalName == "Trigger" && (string?)element.Attribute("Property") == "IsKeyboardFocused");
+        Assert.All(focus.Elements(), element => Assert.Equal("KeyboardFocus", (string?)element.Attribute("TargetName")));
+        var emphasis = document.Descendants().Single(element => (string?)element.Attribute(x + "Key") == "InspectionPlanCardEmphasisTextStyle");
+        Assert.Contains(emphasis.Elements(), element => (string?)element.Attribute("Property") == "FontWeight" && (string?)element.Attribute("Value") == "Normal");
+        var emphasisTrigger = emphasis.Descendants().Single(element => element.Name.LocalName == "DataTrigger");
+        Assert.Equal("{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}", (string?)emphasisTrigger.Attribute("Binding"));
+        Assert.Equal("Bold", (string?)emphasisTrigger.Elements().Single().Attribute("Value"));
+        var cards = document.Descendants().Where(element => element.Name.LocalName == "Button" && (string?)element.Attribute("Style") == "{StaticResource InspectionPlanCardStyle}").ToArray();
+        Assert.Equal(3, cards.Length);
+        var dateColors = new[] { "PrimaryActionBrush", "SuccessBrush", "WarningTextBrush" };
+        for (var day = 0; day < cards.Length; day++)
+        {
+            Assert.Equal("{Binding TodayInspection.SelectDayCommand}", (string?)cards[day].Attribute("Command"));
+            Assert.Equal(day.ToString(), (string?)cards[day].Attribute("CommandParameter"));
+            Assert.DoesNotContain(cards[day].Descendants(), element => (string?)element.Attribute("Text") == "✓");
+            Assert.Equal(2, cards[day].Descendants().Count(element => element.Name.LocalName == "ColumnDefinition"));
+            var texts = cards[day].Descendants().Where(element => (string?)element.Attribute("Style") == "{StaticResource InspectionPlanCardEmphasisTextStyle}").ToArray();
+            Assert.Equal(2, texts.Length);
+            Assert.All(texts, element => Assert.Null(element.Attribute("FontWeight")));
+            Assert.Equal("{DynamicResource " + dateColors[day] + "}", (string?)texts[1].Attribute("Foreground"));
+        }
+    }
 
     [Theory]
     [InlineData(1)]

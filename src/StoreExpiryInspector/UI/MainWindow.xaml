@@ -315,18 +315,27 @@
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="16" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+                <Grid>
                 <Border x:Name="Card" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                     <ContentPresenter />
                 </Border>
+                <Rectangle x:Name="KeyboardFocus" Margin="4" RadiusX="4" RadiusY="4" Stroke="{DynamicResource FocusRingBrush}" StrokeThickness="1" StrokeDashArray="2,2" IsHitTestVisible="False" Visibility="Collapsed" />
+                </Grid>
                 <ControlTemplate.Triggers>
                     <Trigger Property="Tag" Value="True"><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter TargetName="Card" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" /></Trigger>
-                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
-                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Card" Property="BorderThickness" Value="2" /><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /></Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="KeyboardFocus" Property="Visibility" Value="Visible" /></Trigger>
                     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Card" Property="Opacity" Value="0.6" /></Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="InspectionPlanCardEmphasisTextStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Normal" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="FontWeight" Value="Bold" /></DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="TodayInspectionIndeterminateProgressBarStyle" TargetType="ProgressBar">
             <Setter Property="Width" Value="300" />
@@ -3023,24 +3032,21 @@
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                             <Button Command="{Binding TodayInspection.SelectDayCommand}" CommandParameter="0" Tag="{Binding TodayInspection.IsTodaySelected}" Style="{StaticResource InspectionPlanCardStyle}" Margin="0,0,8,0" AutomationProperties.Name="今日排查计划">
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                     <Border Width="52" Height="52" CornerRadius="26" Background="{DynamicResource SelectedSurfaceBrush}" VerticalAlignment="Center"><Path Data="{StaticResource CalendarIcon}" Width="26" Height="26" Stretch="Uniform" Stroke="{DynamicResource PrimaryActionBrush}" StrokeThickness="2" /></Border>
-                                    <StackPanel Grid.Column="1"><TextBlock Text="今日排查" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding TodayInspection.TodayPlanCount, StringFormat={}{0} 项}" FontSize="25" FontWeight="Bold" Foreground="{DynamicResource PrimaryActionBrush}" Margin="0,4,0,2" /><TextBlock Text="需立即处理" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
-                                    <TextBlock Grid.Column="2" Text="✓" Foreground="{DynamicResource PrimaryActionBrush}" FontSize="18" Visibility="{Binding TodayInspection.IsTodaySelected, Converter={StaticResource BoolToVisibility}}" />
+                                    <StackPanel Grid.Column="1"><TextBlock Text="今日排查" FontSize="16" Style="{StaticResource InspectionPlanCardEmphasisTextStyle}" /><TextBlock Text="{Binding TodayInspection.TodayPlanCount, StringFormat={}{0} 项}" FontSize="25" Style="{StaticResource InspectionPlanCardEmphasisTextStyle}" Foreground="{DynamicResource PrimaryActionBrush}" Margin="0,4,0,2" /><TextBlock Text="需立即处理" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
                                 </Grid>
                             </Button>
                             <Button Grid.Column="1" Command="{Binding TodayInspection.SelectDayCommand}" CommandParameter="1" Tag="{Binding TodayInspection.IsTomorrowSelected}" Style="{StaticResource InspectionPlanCardStyle}" Margin="0,0,8,0" AutomationProperties.Name="明日排查计划">
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                     <Border Width="52" Height="52" CornerRadius="26" Background="{DynamicResource SuccessSurfaceBrush}" VerticalAlignment="Center"><Path Data="{StaticResource CalendarIcon}" Width="26" Height="26" Stretch="Uniform" Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2" /></Border>
-                                    <StackPanel Grid.Column="1"><TextBlock Text="明日排查" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding TodayInspection.TomorrowPlanCount, StringFormat={}{0} 项}" FontSize="25" FontWeight="Bold" Margin="0,4,0,2" /><TextBlock Text="系统自动预告" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
-                                    <TextBlock Grid.Column="2" Text="✓" Foreground="{DynamicResource PrimaryActionBrush}" FontSize="18" Visibility="{Binding TodayInspection.IsTomorrowSelected, Converter={StaticResource BoolToVisibility}}" />
+                                    <StackPanel Grid.Column="1"><TextBlock Text="明日排查" FontSize="16" Style="{StaticResource InspectionPlanCardEmphasisTextStyle}" /><TextBlock Text="{Binding TodayInspection.TomorrowPlanCount, StringFormat={}{0} 项}" FontSize="25" Style="{StaticResource InspectionPlanCardEmphasisTextStyle}" Foreground="{DynamicResource SuccessBrush}" Margin="0,4,0,2" /><TextBlock Text="系统自动预告" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
                                 </Grid>
                             </Button>
                             <Button Grid.Column="2" Command="{Binding TodayInspection.SelectDayCommand}" CommandParameter="2" Tag="{Binding TodayInspection.IsDayAfterTomorrowSelected}" Style="{StaticResource InspectionPlanCardStyle}" AutomationProperties.Name="后日排查计划">
-                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                     <Border Width="52" Height="52" CornerRadius="26" Background="{DynamicResource WarningSurfaceBrush}" VerticalAlignment="Center"><Path Data="{StaticResource CalendarIcon}" Width="26" Height="26" Stretch="Uniform" Stroke="{DynamicResource WarningTextBrush}" StrokeThickness="2" /></Border>
-                                    <StackPanel Grid.Column="1"><TextBlock Text="后日排查" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding TodayInspection.DayAfterTomorrowPlanCount, StringFormat={}{0} 项}" FontSize="25" FontWeight="Bold" Foreground="{DynamicResource WarningTextBrush}" Margin="0,4,0,2" /><TextBlock Text="系统自动预告" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
-                                    <TextBlock Grid.Column="2" Text="✓" Foreground="{DynamicResource PrimaryActionBrush}" FontSize="18" Visibility="{Binding TodayInspection.IsDayAfterTomorrowSelected, Converter={StaticResource BoolToVisibility}}" />
+                                    <StackPanel Grid.Column="1"><TextBlock Text="后日排查" FontSize="16" Style="{StaticResource InspectionPlanCardEmphasisTextStyle}" /><TextBlock Text="{Binding TodayInspection.DayAfterTomorrowPlanCount, StringFormat={}{0} 项}" FontSize="25" Style="{StaticResource InspectionPlanCardEmphasisTextStyle}" Foreground="{DynamicResource WarningTextBrush}" Margin="0,4,0,2" /><TextBlock Text="系统自动预告" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
                                 </Grid>
                             </Button>
                         </Grid>
