@@ -1,5 +1,7 @@
 # 2026-09-16：Stage23 IN_PROGRESS / S23-T01 AUTHORIZED
 
+当前用户门禁：S23-T01=WAITING_USER_GUI_RETEST / NOT_CLOSED / NOT_ACCEPTED。顶部三卡最新参考图要求标题日期同行、图标与信息区整体居中；取代R4独立右上日期方案，仅XAML视觉返修，计算/业务/选中态机制不动。T02/T03 NOT_STARTED，不push、不发布、不跑FULL。新的隔离候选与Sol门禁结果见 .ai-dev/ACCEPTANCE/S23-T01.md。
+
 最新技术交付：S23-T01 Terra=ba283f315765d09e2a8a5f5b05b729f6854d0a3d；Sol独立84/84 PASS，production Release build 0/0；TECHNICAL_PASS / USER_GUI_PENDING / NOT_CLOSED / NOT_ACCEPTED。未来安排表导出已实现且正式reader拒绝。S23-T02/T03仍NOT_STARTED；FULL=NOT_RUN / NO_FULL；原dirty不动。验收证据见 .ai-dev/ACCEPTANCE/S23-T01.md。
 
 用户已确认治理并授权 S23-T01 实施。fresh origin/main=16b93188557dd08c5e5fc1e5505040c85f71ba9c；独立 clean worktree，原 dirty 工作区不动。
