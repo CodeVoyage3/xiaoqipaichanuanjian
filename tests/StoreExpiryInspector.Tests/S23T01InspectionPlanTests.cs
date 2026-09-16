@@ -52,18 +52,28 @@ public sealed class S23T01InspectionPlanTests
             Assert.Equal(day.ToString(), (string?)cards[day].Attribute("CommandParameter"));
             Assert.DoesNotContain(cards[day].Descendants(), element => (string?)element.Attribute("Text") == "✓");
             Assert.Equal(2, cards[day].Descendants().Count(element => element.Name.LocalName == "ColumnDefinition"));
+            var informationGroup = Assert.Single(cards[day].Elements());
+            Assert.Equal("Center", (string?)informationGroup.Attribute("HorizontalAlignment"));
+            Assert.Equal("Center", (string?)informationGroup.Attribute("VerticalAlignment"));
+            var icon = Assert.Single(cards[day].Descendants(), element => element.Name.LocalName == "Border" && (string?)element.Attribute("Width") == "52");
+            Assert.Equal("52", (string?)icon.Attribute("Height"));
             var texts = cards[day].Descendants().Where(element => (string?)element.Attribute("Style") == "{StaticResource InspectionPlanCardEmphasisTextStyle}").ToArray();
             Assert.Equal(2, texts.Length);
             Assert.All(texts, element => Assert.Null(element.Attribute("FontWeight")));
             Assert.Equal("{DynamicResource " + dateColors[day] + "}", (string?)texts[1].Attribute("Foreground"));
+            Assert.Equal("28", (string?)texts[1].Attribute("FontSize"));
             Assert.Contains(cards[day].Descendants(), element => (string?)element.Attribute("Text") == titles[day]);
             Assert.Contains(cards[day].Descendants(), element => (string?)element.Attribute("Text") == subtitles[day]);
             var date = Assert.Single(cards[day].Descendants(), element => ((string?)element.Attribute("Text"))?.Contains(dateBindings[day], StringComparison.Ordinal) == true);
             Assert.Equal("12", (string?)date.Attribute("FontSize"));
-            Assert.Equal("{DynamicResource MutedTextBrush}", (string?)date.Attribute("Foreground"));
-            Assert.Equal("Right", (string?)date.Attribute("HorizontalAlignment"));
+            Assert.Equal("Normal", (string?)date.Attribute("FontWeight"));
+            Assert.Equal("#8A94A6", (string?)date.Attribute("Foreground"));
+            Assert.Equal("Center", (string?)date.Attribute("VerticalAlignment"));
+            Assert.Equal("10,0,0,0", (string?)date.Attribute("Margin"));
             Assert.DoesNotContain(date.Ancestors(), element => element.Name.LocalName == "Border");
-            Assert.Equal("1", (string?)date.Parent?.Elements().Single(element => element.Name.LocalName == "Grid" && (string?)element.Attribute("HorizontalAlignment") == "Center").Attribute("Grid.Row"));
+            Assert.Equal("Horizontal", (string?)date.Parent?.Attribute("Orientation"));
+            Assert.Contains(date.Parent!.Elements(), element => (string?)element.Attribute("Text") == titles[day]);
+            Assert.DoesNotContain(cards[day].Descendants(), element => (string?)element.Attribute("HorizontalAlignment") == "Right" && ((string?)element.Attribute("Text"))?.Contains(dateBindings[day], StringComparison.Ordinal) == true);
         }
     }
 
