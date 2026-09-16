@@ -1166,6 +1166,3 @@ S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9仍 `IN_PROGRESS 
 - 完成本卡普通push后停止；不得创建S8-T04或重置数据Task，不做强杀/断电/人工损坏、不启动Stage9或在线升级。下一卡需用户明确批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
-
-
-

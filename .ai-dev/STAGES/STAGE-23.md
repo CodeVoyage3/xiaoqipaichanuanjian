@@ -41,6 +41,3 @@ Terra=5c1bc56f0874ab72546dac8c14b408c1f4460eae；Sol独立5/5 PASS、production 
 Version=1.1.2；migrationCount=10；migration11=NOT_CREATED。禁止 Schema、CurrentSchemaIdentity、Version、Installer、Updater、Release Builder、在线升级与备份恢复协议变化。
 
 FULL=NOT_RUN / NO_FULL。只跑直接专项与必要 Release build；公共核心影响或跨模块失败须由 Sol 有证据决定扩大。技术验收不能代替用户真实 WPF GUI PASS；用户确认前不得 CLOSED / ACCEPTED。
-
-
-
