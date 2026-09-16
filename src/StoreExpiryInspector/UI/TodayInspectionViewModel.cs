@@ -230,6 +230,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public int TodayPlanCount => _planCounts[0];
     public int TomorrowPlanCount => _planCounts[1];
     public int DayAfterTomorrowPlanCount => _planCounts[2];
+    public string TodayPlanDateText => _planBusinessDate.ToString("MM'月'dd'日'", CultureInfo.InvariantCulture);
+    public string TomorrowPlanDateText => _planBusinessDate.AddDays(1).ToString("MM'月'dd'日'", CultureInfo.InvariantCulture);
+    public string DayAfterTomorrowPlanDateText => _planBusinessDate.AddDays(2).ToString("MM'月'dd'日'", CultureInfo.InvariantCulture);
     public string ImportAvailabilityText => IsFuturePlan ? "到排查日后可导入排查结果" : string.Empty;
     public async Task SelectDayAsync(int offset)
     {
@@ -303,6 +306,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         IsLoadingTasks = true;
         var businessDate = _businessToday();
         _planBusinessDate = businessDate;
+        OnPropertyChanged(nameof(TodayPlanDateText)); OnPropertyChanged(nameof(TomorrowPlanDateText)); OnPropertyChanged(nameof(DayAfterTomorrowPlanDateText));
         try
         {
             while (true)

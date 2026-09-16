@@ -43,6 +43,9 @@ public sealed class S23T01InspectionPlanTests
         var cards = document.Descendants().Where(element => element.Name.LocalName == "Button" && (string?)element.Attribute("Style") == "{StaticResource InspectionPlanCardStyle}").ToArray();
         Assert.Equal(3, cards.Length);
         var dateColors = new[] { "PrimaryActionBrush", "SuccessBrush", "WarningTextBrush" };
+        var titles = new[] { "今日任务", "明天计划", "后天计划" };
+        var subtitles = new[] { "需立即处理", "系统自动预告", "系统自动预告" };
+        var dateBindings = new[] { "TodayPlanDateText", "TomorrowPlanDateText", "DayAfterTomorrowPlanDateText" };
         for (var day = 0; day < cards.Length; day++)
         {
             Assert.Equal("{Binding TodayInspection.SelectDayCommand}", (string?)cards[day].Attribute("Command"));
@@ -53,7 +56,31 @@ public sealed class S23T01InspectionPlanTests
             Assert.Equal(2, texts.Length);
             Assert.All(texts, element => Assert.Null(element.Attribute("FontWeight")));
             Assert.Equal("{DynamicResource " + dateColors[day] + "}", (string?)texts[1].Attribute("Foreground"));
+            Assert.Contains(cards[day].Descendants(), element => (string?)element.Attribute("Text") == titles[day]);
+            Assert.Contains(cards[day].Descendants(), element => (string?)element.Attribute("Text") == subtitles[day]);
+            var date = Assert.Single(cards[day].Descendants(), element => ((string?)element.Attribute("Text"))?.Contains(dateBindings[day], StringComparison.Ordinal) == true);
+            Assert.Equal("12", (string?)date.Attribute("FontSize"));
+            Assert.Equal("{DynamicResource MutedTextBrush}", (string?)date.Attribute("Foreground"));
+            Assert.Equal("Right", (string?)date.Attribute("HorizontalAlignment"));
+            Assert.DoesNotContain(date.Ancestors(), element => element.Name.LocalName == "Border");
+            Assert.Equal("1", (string?)date.Parent?.Elements().Single(element => element.Name.LocalName == "Grid" && (string?)element.Attribute("HorizontalAlignment") == "Center").Attribute("Grid.Row"));
         }
+    }
+
+    [Fact]
+    public async Task CardDatesUseTheCapturedBusinessDateAndPublishOnRefresh()
+    {
+        var businessDate = new DateOnly(2026, 12, 31);
+        var vm = new TodayInspectionViewModel(() => new([], 0, 1, 50), (_, _) => throw new InvalidOperationException(), _ => throw new InvalidOperationException(),
+            _ => throw new InvalidOperationException(), _ => throw new InvalidOperationException(), _ => Task.CompletedTask,
+            businessToday: () => businessDate, loadPlanCounts: _ => [0, 0, 0]);
+        Assert.Equal("12月31日", vm.TodayPlanDateText); Assert.Equal("01月01日", vm.TomorrowPlanDateText); Assert.Equal("01月02日", vm.DayAfterTomorrowPlanDateText);
+        var publications = new HashSet<string>();
+        vm.PropertyChanged += (_, args) => publications.Add(args.PropertyName!);
+        businessDate = businessDate.AddDays(1);
+        await vm.LoadAsync();
+        Assert.Equal("01月01日", vm.TodayPlanDateText); Assert.Equal("01月02日", vm.TomorrowPlanDateText); Assert.Equal("01月03日", vm.DayAfterTomorrowPlanDateText);
+        Assert.True(publications.IsSupersetOf([nameof(vm.TodayPlanDateText), nameof(vm.TomorrowPlanDateText), nameof(vm.DayAfterTomorrowPlanDateText)]));
     }
 
     [Fact]
