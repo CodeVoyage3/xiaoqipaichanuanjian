@@ -27,7 +27,8 @@ public sealed class S23T01InspectionPlanTests
         var document = XDocument.Load(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
         var cardStyle = document.Descendants().Single(element => (string?)element.Attribute(x + "Key") == "InspectionPlanCardStyle");
-        var selected = cardStyle.Descendants().Single(element => element.Name.LocalName == "Trigger" && (string?)element.Attribute("Property") == "Tag");
+        var selected = cardStyle.Descendants().Single(element => element.Name.LocalName == "DataTrigger");
+        Assert.Equal("{Binding Tag, RelativeSource={RelativeSource Self}}", (string?)selected.Attribute("Binding"));
         Assert.Equal("True", (string?)selected.Attribute("Value"));
         Assert.Contains(selected.Elements(), element => (string?)element.Attribute("Property") == "BorderBrush" && (string?)element.Attribute("Value") == "{DynamicResource PrimaryActionBrush}");
         Assert.Contains(selected.Elements(), element => (string?)element.Attribute("Property") == "Background" && (string?)element.Attribute("Value") == "{DynamicResource SelectedSurfaceBrush}");
@@ -53,6 +54,62 @@ public sealed class S23T01InspectionPlanTests
             Assert.All(texts, element => Assert.Null(element.Attribute("FontWeight")));
             Assert.Equal("{DynamicResource " + dateColors[day] + "}", (string?)texts[1].Attribute("Foreground"));
         }
+    }
+
+    [Fact]
+    public void ThreeDayCardOuterBorderTracksBooleanSelectionAtRuntime()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var directory = new DirectoryInfo(AppContext.BaseDirectory);
+                while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml")))
+                    directory = directory.Parent;
+                Assert.NotNull(directory);
+                XNamespace ui = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+                XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+                var window = XDocument.Load(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+                var app = XDocument.Load(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "App.xaml"));
+                var dictionary = new XElement(ui + "ResourceDictionary", new XAttribute(XNamespace.Xmlns + "x", x),
+                    app.Descendants(ui + "SolidColorBrush"),
+                    window.Descendants(ui + "Style").Single(element => (string?)element.Attribute(x + "Key") == "InspectionPlanCardStyle"));
+                var resources = (System.Windows.ResourceDictionary)System.Windows.Markup.XamlReader.Parse(dictionary.ToString());
+                var cards = Enumerable.Range(0, 3).Select(_ => new System.Windows.Controls.Button
+                {
+                    Resources = resources, Style = (System.Windows.Style)resources["InspectionPlanCardStyle"],
+                    Width = 300, Height = 130, Tag = false
+                }).ToArray();
+                foreach (var card in cards) card.ApplyTemplate();
+                // Move the same boolean selection through today, tomorrow, after tomorrow, then clear it.
+                foreach (var selectedDay in new[] { 0, 1, 2, -1 })
+                {
+                    for (var day = 0; day < cards.Length; day++)
+                    {
+                        var card = cards[day];
+                        card.Tag = day == selectedDay;
+                        card.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.DataBind);
+                        card.UpdateLayout();
+                        var border = Assert.IsType<System.Windows.Controls.Border>(card.Template.FindName("Card", card));
+                        var selected = day == selectedDay;
+                        var expectedBorder = (System.Windows.Media.SolidColorBrush)resources[selected ? "PrimaryActionBrush" : "BorderBrush"];
+                        var expectedBackground = (System.Windows.Media.SolidColorBrush)resources[selected ? "SelectedSurfaceBrush" : "SurfaceBrush"];
+                        Assert.Equal(expectedBorder.Color, Assert.IsType<System.Windows.Media.SolidColorBrush>(border.BorderBrush).Color);
+                        Assert.Equal(expectedBackground.Color, Assert.IsType<System.Windows.Media.SolidColorBrush>(border.Background).Color);
+                        Assert.Equal(new System.Windows.Thickness(selected ? 2 : 1), border.BorderThickness);
+                        Assert.Equal(new System.Windows.Thickness(selected ? 15 : 16), border.Padding);
+                    }
+                }
+            }
+            catch (Exception exception) { failure = exception; }
+            finally { System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown(); }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.IsBackground = true;
+        thread.Start();
+        Assert.True(thread.Join(TimeSpan.FromSeconds(30)));
+        Assert.Null(failure);
     }
 
     [Theory]
