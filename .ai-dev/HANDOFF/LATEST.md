@@ -1,4 +1,4 @@
-# 2026-09-16：V111-PERF-01 静态与真实内存门禁通过，等待用户 GUI
+# 2026-09-16：V111-PERF-01 TECHNICAL PASS，等待用户 GUI
 
 fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。正式 dirty 工作区原 `1 modified + 4 untracked` 未触碰。
 
@@ -8,7 +8,9 @@ fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=
 
 Terra implementation=`310ab77d8df38c18c1a3f95de7bd301892bb418c`；Sol integration=`426a686`。真实 diff 仅 `App.xaml.cs` 与 `V111WpfRenderModeTests.cs`；专项=`1/1 PASS`，Release build=`0 warning / 0 error`，禁止范围 diff=`0`。
 
-当前物理宿主 Intel GPU/driver 上，TEMP/GUID 候选主窗 1.7 秒，Private WS 77.8 MiB、Private Bytes 117.3 MiB、VMMap Private Data 9.1 MiB、native Heap 51.1 MiB；WriteCombine 0、64 MiB 块 0；空闲 CPU 0.05%。页面切换/滚动 CPU 与用户真实 GUI 仍待完成，明确 GUI PASS 前不得 CLOSED/ACCEPTED；本卡不授权 v1.1.2 或任何发布。
+当前物理宿主 Intel GPU/driver 上，TEMP/GUID 候选主窗 1.7 秒，Private WS 77.8 MiB、Private Bytes 117.3 MiB、VMMap Private Data 9.1 MiB、native Heap 51.1 MiB；WriteCombine 0、64 MiB 块 0；空闲 CPU 0.05%。
+
+用户操作页面切换 287 秒 CPU average/P95/max=`0.116% / 0.418% / 0.847%`；长列表滚动/最大化恢复 104 秒=`0.268% / 0.793% / 1.2%`，全程 Responding。交互后 VMMap Private WS=`170.2 MiB`、Total Private=`208.9 MiB`、WriteCombine=`0`。`SOL TECHNICAL PASS=PASS`；用户完整 GUI 仍待明确回执，GUI PASS 前不得 CLOSED/ACCEPTED。本卡不授权 v1.1.2 或任何发布。
 
 # 2026-09-15：v1.1.1 RELEASED / ACCEPTED
 
