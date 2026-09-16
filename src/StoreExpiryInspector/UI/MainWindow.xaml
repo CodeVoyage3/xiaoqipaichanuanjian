@@ -3062,7 +3062,6 @@
                                         <TextBlock Text="当前任务" FontSize="18" FontWeight="SemiBold" />
                                         <TextBlock Text="选择任务导出计划，或导入已填写的排查结果。" Margin="0,4,0,0" Foreground="{DynamicResource SecondaryTextBrush}" />
                                         <TextBlock Text="{Binding TodayInspection.StatusText}" Margin="0,8,0,0" TextWrapping="Wrap" />
-                                        <TextBlock Text="正在加载今日任务…" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryTextBrush}" Visibility="{Binding TodayInspection.IsLoadingTasks, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                         <TextBlock Text="大类" VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -3088,6 +3087,15 @@
                                             <DataGridTextColumn Header="预计排查日期" Binding="{Binding PlannedInspectionDate, Converter={StaticResource DateOnlyDisplayConverter}}" Width="116" ElementStyle="{StaticResource TableCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
                                         </DataGrid.Columns>
                                     </DataGrid>
+                                <Border Grid.Row="1" Panel.ZIndex="10" Width="196" Padding="10,8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" IsHitTestVisible="True"
+                                        Visibility="{Binding TodayInspection.IsLoadingTasks, Converter={StaticResource BoolToVisibility}}"
+                                        AutomationProperties.Name="正在加载今日排查任务">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="正在加载任务…" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                        <ProgressBar Width="160" Height="4" Margin="0,8,0,0" IsIndeterminate="True" />
+                                    </StackPanel>
+                                </Border>
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                                     <TextBlock Text="{Binding TodayInspection.PageSummary}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,8,0" />
                                     <Button Content="上一页" Command="{Binding TodayInspection.PreviousPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="72" Margin="0,0,8,0" AutomationProperties.Name="上一页今日排查任务" />

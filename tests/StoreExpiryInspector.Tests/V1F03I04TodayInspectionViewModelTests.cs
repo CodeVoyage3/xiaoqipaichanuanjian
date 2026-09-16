@@ -346,6 +346,52 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
+    public async Task DaySwitchPublishesTheNewListOnlyAfterAllQueriesComplete()
+    {
+        var countsStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCounts = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var blockCounts = false;
+        var vm = new TodayInspectionViewModel(
+            loadTasks: () => new([], 0, 1, 50),
+            export: (path, ids) => new(path, ids.Count, ids.Count),
+            preview: _ => Preview([]), apply: _ => new(true, []), submit: _ => new(BulkInspectionSubmissionOutcome.Submitted, [], []), refreshAfterSubmit: _ => Task.CompletedTask,
+            searchTasks: request => new([new(request.TargetDate?.DayNumber ?? 1, 1, "商品", "A", null, "expired", 1, 1, Today, false)], 1, request.Page, request.PageSize),
+            loadPlanCounts: _ =>
+            {
+                if (blockCounts) { countsStarted.TrySetResult(); releaseCounts.Task.GetAwaiter().GetResult(); }
+                return [1, 2, 3];
+            },
+            businessToday: () => Today);
+
+        await vm.LoadAsync();
+        var oldTasks = vm.Tasks;
+        var taskPublications = 0;
+        var visibleTaskPublications = 0;
+        vm.PropertyChanged += (_, eventArgs) =>
+        {
+            if (eventArgs.PropertyName == nameof(vm.Tasks)) taskPublications++;
+            if (eventArgs.PropertyName == nameof(vm.VisibleTasks)) visibleTaskPublications++;
+        };
+        blockCounts = true;
+
+        var switching = vm.SelectDayAsync(1);
+        try
+        {
+            await countsStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.True(vm.IsTomorrowSelected);
+            Assert.Same(oldTasks, vm.Tasks);
+            Assert.Same(oldTasks, vm.VisibleTasks);
+            Assert.False(vm.CanUseContent);
+        }
+        finally { releaseCounts.TrySetResult(); }
+
+        await switching;
+        Assert.NotSame(oldTasks, vm.Tasks);
+        Assert.Equal(1, taskPublications);
+        Assert.Equal(1, visibleTaskPublications);
+    }
+
+    [Fact]
     public async Task PagedCategorySelectionExportsAcrossPagesAndPrunesOnlyClosedTasksOnReload()
     {
         var openIds = Enumerable.Range(1, 51).Select(id => (long)id).Append(99).ToHashSet();
@@ -510,6 +556,9 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.DoesNotContain("Header=\"批次数\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("Header=\"任务状态\"", window, StringComparison.Ordinal);
         Assert.Contains("ItemsSource=\"{Binding TodayInspection.VisibleTasks}\"", window, StringComparison.Ordinal);
+        Assert.Contains("<Border Grid.Row=\"1\" Panel.ZIndex=\"10\" Width=\"196\"", window, StringComparison.Ordinal);
+        Assert.Contains("Visibility=\"{Binding TodayInspection.IsLoadingTasks, Converter={StaticResource BoolToVisibility}}\"", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("Text=\"正在加载今日任务…\"", window, StringComparison.Ordinal);
         Assert.Contains("TodayInspection.Categories", window, StringComparison.Ordinal);
         Assert.Contains("TableGridColumnHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", allWindow, StringComparison.Ordinal);

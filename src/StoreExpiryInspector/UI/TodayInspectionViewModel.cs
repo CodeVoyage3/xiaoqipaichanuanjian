@@ -346,9 +346,6 @@ public sealed class TodayInspectionViewModel : ViewModelBase
                 if (version != _loadVersion) continue;
                 _selectedTaskIds.IntersectWith(openTaskIds);
             }
-            Tasks = tasks;
-            _categories = categories;
-            _totalCount = result.TotalCount;
             if (_loadPlanCounts is not null)
             {
                 var counts = await Task.Run(() => DatabaseRuntimeGate.Run(() => _loadPlanCounts(businessDate)));
@@ -356,6 +353,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
                 _planCounts = counts;
             }
             else if (!future) _planCounts[0] = result.TotalCount;
+            Tasks = tasks;
+            _categories = categories;
+            _totalCount = result.TotalCount;
             OnPropertyChanged(nameof(TodayPlanCount)); OnPropertyChanged(nameof(TomorrowPlanCount)); OnPropertyChanged(nameof(DayAfterTomorrowPlanCount));
             OnPropertyChanged(nameof(TargetDate));
             _hasLoadedTasks = true;
