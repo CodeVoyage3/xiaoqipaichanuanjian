@@ -1,3 +1,15 @@
+# 2026-09-16：Stage23 IN_PROGRESS / S23-T01 AUTHORIZED
+
+用户已确认治理并授权 S23-T01 实施。fresh origin/main=16b93188557dd08c5e5fc1e5505040c85f71ba9c；独立 clean worktree，原 dirty 工作区不动。
+
+Stage23=IN_PROGRESS；S23-T01=AUTHORIZED / IN_PROGRESS；S23-T02=NOT_STARTED；S23-T03=NOT_STARTED。治理先提交，然后全新 Terra 仅实施 S23-T01。
+
+S23-T01 包含定稿三日计划与首页明日同源计数。未来只读 projection，不提前生成正式任务/Inspection，不允许正式导入/完成。未来导出若有低风险阻点单独报告，不阻塞其余交付。
+
+Version=1.1.2；migrationCount=10；migration11=NOT_CREATED；禁止 Schema/CurrentSchemaIdentity/Installer/Updater/Release Builder/协议变化；FULL=NOT_RUN / NO_FULL。用户 GUI 验收前不得 CLOSED / ACCEPTED。
+
+以下为历史记录，不覆盖上述新授权：
+
 # 2026-09-16：v1.1.2 RELEASED / ACCEPTED / PUBLIC REMOTE VERIFIED
 
 - 唯一 PRODUCT SOURCE=`e758563b51d0222ac7a3518ca83e40954be5001e`；candidate runId=`7a7d0ecb-057e-438f-b1c7-680423f336ce`。
