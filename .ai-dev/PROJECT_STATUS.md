@@ -1,4 +1,4 @@
-# 2026-09-16 current：V111-PERF-01 FROZEN / IMPLEMENTATION_AUTHORIZED
+# 2026-09-16 current：V111-PERF-01 STATIC_AND_MEMORY_PASS / WAITING_USER_GUI
 
 - fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。
 - 正式 v1.1.1 的约 900 MiB 启动内存已定性为 WPF hardware rendering → D3D9 → Intel graphics 异常大块私有图形分配；软件渲染同机 A/B 已消除 64 MiB WriteCombine。
@@ -6,7 +6,9 @@
 - 预计生产修改仅 `src/StoreExpiryInspector/App.xaml.cs`，在任何 Window 创建前设置进程级 `SoftwareOnly`，加一个直接专项测试。
 - `NO_SCHEMA_CHANGE / NO_VERSION_CHANGE / NO_INSTALLER_UPDATER_RELEASE_CHANGE / FULL=NOT_RUN / NO_FULL`。
 - 正式 dirty 工作区原 `1 modified + 4 untracked` 保持未触碰；所有治理、实现、测试位于 fresh 隔离 clean worktree。
-- 下一步：全新 GPT-5.6 Terra / medium 实施；Sol 独立技术、真实内存/CPU验收；用户真实 GUI PASS 前不得 CLOSED/ACCEPTED。
+- Terra implementation=`310ab77d8df38c18c1a3f95de7bd301892bb418c`，Sol integration=`426a686`；diff 仅 `App.xaml.cs` 与一个专项测试。
+- 专项=`1/1 PASS`；Release build=`0 warning / 0 error`；同机候选 Private WS=`77.8 MiB`、Private Bytes=`117.3 MiB`、VMMap Private Data=`9.1 MiB`、native Heap=`51.1 MiB`、WriteCombine=`0`、64 MiB 块=`0`、空闲 CPU=`0.05%`。
+- 下一步：用户真实 GUI 操作同时完成页面切换/长列表滚动 CPU 观察；明确 GUI PASS 前不得 CLOSED/ACCEPTED。
 
 # 2026-09-15：v1.1.1 RELEASED / ACCEPTED / PUBLIC REMOTE VERIFIED
 

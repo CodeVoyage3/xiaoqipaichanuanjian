@@ -1,4 +1,4 @@
-# 2026-09-16：V111-PERF-01 WPF 高内存修复已冻结并授权
+# 2026-09-16：V111-PERF-01 静态与真实内存门禁通过，等待用户 GUI
 
 fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。正式 dirty 工作区原 `1 modified + 4 untracked` 未触碰。
 
@@ -6,7 +6,9 @@ fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=
 
 唯一修复是在任何 WPF Window 创建前设置当前进程 `RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly`，预计只改 `App.xaml.cs` 并加一个直接专项。禁止 Registry/vendor 分支、Schema/migration、Version、Installer/Updater/Release 及业务/UI扩展。`FULL=NOT_RUN / NO_FULL`。
 
-下一步由全新 GPT-5.6 Terra / medium / clean worktree 实施；Sol 独立审查与当前真实 Intel 宿主机内存/CPU验收。用户真实 GUI PASS 前不得 CLOSED/ACCEPTED；本卡不授权 v1.1.2 或任何发布。
+Terra implementation=`310ab77d8df38c18c1a3f95de7bd301892bb418c`；Sol integration=`426a686`。真实 diff 仅 `App.xaml.cs` 与 `V111WpfRenderModeTests.cs`；专项=`1/1 PASS`，Release build=`0 warning / 0 error`，禁止范围 diff=`0`。
+
+当前物理宿主 Intel GPU/driver 上，TEMP/GUID 候选主窗 1.7 秒，Private WS 77.8 MiB、Private Bytes 117.3 MiB、VMMap Private Data 9.1 MiB、native Heap 51.1 MiB；WriteCombine 0、64 MiB 块 0；空闲 CPU 0.05%。页面切换/滚动 CPU 与用户真实 GUI 仍待完成，明确 GUI PASS 前不得 CLOSED/ACCEPTED；本卡不授权 v1.1.2 或任何发布。
 
 # 2026-09-15：v1.1.1 RELEASED / ACCEPTED
 
