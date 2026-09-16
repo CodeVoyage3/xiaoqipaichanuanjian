@@ -1,4 +1,12 @@
-# 2026-09-16：Stage23 IN_PROGRESS / S23-T01 AUTHORIZED
+# 2026-09-16：S23-T01 CLOSED / ACCEPTED；等待用户确认下一Task
+
+用户真实GUI验收已通过，S23-T01=CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS / FINAL_ACCEPTED。最终生产修复2b4a6653f8593ce4648529b3dc343d06ae9b8404；Sol最终专项3/3 PASS与Release build 0 warning / 0 error，不重跑测试或build，FULL NOT_RUN / NO_FULL。
+
+Stage23仍IN_PROGRESS；S23-T02/S23-T03保持NOT_STARTED，不自动进入、不创建下一实施代理，等待用户明确确认。fresh origin/main=16b93188557dd08c5e5fc1e5505040c85f71ba9c；Sol隔离树治理收口，正式dirty原状态未动。main集成/push/发布、停止GUI与候选/隔离数据清理均未执行，不从用户GUI通过推定授权。Version1.1.2/migration10/migration11 NOT_CREATED；验收证据见 .ai-dev/ACCEPTANCE/S23-T01.md。
+
+以下为历史实施与返修记录，不覆盖本节最终状态与等待指令。
+
+# 2026-09-16：Stage23 IN_PROGRESS / S23-T01 AUTHORIZED（历史）
 
 当前用户门禁：S23-T01=WAITING_USER_GUI_RETEST / NOT_CLOSED / NOT_ACCEPTED。顶部三卡最新参考图要求标题日期同行、图标与信息区整体居中；取代R4独立右上日期方案，仅XAML视觉返修，计算/业务/选中态机制不动。T02/T03 NOT_STARTED，不push、不发布、不跑FULL。新的隔离候选与Sol门禁结果见 .ai-dev/ACCEPTANCE/S23-T01.md。
 

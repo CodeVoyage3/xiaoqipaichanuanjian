@@ -6,9 +6,15 @@
 
 ## Task 顺序
 
-- S23-T01：AUTHORIZED / IN_PROGRESS；今日三日自动计划与首页明日提示。
+- S23-T01：CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS；今日三日自动计划与首页明日提示。
 - S23-T02：NOT_STARTED；左侧导航 SVG 统一替换。
 - S23-T03：NOT_STARTED；商品详情交互优化。
+
+## 当前收口节点
+
+2026-09-16 用户明确回执：“S23-T01 GUI 验收通过，可以 CLOSED / ACCEPTED。” S23-T01已完成最终人工验收和治理收口；Stage23仍IN_PROGRESS，不整体CLOSED。当前等待用户确认下一张Task；S23-T02/S23-T03保持NOT_STARTED，禁止自动创建实施代理或进入后续任务。
+
+复用已有Sol独立技术门禁：初始专项84/84、R3专项45/45、最终R5专项3/3及Release build 0 warning / 0 error；FULL NOT_RUN / NO_FULL，不重复跑测试或构建。最终生产修复=2b4a6653f8593ce4648529b3dc343d06ae9b8404。main合并/push、发布、候选或隔离数据清理均未执行，用户回执不扩大这些权限。
 
 ## 共同边界
 

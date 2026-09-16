@@ -1,4 +1,12 @@
-# 2026-09-16：Stage23 IN_PROGRESS / S23-T01 AUTHORIZED
+# 2026-09-16：S23-T01 CLOSED / ACCEPTED；Stage23 IN_PROGRESS
+
+用户真实GUI验收回执已通过，S23-T01=CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS / FINAL_ACCEPTED。最终生产修复2b4a665，最终Sol专项3/3 PASS与Release build 0/0沿用，不重复构建测试，FULL NOT_RUN / NO_FULL。
+
+Stage23仍IN_PROGRESS，当前等待用户确认下一张Task；S23-T02/S23-T03 NOT_STARTED，禁止自动启动。fresh origin/main=16b93188557dd08c5e5fc1e5505040c85f71ba9c；治理在Sol隔离树收口，原dirty未动。main集成/push/发布和候选/数据清理均NOT_RUN。Version1.1.2、migration10、migration11 NOT_CREATED。详见 .ai-dev/ACCEPTANCE/S23-T01.md。
+
+以下为历史实施与返修记录，不覆盖上述最终用户验收状态。
+
+# 2026-09-16：Stage23 IN_PROGRESS / S23-T01 AUTHORIZED（历史）
 
 当前用户门禁：S23-T01=WAITING_USER_GUI_RETEST / NOT_CLOSED / NOT_ACCEPTED。顶部三卡按最新参考图返修：标题日期同行、整体信息组居中；撤销独立右上日期。Stage23仍IN_PROGRESS，T02/T03 NOT_STARTED，FULL NOT_RUN / NO_FULL。最新同轮证据见 .ai-dev/ACCEPTANCE/S23-T01.md。
 
