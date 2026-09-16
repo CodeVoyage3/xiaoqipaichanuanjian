@@ -1,3 +1,15 @@
+# 2026-09-16：v1.1.2 RELEASED / ACCEPTED / PUBLIC REMOTE VERIFIED
+
+- 唯一 PRODUCT SOURCE=`e758563b51d0222ac7a3518ca83e40954be5001e`；candidate runId=`7a7d0ecb-057e-438f-b1c7-680423f336ce`。
+- annotated tag `v1.1.2` object=`1cf99cd6456eb7db5fc51d28c47c4632d7375736`，peel=`e758563b51d0222ac7a3518ca83e40954be5001e`；GitHub Release ID=`389676425`，stable/latest=`v1.1.2`。
+- GitHub 公网匿名下载四资产与冻结候选逐项全等：Setup `75353858` / `1ABF7F7E2F8C9578C397605C25E1CF359D2A9C661F1761F4D316ED00206AA509`；ZIP `109462630` / `2FCC046CB5E650EFA7008A6A50352B68B1C811372B46EE8073C3401D904C6C13`；manifest `914` / `75E698EF0E0172B4E10B9C04B7EB184A158A474F6345C3D65F664C65C8E7FDE1`；signature `384` / `E091D4A45E29D1305B003822FD83E5C97AE87059A4B84515CBA2F3801E9FDD49`。
+- Production RSA-PSS/SHA256 verifier=`PASS`；公网包 revalidation=`Verified`。App/Updater=`1.1.2 / 1.1.2.0`；migrationCount=`10`；migration11=`NOT_CREATED`。
+- setupCompatibility=`SAME_SCHEMA_SLIM`；minimumDirectVersion=`1.1.1`；crossSchemaAllowed=`false`。V111-PERF-01=`CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS`。
+- 夸克永久公开分享=<https://pan.quark.cn/s/153f76ad8bfb>，同一 Setup 回读 `75353858` bytes，客态内层验证=`PASS`。
+- Gitee `master/latest.json` commit=`cf056f2b64d84df43eb76068b3d840485b1ff2f7`；匿名 Raw HTTP `200`，严格三字段、`version=1.1.2`，manualDownloadUrl 指向该夸克分享。
+- 发布期间未重新 build、未替换冻结资产、未修改 PRODUCT SOURCE；正式 dirty 工作区仍为原 `1 modified + 4 untracked`；`FULL=NOT_RUN / NO_FULL`；正式数据库=`NO ACCESS`。
+- v1.1.2=`RELEASED / ACCEPTED`；Release governance=`CLOSED`；Stage23=`NOT_STARTED / NOT_AUTHORIZED`。
+
 # 2026-09-16：V111-PERF-01 CLOSED / ACCEPTED
 
 - fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。

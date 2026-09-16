@@ -1,0 +1,70 @@
+{
+  "recordedAt": "2026-09-16",
+  "result": "V1.1.2_RELEASED_ACCEPTED",
+  "productSource": "e758563b51d0222ac7a3518ca83e40954be5001e",
+  "candidateRunId": "7a7d0ecb-057e-438f-b1c7-680423f336ce",
+  "tag": {
+    "name": "v1.1.2",
+    "type": "annotated",
+    "objectSha": "1cf99cd6456eb7db5fc51d28c47c4632d7375736",
+    "dereferenceSha": "e758563b51d0222ac7a3518ca83e40954be5001e"
+  },
+  "githubRelease": {
+    "id": 389676425,
+    "url": "https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.1.2",
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "anonymousFreshDownloadExactMatch": true
+  },
+  "assets": [
+    { "name": "StoreExpiryInspector-Setup-1.1.2.exe", "bytes": 75353858, "sha256": "1ABF7F7E2F8C9578C397605C25E1CF359D2A9C661F1761F4D316ED00206AA509" },
+    { "name": "StoreExpiryInspector-1.1.2-win-x64.zip", "bytes": 109462630, "sha256": "2FCC046CB5E650EFA7008A6A50352B68B1C811372B46EE8073C3401D904C6C13" },
+    { "name": "update-manifest.json", "bytes": 914, "sha256": "75E698EF0E0172B4E10B9C04B7EB184A158A474F6345C3D65F664C65C8E7FDE1" },
+    { "name": "update-manifest.sig", "bytes": 384, "sha256": "E091D4A45E29D1305B003822FD83E5C97AE87059A4B84515CBA2F3801E9FDD49" }
+  ],
+  "signing": {
+    "algorithm": "RSA-PSS/SHA256",
+    "productionTrustFingerprint": "565956021399C88A8B13DD0873D2A801F6675EAB44BEB4FC8EBE53C71FEFBADC",
+    "productionVerifier": "PASS",
+    "publicPackageRevalidation": "Verified"
+  },
+  "releaseContract": {
+    "targetVersion": "1.1.2",
+    "migrationCount": 10,
+    "setupCompatibility": "SAME_SCHEMA_SLIM",
+    "minimumDirectVersion": "1.1.1",
+    "crossSchemaAllowed": false
+  },
+  "verification": {
+    "v111PerformanceFix": "TECHNICAL PASS + USER GUI PASS + FINAL ACCEPTED",
+    "targeted": "11/11 PASS",
+    "publicPackageVerifier": "1/1 PASS",
+    "releaseBuild": "PASS / 0 warning / 0 error",
+    "freshInstall": "EVIDENCE_REUSED / UNCHANGED_PRODUCTION_PATH",
+    "setupUpgrade": "EVIDENCE_REUSED / UNCHANGED_PRODUCTION_PATH",
+    "onlineUpdate": "EXISTING_REAL_E2E_EVIDENCE_REUSED + CURRENT_PUBLIC_PACKAGE_VERIFICATION",
+    "repair": "EVIDENCE_REUSED / UNCHANGED_PRODUCTION_PATH",
+    "legacyDirect": "NOT_APPLICABLE / MINIMUM_DIRECT_VERSION_1.1.1"
+  },
+  "quark": {
+    "shareUrl": "https://pan.quark.cn/s/153f76ad8bfb",
+    "setupBytesReread": 75353858,
+    "publicShareVerified": true
+  },
+  "gitee": {
+    "commit": "cf056f2b64d84df43eb76068b3d840485b1ff2f7",
+    "rawUrl": "https://gitee.com/CodeVoyage3/xiaoqipaichanuanjian-update/raw/master/latest.json",
+    "anonymousHttpStatus": 200,
+    "threeFieldsExact": true,
+    "version": "1.1.2"
+  },
+  "boundaries": {
+    "stage23": "NOT_STARTED",
+    "formalDatabaseAccess": false,
+    "full": "NOT_RUN / NO_FULL",
+    "formalDirtyWorktreeTouched": false,
+    "candidateRebuiltDuringPublication": false,
+    "productionSourceChangedDuringPublication": false
+  }
+}

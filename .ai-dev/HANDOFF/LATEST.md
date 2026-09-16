@@ -1,3 +1,15 @@
+# 2026-09-16：v1.1.2 RELEASED / ACCEPTED
+
+正式性能修复版已发布。唯一 PRODUCT SOURCE=`e758563b51d0222ac7a3518ca83e40954be5001e`；annotated tag `v1.1.2` tag object=`1cf99cd6456eb7db5fc51d28c47c4632d7375736`，解引用到该精确 source。GitHub Release ID=`389676425`，`draft=false`、`prerelease=false`、stable/latest=`v1.1.2`。
+
+冻结四资产从 GitHub 公网匿名 fresh 下载并逐项全等：Setup=`75353858` bytes / SHA256 `1ABF7F7E2F8C9578C397605C25E1CF359D2A9C661F1761F4D316ED00206AA509`；ZIP=`109462630` / `2FCC046CB5E650EFA7008A6A50352B68B1C811372B46EE8073C3401D904C6C13`；manifest=`914` / `75E698EF0E0172B4E10B9C04B7EB184A158A474F6345C3D65F664C65C8E7FDE1`；signature=`384` / `E091D4A45E29D1305B003822FD83E5C97AE87059A4B84515CBA2F3801E9FDD49`。公网包 production verifier=`Verified`，RSA-PSS/SHA256=`PASS`。
+
+release contract：target=`1.1.2`，migrationCount=`10`，migration11=`NOT_CREATED`，setupCompatibility=`SAME_SCHEMA_SLIM`，minimumDirectVersion=`1.1.1`，crossSchemaAllowed=`false`。V111-PERF-01 已复用 `TECHNICAL PASS + USER GUI PASS + FINAL ACCEPTED`；本轮 targeted=`11/11 PASS`、Release build=`0 warning / 0 error`、公网 package verifier=`1/1 PASS`；`FULL=NOT_RUN / NO_FULL`；正式数据库=`NO ACCESS`。
+
+夸克正式分享=<https://pan.quark.cn/s/153f76ad8bfb>，同一 Setup 回读及客态内层验证=`PASS`。Gitee `latest.json` commit=`cf056f2b64d84df43eb76068b3d840485b1ff2f7`；匿名 Raw HTTP `200`，严格三字段且 `version=1.1.2`。GitHub 继续作为唯一自动更新与发行身份权威。
+
+正式 dirty 工作树原 `1 modified + 4 untracked` 未触碰；发布期间未重新构建候选、未替换资产、未修改 PRODUCT SOURCE。v1.1.2=`RELEASED / ACCEPTED`，Release governance=`CLOSED`。Stage23=`NOT_STARTED`，必须由用户另行授权启动。
+
 # 2026-09-16：V111-PERF-01 CLOSED / ACCEPTED
 
 fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。正式 dirty 工作区原 `1 modified + 4 untracked` 未触碰。
