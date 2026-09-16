@@ -1,3 +1,13 @@
+# 2026-09-16 current：V111-PERF-01 FROZEN / IMPLEMENTATION_AUTHORIZED
+
+- fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。
+- 正式 v1.1.1 的约 900 MiB 启动内存已定性为 WPF hardware rendering → D3D9 → Intel graphics 异常大块私有图形分配；软件渲染同机 A/B 已消除 64 MiB WriteCombine。
+- 独立性能修复任务 `V111-PERF-01｜v1.1.1 WPF 硬件渲染高内存修复` 已冻结并获实施授权；不创建新业务 Stage。
+- 预计生产修改仅 `src/StoreExpiryInspector/App.xaml.cs`，在任何 Window 创建前设置进程级 `SoftwareOnly`，加一个直接专项测试。
+- `NO_SCHEMA_CHANGE / NO_VERSION_CHANGE / NO_INSTALLER_UPDATER_RELEASE_CHANGE / FULL=NOT_RUN / NO_FULL`。
+- 正式 dirty 工作区原 `1 modified + 4 untracked` 保持未触碰；所有治理、实现、测试位于 fresh 隔离 clean worktree。
+- 下一步：全新 GPT-5.6 Terra / medium 实施；Sol 独立技术、真实内存/CPU验收；用户真实 GUI PASS 前不得 CLOSED/ACCEPTED。
+
 # 2026-09-15：v1.1.1 RELEASED / ACCEPTED / PUBLIC REMOTE VERIFIED
 
 唯一 PRODUCT SOURCE=`b79629ae044ac648ab6eec8655940bfe998f8c1f`，candidate runId=`68dbbea8-a959-4b09-83d8-e9941d6b5979`。annotated tag `v1.1.1` 的 tag object=`e011ee1db249ef3e0739d60d12f8f095184a7a1f`，精确解引用到 PRODUCT SOURCE。GitHub Release ID=`388817412`，`draft=false`、`prerelease=false`、stable/latest=`v1.1.1`。

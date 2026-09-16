@@ -1,3 +1,13 @@
+# 2026-09-16：V111-PERF-01 WPF 高内存修复已冻结并授权
+
+fresh baseline=`origin/main@fe649895c65e345079899174e8cc708604de95ff`；Version=`1.1.1`；migrationCount=`10`；migration11=`NOT_CREATED`。正式 dirty 工作区原 `1 modified + 4 untracked` 未触碰。
+
+`V111-PERF-01｜v1.1.1 WPF 硬件渲染高内存修复`=`FROZEN / IMPLEMENTATION_AUTHORIZED / NOT_IMPLEMENTED / NOT_ACCEPTED`。根因已确认是 WPF hardware rendering → D3D9 → Intel graphics 异常大块私有图形分配；不重复 native 诊断。
+
+唯一修复是在任何 WPF Window 创建前设置当前进程 `RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly`，预计只改 `App.xaml.cs` 并加一个直接专项。禁止 Registry/vendor 分支、Schema/migration、Version、Installer/Updater/Release 及业务/UI扩展。`FULL=NOT_RUN / NO_FULL`。
+
+下一步由全新 GPT-5.6 Terra / medium / clean worktree 实施；Sol 独立审查与当前真实 Intel 宿主机内存/CPU验收。用户真实 GUI PASS 前不得 CLOSED/ACCEPTED；本卡不授权 v1.1.2 或任何发布。
+
 # 2026-09-15：v1.1.1 RELEASED / ACCEPTED
 
 正式发布已完成。唯一 PRODUCT SOURCE=`b79629ae044ac648ab6eec8655940bfe998f8c1f`；annotated tag `v1.1.1` tag object=`e011ee1db249ef3e0739d60d12f8f095184a7a1f`，解引用到该精确 source。GitHub Release ID=`388817412`，`draft=false`、`prerelease=false`、stable/latest=`v1.1.1`。
