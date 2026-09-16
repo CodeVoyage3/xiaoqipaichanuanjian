@@ -649,10 +649,9 @@
                             Tag="{Binding IsHomeSectionVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource HomeIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavHomeIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationHomeText" Margin="14,0,0,0" Text="首页" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -673,10 +672,9 @@
                             Tag="{Binding IsPendingTasksVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource ClipboardIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavTasksIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationTasksText" Margin="14,0,0,0" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -687,9 +685,9 @@
                             Tag="{Binding IsTodayInspectionVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource CalendarIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavTodayInspectionIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationTodayInspectionText" Margin="14,0,0,0" Text="今日排查" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -700,10 +698,9 @@
                             Tag="{Binding IsHistoryVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource ClockIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavHistoryIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationHistoryText" Margin="14,0,0,0" Text="排查历史" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -718,7 +715,7 @@
                                FontSize="12"
                                Foreground="{DynamicResource MutedTextBrush}" />
                     <Button x:Name="NavigationProductCatalogButton" AutomationProperties.Name="商品明细" ToolTip="商品明细" Command="{Binding NavigateProductCatalogCommand}" Tag="{Binding IsProductCatalogSectionVisible}" Style="{StaticResource NavButtonStyle}">
-                        <StackPanel Orientation="Horizontal"><Path Data="{StaticResource ClipboardIcon}" Style="{StaticResource NavIconPathStyle}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" /><TextBlock x:Name="NavigationProductCatalogText" Margin="14,0,0,0" Text="商品明细" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center"><Path Data="{StaticResource NavProductCatalogIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" /></Viewbox><TextBlock x:Name="NavigationProductCatalogText" Margin="14,0,0,0" Text="商品明细" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" /></StackPanel>
                     </Button>
                     <Button x:Name="NavigationImportButton"
                             AutomationProperties.Name="数据导入"
@@ -727,10 +724,9 @@
                             Tag="{Binding IsImportVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource ImportIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavImportIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationImportText" Margin="14,0,0,0" Text="数据导入" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -741,10 +737,9 @@
                             Tag="{Binding IsBackupRestoreVisible}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource DatabaseIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavBackupRestoreIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationBackupText" Margin="14,0,0,0" Text="数据备份与恢复" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -765,10 +760,9 @@
                             IsEnabled="{Binding CanOpenSettings}"
                             Style="{StaticResource NavButtonStyle}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource GearIcon}"
-                                  Style="{StaticResource NavIconPathStyle}"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  />
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavSettingsIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
                             <TextBlock x:Name="NavigationSettingsText" Margin="14,0,0,0" Text="设置" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
