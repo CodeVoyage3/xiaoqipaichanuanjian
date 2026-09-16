@@ -11,7 +11,8 @@ public sealed record InspectionTaskSearchRequest(
     string? Stage = null,
     int Page = 1,
     int PageSize = 50,
-    string? CategoryName = null)
+    string? CategoryName = null,
+    DateOnly? TargetDate = null)
 {
     public string? Search => SearchText;
 }
@@ -27,7 +28,8 @@ public sealed record InspectionTaskListItem(
     int EffectiveStockQty,
     DateOnly? NearestExpiryDate,
     bool HasValidDraft,
-    string CategoryName = "");
+    string CategoryName = "",
+    DateOnly? PlannedInspectionDate = null);
 
 public sealed record InspectionDashboardResult(
     int OpenTaskCount,
@@ -39,7 +41,8 @@ public sealed record InspectionDashboardResult(
     DateTime? LastSuccessfulImportAtUtc = null,
     int ProductCount = 0,
     int BatchCount = 0,
-    FutureExpiryRiskOverview? FutureRisk = null);
+    FutureExpiryRiskOverview? FutureRisk = null,
+    int TomorrowPlanCount = 0);
 
 public sealed record InspectionTaskSearchResult(
     IReadOnlyList<InspectionTaskListItem> Items,
@@ -177,9 +180,10 @@ public sealed class InspectionTaskQuery
             .ToArray());
     }
 
-    public InspectionDashboardResult Dashboard(StoreDbContext context)
+    public InspectionDashboardResult Dashboard(StoreDbContext context, DateOnly? businessDate = null)
     {
         ArgumentNullException.ThrowIfNull(context);
+        var today = businessDate ?? DateOnly.FromDateTime(DateTime.Today);
 
         var tasks = BuildTasks(context);
         var lastSuccessfulImportAtUtc = context.Imports
@@ -203,7 +207,8 @@ public sealed class InspectionTaskQuery
             lastSuccessfulImportAtUtc,
             productCount,
             batchCount,
-            new FutureExpiryRiskQuery().Overview(context, DateOnly.FromDateTime(DateTime.Today)));
+            new FutureExpiryRiskQuery().Overview(context, today),
+            new InspectionPlanQuery().Search(context, today.AddDays(1), new()).TotalCount);
     }
 
     public InspectionTaskSearchResult SearchOpenTasks(

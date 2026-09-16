@@ -201,6 +201,8 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _discount50Count;
     private int _productCount;
     private int _batchCount;
+    public int TomorrowPlanCount { get; private set; }
+    public string TomorrowPlanText => $"明日需排查 {TomorrowPlanCount} 项";
     private FutureExpiryRiskOverview? _futureRisk;
     private DateTime? _lastSuccessfulImportAtUtc;
     private bool _isSearchActive;
@@ -580,6 +582,8 @@ public sealed class DashboardViewModel : ViewModelBase
             Discount50Count = result.Discount50Count;
             ProductCount = result.ProductCount;
             BatchCount = result.BatchCount;
+            TomorrowPlanCount = result.TomorrowPlanCount;
+            OnPropertyChanged(nameof(TomorrowPlanCount)); OnPropertyChanged(nameof(TomorrowPlanText));
             _futureRisk = result.FutureRisk;
             foreach (var name in new[] { "Future7Discount50", "Future7Discount20", "Future7Withdraw", "Future7Expired", "Future14Discount50", "Future14Discount20", "Future14Withdraw", "Future14Expired", "Future30Discount50", "Future30Discount20", "Future30Withdraw", "Future30Expired" }) OnPropertyChanged(name);
             OnPropertyChanged(nameof(FutureRiskSummary));
@@ -1262,14 +1266,32 @@ public sealed class ShellViewModel : ViewModelBase
             confirmSubmission: confirmTodaySubmission,
             logException: logger,
             businessToday: () => DateOnly.FromDateTime(DateTime.Today),
-            searchTasks: searchTasks,
+            searchTasks: hasInjectedReadDependency ? searchTasks : request =>
+            {
+                using var context = contextFactory();
+                return request.TargetDate is DateOnly targetDate
+                    ? new InspectionPlanQuery().Search(context, targetDate, request)
+                    : new InspectionTaskQuery().SearchOpenTasks(context, request);
+            },
             loadCategories: loadCategories,
             loadTaskIds: todayTaskIdsLoader ?? (hasInjectedReadDependency
                 ? FailClosedLoader<string?, IReadOnlyList<long>>("todayTaskIds")
                 : CreateTodayTaskIdsLoader(contextFactory)),
             loadOpenTaskIds: todayOpenTaskIdsLoader ?? (hasInjectedReadDependency
                 ? FailClosedLoader<IReadOnlyCollection<long>, IReadOnlyList<long>>("todayOpenTaskIds")
-                : CreateTodayOpenTaskIdsLoader(contextFactory)));
+                : CreateTodayOpenTaskIdsLoader(contextFactory)),
+            loadPlanCounts: hasInjectedReadDependency ? null : today =>
+            {
+                using var context = contextFactory();
+                var query = new InspectionPlanQuery();
+                return [new InspectionTaskQuery().SearchOpenTasks(context, new()).TotalCount,
+                    query.Search(context, today.AddDays(1), new()).TotalCount, query.Search(context, today.AddDays(2), new()).TotalCount];
+            },
+            exportFuture: hasInjectedReadDependency ? null : (path, date, ids) =>
+            {
+                using var context = contextFactory();
+                return new FutureInspectionPlanExportUseCase().Execute(context, path, date, ids, DateOnly.FromDateTime(DateTime.Today));
+            });
         BackupRestore = new DatabaseBackupRestoreViewModel(
             loadBackups: loadBackups,
             createBackup: createBackup,
@@ -1479,7 +1501,7 @@ public sealed class ShellViewModel : ViewModelBase
         ShellPage.Import => "导入最新的商品效期 Excel，更新商品与批次数据",
         ShellPage.ProductCatalog => "查看系统当前所有商品的汇总信息，点击详情查看批次",
         ShellPage.ProductCatalogDetail => "先看商品整体情况，再查看各批次明细",
-        ShellPage.TodayInspection => "导出今日计划、回导结果并集中提交已完成排查",
+        ShellPage.TodayInspection => "系统根据效期规则自动预告今日、明日、后日需排查商品，便于门店提前安排工作。",
         ShellPage.BackupRestore => "创建经过验证的本地备份，或从应用备份安全恢复",
         ShellPage.InspectionDetail => "检查信息自动保存，提交前请确认数量",
         ShellPage.FutureExpiryRisk => "查看未来时间范围内即将进入指定阶段的商品明细",

@@ -68,7 +68,7 @@ internal static class WpfDialogService
         };
         buttons.Children.Add(later); buttons.Children.Add(update); buttons.Children.Add(cancel); panel.Children.Add(buttons); dialog.Content = panel; dialog.Loaded += (_, _) => later.Focus(); dialog.ShowDialog();
     }
-    public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result)
+    public static void ShowExportSuccess(Window owner, TodayInspectionPlanExportResult result, bool futureArrangement = false)
     {
         var dialog = new Window
         {
@@ -79,7 +79,7 @@ internal static class WpfDialogService
         };
         var panel = new StackPanel { Margin = new Thickness(24) };
         panel.Children.Add(new TextBlock { Text = "导出成功", FontSize = 18, FontWeight = FontWeights.SemiBold });
-        panel.Children.Add(new TextBlock { Text = $"商品/任务数量：{result.TaskCount}\n批次数：{result.RowCount}\n完整路径：{result.OutputPath}", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = futureArrangement ? $"未来工作安排商品数：{result.TaskCount}\n安排行数：{result.RowCount}\n此表仅供安排工作，不能导入正式排查结果。\n完整路径：{result.OutputPath}" : $"商品/任务数量：{result.TaskCount}\n批次数：{result.RowCount}\n完整路径：{result.OutputPath}", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         buttons.Children.Add(OpenButton("打开文件", () => Open(result.OutputPath, false, dialog), owner));
         buttons.Children.Add(OpenButton("打开所在文件夹", () => Open(result.OutputPath, true, dialog), owner));

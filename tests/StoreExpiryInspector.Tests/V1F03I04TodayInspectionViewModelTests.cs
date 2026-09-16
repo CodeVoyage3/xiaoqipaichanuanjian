@@ -488,12 +488,12 @@ public sealed class V1F03I04TodayInspectionViewModelTests
     }
 
     [Fact]
-    public void TodayTaskGridUsesTheSixColumnVirtualizedSelectionContract()
+    public void TodayTaskGridUsesTheSevenColumnVirtualizedSelectionContract()
     {
         var allWindow = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
         var todayStart = allWindow.IndexOf("<Grid Visibility=\"{Binding IsTodayInspectionVisible", StringComparison.Ordinal);
         var window = allWindow[todayStart..allWindow.IndexOf("IsImportVisible", todayStart, StringComparison.Ordinal)];
-        foreach (var header in new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "总库存" })
+        foreach (var header in new[] { "选择", "条码", "商品名称", "大类", "预计阶段", "总库存", "预计排查日期" })
             Assert.Contains($"Header=\"{header}\"", window, StringComparison.Ordinal);
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", window, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ProductName}\"", window, StringComparison.Ordinal);
@@ -513,9 +513,9 @@ public sealed class V1F03I04TodayInspectionViewModelTests
         Assert.Contains("TodayInspection.Categories", window, StringComparison.Ordinal);
         Assert.Contains("TableGridColumnHeaderStyle", window, StringComparison.Ordinal);
         Assert.Contains("BorderThickness\" Value=\"0,0,1,1\"", allWindow, StringComparison.Ordinal);
-        Assert.True(new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "总库存" }
+        Assert.True(new[] { "选择", "条码", "商品名称", "大类", "预计阶段", "总库存", "预计排查日期" }
             .Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal))
-            .Zip(new[] { "选择", "条码", "商品名称", "大类", "当前最高阶段", "总库存" }.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
+            .Zip(new[] { "选择", "条码", "商品名称", "大类", "预计阶段", "总库存", "预计排查日期" }.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
             .All(value => value));
         Assert.Contains("CheckBox IsChecked=\"{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\"", window, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.Name=\"选择今日排查任务\"", window, StringComparison.Ordinal);

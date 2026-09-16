@@ -491,24 +491,27 @@ public partial class MainWindow : Window
     private async void ExportTodayInspection_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ShellViewModel shell) return;
+        if (!shell.TodayInspection.ExportCommand.CanExecute(null)) return;
+        var future = shell.TodayInspection.IsFuturePlan;
         var dialog = new SaveFileDialog
         {
-            Title = "导出今日排查计划",
+            Title = future ? "导出未来排查工作安排" : "导出今日排查计划",
             Filter = "Excel 工作簿 (*.xlsx)|*.xlsx",
             DefaultExt = ".xlsx",
             AddExtension = true,
-            FileName = $"今日排查计划_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+            FileName = future ? $"未来排查工作安排_{shell.TodayInspection.TargetDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx" : $"今日排查计划_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
             OverwritePrompt = false
         };
         if (dialog.ShowDialog(this) != true) return;
         await shell.TodayInspection.ExportAsync(dialog.FileName);
         if (shell.TodayInspection.LatestExportResult is { } result && result.OutputPath == dialog.FileName)
-            WpfDialogService.ShowExportSuccess(this, result);
+            WpfDialogService.ShowExportSuccess(this, result, future);
     }
 
     private async void OpenTodayInspection_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ShellViewModel shell) return;
+        if (!shell.TodayInspection.PreviewCommand.CanExecute(null)) return;
         var dialog = new OpenFileDialog
         {
             Title = "选择已填写的今日排查计划",
