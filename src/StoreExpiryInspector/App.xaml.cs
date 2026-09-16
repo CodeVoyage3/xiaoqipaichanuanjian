@@ -4,6 +4,8 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
@@ -32,6 +34,8 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
+        RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+
         if (InstallerPreflight.TryHandle(e.Args, out var preflightExitCode))
         {
             Shutdown(preflightExitCode);
