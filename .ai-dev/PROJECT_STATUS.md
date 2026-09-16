@@ -1,3 +1,13 @@
+# 2026-09-16：S23-T02 CLOSED / ACCEPTED；S23-T03 NOT_STARTED
+
+## 2026-09-16 最终真实 GUI 回执与治理收口
+
+用户明确确认：“S23-T02 GUI 验收通过，可以 CLOSED / ACCEPTED。请只做 T02 治理收口，S23-T03 保持 NOT_STARTED，等我确认后再启动。”
+S23-T02=CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS / FINAL_ACCEPTED；此为真实用户人工回执，解除USER_GUI_PENDING。实现=5c1bc56f0874ab72546dac8c14b408c1f4460eae；复用Sol独立5/5 PASS及production Release build 0 warning / 0 error，不重跑测试/build，FULL NOT_RUN / NO_FULL。
+启动入口首次误用带前缀随机目录，被正式TEMP/GUID校验阻止；仅修复外部隔离启动cmd为TEMP下纯GUID，新路径生成检查PASS，生产代码未改。用户修复入口后最终GUI PASS；入口失败保留为历史，不记图标生产失败。
+Stage23保持IN_PROGRESS；S23-T01与S23-T02均CLOSED / ACCEPTED；S23-T03保持NOT_STARTED，等待用户明确确认，不创建代理或启动T03。本轮仅五份治理文件，未merge/push/Release、未停止用户进程、未清理候选/隔离数据；原dirty和正式DB未触碰。App/Updater1.1.2，migration10/migration11 NOT_CREATED。
+以下历史待验收记录不覆盖本节最终状态。
+
 # 2026-09-16：S23-T02 TECHNICAL_PASS / USER_GUI_PENDING
 
 Terra=5c1bc56f0874ab72546dac8c14b408c1f4460eae；Sol独立5/5 PASS、production Release build 0 warning / 0 error、diff --check PASS。S23-T02仍IN_PROGRESS / NOT_CLOSED / NOT_ACCEPTED，等待真实GUI；S23-T01保持CLOSED / ACCEPTED，T03 NOT_STARTED。版本1.1.2/迁移10，FULL NOT_RUN / NO_FULL。原dirty与正式DB未动；无main merge/push/Release。见.ai-dev/ACCEPTANCE/S23-T02.md；以下历史不覆盖本节。
@@ -1085,5 +1095,6 @@ Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02 TECHNICALLY_ACCEPTED / 
 - V1-UI-01 最终结论（2026-09-03）：用户真实 WPF 首轮已通过导航顺序、整体蓝色降噪、Search/Refresh/分页中性视觉、ComboBox 产品方案、三条件组合筛选、清空、计数/空态/分页、StageBadge 与 Primary/Danger 语义；GUI R1 后又明确确认品牌区紧凑布局及阶段/大类中文 display 两项重验 `PASSED`。结合 Sol 既有新鲜技术门禁，V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`。V1-F03/I04 继续 `CLOSED`；Stage 8/9 与在线升级均未启动，下一阶段等待用户另行批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
+
 
 
