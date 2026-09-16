@@ -2933,13 +2933,16 @@
                 </Grid>
 
                 <Grid Visibility="{Binding IsProductCatalogDetailVisible, Converter={StaticResource BoolToVisibility}}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer x:Name="ProductCatalogDetailScrollViewer"
+                                  Background="Transparent"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  PreviewMouseWheel="ProductCatalogDetailScrollViewer_PreviewMouseWheel">
                         <StackPanel Margin="0,0,0,24">
                             <Grid>
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                 <StackPanel><TextBlock Text="商品明细 / 商品详情" Foreground="{DynamicResource SecondaryTextBrush}" /><TextBlock Text="商品详情" FontSize="24" FontWeight="SemiBold" /><TextBlock Text="先看商品整体情况，再查看各批次明细" Margin="0,4,0,0" Foreground="{DynamicResource SecondaryTextBrush}" /></StackPanel>
                                 <Button Grid.Column="1" Content="返回列表" Height="40" Command="{Binding ReturnFromProductCatalogCommand}" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.Name="返回商品明细" />
-                                <Button Grid.Column="2" Content="去排查" Height="40" Margin="8,0,0,0" Command="{Binding OpenProductTaskCommand}" Visibility="{Binding ProductCatalog.HasOpenTask, Converter={StaticResource BoolToVisibility}}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.Name="去排查商品" />
                             </Grid>
                             <Border Margin="0,16,0,0" Padding="18" Style="{StaticResource PageSectionBorderStyle}">
                                 <Grid>

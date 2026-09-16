@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly SignedUpdatePackageDownloader _updateDownloader;
     private readonly UpdateNetworkDiagnostics? _updateDiagnostics;
     private Task<UpdatePackageResult>? _updateWorker;
+    private int _productCatalogDetailWheelRemainder;
     private Func<Version, CancellationToken, Task<UpdateCheckResult>>? _giteeManualUpdateCheck;
     private Func<VerifiedUpdatePackage, SignedUpdatePackageDownloader, Action, Task<UpdatePackageResult>>? _installPreparedUpdate;
     internal bool IsClosed { get; private set; }
@@ -333,6 +334,40 @@ public partial class MainWindow : Window
             DashboardScrollViewer.VerticalOffset - e.Delta,
             0,
             DashboardScrollViewer.ScrollableHeight));
+        e.Handled = true;
+    }
+
+    private void ProductCatalogDetailScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is not ScrollViewer scrollViewer || scrollViewer.ScrollableHeight <= 0)
+        {
+            return;
+        }
+
+        var totalDelta = _productCatalogDetailWheelRemainder + e.Delta;
+        var notches = totalDelta / Mouse.MouseWheelDeltaForOneLine;
+        _productCatalogDetailWheelRemainder = totalDelta % Mouse.MouseWheelDeltaForOneLine;
+        if (notches == 0)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        var lines = SystemParameters.WheelScrollLines;
+        for (var notch = 0; notch < Math.Abs(notches); notch++)
+        {
+            if (lines < 0)
+            {
+                if (notches > 0) scrollViewer.PageUp(); else scrollViewer.PageDown();
+                continue;
+            }
+
+            for (var line = 0; line < lines; line++)
+            {
+                if (notches > 0) scrollViewer.LineUp(); else scrollViewer.LineDown();
+            }
+        }
+
         e.Handled = true;
     }
 
