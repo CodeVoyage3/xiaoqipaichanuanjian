@@ -371,6 +371,22 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void ProductCatalogCopy_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = sender is DataGrid { SelectedCells.Count: 1 } grid
+            && grid.SelectedCells[0].Item is not null;
+        e.Handled = true;
+    }
+
+    private void ProductCatalogCopy_Executed(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (sender is not DataGrid { SelectedCells.Count: 1 } grid) return;
+
+        var cell = grid.SelectedCells[0];
+        Clipboard.SetText(cell.Column.OnCopyingCellClipboardContent(cell.Item)?.ToString() ?? string.Empty);
+        e.Handled = true;
+    }
+
     private void FutureRiskDataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (sender is DataGrid dataGrid && FindVisualChild<ScrollViewer>(dataGrid) is { } scrollViewer)
