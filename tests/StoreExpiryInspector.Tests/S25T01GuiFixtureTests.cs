@@ -1,6 +1,9 @@
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.UI;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -8,7 +11,7 @@ namespace StoreExpiryInspector.Tests;
 public sealed class S25T01GuiFixtureTests
 {
     [Fact]
-    public void SeedsTheRequestedTemporaryGuiFixture()
+    public async Task SeedsTheRequestedTemporaryGuiFixture()
     {
         var root = Environment.GetEnvironmentVariable("S25_T01_GUI_ROOT");
         var ownsRoot = string.IsNullOrWhiteSpace(root);
@@ -46,10 +49,41 @@ public sealed class S25T01GuiFixtureTests
             var exported = new TodayInspectionPlanExportUseCase().Execute(context, new(planPath, context.Tasks.Select(task => task.Id).ToArray()));
             Assert.Equal(55, exported.TaskCount);
             Assert.All(new InspectionPlanDraftApplyUseCase().Preview(context, planPath).File.Rows, row => Assert.Empty(row.Errors));
+            SetQuantity(planPath, "11");
+            var confirmations = 0;
+            InspectionResultImportSessionViewModel CreateSession() => new(
+                path => { using var preview = DatabaseInitializer.CreateContext(databasePath); return new InspectionPlanDraftApplyUseCase().Preview(preview, path); },
+                request => { using var apply = DatabaseInitializer.CreateContext(databasePath); return new InspectionPlanDraftApplyUseCase().Apply(apply, request); },
+                request => { using var submit = DatabaseInitializer.CreateContext(databasePath); return new BulkInspectionSubmissionUseCase().Submit(submit, request); },
+                _ => Task.CompletedTask,
+                _ => { confirmations++; return true; },
+                confirmSubmission: () => true);
+            var session = CreateSession();
+            await session.PreviewAsync(planPath);
+            session.InspectorName = "S25 GUI";
+            await session.SubmitAsync();
+            Assert.Equal(1, confirmations);
+            using (var verify = DatabaseInitializer.CreateContext(databasePath)) Assert.Single(verify.Inspections);
+            var reopened = CreateSession();
+            await reopened.PreviewAsync(planPath);
+            Assert.Empty(reopened.CompleteTaskIds);
+            using (var verify = DatabaseInitializer.CreateContext(databasePath)) Assert.Single(verify.Inspections);
         }
         finally
         {
             if (ownsRoot && Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static void SetQuantity(string path, string value)
+    {
+        using var document = SpreadsheetDocument.Open(path, true);
+        var workbook = document.WorkbookPart?.Workbook ?? throw new InvalidOperationException("Workbook is missing.");
+        var sheet = workbook.Sheets?.Elements<Sheet>().Single() ?? throw new InvalidOperationException("Worksheet is missing.");
+        var worksheet = (WorksheetPart)document.WorkbookPart!.GetPartById(sheet.Id!);
+        var worksheetData = worksheet.Worksheet ?? throw new InvalidOperationException("Worksheet is missing.");
+        var cell = (worksheetData.GetFirstChild<SheetData>() ?? throw new InvalidOperationException("Rows are missing.")).Elements<Row>().Skip(1).First().Elements<Cell>().ElementAt(11);
+        cell.DataType = CellValues.InlineString; cell.CellValue = null; cell.InlineString = new InlineString(new Text(value));
+        worksheetData.Save();
     }
 }

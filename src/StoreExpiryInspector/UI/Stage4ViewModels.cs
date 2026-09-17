@@ -1124,6 +1124,8 @@ public sealed class PendingTasksViewModel : ViewModelBase
     {
         if (_export is null || IsActionBusy || _selectedTaskIds.Count == 0) return;
         var ids = _selectedTaskIds.ToArray();
+        LatestExportResult = null;
+        OnPropertyChanged(nameof(LatestExportResult));
         IsActionBusy = true;
         try
         {

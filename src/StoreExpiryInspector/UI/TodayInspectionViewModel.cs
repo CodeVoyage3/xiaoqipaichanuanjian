@@ -386,7 +386,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _isExportBusy = true;
         NotifyImportSessionChanged();
         try { return await Task.Run(() => DatabaseRuntimeGate.Run(action)); }
-        catch (Exception) { StatusText = failure; return default; }
+        catch (Exception exception) { _logException?.Invoke(exception); StatusText = failure; return default; }
         finally { _isExportBusy = false; NotifyImportSessionChanged(); }
     }
     private async Task SetSelectionAsync(bool selected)

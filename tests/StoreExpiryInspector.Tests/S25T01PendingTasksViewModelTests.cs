@@ -65,6 +65,23 @@ public sealed class S25T01PendingTasksViewModelTests
         Assert.Equal(2, pending.Split("选择待排查任务", StringSplitOptions.None).Length - 1);
     }
 
+    [Fact]
+    public async Task FailedRetryDoesNotReuseAnEarlierExportAsSuccess()
+    {
+        var succeed = true;
+        var vm = Create((path, ids) => succeed ? new(path, ids.Count, ids.Count) : throw new IOException("locked"));
+        await vm.LoadAsync();
+        vm.Items[0].IsSelected = true;
+        await vm.ExportSelectedAsync("C:\\same.xlsx");
+        Assert.NotNull(vm.LatestExportResult);
+
+        succeed = false;
+        await vm.ExportSelectedAsync("C:\\same.xlsx");
+
+        Assert.Null(vm.LatestExportResult);
+        Assert.Contains("失败", vm.ActionStatusText);
+    }
+
     private static PendingTasksViewModel Create(Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>? export = null) => new(
         request =>
         {
