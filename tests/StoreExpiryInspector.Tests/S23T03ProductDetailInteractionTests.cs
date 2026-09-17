@@ -79,11 +79,15 @@ public sealed class S23T03ProductDetailInteractionTests
         {
             try
             {
+                Console.WriteLine("S24_DETAIL_PROBE: creating Application");
                 var app = new StoreExpiryInspector.App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
                 app.InitializeComponent();
                 var shell = CreateShell(); SetSelectedDetail(shell.ProductCatalog); shell.NavigateTo(ShellPage.ProductCatalogDetail);
+                Console.WriteLine("S24_DETAIL_PROBE: showing detail");
                 var window = LocalDetailWindow(shell); window.Show(); window.UpdateLayout();
+                Console.WriteLine("S24_DETAIL_PROBE: testing native copy");
                 ProbeNativeCopy(window, shell);
+                Console.WriteLine("S24_DETAIL_PROBE: testing wheel");
                 var outer = Descendants<ScrollViewer>(window).Single(viewer => Descendants<DataGrid>(viewer).Any());
                 var grid = Descendants<DataGrid>(outer).Single(value => AutomationProperties.GetName(value) == "当前商品批次明细");
                 var inner = Descendants<ScrollViewer>(grid).First();
@@ -224,7 +228,9 @@ public sealed class S23T03ProductDetailInteractionTests
 
     private static void ProbeNativeCopy(Window detailWindow, ShellViewModel shell)
     {
+        Console.WriteLine("S24_DETAIL_PROBE: capturing clipboard");
         var originalClipboard = CaptureClipboard();
+        Console.WriteLine("S24_DETAIL_PROBE: captured clipboard");
         try
         {
             var code = Descendants<TextBox>(detailWindow).Single(value => AutomationProperties.GetName(value) == "商品编码");
@@ -262,7 +268,9 @@ public sealed class S23T03ProductDetailInteractionTests
         }
         finally
         {
+            Console.WriteLine("S24_DETAIL_PROBE: restoring clipboard");
             RestoreClipboard(originalClipboard);
+            Console.WriteLine("S24_DETAIL_PROBE: restored clipboard");
         }
     }
 
