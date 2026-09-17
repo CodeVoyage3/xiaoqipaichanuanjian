@@ -1,3 +1,18 @@
+# 2026-09-17：Stage23 最终治理收口 / CLOSED / ACCEPTED
+
+最终状态：
+- S23-T01 = CLOSED / ACCEPTED / USER_GUI_PASS（保留既有真实用户回执）
+- S23-T02 = CLOSED / ACCEPTED / USER_GUI_PASS（保留既有真实用户回执）
+- S23-T03 = CLOSED / ACCEPTED / TECHNICAL_PASS / USER_GUI_PASS / FINAL_ACCEPTED
+- Stage23 = CLOSED / ACCEPTED / FINAL_ACCEPTED
+
+真实用户最终回执：S23-T03 最终 GUI 验收通过。请完成最终治理收口。S23-T03 = CLOSED / ACCEPTED，登记真实用户 GUI PASS，Stage23 = CLOSED / ACCEPTED。
+此回执解除 S23-T03 的 USER_GUI_PENDING，覆盖商品详情顶部重复入口移除、整页滚轮、面包屑移除、16 DIP 右侧安全留白、当前/历史批次展示及最终文本复制小修；此前逐轮通过的内容不再返修。仅治理收口，不以技术检查代替真实用户验收。
+
+治理基线 HEAD = 19322e906550de360097524966c9c027d2ab1485（s23-t03-copy-sol 隔离链）。最后生产实施 Terra = c532b39123a3146c3e4073079cc279cf894ec705；Sol 独立验收 = 19322e906550de360097524966c9c027d2ab1485。复用已登记桌面权限专项6/6 PASS、Production Release build0 warning/0 error；本轮 TESTS=NOT_RERUN，BUILD=NOT_RERUN，FULL=NOT_RUN / NO_FULL。
+本轮仅 .ai-dev 五份治理文件，生产代码/测试代码/Schema/migration/CurrentSchemaIdentity/Version/Installer/Updater/Release 不变。Version=1.1.2，migration=10，migration11=NOT_CREATED。原 dirty 工作区不动；不 merge、不 push main、不发布、不启动 Stage24、不操作正式数据库或用户进程、不清理隔离候选/数据。Stage24=NOT_STARTED / NOT_AUTHORIZED；等待用户下一步指令。
+
+以下保留历史分析、实施和 USER_GUI_PENDING 记录，仅作过程追溯，不覆盖本节最终 CLOSED / ACCEPTED 状态。
 # 2026-09-17: S23-T03 copy repair TECHNICAL_PASS / USER_GUI_PENDING
 
 User accepted current/history batch GUI; its logic/style/wheel retained. Fresh Terra copy implementation c532b39123a3146c3e4073079cc279cf894ec705 based f6877441b576d9746e0b1842bffbda4b918319e7. Sol candidate s23-t03-copy-sol; Sol only added test/navigation evidence and governance, no production edits.
