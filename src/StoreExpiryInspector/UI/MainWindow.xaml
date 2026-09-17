@@ -1300,12 +1300,17 @@
                     </Grid>
 
                     <Grid Grid.Row="2" Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal">
                             <TextBlock Text="默认按紧急程度和最近有效期排序"
                                        FontSize="13"
                                        Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Text="{Binding PendingTasks.ActionStatusText}"
+                                       Margin="12,0,0,0"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <WrapPanel Grid.Row="1" HorizontalAlignment="Right" Margin="0,8,0,0">
                             <TextBlock Text="{Binding PendingTasks.SelectedCount, StringFormat=已选 {0} 项}" VerticalAlignment="Center" FontWeight="SemiBold" />
                             <Button Content="清空已选" Command="{Binding PendingTasks.ClearSelectionCommand}" Style="{StaticResource LinkButtonStyle}" Margin="10,0,0,0" />
                             <Button Content="导出已选任务" Click="ExportPendingInspection_Click" Command="{Binding PendingTasks.ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="112" Margin="10,0,0,0" AutomationProperties.Name="导出已选待排查任务" />
@@ -1325,7 +1330,7 @@
                                     AutomationProperties.Name="刷新待排查任务"
                                     Width="72"
                                     Margin="12,0,0,0" />
-                        </StackPanel>
+                        </WrapPanel>
                     </Grid>
 
                     <Grid Grid.Row="3">
@@ -1336,6 +1341,7 @@
                                 CornerRadius="6">
                             <DataGrid ItemsSource="{Binding PendingTasks.Items}"
                                       Style="{StaticResource PendingDataGridStyle}"
+                                      IsEnabled="{Binding PendingTasks.CanUseImport}"
                                       AutoGenerateColumns="False"
                                       SelectionMode="Single"
                                       SelectionUnit="Cell"
@@ -1399,6 +1405,7 @@
                                 Visibility="Collapsed">
                             <DataGrid ItemsSource="{Binding PendingTasks.Items}"
                                       Style="{StaticResource PendingDataGridStyle}"
+                                      IsEnabled="{Binding PendingTasks.CanUseImport}"
                                       AutoGenerateColumns="False"
                                       SelectionMode="Single"
                                       SelectionUnit="Cell"

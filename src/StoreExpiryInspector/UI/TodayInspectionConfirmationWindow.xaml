@@ -76,7 +76,7 @@
         </Grid>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="取消" IsCancel="True" Width="88" Margin="0,0,8,0"/>
-            <Button Content="提交数据" Click="Submit_Click" IsDefault="True" Width="104" AutomationProperties.Name="提交排查数据"/>
+            <Button Content="提交数据" Click="Submit_Click" IsDefault="True" IsEnabled="{Binding CanSubmit}" Width="104" AutomationProperties.Name="提交排查数据"/>
         </StackPanel>
     </Grid>
 </Window>

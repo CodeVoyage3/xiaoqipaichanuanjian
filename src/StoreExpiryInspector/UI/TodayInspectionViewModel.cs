@@ -75,37 +75,19 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     private readonly Func<string?, IReadOnlyList<long>>? _loadTaskIds;
     private readonly Func<IReadOnlyCollection<long>, IReadOnlyList<long>>? _loadOpenTaskIds;
     private readonly Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult> _export;
-    private readonly Func<string, InspectionPlanPreview> _preview;
-    private readonly Func<ApplyInspectionPlanDraftRequest, ApplyInspectionPlanDraftResult> _apply;
-    private readonly Func<BulkInspectionSubmissionRequest, BulkInspectionSubmissionResult> _submit;
     private readonly Func<IReadOnlyCollection<long>, Task> _refreshAfterSubmit;
-    private readonly Func<IReadOnlyList<OverStockConfirmation>, bool>? _confirmOverStock;
-    private readonly Func<ExpiredInventoryWarning, bool>? _confirmExpiredInventory;
-    private readonly Func<bool>? _confirmSubmission;
     private readonly Action<Exception>? _logException;
     private readonly Func<DateOnly> _businessToday;
-    private readonly Func<DateTime> _utcNow;
     private bool _isLoadingTasks;
-    private bool _isActionBusy;
-    private bool _isReadingPlan;
+    private bool _isExportBusy;
     private bool _hasLoadedTasks;
     private bool _isBulkSelecting;
     private bool _isBulkSelectionBusy;
     private int _loadVersion;
     private int _selectionVersion;
     private string _statusText = "正在加载今日任务…";
-    private string _inspectorName = string.Empty;
-    private string _checkDateText;
-    private DateTime? _checkDateValue;
-    private string _inspectorNameError = string.Empty;
-    private string _checkDateError = string.Empty;
-    private InspectionPlanPreview? _currentPreview;
-    private ApplyInspectionPlanDraftResult? _draftResult;
-    private IReadOnlyList<OverStockConfirmation> _pendingConfirmations = Array.Empty<OverStockConfirmation>();
-    private SubmissionIntent? _submissionIntent;
     private readonly HashSet<long> _selectedTaskIds = [];
     private IReadOnlyList<string> _categories = ["全部"];
-    private string _selectedPreviewFilter = "全部";
     private int _currentPage = 1;
     private int _totalCount;
     private readonly Func<DateOnly, int[]>? _loadPlanCounts;
@@ -142,22 +124,15 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _loadTaskIds = loadTaskIds;
         _loadOpenTaskIds = loadOpenTaskIds;
         _export = export;
-        _preview = preview;
-        _apply = apply;
-        _submit = submit;
         _refreshAfterSubmit = refreshAfterSubmit;
-        _confirmOverStock = confirmOverStock;
-        _confirmExpiredInventory = confirmExpiredInventory;
-        _confirmSubmission = confirmSubmission;
         _logException = logException;
         _businessToday = businessToday ?? (() => DateOnly.FromDateTime(DateTime.Today));
         _planBusinessDate = _businessToday();
-        _utcNow = utcNow ?? (() => DateTime.UtcNow);
-        _checkDateText = _businessToday().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        _checkDateValue = _businessToday().ToDateTime(TimeOnly.MinValue);
         ImportSession = new InspectionResultImportSessionViewModel(
-            _preview, _apply, _submit, _refreshAfterSubmit, _confirmOverStock, _confirmExpiredInventory,
-            _confirmSubmission, _logException, _businessToday, _utcNow);
+            preview, apply, submit, RefreshAfterSubmitAsync, confirmOverStock, confirmExpiredInventory,
+            confirmSubmission, logException, _businessToday, utcNow);
+        ImportSession.PropertyChanged += (_, _) => NotifyImportSessionChanged();
+        ImportSession.Submitted += RemoveSelectedTaskIds;
         ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => CanUseContent);
         SelectAllCommand = new RelayCommand(_ => { _ = SetSelectionAsync(true); }, _ => CanUseContent && !_isBulkSelectionBusy && Tasks.Count != 0);
         ClearSelectionCommand = new RelayCommand(_ => { _ = SetSelectionAsync(false); }, _ => CanUseContent && !_isBulkSelectionBusy && SelectedCount != 0);
@@ -166,9 +141,6 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         SelectDayCommand = new RelayCommand(day => { if (int.TryParse(day?.ToString(), out var offset)) _ = SelectDayAsync(offset); }, _ => CanUseContent);
         ExportCommand = new RelayCommand(_ => { }, _ => CanUseContent && SelectedCount != 0 && (!IsFuturePlan || _exportFuture is not null));
         PreviewCommand = new RelayCommand(_ => { }, _ => CanUseContent && !IsFuturePlan);
-        SaveDraftCommand = new RelayCommand(_ => { _ = SaveDraftAsync(); }, _ => CanUseContent && CanSaveDraft);
-        SubmitCommand = new RelayCommand(_ => { _ = SubmitAsync(); }, _ => CanUseContent && CanSaveDraft);
-        PreviewFilterCommand = new RelayCommand(filter => SelectedPreviewFilter = filter as string ?? "全部");
     }
 
     public IReadOnlyList<TodayInspectionTaskViewModel> Tasks { get; private set; } = Array.Empty<TodayInspectionTaskViewModel>();
@@ -192,36 +164,23 @@ public sealed class TodayInspectionViewModel : ViewModelBase
             _ = LoadAsync();
         }
     }
-    public ObservableCollection<TodayInspectionPreviewRowViewModel> PreviewRows { get; } = [];
-    public IReadOnlyList<string> PreviewFilters { get; } = ["全部", "可提交", "未填写", "状态变化", "填写错误"];
-    public string SelectedPreviewFilter
-    {
-        get => _selectedPreviewFilter;
-        set
-        {
-            var filter = PreviewFilters.Contains(value) ? value : "全部";
-            if (_selectedPreviewFilter == filter) return;
-            _selectedPreviewFilter = filter;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(VisiblePreviewRows));
-        }
-    }
-    public IReadOnlyList<TodayInspectionPreviewRowViewModel> VisiblePreviewRows => SelectedPreviewFilter == "全部"
-        ? PreviewRows
-        : PreviewRows.Where(row => row.ResultText == SelectedPreviewFilter).ToArray();
-    public string AllPreviewFilterText => $"全部 {PreviewRows.Count}";
-    public string SubmittablePreviewFilterText => $"可提交 {PreviewRows.Count(row => row.ResultText == "可提交")}";
-    public string BlankPreviewFilterText => $"未填写 {PreviewRows.Count(row => row.ResultText == "未填写")}";
-    public string StalePreviewFilterText => $"状态变化 {PreviewRows.Count(row => row.ResultText == "状态变化")}";
-    public string InvalidPreviewFilterText => $"填写错误 {PreviewRows.Count(row => row.ResultText == "填写错误")}";
+    public ObservableCollection<TodayInspectionPreviewRowViewModel> PreviewRows => ImportSession.PreviewRows;
+    public IReadOnlyList<string> PreviewFilters => ImportSession.PreviewFilters;
+    public string SelectedPreviewFilter { get => ImportSession.SelectedPreviewFilter; set => ImportSession.SelectedPreviewFilter = value; }
+    public IReadOnlyList<TodayInspectionPreviewRowViewModel> VisiblePreviewRows => ImportSession.VisiblePreviewRows;
+    public string AllPreviewFilterText => ImportSession.AllPreviewFilterText;
+    public string SubmittablePreviewFilterText => ImportSession.SubmittablePreviewFilterText;
+    public string BlankPreviewFilterText => ImportSession.BlankPreviewFilterText;
+    public string StalePreviewFilterText => ImportSession.StalePreviewFilterText;
+    public string InvalidPreviewFilterText => ImportSession.InvalidPreviewFilterText;
     public RelayCommand ReloadCommand { get; }
     public RelayCommand SelectAllCommand { get; }
     public RelayCommand ClearSelectionCommand { get; }
     public RelayCommand ExportCommand { get; }
     public RelayCommand PreviewCommand { get; }
-    public RelayCommand SaveDraftCommand { get; }
-    public RelayCommand SubmitCommand { get; }
-    public RelayCommand PreviewFilterCommand { get; }
+    public RelayCommand SaveDraftCommand => ImportSession.SaveDraftCommand;
+    public RelayCommand SubmitCommand => ImportSession.SubmitCommand;
+    public RelayCommand PreviewFilterCommand => ImportSession.PreviewFilterCommand;
     public RelayCommand PreviousPageCommand { get; }
     public RelayCommand NextPageCommand { get; }
     public RelayCommand SelectDayCommand { get; }
@@ -248,11 +207,11 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         RefreshCommands();
         await LoadAsync();
     }
-    public IReadOnlyList<long> CompleteTaskIds => _draftResult?.Tasks.Where(task => task.Readiness.FilledItemCount > 0 && task.Readiness.RequiresReconfirmationCount == 0).Select(task => task.TaskId).ToArray() ?? [];
+    public IReadOnlyList<long> CompleteTaskIds => ImportSession.CompleteTaskIds;
     public bool IsLoadingTasks { get => _isLoadingTasks; private set { if (_isLoadingTasks == value) return; _isLoadingTasks = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
-    public bool IsActionBusy { get => _isActionBusy; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(CanUseContent)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext)); RefreshCommands(); } }
+    public bool IsActionBusy => _isExportBusy || ImportSession.IsActionBusy;
     public bool IsBusy => IsActionBusy;
-    public bool IsReadingPlan { get => _isReadingPlan; private set { if (_isReadingPlan == value) return; _isReadingPlan = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseContent)); RefreshCommands(); } }
+    public bool IsReadingPlan => ImportSession.IsReadingPlan;
     public bool HasLoadedTasks => _hasLoadedTasks;
     public bool CanUseContent => !IsLoadingTasks && !IsActionBusy && !IsReadingPlan && !_isBulkSelectionBusy;
     public int SelectedCount => _selectedTaskIds.Count;
@@ -262,35 +221,28 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public bool CanGoPrevious => CanUseContent && CurrentPage > 1;
     public bool CanGoNext => CanUseContent && CurrentPage < TotalPages;
     public string PageSummary => $"第 {CurrentPage} / {TotalPages} 页 · 共 {TotalCount} 个当前任务";
-    public bool HasPreview => _currentPreview is not null;
-    public bool CanSaveDraft => !IsFuturePlan && _currentPreview?.ApplicableTaskIds.Count > 0 && IsFormValid;
-    public bool IsFormValid => !string.IsNullOrWhiteSpace(InspectorName) && TryGetCheckDate(out _);
+    public bool HasPreview => ImportSession.HasPreview;
+    public bool CanSaveDraft => !IsFuturePlan && ImportSession.CanSaveDraft;
+    public bool IsFormValid => ImportSession.IsFormValid;
     public string StatusText { get => _statusText; private set { if (_statusText == value) return; _statusText = value; OnPropertyChanged(); } }
-    public string InspectorName { get => _inspectorName; set { if (_inspectorName == value) return; _inspectorName = value; InvalidateDraftOnFormChange(); OnPropertyChanged(); ValidateForm(); } }
-    public string CheckDateText { get => _checkDateText; set { if (_checkDateText == value) return; _checkDateText = value; _checkDateValue = DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) ? date : null; InvalidateDraftOnFormChange(); OnPropertyChanged(); OnPropertyChanged(nameof(CheckDateValue)); ValidateForm(); } }
-    public DateTime? CheckDateValue { get => _checkDateValue; set { if (_checkDateValue == value) return; _checkDateValue = value; _checkDateText = value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty; InvalidateDraftOnFormChange(); OnPropertyChanged(); OnPropertyChanged(nameof(CheckDateText)); ValidateForm(); } }
-    public DateTime CheckDateMaxValue => _businessToday().ToDateTime(TimeOnly.MinValue);
-    public string InspectorNameError { get => _inspectorNameError; private set { if (_inspectorNameError == value) return; _inspectorNameError = value; OnPropertyChanged(); } }
-    public string CheckDateError { get => _checkDateError; private set { if (_checkDateError == value) return; _checkDateError = value; OnPropertyChanged(); } }
-    public bool HasInspectorNameError => !string.IsNullOrEmpty(InspectorNameError);
-    public bool HasCheckDateError => !string.IsNullOrEmpty(CheckDateError);
-    public string PreviewSummaryText => _currentPreview is null ? "尚未读取排查结果文件" : $"本次共 {_currentPreview.Summary.ProductCount} 个商品 / {_currentPreview.Summary.BatchCount} 个批次，{PreviewRows.Count(row => row.StatusText == "可提交")} 条可提交";
-    public string DraftStatusText => _draftResult is null ? "尚未处理排查结果" : CompleteTaskIds.Count > 0 ? "已保存有效排查结果，可以提交；未填写项目会继续待排查。" : "没有可提交的有效排查结果。";
-    public bool HasPreviewIssues => PreviewRows.Any(row => row.HasIssue);
-    public string PreviewIssueText => _currentPreview is null ? string.Empty : string.Join("　", new[]
-    {
-        PreviewRows.Count(row => row.StatusText == "未填写") is var blank && blank > 0 ? $"未填写 {blank} 条" : null,
-        PreviewRows.Count(row => row.StatusText == "需要重新导出") is var stale && stale > 0 ? $"状态变化 {stale} 条" : null,
-        PreviewRows.Count(row => row.StatusText == "数据错误") is var invalid && invalid > 0 ? $"填写错误 {invalid} 条" : null,
-        PreviewRows.Count(row => row.StatusText == "可提交") is var valid && valid > 0 ? $"有效 {valid} 条" : null
-    }.Where(text => text is not null));
-    public string PreviewDetailText => string.Join(Environment.NewLine, PreviewRows.Where(row => row.HasIssue).Select(row => $"第 {row.RowNumber} 行：{row.Reason}"));
+    public string InspectorName { get => ImportSession.InspectorName; set => ImportSession.InspectorName = value; }
+    public string CheckDateText { get => ImportSession.CheckDateText; set => ImportSession.CheckDateText = value; }
+    public DateTime? CheckDateValue { get => ImportSession.CheckDateValue; set => ImportSession.CheckDateValue = value; }
+    public DateTime CheckDateMaxValue => ImportSession.CheckDateMaxValue;
+    public string InspectorNameError => ImportSession.InspectorNameError;
+    public string CheckDateError => ImportSession.CheckDateError;
+    public bool HasInspectorNameError => ImportSession.HasInspectorNameError;
+    public bool HasCheckDateError => ImportSession.HasCheckDateError;
+    public string PreviewSummaryText => ImportSession.PreviewSummaryText;
+    public string DraftStatusText => ImportSession.DraftStatusText;
+    public bool HasPreviewIssues => ImportSession.HasPreviewIssues;
+    public string PreviewIssueText => ImportSession.PreviewIssueText;
+    public string PreviewDetailText => ImportSession.PreviewDetailText;
     public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
-    public event Action<string>? SubmissionBlocked;
-    public event Action<string>? PreviewFailed;
+    public event Action<string>? SubmissionBlocked { add => ImportSession.SubmissionBlocked += value; remove => ImportSession.SubmissionBlocked -= value; }
+    public event Action<string>? PreviewFailed { add => ImportSession.PreviewFailed += value; remove => ImportSession.PreviewFailed -= value; }
 
-    public string? GetPreviewProductName(long taskId) => _currentPreview?.File.Rows
-        .FirstOrDefault(row => row.TaskId == taskId)?.ProductName;
+    public string? GetPreviewProductName(long taskId) => ImportSession.GetPreviewProductName(taskId);
 
     public async Task LoadAsync()
     {
@@ -398,152 +350,44 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public async Task PreviewAsync(string path)
     {
         if (IsFuturePlan) { StatusText = ImportAvailabilityText; return; }
-        if (IsActionBusy) return;
-        ResetSession();
-        IsActionBusy = true;
-        var reading = Task.Run(() => DatabaseRuntimeGate.Run(() => _preview(path)));
-        if (await Task.WhenAny(reading, Task.Delay(180)) != reading) IsReadingPlan = true;
-        InspectionPlanPreview? preview;
-        try { preview = await reading; }
-        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "读取排查结果文件失败"; PreviewFailed?.Invoke(FileMessage(exception)); return; }
-        finally { IsReadingPlan = false; IsActionBusy = false; }
-        _currentPreview = preview;
-        PreviewRows.Clear();
-        foreach (var row in _currentPreview.File.Rows)
-        {
-            _currentPreview.TaskReasons.TryGetValue(row.TaskId ?? 0, out var reason);
-            PreviewRows.Add(new TodayInspectionPreviewRowViewModel(row, reason ?? string.Empty));
-        }
-        StatusText = _currentPreview.ApplicableTaskIds.Count == 0 ? "预览完成，但没有可提交的数据。请查看错误或陈旧原因。" : "预览完成，请填写排查人和日期后提交数据。";
-        SelectedPreviewFilter = "全部";
-        NotifyPreviewDisplayChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(CanSaveDraft)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); OnPropertyChanged(nameof(PreviewDetailText));
+        await ImportSession.PreviewAsync(path);
     }
 
     public void CancelPreview()
     {
-        if (_currentPreview is not null) ResetSession();
+        ImportSession.CancelPreview();
     }
 
     public async Task SaveDraftAsync()
     {
         if (IsFuturePlan) { StatusText = ImportAvailabilityText; return; }
-        if (_currentPreview is null) { BlockSubmission("请先读取排查结果文件。", "请先选择并读取已填写的排查计划。"); return; }
-        ValidateForm();
-        if (!IsFormValid || !TryGetCheckDate(out var checkDate)) { BlockSubmission("请完善排查人和排查日期。", string.Join("\n", new[] { InspectorNameError, CheckDateError }.Where(value => !string.IsNullOrEmpty(value)))); return; }
-        InvalidateSubmissionIntent();
-        DateTime savedAtUtc;
-        try { savedAtUtc = RequireUtcNow(); }
-        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "提交数据准备失败，请重新导出最新计划后重试"; return; }
-        var draft = await RunAsync("提交数据准备失败，请重新导出最新计划后重试", () => _apply(new(_currentPreview, _currentPreview.ApplicableTaskIds, InspectorName, checkDate, _businessToday(), savedAtUtc)));
-        if (draft is null) return;
-        _draftResult = draft;
-        StatusText = DraftStatusText;
-        OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); RefreshCommands();
+        await ImportSession.SaveDraftAsync();
     }
 
     public async Task SubmitAsync()
     {
         if (IsFuturePlan) { StatusText = ImportAvailabilityText; return; }
         if (!CanUseContent) return;
-        if (_currentPreview is null) { BlockSubmission("请先读取排查结果文件。", "请先选择并读取已填写的排查计划。"); return; }
-        if (_draftResult is null) await SaveDraftAsync();
-        if (_draftResult is null)
-        {
-            if (!IsFormValid) return;
-            BlockSubmission("暂时无法提交。", "排查结果未能保存，请重新导出最新计划后再试。");
-            return;
-        }
-        if (CompleteTaskIds.Count == 0)
-        {
-            BlockSubmission("没有可提交的有效排查结果。", "请填写至少一项排查数量后再提交。");
-            return;
-        }
-        if (!IsFormValid || !TryGetCheckDate(out var checkDate)) { BlockSubmission("请完善排查人和排查日期。", string.Join("\n", new[] { InspectorNameError, CheckDateError }.Where(value => !string.IsNullOrEmpty(value)))); return; }
-        var expiredInventory = GetExpiredInventoryWarning();
-        if (expiredInventory is not null && _confirmExpiredInventory is not null)
-        {
-            if (_confirmExpiredInventory(expiredInventory) != true) { StatusText = "请复核过期商品库存后再提交。"; return; }
-        }
-        else if (_confirmSubmission?.Invoke() != true) { StatusText = "已取消提交数据。"; return; }
-        try { _submissionIntent ??= new(CompleteTaskIds, InspectorName, checkDate, _businessToday(), RequireUtcNow()); }
-        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "提交数据失败，请检查当前状态后重试。"; return; }
-        IsActionBusy = true;
-        try
-        {
-            while (true)
-            {
-                var intent = _submissionIntent;
-                var result = await Task.Run(() => DatabaseRuntimeGate.Run(() => _submit(new(intent.TaskIds, intent.InspectorName, intent.CheckDate, intent.BusinessDate, intent.SubmittedAtUtc, _pendingConfirmations, true))));
-                if (result.Outcome is BulkInspectionSubmissionOutcome.RequiresOverStockConfirmation or BulkInspectionSubmissionOutcome.OverStockConfirmationStale)
-                {
-                    _pendingConfirmations = result.OverStockConfirmations;
-                    StatusText = result.Outcome == BulkInspectionSubmissionOutcome.OverStockConfirmationStale ? "超库存事实已变化，请重新确认。" : "存在超库存排查项，请返回检查或确认仍然提交。";
-                    OnPropertyChanged(nameof(OverStockText));
-                    if (_confirmOverStock?.Invoke(_pendingConfirmations) != true)
-                    {
-                        InvalidateSubmissionIntent();
-                        OnPropertyChanged(nameof(OverStockText));
-                        return;
-                    }
-                    continue;
-                }
-                if (result.Outcome == BulkInspectionSubmissionOutcome.NoValidRows)
-                {
-                    StatusText = $"没有有效排查结果已提交；状态变化 {result.Skipped?.Count ?? 0} 条，请重新导出最新计划。";
-                    return;
-                }
-                StatusText = result.Outcome == BulkInspectionSubmissionOutcome.AlreadySubmitted ? "任务已提交过，正在刷新页面。" : "提交已成功，正在刷新页面。";
-                RemoveSelectedTaskIds(intent.TaskIds);
-                await RefreshAfterSubmitAsync(intent.TaskIds);
-                ClearSubmittedSession();
-                return;
-            }
-        }
-        catch (Exception exception)
-        {
-            _logException?.Invoke(exception);
-            BlockSubmission("提交数据失败，请检查当前状态后重试。", "请重新导出最新计划并确认数据后再提交。");
-        }
-        finally { IsActionBusy = false; }
+        await ImportSession.SubmitAsync();
+        if (ImportSession.StatusText == "提交已成功，相关页面已刷新。") StatusText = "提交已成功，首页、今日排查、待办任务、详情和历史已刷新。";
     }
 
-    public string OverStockText => _pendingConfirmations.Count == 0 ? string.Empty : string.Join("；", _pendingConfirmations.Select(item => $"商品 {item.ProductId}：库存 {item.EffectiveStockQty}，本次 {item.TotalCheckedQty}"));
-
-    private ExpiredInventoryWarning? GetExpiredInventoryWarning()
-    {
-        if (_currentPreview is null) return null;
-        var completeTaskIds = CompleteTaskIds.ToHashSet();
-        var rows = _currentPreview.File.Rows.Where(row => row.Stage == ExpiryStageCalculator.Expired && row.CheckedQty > 0 &&
-            row.TaskId is long taskId && _currentPreview.ApplicableTaskIds.Contains(taskId) && completeTaskIds.Contains(taskId)).ToArray();
-        return rows.Length == 0 ? null : new(rows.Length, rows.Sum(row => (long)row.CheckedQty!.Value));
-    }
+    public string OverStockText => ImportSession.OverStockText;
 
     private async Task RefreshAfterSubmitAsync(IReadOnlyCollection<long> taskIds)
     {
-        try { await Task.WhenAll(_refreshAfterSubmit(taskIds), ReloadTasksWhileBusyAsync()); StatusText = "提交已成功，首页、今日排查、待办任务、详情和历史已刷新。"; }
-        catch (Exception exception) { _logException?.Invoke(exception); StatusText = "提交已成功，部分页面刷新失败，可手动刷新。"; }
+        try { await Task.WhenAll(_refreshAfterSubmit(taskIds), LoadTasksAsync()); }
+        catch (Exception exception) { _logException?.Invoke(exception); throw; }
     }
 
     private async Task<T?> RunAsync<T>(string failure, Func<T> action)
     {
         if (IsActionBusy) return default;
-        IsActionBusy = true;
+        _isExportBusy = true;
+        NotifyImportSessionChanged();
         try { return await Task.Run(() => DatabaseRuntimeGate.Run(action)); }
-        catch (Exception exception) { _logException?.Invoke(exception); StatusText = failure; return default; }
-        finally { IsActionBusy = false; }
-    }
-    private static string FileMessage(Exception exception) => exception switch
-    {
-        FileNotFoundException => "找不到排查结果文件。请确认文件位置后重新选择。",
-        IOException => "文件暂时无法读取，可能还在 Excel 或 WPS 中打开。请先保存并关闭表格，再重新导入。",
-        InvalidDataException => "排查计划的表格结构已经发生变化或文件已损坏，软件无法安全识别。请重新导出最新排查计划。",
-        _ => "这个 Excel 文件无法正常读取，可能已经损坏。请重新导出排查计划后再试。"
-    };
-
-    private bool TryGetCheckDate(out DateOnly date)
-    {
-        date = _checkDateValue is DateTime value ? DateOnly.FromDateTime(value) : default;
-        return date != default && date <= _businessToday();
+        catch (Exception) { StatusText = failure; return default; }
+        finally { _isExportBusy = false; NotifyImportSessionChanged(); }
     }
     private async Task SetSelectionAsync(bool selected)
     {
@@ -592,12 +436,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         OnPropertyChanged(nameof(CurrentPage)); OnPropertyChanged(nameof(PageSummary)); OnPropertyChanged(nameof(CanGoPrevious)); OnPropertyChanged(nameof(CanGoNext));
         await LoadAsync();
     }
-    private void ResetSession() { _currentPreview = null; _draftResult = null; InvalidateSubmissionIntent(); PreviewRows.Clear(); _selectedPreviewFilter = "全部"; OnPropertyChanged(nameof(SelectedPreviewFilter)); NotifyPreviewDisplayChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(PreviewSummaryText)); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); OnPropertyChanged(nameof(HasPreviewIssues)); OnPropertyChanged(nameof(PreviewIssueText)); RefreshCommands(); }
-    private void NotifyPreviewDisplayChanged() { OnPropertyChanged(nameof(VisiblePreviewRows)); OnPropertyChanged(nameof(AllPreviewFilterText)); OnPropertyChanged(nameof(SubmittablePreviewFilterText)); OnPropertyChanged(nameof(BlankPreviewFilterText)); OnPropertyChanged(nameof(StalePreviewFilterText)); OnPropertyChanged(nameof(InvalidPreviewFilterText)); }
-    private void InvalidateSubmissionIntent() { _submissionIntent = null; _pendingConfirmations = Array.Empty<OverStockConfirmation>(); }
-    private void InvalidateDraftOnFormChange() { if (_draftResult is null) return; _draftResult = null; InvalidateSubmissionIntent(); OnPropertyChanged(nameof(DraftStatusText)); OnPropertyChanged(nameof(CompleteTaskIds)); OnPropertyChanged(nameof(OverStockText)); RefreshCommands(); }
-    private DateTime RequireUtcNow() { var value = _utcNow(); return value.Kind == DateTimeKind.Utc ? value : throw new InvalidOperationException("权威提交时间必须为 UTC。"); }
-    private Task ReloadTasksWhileBusyAsync() => LoadTasksAsync();
+    private void ResetSession() => ImportSession.CancelPreview();
     private void RemoveSelectedTaskIds(IEnumerable<long> taskIds)
     {
         _isBulkSelecting = true;
@@ -609,31 +448,11 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         finally { _isBulkSelecting = false; }
         OnSelectionChanged();
     }
-    private void ClearSubmittedSession()
+    private void NotifyImportSessionChanged()
     {
-        _currentPreview = null;
-        _draftResult = null;
-        InvalidateSubmissionIntent();
-        PreviewRows.Clear();
-        _selectedPreviewFilter = "全部";
-        OnPropertyChanged(nameof(SelectedPreviewFilter));
-        NotifyPreviewDisplayChanged();
-        OnPropertyChanged(nameof(HasPreview));
-        OnPropertyChanged(nameof(PreviewSummaryText));
-        OnPropertyChanged(nameof(DraftStatusText));
-        OnPropertyChanged(nameof(CompleteTaskIds));
-        OnPropertyChanged(nameof(OverStockText));
-        OnPropertyChanged(nameof(CanSaveDraft));
+        foreach (var name in new[] { nameof(IsActionBusy), nameof(IsBusy), nameof(IsReadingPlan), nameof(CanUseContent), nameof(CanGoPrevious), nameof(CanGoNext), nameof(PreviewRows), nameof(PreviewFilters), nameof(SelectedPreviewFilter), nameof(VisiblePreviewRows), nameof(AllPreviewFilterText), nameof(SubmittablePreviewFilterText), nameof(BlankPreviewFilterText), nameof(StalePreviewFilterText), nameof(InvalidPreviewFilterText), nameof(HasPreview), nameof(CanSaveDraft), nameof(IsFormValid), nameof(InspectorName), nameof(CheckDateText), nameof(CheckDateValue), nameof(InspectorNameError), nameof(CheckDateError), nameof(HasInspectorNameError), nameof(HasCheckDateError), nameof(PreviewSummaryText), nameof(DraftStatusText), nameof(CompleteTaskIds), nameof(HasPreviewIssues), nameof(PreviewIssueText), nameof(PreviewDetailText), nameof(OverStockText) }) OnPropertyChanged(name);
+        if (!string.IsNullOrEmpty(ImportSession.StatusText)) StatusText = ImportSession.StatusText;
         RefreshCommands();
     }
-    private sealed record SubmissionIntent(IReadOnlyList<long> TaskIds, string InspectorName, DateOnly CheckDate, DateOnly BusinessDate, DateTime SubmittedAtUtc);
-    private void ValidateForm()
-    {
-        InspectorNameError = string.IsNullOrWhiteSpace(InspectorName) ? "请输入排查人" : string.Empty;
-        CheckDateError = _checkDateValue is null ? "请选择排查日期" : _checkDateValue.Value.Date > CheckDateMaxValue.Date ? "排查日期不能晚于今天" : string.Empty;
-        OnPropertyChanged(nameof(HasInspectorNameError)); OnPropertyChanged(nameof(HasCheckDateError));
-        OnPropertyChanged(nameof(IsFormValid)); OnPropertyChanged(nameof(CanSaveDraft)); RefreshCommands();
-    }
-    private void BlockSubmission(string status, string reason) { StatusText = status; SubmissionBlocked?.Invoke(reason); }
     private void RefreshCommands() { SelectDayCommand.RaiseCanExecuteChanged(); ReloadCommand.RaiseCanExecuteChanged(); SelectAllCommand.RaiseCanExecuteChanged(); ClearSelectionCommand.RaiseCanExecuteChanged(); PreviousPageCommand.RaiseCanExecuteChanged(); NextPageCommand.RaiseCanExecuteChanged(); ExportCommand.RaiseCanExecuteChanged(); PreviewCommand.RaiseCanExecuteChanged(); SaveDraftCommand.RaiseCanExecuteChanged(); SubmitCommand.RaiseCanExecuteChanged(); }
 }

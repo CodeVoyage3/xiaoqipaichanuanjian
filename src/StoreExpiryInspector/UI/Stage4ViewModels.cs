@@ -755,6 +755,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsActionBusy)); OnPropertyChanged(nameof(CanUseImport)); RaiseSelectionState();
             }
         };
+        if (ImportSession is not null) ImportSession.Submitted += RemoveSubmittedTaskIds;
         SearchCommand = new RelayCommand(parameter => { _ = SearchAsync(); });
         ClearFiltersCommand = new RelayCommand(parameter => { _ = ClearFiltersAsync(); });
         RetryCommand = new RelayCommand(parameter => { ClearSelection(); _ = LoadAsync(); });
@@ -1139,6 +1140,13 @@ public sealed class PendingTasksViewModel : ViewModelBase
         RaiseSelectionState();
     }
 
+    private void RemoveSubmittedTaskIds(IReadOnlyList<long> taskIds)
+    {
+        foreach (var taskId in taskIds) _selectedTaskIds.Remove(taskId);
+        foreach (var item in Items) item.IsSelected = _selectedTaskIds.Contains(item.TaskId);
+        RaiseSelectionState();
+    }
+
     private void ClearSelection()
     {
         if (_selectedTaskIds.Count == 0) return;
@@ -1461,9 +1469,9 @@ public sealed class ShellViewModel : ViewModelBase
         {
             if (args.PropertyName == nameof(TodayInspectionViewModel.IsActionBusy)) NotifyNavigationState();
         };
-        PendingTasks.ImportSession?.PropertyChanged += (_, args) =>
+        PendingTasks.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(InspectionResultImportSessionViewModel.IsActionBusy)) NotifyNavigationState();
+            if (args.PropertyName == nameof(PendingTasksViewModel.IsActionBusy)) NotifyNavigationState();
         };
         Detail.PropertyChanged += (_, args) =>
         {
@@ -1624,6 +1632,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (History.IsEditBusy ||
             Import.IsLoading ||
             TodayInspection.IsActionBusy ||
+            PendingTasks.IsActionBusy ||
             Detail.IsActionBusy ||
             (BackupRestore.IsLocked && page != ShellPage.BackupRestore) ||
             (BackupRestore.IsBusy && page != ShellPage.BackupRestore))

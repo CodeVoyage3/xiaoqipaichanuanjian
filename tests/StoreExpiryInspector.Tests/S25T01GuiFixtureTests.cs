@@ -1,3 +1,4 @@
+using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
 using Xunit;
@@ -33,13 +34,18 @@ public sealed class S25T01GuiFixtureTests
                 var product = new Product { ProductCode = $"S25-GUI-{index:D3}", CurrentName = $"S25 待排查商品 {index:D3}", CurrentBarcode = $"697439695{index:D4}", ExcelStockQty = 10, EffectiveStockQty = 10, EffectiveStockSource = "fixture", CategoryCode = pet ? "pet" : "food", PolicyCode = pet ? ExpiryPolicies.Pet : ExpiryPolicies.Food, PolicyVersion = 1, ExpiryManagementStatus = ExpiryManagementStatus.Managed, LastSeenImportId = import.Id };
                 var batch = new Batch { Product = product, ExpiryDate = DateOnly.FromDateTime(DateTime.Today).AddDays(5 + index), ShelfLifeValue = 30, ShelfLifeUnit = "D", CurrentArrivalQty = 10, MaxArrivalQty = 10, TrackingStatus = "active", CurrentStage = index % 3 == 0 ? "withdraw" : "discount_50", AttentionVersion = 1, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
                 var task = new ProductTask { Product = product, HighestStage = batch.CurrentStage, Status = "open" };
-                task.Items.Add(new ProductTaskItem { Product = product, Batch = batch, Stage = batch.CurrentStage });
+                task.Items.Add(new ProductTaskItem { Product = product, Batch = batch, Stage = batch.CurrentStage, AttentionVersion = batch.AttentionVersion });
                 context.Tasks.Add(task);
             }
             context.SaveChanges();
             Assert.Equal(55, context.Tasks.Count(task => task.Status == "open"));
             Assert.Equal(2, context.ScopeBaselines.Count(scope => scope.IsCompleted));
             Assert.All(context.Products, product => Assert.Equal(10, product.EffectiveStockQty));
+            Assert.All(context.Tasks.SelectMany(task => task.Items), item => Assert.Equal(item.Batch!.AttentionVersion, item.AttentionVersion));
+            var planPath = Path.Combine(root, "S25-pending-plan.xlsx");
+            var exported = new TodayInspectionPlanExportUseCase().Execute(context, new(planPath, context.Tasks.Select(task => task.Id).ToArray()));
+            Assert.Equal(55, exported.TaskCount);
+            Assert.All(new InspectionPlanDraftApplyUseCase().Preview(context, planPath).File.Rows, row => Assert.Empty(row.Errors));
         }
         finally
         {

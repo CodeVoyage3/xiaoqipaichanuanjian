@@ -83,6 +83,7 @@ public partial class MainWindow : Window
         _isNavigationCollapsed = LoadNavigationCollapsedState();
         ApplyNavigationLayout();
         shell.TodayInspection.PreviewFailed += ShowTodayPreviewFailure;
+        shell.PendingTasks.ImportSession?.PreviewFailed += ShowTodayPreviewFailure;
         DataContext = shell;
         Closed += (_, _) => { _updateDiagnostics?.Add("gui-window-closed", new { threadId = Environment.CurrentManagedThreadId }); IsClosed = true; StopUpdatePreparation("window-closed"); };
     }
@@ -562,7 +563,7 @@ public partial class MainWindow : Window
     private async void OpenTodayInspection_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ShellViewModel shell) return;
-        if (shell.TodayInspection.ImportSession.IsActionBusy) return;
+        if (!shell.CanNavigate || !shell.TodayInspection.PreviewCommand.CanExecute(null)) return;
         var dialog = new OpenFileDialog
         {
             Title = "选择已填写的今日排查计划",
@@ -585,12 +586,15 @@ public partial class MainWindow : Window
     {
         if (DataContext is not ShellViewModel shell || !shell.PendingTasks.ExportCommand.CanExecute(null)) return;
         var dialog = new SaveFileDialog { Title = "导出已选排查任务", Filter = "Excel 工作簿 (*.xlsx)|*.xlsx", DefaultExt = ".xlsx", AddExtension = true, OverwritePrompt = false, FileName = $"待排查任务_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx" };
-        if (dialog.ShowDialog(this) == true) await shell.PendingTasks.ExportSelectedAsync(dialog.FileName);
+        if (dialog.ShowDialog(this) != true) return;
+        await shell.PendingTasks.ExportSelectedAsync(dialog.FileName);
+        if (shell.PendingTasks.LatestExportResult is { } result && result.OutputPath == dialog.FileName)
+            WpfDialogService.ShowExportSuccess(this, result, false);
     }
 
     private async void OpenPendingInspection_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is not ShellViewModel { PendingTasks.ImportSession: { } session } || session.IsActionBusy) return;
+        if (DataContext is not ShellViewModel { PendingTasks.ImportSession: { } session } shell || !shell.CanNavigate || session.IsActionBusy) return;
         var dialog = new OpenFileDialog { Title = "选择已填写的排查计划", Filter = "Excel 工作簿 (*.xlsx)|*.xlsx", CheckFileExists = true, Multiselect = false, DefaultExt = ".xlsx", AddExtension = false };
         if (dialog.ShowDialog(this) != true) return;
         await session.PreviewAsync(dialog.FileName);
@@ -1038,9 +1042,9 @@ public partial class MainWindow : Window
             "确认超库存排查",
             string.Join("\n", confirmations.Select(item =>
             {
-                var shell = DataContext as ShellViewModel;
-                var productName = shell?.TodayInspection.ImportSession.GetPreviewProductName(item.TaskId)
-                    ?? shell?.PendingTasks.ImportSession?.GetPreviewProductName(item.TaskId);
+                var session = OwnedWindows.OfType<TodayInspectionConfirmationWindow>()
+                    .FirstOrDefault(window => window.IsActive)?.DataContext as InspectionResultImportSessionViewModel;
+                var productName = session?.GetPreviewProductName(item.TaskId);
                 return $"{productName ?? "商品"}：当前库存 {item.EffectiveStockQty}，本次排查 {item.TotalCheckedQty}";
             })),
             "确认仍然提交",
