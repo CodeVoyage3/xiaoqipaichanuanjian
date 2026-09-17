@@ -1,3 +1,9 @@
+# 2026-09-17: S23-T03 TECHNICAL_PASS / USER_GUI_PENDING
+
+Terra=902649c0a36c315f5c086d4233b8acc2a75c3c1a. Sol independent3/3 PASS, Production Release build0 warning/0 error, forbidden production diff0. Root cause confirmed in actual local WPF template: batch inner ScrollViewer consumes bubble with no scroll space; baseline top/body/blank scroll normally after layout. Local outer Preview/system steps/remainder/one consumer passes all four regions and bounds. See ACCEPTANCE/S23-T03.md for independent evidence and limitations.
+Top duplicate action removed; batch entry and original product-level navigation unchanged. Production only MainWindow.xaml/.cs. Version1.1.2/migration10/migration11 NOT_CREATED, FULL NOT_RUN/NO_FULL. T01/T02 remain CLOSED/ACCEPTED. Stage23 IN_PROGRESS; T03 NOT_CLOSED/NOT_ACCEPTED until user GUI PASS. No merge/push/release/Stage24/formal DB/original dirty changes.
+Historical statements below do not override this latest independent acceptance.
+
 # 2026-09-16: S23-T03 FINAL PRODUCT DECISION / AUTHORIZED / IN_PROGRESS
 
 This decision supersedes the prior rename option. REMOVE the duplicate top 去排查 button; keep only 返回列表. Preserve batch-row 去排查, OpenProductTaskCommand/OpenTaskId and original product-level inspection navigation/return. No replacement button or header redesign; only minimal alignment if needed.

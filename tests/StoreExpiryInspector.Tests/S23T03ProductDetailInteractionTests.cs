@@ -241,6 +241,7 @@ public sealed class S23T03ProductDetailInteractionTests
         var args = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = UIElement.PreviewMouseWheelEvent };
         hit.RaiseEvent(args);
         if (!args.Handled) { args.RoutedEvent = UIElement.MouseWheelEvent; hit.RaiseEvent(args); }
+        window.UpdateLayout(); // Observe the queued native scroll before recording baseline offsets.
         window.RemoveHandler(UIElement.PreviewMouseWheelEvent, previewHandler);
         window.RemoveHandler(UIElement.MouseWheelEvent, bubbleHandler);
         outer.RemoveHandler(UIElement.MouseWheelEvent, outerHandler);
