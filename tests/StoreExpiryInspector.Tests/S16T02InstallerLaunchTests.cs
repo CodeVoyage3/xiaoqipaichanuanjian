@@ -62,11 +62,26 @@ public sealed class S16T02InstallerLaunchTests
     }
 
     [Fact]
-    public void Candidate_versions_are_1_0_8()
+    public void Current_app_and_updater_versions_share_the_existing_identity_format()
     {
-        var root = FindRoot();
-        Assert.Contains("<Version>1.0.8</Version>", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "StoreExpiryInspector.csproj")), StringComparison.Ordinal);
-        Assert.Contains("<Version>1.0.8</Version>", File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector.Updater", "StoreExpiryInspector.Updater.csproj")), StringComparison.Ordinal);
+        AssertCurrentVersionIdentity(FindRoot());
+    }
+
+    internal static void AssertCurrentVersionIdentity(string root)
+    {
+        string? appVersion = null;
+        foreach (var name in new[] { "StoreExpiryInspector", "StoreExpiryInspector.Updater" })
+        {
+            var project = System.Xml.Linq.XDocument.Load(Path.Combine(root, "src", name, name + ".csproj"));
+            var version = Assert.Single(project.Descendants("Version")).Value;
+            Assert.True(Version.TryParse(version, out var parsed));
+            Assert.Equal(3, version.Split('.').Length);
+            Assert.True(parsed!.Build >= 0 && parsed.Revision == -1);
+            Assert.Equal("$(Version).0", Assert.Single(project.Descendants("AssemblyVersion")).Value);
+            Assert.Equal("$(Version).0", Assert.Single(project.Descendants("FileVersion")).Value);
+            if (appVersion is not null) Assert.Equal(appVersion, version);
+            appVersion = version;
+        }
     }
 
     private static string FindRoot()

@@ -13,6 +13,27 @@ namespace StoreExpiryInspector.Tests;
 public sealed class ReleaseCandidateBuilderTests
 {
     [Fact]
+    public void Version113ContractPreservesVersion112SameSchemaUpgradeIdentity()
+    {
+        using var contract = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "release", "release-contract.json")));
+        var release = contract.RootElement.GetProperty("releases").EnumerateArray().Single(item => item.GetProperty("targetVersion").GetString() == "1.1.3");
+        Assert.Equal("v1.1.2", release.GetProperty("previousRelease").GetString());
+        Assert.Equal(2, release.GetProperty("minimumProtocolVersion").GetInt32());
+        var setup = release.GetProperty("setupCompatibility");
+        Assert.Equal("SAME_SCHEMA_SLIM", setup.GetProperty("setupMode").GetString());
+        Assert.Equal("1.1.2", setup.GetProperty("minimumDirectVersion").GetString());
+        Assert.False(setup.GetProperty("crossSchemaAllowed").GetBoolean());
+        var source = release.GetProperty("source");
+        Assert.Equal("1.1.2", source.GetProperty("minVersion").GetString());
+        Assert.Equal("1.1.2", source.GetProperty("maxVersion").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, source.GetProperty("minMigration").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, source.GetProperty("maxMigration").GetString());
+        Assert.Equal(10, CurrentSchemaIdentity.Migrations.Count);
+        Assert.Equal("ACCEPTED", release.GetProperty("schemaEvidence").GetProperty("status").GetString());
+        Assert.Equal(".ai-dev/ACCEPTANCE/S21-T01.md", release.GetProperty("schemaEvidence").GetProperty("reference").GetString());
+    }
+
+    [Fact]
     public void ContractAndReceiptSchemaStayNarrow()
     {
         var root = RepositoryRoot();
