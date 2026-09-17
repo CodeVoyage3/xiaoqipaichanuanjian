@@ -1,3 +1,9 @@
+## 2026-09-17 Stage25 授权更新
+
+S25-T01 = AUTHORIZED / IN_PROGRESS，Scope 见 TASKS/S25-T01.md；覆盖此前延期状态。
+S25-T02 = NOT_STARTED：Same-Schema｜跨版本直升策略与兼容基线治理。
+同一兼容世代内，Schema、Updater、manifest/signature、持久化格式和必要转换兼容时，默认旧版本直接升级最新版，不要求逐版本安装；仅明确 breaking change 才提高最低兼容版本或要求桥接。最低兼容版本待单独审计。本轮只登记，不启动 T02。
+
 ## 2026-09-17 产品决策｜Stage25 候选首项（延期，不进入 v1.1.3）
 
 需求：待排查任务｜选中任务导出 + 正式排查结果回导。
@@ -341,3 +347,4 @@
 - 最终闭环覆盖今日排查查询与 Excel 导出、Result Reader/stale 校验/Draft Application、Bulk Submission orchestration，以及 WPF 双入口、确认提交、权威刷新和历史可见。
 - 最近正式技术证据为 Release 891/891、Release build 0 warning / 0 error、EF 无模型漂移、migration=9、无 Schema/依赖/项目文件变化、`git diff --check` 通过。
 - 后续 UI 小微调不得追加到 I04 R1～R10 链；必须由用户在新的 Codex 话题中定义为新工作项。Stage 8、Stage 9 均未开始且必须另行批准。
+

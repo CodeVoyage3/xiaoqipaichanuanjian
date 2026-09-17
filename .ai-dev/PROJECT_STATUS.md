@@ -1,3 +1,12 @@
+# 2026-09-17 Stage25 / S25-T01 Scope 已确认
+
+Stage25=IN_PROGRESS；S25-T01=AUTHORIZED / IN_PROGRESS；S25-T02=NOT_STARTED。
+全新 Terra 实施，Sol 独立验收；GUI PASS 前不 CLOSED/ACCEPTED。
+FULL=NOT_RUN / NO_FULL；Version1.1.3；migration10；migration11 NOT_CREATED；原dirty main不触碰。
+详见 STAGES/STAGE-25.md、TASKS/S25-T01.md、ACCEPTANCE/S25-T01.md（HANDOFF路径以 .ai-dev 为根）。
+
+以下为历史记录。
+
 # 2026-09-17 v1.1.3 RELEASED / Stage24 CLOSED / ACCEPTED
 
 S24-T01 = CLOSED / ACCEPTED / REAL_USER_RELEASE_GUI_PASS。
@@ -1259,3 +1268,4 @@ Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02 TECHNICALLY_ACCEPTED / 
 - V1-UI-01 最终结论（2026-09-03）：用户真实 WPF 首轮已通过导航顺序、整体蓝色降噪、Search/Refresh/分页中性视觉、ComboBox 产品方案、三条件组合筛选、清空、计数/空态/分页、StageBadge 与 Primary/Danger 语义；GUI R1 后又明确确认品牌区紧凑布局及阶段/大类中文 display 两项重验 `PASSED`。结合 Sol 既有新鲜技术门禁，V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`。V1-F03/I04 继续 `CLOSED`；Stage 8/9 与在线升级均未启动，下一阶段等待用户另行批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
+
