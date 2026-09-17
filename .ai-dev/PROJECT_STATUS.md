@@ -1,3 +1,10 @@
+# 2026-09-17: S23-T03 UI R1 delivered / USER_GUI_PENDING
+
+Terra UI repair=f230c53c1efb38020bb53eaeee6da987aca9a889. Sol independent diff review: only MainWindow.xaml,2 insertions/2 deletions inside product-detail block. Breadcrumb removed; title/subtitle retained naturally; content right margin16 DIP consistently covers information/statistics/batch containers. Wheel implementation/commands/business and all other pages unchanged; forbidden-scope diff0. diff --check PASS.
+Sol production command: dotnet build src/StoreExpiryInspector/StoreExpiryInspector.csproj -c Release -p:NuGetAudit=false --nologo. Result0 warning/0 error. No tests/FULL rerun; previous3/3 technical evidence plus user's real four-region wheel/no-double/jump/navigation GUI PASS retained. Terra ran solution build before Sol requested only production project; no tests executed.
+New candidate: s23-t03-ui-r1-sol/src/StoreExpiryInspector/bin/Release/net10.0-windows/StoreExpiryInspector.exe, dedicated external TEMP/GUID launcher. Verify only breadcrumb disappearance/natural header spacing and comfortable right gutter at scrollbar. Keep T03 USER_GUI_PENDING / NOT_CLOSED / NOT_ACCEPTED, Stage23 IN_PROGRESS. App/Updater1.1.2/migration10/migration11 NOT_CREATED. No merge/push/Release/Stage24/formal DB/original dirty/accepted T01/T02 changes. Wait user GUI receipt.
+Historical notes below do not override this delivered pending state.
+
 # 2026-09-17: S23-T03 UI R1 / USER_GUI_PENDING
 
 User confirms real GUI wheel top/body/grid/blank PASS, no double scroll/jump, batch task entry and return PASS. Overall acceptance withheld pending two layout-only fixes:
