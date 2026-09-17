@@ -60,6 +60,15 @@ public sealed class S23T03ProductCatalogHistoryTests
         Assert.Equal("无待处理", detail.HistoricalBatches.Single(batch => batch.BatchId == taskWithoutInspection.Id).TaskStatus);
         Assert.All(detail.HistoricalBatches, batch => Assert.False(batch.IsPending));
         Assert.False(context.ChangeTracker.HasChanges());
+        var tasksBefore = context.Tasks.Count();
+        noCatchup.LifecycleGeneration = 1; context.SaveChanges();
+        Assert.Equal("无待处理", new ProductCatalogQuery().GetDetail(context, product.Id)!.HistoricalBatches.Single(batch => batch.BatchId == noCatchup.Id).TaskStatus);
+        noCatchup.LifecycleGeneration = 0;
+        context.Add(new LifecycleEvent { ProductId = product.Id, BatchId = noCatchup.Id, EventType = "batch_tracking_resumed", Reason = "test", OccurredAtUtc = utc.AddMinutes(1) });
+        context.SaveChanges();
+        Assert.Equal("无待处理", new ProductCatalogQuery().GetDetail(context, product.Id)!.HistoricalBatches.Single(batch => batch.BatchId == noCatchup.Id).TaskStatus);
+        Assert.Equal(tasksBefore, context.Tasks.Count());
+        Assert.False(context.ChangeTracker.HasChanges());
     }
 
     [Fact]
@@ -79,6 +88,11 @@ public sealed class S23T03ProductCatalogHistoryTests
         Assert.False(catalog.IsHistoryExpanded); Assert.Equal(1, loads);
         catalog.ClearDetail();
         Assert.False(catalog.IsHistoryExpanded);
+        var emptyHistory = detail with { Batches = detail.CurrentBatches };
+        var noHistoryCatalog = new StoreExpiryInspector.UI.ProductCatalogViewModel(_ => new([], 0, 1, 50), _ => emptyHistory);
+        await noHistoryCatalog.OpenAsync(1);
+        Assert.False(noHistoryCatalog.HasHistoricalBatches);
+        Assert.Equal(0, noHistoryCatalog.Selected!.HistoricalBatchCount);
     }
 
     private static Batch AddBatch(StoreExpiryInspector.Infrastructure.StoreDbContext context, Product product, DateOnly expiry, string stage, string trackingStatus, DateOnly? nextTrigger, int attention, int handled)
