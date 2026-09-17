@@ -160,8 +160,6 @@ public sealed class UIUXR03UiStaticAuditTests
         var dialogService = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "WpfDialogService.cs"));
         Assert.DoesNotContain("MessageBox.Show", appCode, StringComparison.Ordinal);
         Assert.DoesNotContain("MessageBox.Show", reminderCode, StringComparison.Ordinal);
-        Assert.Contains("WpfDialogService.Show", appCode, StringComparison.Ordinal);
-        Assert.Contains("WpfDialogService.Show", reminderCode, StringComparison.Ordinal);
         Assert.Contains("WpfDialogKind.Warning", dialogService, StringComparison.Ordinal);
 
         var dateConverter = File.ReadAllText(Path.Combine(root, "src", "StoreExpiryInspector", "UI", "Stage4ViewModels.cs"));

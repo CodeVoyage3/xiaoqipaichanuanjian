@@ -834,7 +834,7 @@ public sealed class S7T03DatabaseBackupRestoreViewModelTests
         Assert.Contains("_reminderScheduler?.Stop()", app, StringComparison.Ordinal);
         Assert.Contains("var lease = await DatabaseRuntimeGate.EnterMaintenanceAsync()", app, StringComparison.Ordinal);
         Assert.Contains("_trayIcon is null", app, StringComparison.Ordinal);
-        Assert.Contains("ShutdownMode = ShutdownMode.OnLastWindowClose", app, StringComparison.Ordinal);
+        Assert.Contains("ShutdownMode = ShutdownMode.OnExplicitShutdown", app, StringComparison.Ordinal);
         Assert.Contains("MainWindow.Hide()", app, StringComparison.Ordinal);
         Assert.Contains("MainWindow?.DataContext is ShellViewModel { IsDatabaseProtectionBusy: true }", app, StringComparison.Ordinal);
 

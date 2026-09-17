@@ -10,6 +10,7 @@ using StoreExpiryInspector.Application.Reminders;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.Domain;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.UpdateSafety;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -207,7 +208,7 @@ public sealed class S8T05CorruptionSafetyTests
             Assert.Equal("100000", Scalar(database, "SELECT COUNT(*) FROM products;"));
             Assert.Equal("100000", Scalar(database, "SELECT COUNT(*) FROM batches;"));
             Assert.Equal("300000", Scalar(database, "SELECT COUNT(*) FROM inspections;"));
-            Assert.Equal("9", Scalar(database, "SELECT COUNT(*) FROM __EFMigrationsHistory;"));
+            Assert.Equal(CurrentSchemaIdentity.Migrations.Count.ToString(CultureInfo.InvariantCulture), Scalar(database, "SELECT COUNT(*) FROM __EFMigrationsHistory;"));
             var backups = Path.Combine(root, "backups");
             var expected = Fingerprint(database);
             var backupWatch = Stopwatch.StartNew();
@@ -414,7 +415,7 @@ public sealed class S8T05CorruptionSafetyTests
             var initializer = TryInitialize(copy);
             var sourceAfterMutation = Fingerprint(source.Path);
             var businessFingerprintMatched = probe.Fingerprint == sourceAfterMutation;
-            var structurallyHealthy = probe.Opened && probe.Integrity == "ok" && probe.ForeignKeys == 0 && probe.Migrations == "9";
+            var structurallyHealthy = probe.Opened && probe.Integrity == "ok" && probe.ForeignKeys == 0 && probe.Migrations == CurrentSchemaIdentity.Migrations.Count.ToString(CultureInfo.InvariantCulture);
             var limitationObserved = scenario == "mismatched" && structurallyHealthy && !businessFingerprintMatched && initializer.Accepted;
             var pass = scenario == "mismatched"
                 ? limitationObserved
@@ -434,7 +435,7 @@ public sealed class S8T05CorruptionSafetyTests
                 Assert.Equal(0, probe.ForeignKeys);
                 if (scenario == "mismatched")
                 {
-                    Assert.Equal("9", probe.Migrations);
+                    Assert.Equal(CurrentSchemaIdentity.Migrations.Count.ToString(CultureInfo.InvariantCulture), probe.Migrations);
                     Assert.True(initializer.Accepted);
                     Assert.False(businessFingerprintMatched);
                     Assert.True(limitationObserved);

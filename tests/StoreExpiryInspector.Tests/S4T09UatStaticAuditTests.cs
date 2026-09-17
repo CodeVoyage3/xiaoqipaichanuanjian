@@ -101,7 +101,10 @@ public sealed class S4T09UatStaticAuditTests
         Assert.Contains("Text=\"正在导入，请稍候…\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("IsIndeterminate=\"True\"", mainWindow, StringComparison.Ordinal);
         Assert.Contains("SetState(ImportPageState.Confirming, \"正在导入，请稍候…\"", importViewModel, StringComparison.Ordinal);
-        Assert.Contains("var successMessage = \"导入成功\"", importViewModel, StringComparison.Ordinal);
+        Assert.Contains("SetState(ImportPageState.Succeeded, \"导入成功\", string.Empty)", importViewModel, StringComparison.Ordinal);
+        Assert.Contains("SetState(ImportPageState.Succeeded, \"导入成功，但本次数据变化摘要读取失败。\", string.Empty)", importViewModel, StringComparison.Ordinal);
+        Assert.Contains("_hasDifferenceSummaryFailure = true", importViewModel, StringComparison.Ordinal);
+        Assert.Contains("Import.SuccessSummaryText", mainWindow, StringComparison.Ordinal);
         Assert.Contains("FontFamily = new FontFamily(\"Microsoft YaHei UI, Segoe UI\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("Language = XmlLanguage.GetLanguage(\"zh-CN\")", codeBehind, StringComparison.Ordinal);
         Assert.Contains("FindVisualChild<ScrollViewer>", codeBehind, StringComparison.Ordinal);

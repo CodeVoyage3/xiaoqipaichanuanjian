@@ -103,7 +103,8 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("Header=\"问题类型\"", window, StringComparison.Ordinal);
         Assert.Contains("ConfirmAvailabilityText", window, StringComparison.Ordinal);
         Assert.Contains("Text=\"搜索商品名称 / 商品条码 / 商品编码\"", window, StringComparison.Ordinal);
-        Assert.Equal(2, Count(window, "Text=\"搜索商品名称 / 商品条码 / 商品编码\""));
+        Assert.Equal(1, Count(window[dashboardStart..pendingStart], "Text=\"搜索商品名称 / 商品条码 / 商品编码\""));
+        Assert.Equal(1, Count(window[pendingStart..historyStart], "Text=\"搜索商品名称 / 商品条码 / 商品编码\""));
         Assert.Contains("ShellColumn\" Width=\"220\"", window, StringComparison.Ordinal);
         Assert.Equal(2, Count(codeBehind, "ShellColumn.Width = new(220)"));
         Assert.DoesNotContain("M 12,16 L 12,3", app, StringComparison.Ordinal);
@@ -139,6 +140,9 @@ public sealed class S4T10UiRefreshStaticAuditTests
         var detailEnd = window.IndexOf("<!-- 数据导入", detailStart, StringComparison.Ordinal);
         Assert.True(detailStart >= 0 && detailEnd > detailStart);
         var detail = window.Substring(detailStart, detailEnd - detailStart);
+        var productCatalogStart = detail.IndexOf("<Grid Visibility=\"{Binding IsProductCatalogVisible", StringComparison.Ordinal);
+        Assert.True(productCatalogStart > 0);
+        detail = detail[..productCatalogStart];
         Assert.Equal(1, Count(detail, "<ScrollViewer"));
         Assert.Contains("x:Name=\"DetailScrollViewer\"", detail, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"InspectionDetailRoot\"", detail, StringComparison.Ordinal);
@@ -177,7 +181,7 @@ public sealed class S4T10UiRefreshStaticAuditTests
         Assert.Contains("x:Name=\"DraftFooterStatusText\"", detail, StringComparison.Ordinal);
         Assert.Contains("Style=\"{StaticResource DraftFooterStatusTextStyle}\"", detail, StringComparison.Ordinal);
         Assert.Equal(2, Count(detail, "<ColumnDefinition Width=\"200\" />"));
-        Assert.DoesNotContain("<ColumnDefinition Width=\"300\" />", detail, StringComparison.Ordinal);
+        UIUXR02UiStaticAuditTests.AssertAcceptedBarcodeColumn(window);
         Assert.Contains("x:Key=\"DraftFooterStatusTextStyle\"", window, StringComparison.Ordinal);
         Assert.Contains("Condition Binding=\"{Binding Detail.HasRecoveredDraft}\" Value=\"True\"", window, StringComparison.Ordinal);
         Assert.Contains("Condition Binding=\"{Binding Detail.HasUnsavedChanges}\" Value=\"False\"", window, StringComparison.Ordinal);

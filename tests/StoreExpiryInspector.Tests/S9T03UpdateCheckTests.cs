@@ -2,6 +2,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.UI;
 using System.Windows;
@@ -125,6 +126,21 @@ public sealed class S9T03UpdateCheckTests
     [Fact]
     public void MainWindowCanReachCoreReadyOnStaWithoutAnyRuntimeDatabase()
     {
+        if (Environment.GetEnvironmentVariable("S24_S9_ISOLATED_CHILD") != "1")
+        {
+            var results = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(results);
+            var start = new System.Diagnostics.ProcessStartInfo("dotnet") { UseShellExecute = false, CreateNoWindow = true };
+            foreach (var argument in new[] { "vstest", typeof(S9T03UpdateCheckTests).Assembly.Location, "/TestCaseFilter:FullyQualifiedName=StoreExpiryInspector.Tests.S9T03UpdateCheckTests.MainWindowCanReachCoreReadyOnStaWithoutAnyRuntimeDatabase", "/Logger:trx;LogFileName=isolated-update-window.trx", "/ResultsDirectory:" + results }) start.ArgumentList.Add(argument);
+            start.Environment["S24_S9_ISOLATED_CHILD"] = "1";
+            using var child = System.Diagnostics.Process.Start(start)!;
+            if (!child.WaitForExit(30_000)) { child.Kill(true); Assert.Fail("Isolated update-window STA test did not terminate."); }
+            Assert.Equal(0, child.ExitCode);
+            var counters = XDocument.Load(Path.Combine(results, "isolated-update-window.trx")).Descendants().Single(node => node.Name.LocalName == "Counters");
+            foreach (var name in new[] { "total", "executed", "passed" }) Assert.Equal("1", counters.Attribute(name)?.Value);
+            foreach (var name in new[] { "failed", "notExecuted" }) Assert.Equal("0", counters.Attribute(name)?.Value);
+            return;
+        }
         Exception? failure = null;
         var thread = new Thread(() =>
         {
@@ -171,7 +187,23 @@ public sealed class S9T03UpdateCheckTests
                                 Assert.Equal(Brushes.White, ((TextBlock)((Button)buttons.Children[1]).Content).Foreground);
                             }
                             catch (Exception exception) { modalFailure = exception; }
-                            finally { prompt?.Close(); }
+                            finally
+                            {
+                                window.Dispatcher.BeginInvoke(() =>
+                                {
+                                    Window? reminder = null;
+                                    try
+                                    {
+                                        reminder = System.Windows.Application.Current.Windows.Cast<Window>().Single(item => item.Title == "稍后提醒");
+                                        Assert.Same(window, reminder.Owner);
+                                        Assert.False(IsWindowEnabled(ownerHandle));
+                                        Assert.Contains("当前版本暂时可以继续使用", ((StackPanel)reminder.Content).Children.OfType<TextBlock>().Single(item => item.Text.Contains("当前版本", StringComparison.Ordinal)).Text, StringComparison.Ordinal);
+                                    }
+                                    catch (Exception exception) { modalFailure = exception; }
+                                    finally { reminder?.Close(); }
+                                });
+                                prompt?.Close();
+                            }
                         });
                         WpfDialogService.ShowUpdateAvailable(window, new UpdateNotificationViewModel(update, () => { }, () => { }));
                         completionScheduled = true;

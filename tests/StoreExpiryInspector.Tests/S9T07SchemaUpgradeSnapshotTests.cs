@@ -232,12 +232,13 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     public async Task RealProductionOldRollbackRestoresSchema9AndLoadsOldShell()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var install = Path.Combine(root, "install"); var data = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()); var operation = Guid.NewGuid().ToString();
-        var productionPublish = Environment.GetEnvironmentVariable("S9_T07_REAL_OLD_PUBLISH"); Assert.False(string.IsNullOrWhiteSpace(productionPublish)); productionPublish = Path.GetFullPath(productionPublish); Assert.True(Guid.TryParse(Path.GetRelativePath(Path.GetTempPath(), productionPublish), out _)); Assert.True(File.Exists(Path.Combine(productionPublish, "StoreExpiryInspector.exe")));
+        var productionPublish = Environment.GetEnvironmentVariable("S9_T07_SCHEMA9_PRODUCTION_PUBLISH"); Assert.False(string.IsNullOrWhiteSpace(productionPublish)); productionPublish = Path.GetFullPath(productionPublish); Assert.True(Guid.TryParse(Path.GetRelativePath(Path.GetTempPath(), productionPublish), out _)); Assert.True(File.Exists(Path.Combine(productionPublish, "StoreExpiryInspector.exe")));
         var app = Path.Combine(install, "app"); var staging = Path.Combine(install, "app.staging-" + operation); var old = Path.Combine(install, "app.old-" + operation); CopyDirectory(productionPublish, app); CopyDirectory(Path.Combine(FindRoot(), "tests", "StoreExpiryInspector.S9T07Fixture", "bin", "Release", "net10.0-windows", "fixture-run"), staging);
         Process? seed = Process.Start(new ProcessStartInfo(Path.Combine(app, "StoreExpiryInspector.exe")) { UseShellExecute = false, WorkingDirectory = install, ArgumentList = { "--data-root", data, "--s9-t01-smoke-exit" } })!; var seedStarted = seed.StartTime.ToUniversalTime(); try { using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30)); await seed.WaitForExitAsync(timeout.Token); Assert.Equal(0, seed.ExitCode); } finally { StopExactProcess(seed, seedStarted, Path.Combine(app, "StoreExpiryInspector.exe")); seed.Dispose(); }
         Directory.CreateDirectory(Path.Combine(data, "updates", operation));
         var database = Path.Combine(data, "data", "app.db"); SeedBlob(database); SeedRollbackHistoryAndSettings(database); SqliteConnection.ClearAllPools(); using (var connection = new SqliteConnection($"Data Source={database};Pooling=False")) { connection.Open(); using var pragma = connection.CreateCommand(); pragma.CommandText = "PRAGMA journal_mode=DELETE;"; pragma.ExecuteScalar(); }
-        Assert.NotNull(AssemblyName.GetAssemblyName(Path.Combine(app, "StoreExpiryInspector.dll")).Version);
+        Assert.Equal(new Version(1, 0, 3, 0), AssemblyName.GetAssemblyName(Path.Combine(app, "StoreExpiryInspector.dll")).Version);
+        Assert.Equal(ExpectedMigrations, ReadMigrationIds(database));
         Assert.Equal(new Version(1, 0, 4, 0), AssemblyName.GetAssemblyName(Path.Combine(staging, "StoreExpiryInspector.dll")).Version);
         var source = ExpectedMigrations; var target = source.Concat(["20260905120000_S9T07Fixture10"]).ToArray(); var snapshot = SchemaUpgradeSnapshots.Create(data, operation, "1.0.3", source); var oldTree = TreeFingerprint.Create(app); var token = Guid.NewGuid().ToString();
         using var parent = Process.Start(new ProcessStartInfo("cmd.exe", "/c exit 0") { UseShellExecute = false })!; var parentPid = parent.Id; var parentStarted = parent.StartTime.ToUniversalTime(); await parent.WaitForExitAsync();
@@ -948,6 +949,7 @@ public sealed class S9T07SchemaUpgradeSnapshotTests
     }
 
     private static void Execute(string database, string sql) { using var connection = new SqliteConnection($"Data Source={database};Pooling=False"); connection.Open(); using var command = connection.CreateCommand(); command.CommandText = sql; command.ExecuteNonQuery(); }
+    private static string[] ReadMigrationIds(string database) { using var connection = new SqliteConnection($"Data Source={database};Pooling=False"); connection.Open(); using var command = connection.CreateCommand(); command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId"; using var reader = command.ExecuteReader(); var migrations = new List<string>(); while (reader.Read()) migrations.Add(reader.GetString(0)); return [.. migrations]; }
 
     private static void SeedBlob(string database)
     {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StoreExpiryInspector.Application;
 using StoreExpiryInspector.Domain;
+using StoreExpiryInspector.UpdateSafety;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -43,7 +44,7 @@ public sealed class S11T01ProductPolishAndResetTests
             Assert.Null(verify.AppStates.AsNoTracking().Single().LastReminderDate);
             Assert.Null(verify.AppStates.AsNoTracking().Single().LastNormalRunDate);
             Assert.Equal(2, verify.BackupRecords.Count());
-            Assert.Equal(9, verify.Database.GetAppliedMigrations().Count());
+            Assert.Equal(CurrentSchemaIdentity.Migrations, verify.Database.GetAppliedMigrations().ToArray());
         }
         using var protectedBackup = Infrastructure.DatabaseInitializer.CreateContext(result.BackupPath);
         Assert.Single(protectedBackup.Products.AsNoTracking());
@@ -159,7 +160,7 @@ public sealed class S11T01ProductPolishAndResetTests
         Assert.Null(verify.AppStates.AsNoTracking().Single().LastReminderDate);
         Assert.Null(verify.AppStates.AsNoTracking().Single().LastNormalRunDate);
         Assert.Single(verify.BackupRecords.AsNoTracking());
-        Assert.Equal(9, verify.Database.GetAppliedMigrations().Count());
+        Assert.Equal(CurrentSchemaIdentity.Migrations, verify.Database.GetAppliedMigrations().ToArray());
     }
 
     [Fact]
@@ -176,7 +177,7 @@ public sealed class S11T01ProductPolishAndResetTests
         Assert.False(Directory.Exists(backups));
         using var verify = database.Open();
         Assert.Empty(verify.BackupRecords.AsNoTracking());
-        Assert.Equal(9, verify.Database.GetAppliedMigrations().Count());
+        Assert.Equal(CurrentSchemaIdentity.Migrations, verify.Database.GetAppliedMigrations().ToArray());
     }
 
     [Fact]

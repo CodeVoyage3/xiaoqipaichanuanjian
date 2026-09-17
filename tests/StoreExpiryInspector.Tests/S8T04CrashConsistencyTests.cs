@@ -205,7 +205,7 @@ public sealed class S8T04CrashConsistencyTests
         var verification = Verify(databasePath);
         Assert.True(verification.IntegrityOk);
         Assert.Equal(0, verification.ForeignKeyViolations);
-        Assert.Equal(9, verification.Migrations);
+        Assert.Equal(StoreExpiryInspector.UpdateSafety.CurrentSchemaIdentity.Migrations.Count, verification.Migrations);
         AssertAuthorityReadsAndWritable(databasePath);
         Directory.CreateDirectory(Path.GetDirectoryName(evidencePath)!);
         File.WriteAllText(evidencePath, JsonSerializer.Serialize(new
@@ -256,7 +256,7 @@ public sealed class S8T04CrashConsistencyTests
             var before = JsonSerializer.Deserialize<DatabaseSnapshot>(JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "before.json"))).RootElement.GetProperty("before").GetRawText())!;
             var after = Snapshot(database); var committed = checkpoint == "postcommit";
             AssertSnapshotEqual(committed ? expected : before, after, canonical: committed);
-            var verification = Verify(database); Assert.True(verification.IntegrityOk); Assert.Equal(0, verification.ForeignKeyViolations); Assert.Equal(9, verification.Migrations); AssertSnapshotMetadata(database); AssertAuthorityReadsAndWritable(database);
+            var verification = Verify(database); Assert.True(verification.IntegrityOk); Assert.Equal(0, verification.ForeignKeyViolations); Assert.Equal(StoreExpiryInspector.UpdateSafety.CurrentSchemaIdentity.Migrations.Count, verification.Migrations); AssertSnapshotMetadata(database); AssertAuthorityReadsAndWritable(database);
             Directory.CreateDirectory(Path.GetDirectoryName(evidence)!);
             File.WriteAllText(evidence, JsonSerializer.Serialize(new { card = "S8-T04", scenario = "import", rows = products * 2, scale = products == 5_000 ? "10k" : "100k", checkpoint, iteration, root, database_path = database, source_path = source, seed_path = seed, child_pid = worker.Id, marker = markerData, kill_mechanism = "Process.Kill(entireProcessTree:true)", child_exit_code = worker.ExitCode, before_raw_fingerprint = before.RawFingerprint, expected_raw_fingerprint = expected.RawFingerprint, after_raw_fingerprint = after.RawFingerprint, before_canonical_fingerprint = before.CanonicalFingerprint, expected_canonical_fingerprint = expected.CanonicalFingerprint, after_canonical_fingerprint = after.CanonicalFingerprint, before_counts = before.Counts, expected_counts = expected.Counts, after_counts = after.Counts, committed, integrity_check = verification.IntegrityOk ? "ok" : "failed", foreign_key_check_count = verification.ForeignKeyViolations, migrations = verification.Migrations, sidecars_before_reopen = sidecarsBeforeReopen, sidecars_after_reopen = Sidecars(database), pass = true }, new JsonSerializerOptions { WriteIndented = true }));
         }
@@ -384,7 +384,11 @@ public sealed class S8T04CrashConsistencyTests
         using var connection = new SqliteConnection($"Data Source={databasePath};Foreign Keys=True;Pooling=False"); connection.Open(); using var command = connection.CreateCommand();
         command.CommandText = "PRAGMA integrity_check"; var integrity = string.Equals(command.ExecuteScalar()?.ToString(), "ok", StringComparison.OrdinalIgnoreCase);
         command.CommandText = "PRAGMA foreign_key_check"; var violations = 0; using (var fk = command.ExecuteReader()) while (fk.Read()) violations++;
-        command.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory"; return (integrity, violations, Convert.ToInt32(command.ExecuteScalar()));
+        command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId";
+        var migrations = new List<string>();
+        using (var reader = command.ExecuteReader()) while (reader.Read()) migrations.Add(reader.GetString(0));
+        Assert.Equal(StoreExpiryInspector.UpdateSafety.CurrentSchemaIdentity.Migrations, migrations);
+        return (integrity, violations, migrations.Count);
     }
 
     private static void AssertAuthorityReadsAndWritable(string databasePath)

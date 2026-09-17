@@ -112,7 +112,7 @@ public sealed class UIUXR02UiStaticAuditTests
         Assert.Equal(2, Count(detail, "<ColumnDefinition Width=\"150\" />"));
         Assert.Equal(2, Count(detail, "<ColumnDefinition Width=\"148\" />"));
         Assert.Equal(2, Count(detail, "<ColumnDefinition Width=\"200\" />"));
-        Assert.DoesNotContain("<ColumnDefinition Width=\"300\" />", detail, StringComparison.Ordinal);
+        AssertAcceptedBarcodeColumn(window);
         foreach (var token in new[]
         {
             "InspectionStatusTagStyle", "InspectionStatusTagTextStyle", "WarningSurfaceBrush", "WarningTextBrush",
@@ -153,6 +153,19 @@ public sealed class UIUXR02UiStaticAuditTests
         }
 
         return count;
+    }
+
+    internal static void AssertAcceptedBarcodeColumn(string window)
+    {
+        var document = System.Xml.Linq.XDocument.Parse(window);
+        var barcode = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Ean13Barcode");
+        Assert.Equal("{Binding Detail.ProductBarcode}", barcode.Attribute("Barcode")?.Value);
+        Assert.Equal("300", barcode.Attribute("Width")?.Value);
+        Assert.Equal("68", barcode.Attribute("Height")?.Value);
+        var column = barcode.Parent!;
+        Assert.Equal("1", column.Attribute("Grid.Column")?.Value);
+        var definitions = Assert.Single(column.Parent!.Elements(), element => element.Name.LocalName == "Grid.ColumnDefinitions");
+        Assert.Equal(new[] { "*", "300", "92", "92", "Auto" }, definitions.Elements().Select(element => element.Attribute("Width")?.Value));
     }
 
     private static string NormalizeWhitespace(string value) =>

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Infrastructure;
+using StoreExpiryInspector.UpdateSafety;
 using Xunit;
 
 namespace StoreExpiryInspector.Tests;
@@ -126,8 +127,8 @@ public sealed class S14T01SimplifiedOnlineUpdateTests
                 version = "1.0.5",
                 pid = candidatePid,
                 startedUtc = candidateStartedUtc,
-                migrationCount = 9,
-                lastMigration = "20260901155124_AddPolicyAndBaselineFoundation",
+                migrationCount = CurrentSchemaIdentity.Migrations.Count,
+                lastMigration = CurrentSchemaIdentity.LastMigration,
                 integrity = "ok",
                 foreignKeys = "ok",
                 coreRead = true,

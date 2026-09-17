@@ -58,6 +58,22 @@ public sealed class S23T03ProductDetailInteractionTests
     [Fact]
     public void Local_product_detail_template_routes_all_regions_to_the_outer_scrollviewer_once()
     {
+        if (System.Windows.Application.Current is not null)
+        {
+            Assert.NotEqual("1", Environment.GetEnvironmentVariable("S24_S23_ISOLATED_CHILD"));
+            var results = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(results);
+            var start = new System.Diagnostics.ProcessStartInfo("dotnet") { UseShellExecute = false, CreateNoWindow = true };
+            foreach (var argument in new[] { "vstest", typeof(S23T03ProductDetailInteractionTests).Assembly.Location, "/TestCaseFilter:FullyQualifiedName=StoreExpiryInspector.Tests.S23T03ProductDetailInteractionTests.Local_product_detail_template_routes_all_regions_to_the_outer_scrollviewer_once", "/Logger:trx;LogFileName=isolated-detail.trx", "/ResultsDirectory:" + results }) start.ArgumentList.Add(argument);
+            start.Environment["S24_S23_ISOLATED_CHILD"] = "1";
+            using var child = System.Diagnostics.Process.Start(start)!;
+            if (!child.WaitForExit(30_000)) { child.Kill(true); Assert.Fail("Isolated product detail STA test did not terminate."); }
+            Assert.Equal(0, child.ExitCode);
+            var counters = XDocument.Load(Path.Combine(results, "isolated-detail.trx")).Descendants().Single(node => node.Name.LocalName == "Counters");
+            foreach (var name in new[] { "total", "executed", "passed" }) Assert.Equal("1", counters.Attribute(name)?.Value);
+            foreach (var name in new[] { "failed", "notExecuted" }) Assert.Equal("0", counters.Attribute(name)?.Value);
+            return;
+        }
         Exception? failure = null;
         var thread = new Thread(() =>
         {
@@ -129,6 +145,21 @@ public sealed class S23T03ProductDetailInteractionTests
     [Fact]
     public async Task Catalog_detail_navigation_uses_the_row_parameter_without_row_selection()
     {
+        if (Environment.GetEnvironmentVariable("S24_S23_NAV_ISOLATED_CHILD") != "1")
+        {
+            var results = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(results);
+            var start = new System.Diagnostics.ProcessStartInfo("dotnet") { UseShellExecute = false, CreateNoWindow = true };
+            foreach (var argument in new[] { "vstest", typeof(S23T03ProductDetailInteractionTests).Assembly.Location, "/TestCaseFilter:FullyQualifiedName=StoreExpiryInspector.Tests.S23T03ProductDetailInteractionTests.Catalog_detail_navigation_uses_the_row_parameter_without_row_selection", "/Logger:trx;LogFileName=isolated-detail-navigation.trx", "/ResultsDirectory:" + results }) start.ArgumentList.Add(argument);
+            start.Environment["S24_S23_NAV_ISOLATED_CHILD"] = "1";
+            using var child = System.Diagnostics.Process.Start(start)!;
+            if (!child.WaitForExit(30_000)) { child.Kill(true); Assert.Fail("Isolated product detail navigation test did not terminate."); }
+            Assert.Equal(0, child.ExitCode);
+            var counters = XDocument.Load(Path.Combine(results, "isolated-detail-navigation.trx")).Descendants().Single(node => node.Name.LocalName == "Counters");
+            foreach (var name in new[] { "total", "executed", "passed" }) Assert.Equal("1", counters.Attribute(name)?.Value);
+            foreach (var name in new[] { "failed", "notExecuted" }) Assert.Equal("0", counters.Attribute(name)?.Value);
+            return;
+        }
         var shell = CreateShell(); shell.NavigateTo(ShellPage.ProductCatalog);
         var row = new ProductCatalogItem(1, "测试商品", "15060502310890", "6976879890025", "食品", 80, 99, null, "discount_50", 1, null, 7);
         shell.OpenProductCatalogDetailCommand.Execute(row);
