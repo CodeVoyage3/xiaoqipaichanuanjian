@@ -1,5 +1,5 @@
 {
-  "status": "USER_RELEASE_GUI_PENDING",
+  "status": "CLOSED / ACCEPTED",
   "productSourceSha": "280c86f2f30686092f9e603a9bbb8ac593355a27",
   "builderSourceSha": "180b6f534742d5fee6b4f709db3bcc643e1fde94",
   "candidateIdentity": "f3a75491-7eae-4520-b25d-915c3407586f",
@@ -133,12 +133,12 @@
     ]
   },
   "transactionEvidenceKind": "PRODUCTION_PAYLOAD_TEST_UPDATER_TEMP_GUID",
-  "userReleaseGui": "PENDING",
+  "userReleaseGui": "PASS",
   "formalTag": "NOT_CREATED",
   "formalRelease": "NOT_CREATED",
   "assetsUploaded": false,
   "latest": "v1.1.2",
-  "S24T02": "NOT_STARTED",
+  "S24T02": "AUTHORIZED / IN_PROGRESS",
   "supersededCandidates": [
     "8a1e52c7-8110-4025-ad8c-5b15ca241ffd"
   ],
@@ -181,5 +181,7 @@
     "foreignKeys": 0,
     "businessFingerprint": "62c6482a9dc2c53489183ed74a77bae26ff2ab3b2cd922b2a0486f34c8192c0f"
   },
-  "independentAcceptance": "Sol verified final TRX, exact frozen asset hashes, setup scenarios, signed transaction and empty post-freeze production diff"
+  "independentAcceptance": "Sol verified final TRX, exact frozen asset hashes, setup scenarios, signed transaction and empty post-freeze production diff",
+  "userReleaseGuiReceipt": "v1.1.3 Release Candidate GUI 验收通过。S24-T01 RC GUI = PASS；S24-T01 = CLOSED / ACCEPTED；登记真实用户 Release GUI PASS。允许启动 S24-T02 正式发布与公网验证。",
+  "userReleaseGuiDate": "2026-09-17"
 }
