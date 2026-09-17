@@ -10,24 +10,27 @@ public sealed class ProductCatalogViewModel : ViewModelBase
     private readonly Func<long, ProductCatalogDetail?> _detail;
     private readonly Action<Exception>? _log;
     private string _searchText = string.Empty, _category = string.Empty, _stage = string.Empty, _taskStatus = string.Empty, _error = string.Empty;
-    private int _page = 1, _total; private bool _loading, _hasError; private ProductCatalogDetail? _selected;
+    private int _page = 1, _total; private bool _loading, _hasError, _isHistoryExpanded; private ProductCatalogDetail? _selected;
     public ProductCatalogViewModel(Func<ProductCatalogRequest, ProductCatalogPage> search, Func<long, ProductCatalogDetail?> detail, Action<Exception>? log = null)
-    { _search = search; _detail = detail; _log = log; RefreshCommand = new RelayCommand(_ => { _page = 1; _ = LoadAsync(); }); ClearCommand = new RelayCommand(_ => { SearchText = Category = Stage = TaskStatus = string.Empty; _page = 1; _ = LoadAsync(); }); PreviousPageCommand = new RelayCommand(_ => { if (_page > 1) { _page--; _ = LoadAsync(); } }); NextPageCommand = new RelayCommand(_ => { if (_page * 50 < Total) { _page++; _ = LoadAsync(); } }); }
+    { _search = search; _detail = detail; _log = log; RefreshCommand = new RelayCommand(_ => { _page = 1; _ = LoadAsync(); }); ClearCommand = new RelayCommand(_ => { SearchText = Category = Stage = TaskStatus = string.Empty; _page = 1; _ = LoadAsync(); }); PreviousPageCommand = new RelayCommand(_ => { if (_page > 1) { _page--; _ = LoadAsync(); } }); NextPageCommand = new RelayCommand(_ => { if (_page * 50 < Total) { _page++; _ = LoadAsync(); } }); ToggleHistoryCommand = new RelayCommand(_ => IsHistoryExpanded = !IsHistoryExpanded); }
     public ObservableCollection<ProductCatalogItem> Items { get; } = [];
     public IReadOnlyList<CatalogOption> Categories { get; } = [new("全部大类", ""), new("食品", "食品"), new("宠物", "宠物"), new("日用", "日用"), new("美妆", "美妆"), new("家居", "家居"), new("香氛香水", "香氛香水"), new("文具", "文具"), new("潮流玩具", "潮流玩具"), new("应季搭配", "应季搭配"), new("赠品小样", "赠品小样")];
     public IReadOnlyList<CatalogOption> Stages { get; } = [new("全部阶段", ""), new("正常", ExpiryStageCalculator.None), new("5折", ExpiryStageCalculator.Discount50), new("2折", ExpiryStageCalculator.Discount20), new("收仓", ExpiryStageCalculator.Withdraw), new("过期", ExpiryStageCalculator.Expired)];
     public IReadOnlyList<CatalogOption> TaskStatuses { get; } = [new("全部状态", ""), new("有待办", "open"), new("无待办", "none")];
-    public RelayCommand RefreshCommand { get; } public RelayCommand ClearCommand { get; } public RelayCommand PreviousPageCommand { get; } public RelayCommand NextPageCommand { get; }
+    public RelayCommand RefreshCommand { get; } public RelayCommand ClearCommand { get; } public RelayCommand PreviousPageCommand { get; } public RelayCommand NextPageCommand { get; } public RelayCommand ToggleHistoryCommand { get; }
     public string SearchText { get => _searchText; set { if (_searchText == value) return; _searchText = value; OnPropertyChanged(); } }
     public string Category { get => _category; set { if (_category == value) return; _category = value; OnPropertyChanged(); } }
     public string Stage { get => _stage; set { if (_stage == value) return; _stage = value; OnPropertyChanged(); } }
     public string TaskStatus { get => _taskStatus; set { if (_taskStatus == value) return; _taskStatus = value; OnPropertyChanged(); } }
     public bool IsLoading { get => _loading; private set { _loading = value; OnPropertyChanged(); } } public bool HasError { get => _hasError; private set { _hasError = value; OnPropertyChanged(); } } public string Error { get => _error; private set { _error = value; OnPropertyChanged(); } }
     public int Total { get => _total; private set { _total = value; OnPropertyChanged(); OnPropertyChanged(nameof(PageText)); } } public string PageText => $"第 {_page} 页 · 共 {Total} 个商品";
-    public ProductCatalogDetail? Selected { get => _selected; private set { _selected = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasOpenTask)); } } public bool HasOpenTask => Selected?.Product.OpenTaskId is not null;
+    public ProductCatalogDetail? Selected { get => _selected; private set { _selected = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasOpenTask)); OnPropertyChanged(nameof(HasHistoricalBatches)); OnPropertyChanged(nameof(HistoryToggleText)); } } public bool HasOpenTask => Selected?.Product.OpenTaskId is not null;
+    public bool IsHistoryExpanded { get => _isHistoryExpanded; private set { if (_isHistoryExpanded == value) return; _isHistoryExpanded = value; OnPropertyChanged(); OnPropertyChanged(nameof(HistoryToggleText)); } }
+    public bool HasHistoricalBatches => Selected?.HistoricalBatchCount > 0;
+    public string HistoryToggleText => IsHistoryExpanded ? $"收起历史批次（{Selected?.HistoricalBatchCount ?? 0}）" : $"查看历史批次（{Selected?.HistoricalBatchCount ?? 0}）";
     public bool HasNoItems => !IsLoading && !HasError && Items.Count == 0;
     public async Task LoadAsync() { IsLoading = true; HasError = false; Error = string.Empty; try { var result = await Task.Run(() => _search(new(SearchText, Category, Stage, TaskStatus, _page))); Items.Clear(); foreach (var item in result.Items) Items.Add(item); Total = result.TotalCount; OnPropertyChanged(nameof(HasNoItems)); } catch (Exception ex) { _log?.Invoke(ex); Items.Clear(); HasError = true; Error = "商品明细加载失败"; OnPropertyChanged(nameof(HasNoItems)); } finally { IsLoading = false; OnPropertyChanged(nameof(HasNoItems)); } }
-    public async Task OpenAsync(long productId) { IsLoading = true; HasError = false; Error = string.Empty; Selected = null; try { Selected = await Task.Run(() => _detail(productId)); if (Selected is null) { HasError = true; Error = "未找到该商品详情"; } } catch (Exception ex) { _log?.Invoke(ex); HasError = true; Error = "商品详情加载失败"; } finally { IsLoading = false; } }
-    public void ClearDetail() => Selected = null;
+    public async Task OpenAsync(long productId) { IsLoading = true; HasError = false; Error = string.Empty; IsHistoryExpanded = false; Selected = null; try { Selected = await Task.Run(() => _detail(productId)); if (Selected is null) { HasError = true; Error = "未找到该商品详情"; } } catch (Exception ex) { _log?.Invoke(ex); HasError = true; Error = "商品详情加载失败"; } finally { IsLoading = false; } }
+    public void ClearDetail() { IsHistoryExpanded = false; Selected = null; }
 }
 public sealed record CatalogOption(string Label, string Value);

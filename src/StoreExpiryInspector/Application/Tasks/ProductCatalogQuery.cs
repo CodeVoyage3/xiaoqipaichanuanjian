@@ -10,10 +10,10 @@ public sealed record ProductCatalogRequest(string? SearchText = null, string? Ca
 public sealed record ProductCatalogItem(long ProductId, string? Name, string Code, string? Barcode, string Category, int BatchCount, int EffectiveStockQty, DateOnly? NearestExpiry, string HighestStage, int PendingCount, DateTime? LastImportAtUtc, long? OpenTaskId)
 { public string NearestExpiryText => NearestExpiry?.ToString("yyyy-MM-dd") ?? "—"; public string LastImportText => LastImportAtUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—"; }
 public sealed record ProductCatalogPage(IReadOnlyList<ProductCatalogItem> Items, int TotalCount, int Page, int PageSize);
-public sealed record ProductCatalogBatch(long BatchId, DateOnly? ProductionDate, DateOnly ExpiryDate, int CurrentArrivalQty, string Stage, bool IsPending)
-{ public string TaskStatus => IsPending ? "待处理" : "正常"; public string ProductionDateText => ProductionDate?.ToString("yyyy-MM-dd") ?? "—"; public string ExpiryDateText => ExpiryDate.ToString("yyyy-MM-dd"); }
+public sealed record ProductCatalogBatch(long BatchId, DateOnly? ProductionDate, DateOnly ExpiryDate, int CurrentArrivalQty, string Stage, bool IsPending, bool IsHistorical = false, string? HistoricalTaskStatus = null)
+{ public string TaskStatus => IsPending ? "待处理" : HistoricalTaskStatus ?? (IsHistorical ? "无待处理" : "正常"); public string ProductionDateText => ProductionDate?.ToString("yyyy-MM-dd") ?? "—"; public string ExpiryDateText => ExpiryDate.ToString("yyyy-MM-dd"); }
 public sealed record ProductCatalogDetail(ProductCatalogItem Product, IReadOnlyList<ProductCatalogBatch> Batches, int? ExcelStockQty, DateTime? LastInspectionAtUtc)
-{ public string ExcelStockText => ExcelStockQty?.ToString() ?? "—"; public string LastInspectionText => LastInspectionAtUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—"; }
+{ public IReadOnlyList<ProductCatalogBatch> CurrentBatches => Batches.Where(batch => !batch.IsHistorical).ToArray(); public IReadOnlyList<ProductCatalogBatch> HistoricalBatches => Batches.Where(batch => batch.IsHistorical).OrderBy(batch => batch.ExpiryDate).ThenBy(batch => batch.BatchId).ToArray(); public int HistoricalBatchCount => HistoricalBatches.Count; public string ExcelStockText => ExcelStockQty?.ToString() ?? "—"; public string LastInspectionText => LastInspectionAtUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—"; }
 
 public sealed class ProductCatalogQuery
 {
@@ -57,8 +57,14 @@ public sealed class ProductCatalogQuery
         var productRow = context.Products.AsNoTracking().Where(product => product.Id == productId).Select(product => new { product.Id, product.CurrentName, product.ProductCode, product.CurrentBarcode, product.CategoryCode, product.EffectiveStockQty, BatchCount = product.Batches.Count(), NearestExpiry = product.Batches.Where(batch => batch.TrackingStatus == "active").Select(batch => (DateOnly?)batch.ExpiryDate).Min(), HighestPriority = product.Batches.Where(batch => batch.TrackingStatus == "active").Select(batch => batch.CurrentStage == ExpiryStageCalculator.Expired ? 4 : batch.CurrentStage == ExpiryStageCalculator.Withdraw ? 3 : batch.CurrentStage == ExpiryStageCalculator.Discount20 ? 2 : batch.CurrentStage == ExpiryStageCalculator.Discount50 ? 1 : 0).DefaultIfEmpty().Max(), PendingCount = product.Tasks.Where(task => task.Status == "open").SelectMany(task => task.Items).Count(), OpenTaskId = product.Tasks.Where(task => task.Status == "open").Select(task => (long?)task.Id).FirstOrDefault(), LastImport = product.LastSeenImportId == null ? null : context.Imports.Where(import => import.Id == product.LastSeenImportId && import.Status == ImportStatuses.Succeeded && !import.IsUndone).Select(import => import.ConfirmedAtUtc).FirstOrDefault() }).SingleOrDefault();
         var product = productRow is null ? null : ToItem(productRow.Id, productRow.CurrentName, productRow.ProductCode, productRow.CurrentBarcode, productRow.CategoryCode, productRow.BatchCount, productRow.EffectiveStockQty, productRow.NearestExpiry, productRow.HighestPriority, productRow.PendingCount, productRow.LastImport, productRow.OpenTaskId);
         if (product is null) return null;
-        var openTask = product.OpenTaskId;
-        var batches = context.Batches.AsNoTracking().Where(batch => batch.ProductId == productId).Select(batch => new ProductCatalogBatch(batch.Id, batch.ProductionDate, batch.ExpiryDate, batch.CurrentArrivalQty, batch.CurrentStage, openTask != null && context.TaskItems.Any(item => item.TaskId == openTask && item.BatchId == batch.Id))).ToArray()
+        var rows = context.Batches.AsNoTracking().Where(batch => batch.ProductId == productId).Select(batch => new BatchRow(batch.Id, batch.ProductionDate, batch.ExpiryDate, batch.CurrentArrivalQty, batch.CurrentStage, batch.TrackingStatus, batch.NextTriggerDate, batch.AttentionVersion, batch.HandledAttentionVersion, batch.LifecycleGeneration)).ToArray();
+        var batchIds = rows.Select(row => row.Id).ToArray();
+        var openBatchIds = context.TaskItems.AsNoTracking().Where(item => item.ProductId == productId && item.Task.Status == "open" && batchIds.Contains(item.BatchId)).Select(item => item.BatchId).Distinct().ToHashSet();
+        var taskItemBatchIds = context.TaskItems.AsNoTracking().Where(item => item.ProductId == productId && batchIds.Contains(item.BatchId)).Select(item => item.BatchId).Distinct().ToHashSet();
+        var inspections = context.InspectionItems.AsNoTracking().Where(item => item.ProductId == productId && batchIds.Contains(item.BatchId)).Select(item => new InspectionFact(item.BatchId, item.Inspection.SubmittedAtUtc, item.Inspection.Task.Status == "completed")).ToArray();
+        var resumed = context.LifecycleEvents.AsNoTracking().Where(item => item.ProductId == productId && item.BatchId != null && batchIds.Contains(item.BatchId.Value) && item.EventType == "batch_tracking_resumed").Select(item => new ResumeFact(item.BatchId!.Value, item.OccurredAtUtc)).ToArray();
+        var noCatchupBatchIds = context.BatchBaselines.AsNoTracking().Where(item => batchIds.Contains(item.BatchId) && item.Baseline.IsCompleted && item.ColdStartDisposition == ColdStartDispositions.ExpiredHistoricalBaseline && item.SourceTaskId == null).Select(item => item.BatchId).ToHashSet();
+        var batches = rows.Select(row => ToDetailBatch(row, openBatchIds, taskItemBatchIds, inspections, resumed, noCatchupBatchIds))
             .OrderByDescending(batch => ExpiryStageCalculator.GetStagePriority(batch.Stage)).ThenBy(batch => batch.ExpiryDate).ThenBy(batch => batch.BatchId).ToArray();
         var excel = context.Products.AsNoTracking().Where(product => product.Id == productId).Select(product => (int?)product.ExcelStockQty).Single();
         var lastInspection = context.Inspections.AsNoTracking().Where(inspection => inspection.ProductId == productId).Select(inspection => (DateTime?)inspection.SubmittedAtUtc).Max();
@@ -66,6 +72,19 @@ public sealed class ProductCatalogQuery
     }
 
     private static ProductCatalogItem ToItem(long id, string? name, string code, string? barcode, string category, int batchCount, int stock, DateOnly? nearest, int priority, int pending, DateTime? imported, long? openTask) => new(id, name, code, barcode, ProductCategoryScopes.DisplayNameForCategoryCode(category), batchCount, stock, nearest, priority switch { 4 => ExpiryStageCalculator.Expired, 3 => ExpiryStageCalculator.Withdraw, 2 => ExpiryStageCalculator.Discount20, 1 => ExpiryStageCalculator.Discount50, _ => ExpiryStageCalculator.None }, pending, imported, openTask);
+    private static ProductCatalogBatch ToDetailBatch(BatchRow row, HashSet<long> openBatchIds, HashSet<long> taskItemBatchIds, InspectionFact[] inspections, ResumeFact[] resumed, HashSet<long> noCatchupBatchIds)
+    {
+        var pending = openBatchIds.Contains(row.Id);
+        var current = pending || (row.TrackingStatus == "active" && (row.Stage != ExpiryStageCalculator.Expired || row.NextTriggerDate is not null));
+        if (current) return new(row.Id, row.ProductionDate, row.ExpiryDate, row.CurrentArrivalQty, row.Stage, pending);
+        var completed = inspections.Where(item => item.BatchId == row.Id && item.TaskCompleted).Any(item => !resumed.Any(resume => resume.BatchId == row.Id && resume.OccurredAtUtc > item.SubmittedAtUtc) && row.HandledAttentionVersion >= row.AttentionVersion);
+        var noCatchup = row.LifecycleGeneration == 0 && noCatchupBatchIds.Contains(row.Id) && !taskItemBatchIds.Contains(row.Id) && !inspections.Any(item => item.BatchId == row.Id) && !resumed.Any(item => item.BatchId == row.Id);
+        var status = row.TrackingStatus == "stopped" ? "已结束" : completed ? "已完成" : noCatchup ? "无需排查" : "无待处理";
+        return new(row.Id, row.ProductionDate, row.ExpiryDate, row.CurrentArrivalQty, row.Stage, false, true, status);
+    }
+    private sealed record BatchRow(long Id, DateOnly? ProductionDate, DateOnly ExpiryDate, int CurrentArrivalQty, string Stage, string TrackingStatus, DateOnly? NextTriggerDate, int AttentionVersion, int HandledAttentionVersion, int LifecycleGeneration);
+    private sealed record InspectionFact(long BatchId, DateTime SubmittedAtUtc, bool TaskCompleted);
+    private sealed record ResumeFact(long BatchId, DateTime OccurredAtUtc);
     private static int PageOffset(ProductCatalogRequest request) => (int)checked((long)(request.Page - 1) * request.PageSize);
     private static string CategoryCodeForDisplayName(string name) => name.Trim() switch { "食品" => "food", "宠物" => "pet", "日用" => "daily_use", "美妆" => "beauty", "家居" => "home", "香氛香水" => "fragrance", "文具" => "stationery", "潮流玩具" => "trendy_toys", "应季搭配" => "seasonal_assortment", "赠品小样" => "gift_sample", _ => throw new ArgumentException("Unknown category.", nameof(name)) };
 }

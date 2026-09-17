@@ -31,6 +31,9 @@ public sealed class S23T03ProductDetailInteractionTests
         Assert.DoesNotContain("AutomationProperties.Name=\"去排查商品\"", detail, StringComparison.Ordinal);
         Assert.Equal(1, detail.Split("OpenProductTaskCommand", StringSplitOptions.None).Length - 1);
         Assert.Contains("Content=\"去排查  →\"", detail, StringComparison.Ordinal);
+        Assert.Contains("CurrentProductCatalogBatches", detail, StringComparison.Ordinal);
+        Assert.Contains("HistoricalProductCatalogBatches", detail, StringComparison.Ordinal);
+        Assert.Contains("查看历史批次", detail, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -63,7 +66,7 @@ public sealed class S23T03ProductDetailInteractionTests
                 var shell = CreateShell(); SetSelectedDetail(shell.ProductCatalog); shell.NavigateTo(ShellPage.ProductCatalogDetail);
                 var window = LocalDetailWindow(shell); window.Show(); window.UpdateLayout();
                 var outer = Descendants<ScrollViewer>(window).Single(viewer => Descendants<DataGrid>(viewer).Any());
-                var grid = Descendants<DataGrid>(outer).Single();
+                var grid = Descendants<DataGrid>(outer).Single(value => AutomationProperties.GetName(value) == "当前商品批次明细");
                 var inner = Descendants<ScrollViewer>(grid).First();
                 var top = Descendants<TextBlock>(outer).First(x => x.IsVisible && x.Text == "商品编码");
                 var body = Descendants<TextBlock>(outer).First(x => x.IsVisible && x.Text.StartsWith("该商品存在需关注批次", StringComparison.Ordinal));
@@ -105,6 +108,12 @@ public sealed class S23T03ProductDetailInteractionTests
                 outer.ScrollToVerticalOffset(outer.ScrollableHeight); window.UpdateLayout();
                 var bottom = outer.VerticalOffset;
                 Raise(window, CenterInWindow(window, Descendants<DataGridRow>(grid).Last()), -120); window.UpdateLayout(); Assert.Equal(bottom, outer.VerticalOffset, 4);
+
+                shell.ProductCatalog.ToggleHistoryCommand.Execute(null); window.UpdateLayout();
+                var historyGrid = Descendants<DataGrid>(outer).Single(value => AutomationProperties.GetName(value) == "历史商品批次明细");
+                var historyInner = Descendants<ScrollViewer>(historyGrid).First();
+                outer.ScrollToVerticalOffset(outer.ScrollableHeight); window.UpdateLayout();
+                AssertScrolls(window, outer, historyInner, CenterInWindow(window, Descendants<DataGridRow>(historyGrid).Last()), 120, down: false);
                 window.Close();
             }
             catch (Exception exception) { failure = exception; }
@@ -121,7 +130,7 @@ public sealed class S23T03ProductDetailInteractionTests
         productCatalogLoader: _ => new([], 0, 1, 50),
         productCatalogDetailLoader: _ => new(
             new ProductCatalogItem(1, "测试商品", "P-001", "6900000000001", "食品", 80, 99, new DateOnly(2026, 10, 1), "discount_50", 1, DateTime.UtcNow, 7),
-            Enumerable.Range(1, 80).Select(index => new ProductCatalogBatch(index, new DateOnly(2026, 1, 1), new DateOnly(2026, 10, 1).AddDays(index), index, "discount_50", index == 1)).ToArray(),
+            TestBatches(),
             100,
             null));
 
@@ -129,11 +138,13 @@ public sealed class S23T03ProductDetailInteractionTests
     {
         var detail = new ProductCatalogDetail(
             new ProductCatalogItem(1, "测试商品", "P-001", "6900000000001", "食品", 80, 99, new DateOnly(2026, 10, 1), "discount_50", 1, DateTime.UtcNow, 7),
-            Enumerable.Range(1, 80).Select(index => new ProductCatalogBatch(index, new DateOnly(2026, 1, 1), new DateOnly(2026, 10, 1).AddDays(index), index, "discount_50", index == 1)).ToArray(),
+            TestBatches(),
             100,
             null);
         typeof(ProductCatalogViewModel).GetField("_selected", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(catalog, detail);
     }
+
+    private static IReadOnlyList<ProductCatalogBatch> TestBatches() => Enumerable.Range(1, 80).Select(index => new ProductCatalogBatch(index, new DateOnly(2026, 1, 1), new DateOnly(2026, 10, 1).AddDays(index), index, "discount_50", index == 1, index > 40, index > 40 ? "无待处理" : null)).ToArray();
 
     private static Point FindBlankPoint(Window window, ScrollViewer outer)
     {
