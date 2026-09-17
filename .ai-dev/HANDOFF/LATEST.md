@@ -1,3 +1,11 @@
+# 2026-09-17: S23-T03 UI R1 / USER_GUI_PENDING
+
+User confirms real GUI wheel top/body/grid/blank PASS, no double scroll/jump, batch task entry and return PASS. Overall acceptance withheld pending two layout-only fixes:
+1. Remove 商品明细 / 商品详情 breadcrumb; preserve natural title/subtitle spacing without header redesign.
+2. Increase main product-detail content right gutter moderately, consistently covering information card/statistics/batch container when scrollbar is visible.
+Production scope MainWindow.xaml product-detail block only. Do not change wheel implementation, commands/query/business/schema/migration/version/installer/updater/release or accepted T01/T02. New Terra for UI repair, Sol diff review and production Release build only; no tests/FULL rerun. Prior wheel/navigation evidence reused. Keep S23-T03 USER_GUI_PENDING / NOT_CLOSED / NOT_ACCEPTED, Stage23 IN_PROGRESS. No merge/push/Stage24/formal DB/original dirty changes. New isolated GUI candidate required.
+Historical acceptance records below do not override this pending UI repair.
+
 # 2026-09-17: S23-T03 TECHNICAL_PASS / USER_GUI_PENDING
 
 Terra=902649c0a36c315f5c086d4233b8acc2a75c3c1a. Sol independent3/3 PASS, Production Release build0 warning/0 error, forbidden production diff0. Root cause confirmed in actual local WPF template: batch inner ScrollViewer consumes bubble with no scroll space; baseline top/body/blank scroll normally after layout. Local outer Preview/system steps/remainder/one consumer passes all four regions and bounds. See ACCEPTANCE/S23-T03.md for independent evidence and limitations.
