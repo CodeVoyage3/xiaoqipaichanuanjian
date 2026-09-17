@@ -148,6 +148,8 @@ public sealed class ReleaseCandidateBuilderTests
             {
                 Entry(".ai-dev/PROJECT_STATUS.md"),
                 Entry("tests/StoreExpiryInspector.Tests/NewFocusedTests.cs"),
+                Entry("tests/S24T01-RunInstallerCandidate.ps1"),
+                Entry("tests/UnownedHarness.ps1"),
                 Entry("src/StoreExpiryInspector/UI/MainWindow.xaml.cs"),
                 Entry("src/StoreExpiryInspector/Application/Tasks/ProductTaskQuery.cs"),
                 Entry("src/StoreExpiryInspector/Infrastructure/Excel/ExcelTemplateReader.cs"),
@@ -172,9 +174,11 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Equal("FAILED", result.RootElement.GetProperty("status").GetString());
         Assert.Equal("CHANGE_IMPACT", result.RootElement.GetProperty("failedGate").GetString());
         var impact = result.RootElement.GetProperty("changeImpact");
-        Assert.Equal(19, impact.GetProperty("changedFileCount").GetInt32());
+        Assert.Equal(21, impact.GetProperty("changedFileCount").GetInt32());
         AssertCategories(FindChangedFile(impact, ".ai-dev/PROJECT_STATUS.md"), "GOVERNANCE_ONLY");
         AssertCategories(FindChangedFile(impact, "tests/StoreExpiryInspector.Tests/NewFocusedTests.cs"), "TEST_ONLY");
+        AssertCategories(FindChangedFile(impact, "tests/S24T01-RunInstallerCandidate.ps1"), "TEST_ONLY");
+        AssertCategories(FindChangedFile(impact, "tests/UnownedHarness.ps1"), "UNKNOWN");
         AssertCategories(FindChangedFile(impact, "src/StoreExpiryInspector/UI/MainWindow.xaml.cs"), "UI");
         AssertCategories(FindChangedFile(impact, "src/StoreExpiryInspector/Application/Tasks/ProductTaskQuery.cs"), "BUSINESS_LOGIC");
         AssertCategories(FindChangedFile(impact, "src/StoreExpiryInspector/Infrastructure/Excel/ExcelTemplateReader.cs"), "EXCEL_IMPORT_EXPORT");
@@ -193,7 +197,7 @@ public sealed class ReleaseCandidateBuilderTests
         AssertCategories(FindChangedFile(impact, "tests/StoreExpiryInspector.Tests/NewTests.cs"), "TEST_ONLY");
         AssertCategories(FindChangedFile(impact, "docs/link"), "GOVERNANCE_ONLY", "UNKNOWN");
         var unknown = Strings(impact.GetProperty("unknownFiles"));
-        Assert.Equal(new[] { "docs/link", "new-component/Unknown.cs" }, unknown);
+        Assert.Equal(new[] { "docs/link", "new-component/Unknown.cs", "tests/UnownedHarness.ps1" }, unknown);
         AssertSortedDistinctAndDisjoint(impact);
 
         using var governanceOnly = RunChangeImpactProbe(new

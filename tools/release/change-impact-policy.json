@@ -52,6 +52,10 @@
       "categories": ["TEST_ONLY"]
     },
     {
+      "path": "tests/S24T01-RunInstallerCandidate.ps1",
+      "categories": ["TEST_ONLY"]
+    },
+    {
       "path": "src/StoreExpiryInspector/App.xaml",
       "categories": ["UI"]
     },
