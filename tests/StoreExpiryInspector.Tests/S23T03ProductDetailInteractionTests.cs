@@ -5,6 +5,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Windows.Markup;
+using System.Xml.Linq;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.UI;
 using Xunit;
@@ -48,50 +51,67 @@ public sealed class S23T03ProductDetailInteractionTests
     }
 
     [Fact]
-    public void Baseline_product_detail_wheel_trace_uses_real_hit_test_sources()
+    public void Local_product_detail_template_routes_all_regions_to_the_outer_scrollviewer_once()
     {
         Exception? failure = null;
-        var trace = new List<string>();
         var thread = new Thread(() =>
         {
             try
             {
                 var app = new StoreExpiryInspector.App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
                 app.InitializeComponent();
-                var shell = CreateShell();
-                SetSelectedDetail(shell.ProductCatalog);
-                shell.NavigateTo(ShellPage.ProductCatalogDetail);
-                var window = new MainWindow(shell) { Width = 1024, Height = 680, ShowInTaskbar = false };
-                window.Show();
-                window.UpdateLayout();
+                var shell = CreateShell(); SetSelectedDetail(shell.ProductCatalog); shell.NavigateTo(ShellPage.ProductCatalogDetail);
+                var window = LocalDetailWindow(shell); window.Show(); window.UpdateLayout();
+                var outer = Descendants<ScrollViewer>(window).Single(viewer => Descendants<DataGrid>(viewer).Any());
+                var grid = Descendants<DataGrid>(outer).Single();
+                var inner = Descendants<ScrollViewer>(grid).First();
+                var top = Descendants<TextBlock>(outer).First(x => x.IsVisible && x.Text == "商品编码");
+                var body = Descendants<TextBlock>(outer).First(x => x.IsVisible && x.Text.StartsWith("该商品存在需关注批次", StringComparison.Ordinal));
 
-                var detailGrid = Descendants<DataGrid>(window).Single(grid => AutomationProperties.GetName(grid) == "商品批次明细");
-                var outer = Descendants<ScrollViewer>(window)
-                    .Where(viewer => Descendants<DataGrid>(viewer).Any(grid => ReferenceEquals(grid, detailGrid)))
-                    .OrderByDescending(viewer => viewer.ScrollableHeight)
-                    .First();
-                var top = Descendants<TextBlock>(outer).First(block => block.IsVisible && block.ActualWidth > 0 && block.Text == "商品编码");
-                var body = Descendants<TextBlock>(outer).First(block => block.IsVisible && block.ActualWidth > 0 && block.Text.StartsWith("该商品存在需关注批次", StringComparison.Ordinal));
-                trace.Add(Probe(window, outer, "top", -120, () => CenterInWindow(window, top), hit => ReferenceEquals(hit, top) || Ancestors<ScrollViewer>(hit).Any(viewer => ReferenceEquals(viewer, outer))));
-                trace.Add(Probe(window, outer, "body", -120, () => CenterInWindow(window, body), hit => ReferenceEquals(hit, body) || Ancestors<ScrollViewer>(hit).Any(viewer => ReferenceEquals(viewer, outer))));
-                trace.Add(Probe(window, outer, "grid", 120, () =>
-                {
-                    outer.ScrollToVerticalOffset(outer.ScrollableHeight);
-                    window.UpdateLayout();
-                    return CenterInWindow(window, Descendants<DataGridRow>(detailGrid).Last());
-                }, hit => ReferenceEquals(hit, detailGrid) || Ancestors<DataGrid>(hit).Any(grid => ReferenceEquals(grid, detailGrid))));
-                trace.Add(Probe(window, outer, "blank", -120, () => FindBlankPoint(window, outer), hit => IsInVisualBranch(hit, outer)));
+                // Baseline has neither the production local handler nor the hit-test background.
+                // Record the real local-template routing before proving the local fix.
+                outer.Background = null;
+                Console.WriteLine(Probe(window, outer, inner, "baseline-top", -120, () => CenterInWindow(window, top), hit => IsInVisualBranch(hit, outer)));
+                Console.WriteLine(Probe(window, outer, inner, "baseline-body", -120, () => CenterInWindow(window, body), hit => IsInVisualBranch(hit, outer)));
+                outer.ScrollToVerticalOffset(outer.ScrollableHeight); window.UpdateLayout();
+                Console.WriteLine(Probe(window, outer, inner, "baseline-grid", 120, () => CenterInWindow(window, Descendants<DataGridRow>(grid).Last()), hit => Ancestors<DataGrid>(hit).Any(value => ReferenceEquals(value, grid))));
+                Assert.NotNull(FindBlankPointOrNull(window, outer));
+                Console.WriteLine(Probe(window, outer, inner, "baseline-blank", -120, () => FindBlankPoint(window, outer), hit => IsInVisualBranch(hit, outer)));
+                outer.Background = Brushes.Transparent;
 
-                Assert.All(trace, row => Assert.Contains("preview=", row, StringComparison.Ordinal));
-                Console.WriteLine(string.Join(Environment.NewLine, trace));
+                var target = RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
+                var method = typeof(MainWindow).GetMethod("ProductCatalogDetailScrollViewer_PreviewMouseWheel", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                var handler = (MouseWheelEventHandler)Delegate.CreateDelegate(typeof(MouseWheelEventHandler), target, method);
+                outer.AddHandler(UIElement.PreviewMouseWheelEvent, handler);
+
+                outer.ScrollToVerticalOffset(0); window.UpdateLayout();
+                AssertScrolls(window, outer, inner, CenterInWindow(window, top), -120, down: true);
+                outer.ScrollToVerticalOffset(0); window.UpdateLayout();
+                AssertScrolls(window, outer, inner, CenterInWindow(window, body), -120, down: true);
+                outer.ScrollToVerticalOffset(outer.ScrollableHeight); window.UpdateLayout();
+                AssertScrolls(window, outer, inner, CenterInWindow(window, Descendants<DataGridRow>(grid).Last()), 120, down: false);
+                outer.ScrollToVerticalOffset(0); window.UpdateLayout();
+                AssertScrolls(window, outer, inner, FindBlankPointOrNull(window, outer)!.Value, -120, down: true);
+
+                outer.ScrollToVerticalOffset(0); window.UpdateLayout(); var before = outer.VerticalOffset;
+                var remainder = typeof(MainWindow).GetField("_productCatalogDetailWheelRemainder", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                Console.WriteLine($"sub-before={new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, -60).Delta}; remainder={remainder.GetValue(target)}");
+                Raise(window, CenterInWindow(window, top), -60); Assert.Equal(before, outer.VerticalOffset); window.UpdateLayout(); Console.WriteLine($"sub-after-first remainder={remainder.GetValue(target)}");
+                var expectedSub = NativeWheelOffset(outer, -120);
+                Raise(window, CenterInWindow(window, top), -60); window.UpdateLayout(); Console.WriteLine($"sub-after-second remainder={remainder.GetValue(target)} outer={outer.VerticalOffset}"); Assert.Equal(expectedSub, outer.VerticalOffset, 4);
+                outer.ScrollToVerticalOffset(0); window.UpdateLayout();
+                var topBoundary = FindBlankPoint(window, outer);
+                Raise(window, topBoundary, 120); window.UpdateLayout(); Assert.Equal(0, outer.VerticalOffset, 4);
+                outer.ScrollToVerticalOffset(outer.ScrollableHeight); window.UpdateLayout();
+                var bottom = outer.VerticalOffset;
+                Raise(window, CenterInWindow(window, Descendants<DataGridRow>(grid).Last()), -120); window.UpdateLayout(); Assert.Equal(bottom, outer.VerticalOffset, 4);
                 window.Close();
             }
             catch (Exception exception) { failure = exception; }
             finally { Dispatcher.CurrentDispatcher.InvokeShutdown(); }
         });
         thread.SetApartmentState(ApartmentState.STA); thread.IsBackground = true; thread.Start();
-        Assert.True(thread.Join(TimeSpan.FromSeconds(30)));
-        Assert.True(failure is null, failure?.ToString() + Environment.NewLine + string.Join(Environment.NewLine, trace));
+        Assert.True(thread.Join(TimeSpan.FromSeconds(30))); Assert.Null(failure);
     }
 
     private static ShellViewModel CreateShell() => new(
@@ -127,12 +147,79 @@ public sealed class S23T03ProductDetailInteractionTests
         throw new InvalidOperationException("No real blank-area hit target was found.");
     }
 
+    private static Point? FindBlankPointOrNull(Window window, ScrollViewer outer)
+    {
+        try { return FindBlankPoint(window, outer); }
+        catch (InvalidOperationException) { return null; }
+    }
+
+    private static Window LocalDetailWindow(ShellViewModel shell)
+    {
+        var source = XDocument.Load(Path.Combine(FindRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+        XNamespace ui = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        var detail = source.Descendants(ui + "Grid").Single(node => ((string?)node.Attribute("Visibility"))?.Contains("IsProductCatalogDetailVisible", StringComparison.Ordinal) == true);
+        detail.Descendants(ui + "ScrollViewer").First().Attribute("PreviewMouseWheel")?.Remove();
+        var host = new MainWindow(shell);
+        System.Windows.Application.Current.Resources.MergedDictionaries.Add(host.Resources);
+        var grid = (Grid)XamlReader.Parse(detail.ToString());
+        return new Window { Width = 1024, Height = 680, Content = grid, DataContext = shell };
+    }
+
+    private static void AssertScrolls(Window window, ScrollViewer outer, ScrollViewer inner, Point point, int delta, bool down)
+    {
+        var before = outer.VerticalOffset; var innerBefore = inner.VerticalOffset;
+        var expected = NativeWheelOffset(outer, delta);
+        Raise(window, point, delta); window.UpdateLayout();
+        Assert.Equal(innerBefore, inner.VerticalOffset);
+        Assert.Equal(expected, outer.VerticalOffset, 4);
+        Assert.True(down ? outer.VerticalOffset > before : outer.VerticalOffset < before);
+    }
+
+    private static double NativeWheelOffset(ScrollViewer outer, int delta)
+    {
+        var before = outer.VerticalOffset;
+        var lines = SystemParameters.WheelScrollLines;
+        var notches = Math.Abs(delta) / Mouse.MouseWheelDeltaForOneLine;
+        for (var notch = 0; notch < notches; notch++)
+        {
+            if (lines < 0)
+            {
+                if (delta > 0) outer.PageUp(); else outer.PageDown();
+                continue;
+            }
+            for (var line = 0; line < lines; line++)
+                if (delta > 0) outer.LineUp(); else outer.LineDown();
+        }
+        outer.UpdateLayout();
+        var expected = outer.VerticalOffset;
+        outer.ScrollToVerticalOffset(before);
+        outer.UpdateLayout();
+        return expected;
+    }
+
+    private static void Raise(Window window, Point point, int delta)
+    {
+        var hit = Assert.IsAssignableFrom<UIElement>(window.InputHitTest(point));
+        var args = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = UIElement.PreviewMouseWheelEvent };
+        Console.WriteLine($"raise requested={delta} actual={args.Delta} hit={hit.GetType().Name}");
+        hit.RaiseEvent(args);
+        if (!args.Handled) { args.RoutedEvent = UIElement.MouseWheelEvent; hit.RaiseEvent(args); }
+    }
+
+    private static string FindRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"))) directory = directory.Parent;
+        return Assert.IsType<DirectoryInfo>(directory).FullName;
+    }
+
     private static Point CenterInWindow(Window window, UIElement element) =>
         element.TranslatePoint(new Point(element.RenderSize.Width / 2, element.RenderSize.Height / 2), window);
 
-    private static string Probe(Window window, ScrollViewer outer, string region, int delta, Func<Point> pointFactory, Func<UIElement, bool> isExpectedHit)
+    private static string Probe(Window window, ScrollViewer outer, ScrollViewer inner, string region, int delta, Func<Point> pointFactory, Func<UIElement, bool> isExpectedHit)
     {
-        if (region is not "grid") outer.ScrollToVerticalOffset(0);
+        if (region.Contains("grid", StringComparison.Ordinal)) outer.ScrollToVerticalOffset(outer.ScrollableHeight);
+        else outer.ScrollToVerticalOffset(0);
         window.UpdateLayout();
         var point = pointFactory();
         var hit = Assert.IsAssignableFrom<UIElement>(window.InputHitTest(point));
@@ -142,18 +229,23 @@ public sealed class S23T03ProductDetailInteractionTests
         MouseWheelEventHandler previewHandler = (_, args) => preview.Add($"{TypeName(args.OriginalSource)}|{TypeName(args.Source)}|{args.Handled}");
         MouseWheelEventHandler bubbleHandler = (_, args) => bubble.Add($"{TypeName(args.OriginalSource)}|{TypeName(args.Source)}|{args.Handled}");
         var outerBubble = new List<bool>();
+        var innerBubble = new List<bool>();
         MouseWheelEventHandler outerHandler = (_, args) => outerBubble.Add(args.Handled);
+        MouseWheelEventHandler innerHandler = (_, args) => innerBubble.Add(args.Handled);
         window.AddHandler(UIElement.PreviewMouseWheelEvent, previewHandler, true);
         window.AddHandler(UIElement.MouseWheelEvent, bubbleHandler, true);
         outer.AddHandler(UIElement.MouseWheelEvent, outerHandler, true);
+        inner.AddHandler(UIElement.MouseWheelEvent, innerHandler, true);
         var before = outer.VerticalOffset;
+        var innerBefore = inner.VerticalOffset;
         var args = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = UIElement.PreviewMouseWheelEvent };
         hit.RaiseEvent(args);
         if (!args.Handled) { args.RoutedEvent = UIElement.MouseWheelEvent; hit.RaiseEvent(args); }
         window.RemoveHandler(UIElement.PreviewMouseWheelEvent, previewHandler);
         window.RemoveHandler(UIElement.MouseWheelEvent, bubbleHandler);
         outer.RemoveHandler(UIElement.MouseWheelEvent, outerHandler);
-        return $"{region}:hit={TypeName(hit)};preview={string.Join(',', preview)};outerBubble={string.Join(',', outerBubble)};bubble={string.Join(',', bubble)};outer={before}->{outer.VerticalOffset};lines={SystemParameters.WheelScrollLines}";
+        inner.RemoveHandler(UIElement.MouseWheelEvent, innerHandler);
+        return $"{region}:hit={TypeName(hit)};preview={string.Join(',', preview)};innerBubble={string.Join(',', innerBubble)};outerBubble={string.Join(',', outerBubble)};bubble={string.Join(',', bubble)};outer={before}->{outer.VerticalOffset};inner={innerBefore}->{inner.VerticalOffset};lines={SystemParameters.WheelScrollLines}";
     }
 
     private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
