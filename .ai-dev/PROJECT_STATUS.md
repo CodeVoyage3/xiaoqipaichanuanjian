@@ -2,7 +2,7 @@
 
 Stage24: v1.1.3 Same-Schema Release. Baseline aff932484adf62aed35222f08ec0eb0f4b7fb9aa. Stage23 CLOSED / ACCEPTED with real GUI PASS retained. migration=10; migration11=NOT_CREATED; no schema/protocol/product feature changes. Original dirty workspace untouched. Formal v1.1.3 tag/Release/upload/Latest forbidden until user RC GUI PASS.
 
-S24-T01=AUTHORIZED / IN_PROGRESS; S24-T02=NOT_STARTED. Independent stage24-v113-release clone; main baseline aff9324. Version audit: .ai-dev/ANALYSIS/S24-T01-VERSION-AUDIT.md. PRODUCT_SOURCE_SHA pending; stop before publication for user RC GUI PASS.
+S24-T01=AUTHORIZED / IN_PROGRESS; S24-T02=NOT_STARTED. Independent stage24-v113-release clone; main baseline aff9324. Version audit: .ai-dev/ANALYSIS/S24-T01-VERSION-AUDIT.md. PRODUCT_SOURCE_SHA=280c86f2f30686092f9e603a9bbb8ac593355a27 renewed after confirmed SQLite sidecar Release blocker (Terra commit, Sol independent20/20 PASS). Old candidate8a1e52c7 SUPERSEDED; new RC and FULL required; stop before publication for user RC GUI PASS.
 
 Historical records follow.
 

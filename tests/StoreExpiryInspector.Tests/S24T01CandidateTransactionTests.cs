@@ -22,7 +22,8 @@ public sealed class S24T01CandidateTransactionTests
         var sample = RequiredPath("S24_T01_SAMPLE_DATABASE");
         var evidence = RequiredPath("S24_T01_TRANSACTION_EVIDENCE");
         using var receipt = JsonDocument.Parse(File.ReadAllText(Path.Combine(candidate, "release-receipt.json")));
-        Assert.Equal("e21792f83a4217364aebaf4460f9d407e2f9835e", receipt.RootElement.GetProperty("candidateSha").GetString());
+        Assert.Matches("^[0-9a-f]{40}$", Required("S24_T01_PRODUCT_SOURCE_SHA"));
+        Assert.Equal(Required("S24_T01_PRODUCT_SOURCE_SHA"), receipt.RootElement.GetProperty("candidateSha").GetString());
         Assert.Equal(new Version(1, 1, 2, 0), AssemblyName.GetAssemblyName(Path.Combine(source, "StoreExpiryInspector.dll")).Version);
         var install = NewRoot(); var data = NewRoot(); var cache = NewRoot();
         var app = Path.Combine(install, "app"); CopyTree(source, app);

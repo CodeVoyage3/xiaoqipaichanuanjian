@@ -1,5 +1,6 @@
 param(
   [Parameter(Mandatory)][string]$CandidateRun,
+  [Parameter(Mandatory)][ValidatePattern("^[0-9a-f]{40}$")][string]$ProductSourceSha,
   [Parameter(Mandatory)][string]$SourceAssets,
   [Parameter(Mandatory)][string]$ResultDirectory,
   [string]$Compiler = (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
@@ -19,7 +20,7 @@ function Run([string]$File, [string[]]$Arguments) {
   $process.ExitCode
 }
 $receipt = Get-Content -Raw (Join-Path $CandidateRun 'release-receipt.json') | ConvertFrom-Json
-Require ($receipt.status -eq 'RELEASE_CANDIDATE_READY' -and $receipt.candidateSha -eq 'e21792f83a4217364aebaf4460f9d407e2f9835e') 'frozen candidate identity mismatch'
+Require ($receipt.status -eq 'RELEASE_CANDIDATE_READY' -and $receipt.candidateSha -eq $ProductSourceSha) 'frozen candidate identity mismatch'
 Require ($receipt.setupMode -eq 'SAME_SCHEMA_SLIM' -and $receipt.migrationCount -eq 10) 'same-schema identity mismatch'
 Require (-not (Test-Path -LiteralPath $ResultDirectory)) 'fresh evidence root required'
 New-Item -ItemType Directory -Path $ResultDirectory | Out-Null
