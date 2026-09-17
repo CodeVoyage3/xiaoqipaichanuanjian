@@ -155,6 +155,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _checkDateText = _businessToday().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         _checkDateValue = _businessToday().ToDateTime(TimeOnly.MinValue);
+        ImportSession = new InspectionResultImportSessionViewModel(
+            _preview, _apply, _submit, _refreshAfterSubmit, _confirmOverStock, _confirmExpiredInventory,
+            _confirmSubmission, _logException, _businessToday, _utcNow);
         ReloadCommand = new RelayCommand(_ => { _ = LoadAsync(); }, _ => CanUseContent);
         SelectAllCommand = new RelayCommand(_ => { _ = SetSelectionAsync(true); }, _ => CanUseContent && !_isBulkSelectionBusy && Tasks.Count != 0);
         ClearSelectionCommand = new RelayCommand(_ => { _ = SetSelectionAsync(false); }, _ => CanUseContent && !_isBulkSelectionBusy && SelectedCount != 0);
@@ -169,6 +172,7 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     }
 
     public IReadOnlyList<TodayInspectionTaskViewModel> Tasks { get; private set; } = Array.Empty<TodayInspectionTaskViewModel>();
+    public InspectionResultImportSessionViewModel ImportSession { get; }
     public IReadOnlyList<TodayInspectionTaskViewModel> VisibleTasks => _searchTasks is null && SelectedCategory != "全部"
         ? Tasks.Where(task => task.CategoryName == SelectedCategory).ToArray()
         : Tasks;
@@ -284,6 +288,9 @@ public sealed class TodayInspectionViewModel : ViewModelBase
     public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
     public event Action<string>? SubmissionBlocked;
     public event Action<string>? PreviewFailed;
+
+    public string? GetPreviewProductName(long taskId) => _currentPreview?.File.Rows
+        .FirstOrDefault(row => row.TaskId == taskId)?.ProductName;
 
     public async Task LoadAsync()
     {

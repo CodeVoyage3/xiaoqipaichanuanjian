@@ -692,6 +692,27 @@ public sealed class FutureExpiryRiskViewModel : ViewModelBase
 
 public sealed record StageBadge(string HighestStage);
 
+public sealed class PendingInspectionTaskViewModel : ViewModelBase
+{
+    private bool _isSelected;
+    public PendingInspectionTaskViewModel(InspectionTaskListItem item, bool isSelected, Action<long, bool> changed)
+    {
+        Item = item; _isSelected = isSelected; _changed = changed;
+    }
+    private readonly Action<long, bool> _changed;
+    public InspectionTaskListItem Item { get; }
+    public long TaskId => Item.TaskId;
+    public string? ProductName => Item.ProductName;
+    public string? ProductBarcode => Item.ProductBarcode;
+    public string ProductCode => Item.ProductCode;
+    public string HighestStage => Item.HighestStage;
+    public string CategoryName => Item.CategoryName;
+    public int PendingBatchCount => Item.PendingBatchCount;
+    public int EffectiveStockQty => Item.EffectiveStockQty;
+    public DateOnly? NearestExpiryDate => Item.NearestExpiryDate;
+    public bool IsSelected { get => _isSelected; set { if (_isSelected == value) return; _isSelected = value; OnPropertyChanged(); _changed(TaskId, value); } }
+}
+
 public sealed class PendingTasksViewModel : ViewModelBase
 {
     public const int FixedPageSize = 50;
@@ -710,24 +731,47 @@ public sealed class PendingTasksViewModel : ViewModelBase
     private int _currentPage = 1;
     private int _totalCount;
     private int _totalPages = 1;
+    private readonly Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>? _export;
+    private readonly HashSet<long> _selectedTaskIds = [];
+    private bool _isActionBusy;
 
     public PendingTasksViewModel(
         Func<InspectionTaskSearchRequest, InspectionTaskSearchResult> searchTasks,
         Action<Exception>? logException = null,
-        Func<IReadOnlyList<string>>? loadCategories = null)
+        Func<IReadOnlyList<string>>? loadCategories = null,
+        Func<string, IReadOnlyCollection<long>, TodayInspectionPlanExportResult>? export = null,
+        InspectionResultImportSessionViewModel? importSession = null)
     {
         ArgumentNullException.ThrowIfNull(searchTasks);
         _searchTasks = searchTasks;
         _loadCategories = loadCategories;
         _logException = logException;
+        _export = export;
+        ImportSession = importSession;
+        if (ImportSession is not null) ImportSession.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(InspectionResultImportSessionViewModel.IsActionBusy))
+            {
+                OnPropertyChanged(nameof(IsActionBusy)); OnPropertyChanged(nameof(CanUseImport)); RaiseSelectionState();
+            }
+        };
         SearchCommand = new RelayCommand(parameter => { _ = SearchAsync(); });
         ClearFiltersCommand = new RelayCommand(parameter => { _ = ClearFiltersAsync(); });
-        RetryCommand = new RelayCommand(parameter => { _ = LoadAsync(); });
+        RetryCommand = new RelayCommand(parameter => { ClearSelection(); _ = LoadAsync(); });
         PreviousPageCommand = new RelayCommand(parameter => { _ = GoToPreviousPageAsync(); });
         NextPageCommand = new RelayCommand(parameter => { _ = GoToNextPageAsync(); });
+        ClearSelectionCommand = new RelayCommand(_ => ClearSelection(), _ => SelectedCount != 0 && !IsActionBusy);
+        ExportCommand = new RelayCommand(_ => { }, _ => SelectedCount != 0 && !IsActionBusy && _export is not null);
     }
 
-    public ObservableCollection<InspectionTaskListItem> Items { get; } = [];
+    public ObservableCollection<PendingInspectionTaskViewModel> Items { get; } = [];
+    public InspectionResultImportSessionViewModel? ImportSession { get; }
+    public IReadOnlyCollection<long> SelectedTaskIds => _selectedTaskIds;
+    public int SelectedCount => _selectedTaskIds.Count;
+    public bool IsActionBusy { get => _isActionBusy || ImportSession?.IsActionBusy == true; private set { if (_isActionBusy == value) return; _isActionBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanUseImport)); RaiseSelectionState(); } }
+    public bool CanUseImport => !IsActionBusy;
+    public TodayInspectionPlanExportResult? LatestExportResult { get; private set; }
+    public string ActionStatusText { get; private set; } = string.Empty;
 
     public IReadOnlyList<StageFilterOption> StageFilters => StageFilterOption.All;
 
@@ -742,6 +786,8 @@ public sealed class PendingTasksViewModel : ViewModelBase
     public RelayCommand PreviousPageCommand { get; }
 
     public RelayCommand NextPageCommand { get; }
+    public RelayCommand ClearSelectionCommand { get; }
+    public RelayCommand ExportCommand { get; }
 
     public int PageSize => FixedPageSize;
 
@@ -826,6 +872,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             }
 
             _searchText = value;
+            ClearSelection();
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasSearchText));
             OnPropertyChanged(nameof(IsFilterActive));
@@ -845,6 +892,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             }
 
             _selectedStage = value;
+            ClearSelection();
             _currentPage = 1;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CurrentPage));
@@ -869,6 +917,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             }
 
             _selectedCategory = value;
+            ClearSelection();
             CurrentPage = 1;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsFilterActive));
@@ -960,6 +1009,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
     public async Task ClearFiltersAsync()
     {
+        ClearSelection();
         var changed = !string.IsNullOrEmpty(_searchText) || _selectedStage is not null || _selectedCategory is not null || CurrentPage != 1;
         _searchText = string.Empty;
         _selectedStage = null;
@@ -1020,7 +1070,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             Items.Clear();
             foreach (var item in result.Items)
             {
-                Items.Add(item);
+                Items.Add(new PendingInspectionTaskViewModel(item, _selectedTaskIds.Contains(item.TaskId), SetSelected));
             }
 
             HasLoadedResult = true;
@@ -1067,6 +1117,42 @@ public sealed class PendingTasksViewModel : ViewModelBase
 
         CurrentPage++;
         await LoadAsync();
+    }
+
+    public async Task ExportSelectedAsync(string path)
+    {
+        if (_export is null || IsActionBusy || _selectedTaskIds.Count == 0) return;
+        var ids = _selectedTaskIds.ToArray();
+        IsActionBusy = true;
+        try
+        {
+            LatestExportResult = await Task.Run(() => DatabaseRuntimeGate.Run(() => _export(path, ids)));
+            ActionStatusText = $"已导出 {LatestExportResult.TaskCount} 个任务、{LatestExportResult.RowCount} 个批次：{LatestExportResult.OutputPath}";
+        }
+        catch (Exception exception) { _logException?.Invoke(exception); ActionStatusText = "导出已选排查任务失败，请重试。"; }
+        finally { OnPropertyChanged(nameof(LatestExportResult)); OnPropertyChanged(nameof(ActionStatusText)); IsActionBusy = false; }
+    }
+
+    private void SetSelected(long taskId, bool selected)
+    {
+        if (selected) _selectedTaskIds.Add(taskId); else _selectedTaskIds.Remove(taskId);
+        RaiseSelectionState();
+    }
+
+    private void ClearSelection()
+    {
+        if (_selectedTaskIds.Count == 0) return;
+        _selectedTaskIds.Clear();
+        foreach (var item in Items) item.IsSelected = false;
+        RaiseSelectionState();
+    }
+
+    private void RaiseSelectionState()
+    {
+        OnPropertyChanged(nameof(SelectedCount));
+        OnPropertyChanged(nameof(SelectedTaskIds));
+        ClearSelectionCommand.RaiseCanExecuteChanged();
+        ExportCommand.RaiseCanExecuteChanged();
     }
 
     private void UpdateCategoryFilters(IReadOnlyList<InspectionTaskListItem> allTasks)
@@ -1226,7 +1312,10 @@ public sealed class ShellViewModel : ViewModelBase
             utcNow,
             () => NavigateTo(ShellPage.PendingTasks),
             searchTasks);
-        PendingTasks = new PendingTasksViewModel(searchTasks, logger, loadCategories);
+        PendingTasks = new PendingTasksViewModel(searchTasks, logger, loadCategories, exportToday,
+            new InspectionResultImportSessionViewModel(previewToday, applyToday, submitToday, RefreshAfterTodayInspectionSubmitAsync,
+                confirmTodayOverStock, confirmTodayExpiredInventory, confirmTodaySubmission, logger,
+                () => DateOnly.FromDateTime(DateTime.Today), utcNow));
         History = new InspectionHistoryViewModel(
             loadHistory,
             loadHistoryDetail,
@@ -1326,7 +1415,11 @@ public sealed class ShellViewModel : ViewModelBase
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
         OpenDetailCommand = new RelayCommand(parameter =>
         {
-            if (parameter is InspectionTaskListItem item)
+            if (parameter is PendingInspectionTaskViewModel pending)
+            {
+                OpenDetail(pending.TaskId);
+            }
+            else if (parameter is InspectionTaskListItem item)
             {
                 OpenDetail(item.TaskId);
             }
@@ -1367,6 +1460,10 @@ public sealed class ShellViewModel : ViewModelBase
         TodayInspection.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(TodayInspectionViewModel.IsActionBusy)) NotifyNavigationState();
+        };
+        PendingTasks.ImportSession?.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(InspectionResultImportSessionViewModel.IsActionBusy)) NotifyNavigationState();
         };
         Detail.PropertyChanged += (_, args) =>
         {
@@ -1794,6 +1891,7 @@ public sealed class ShellViewModel : ViewModelBase
     public bool CanNavigate => !History.IsEditBusy
         && !Import.IsLoading
         && !TodayInspection.IsActionBusy
+        && !PendingTasks.IsActionBusy
         && !Detail.IsActionBusy
         && !IsDatabaseProtectionBlocking;
 

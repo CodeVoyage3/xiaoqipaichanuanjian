@@ -4,7 +4,7 @@ namespace StoreExpiryInspector.UI;
 
 public partial class TodayInspectionConfirmationWindow : Window
 {
-    private TodayInspectionViewModel? _viewModel;
+    private InspectionResultImportSessionViewModel? _viewModel;
 
     public TodayInspectionConfirmationWindow()
     {
@@ -12,19 +12,19 @@ public partial class TodayInspectionConfirmationWindow : Window
         Closed += (_, _) =>
         {
             if (_viewModel is not null) _viewModel.SubmissionBlocked -= ShowSubmissionBlocked;
-            (DataContext as TodayInspectionViewModel)?.CancelPreview();
+            (DataContext as InspectionResultImportSessionViewModel)?.CancelPreview();
         };
         DataContextChanged += (_, _) =>
         {
             if (_viewModel is not null) _viewModel.SubmissionBlocked -= ShowSubmissionBlocked;
-            _viewModel = DataContext as TodayInspectionViewModel;
+            _viewModel = DataContext as InspectionResultImportSessionViewModel;
             if (_viewModel is not null) _viewModel.SubmissionBlocked += ShowSubmissionBlocked;
         };
     }
 
     private async void Submit_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is not TodayInspectionViewModel viewModel) return;
+        if (DataContext is not InspectionResultImportSessionViewModel viewModel) return;
         await viewModel.SubmitAsync();
         if (!viewModel.HasPreview) Close();
     }

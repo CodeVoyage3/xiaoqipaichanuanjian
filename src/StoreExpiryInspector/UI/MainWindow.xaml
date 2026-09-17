@@ -1306,6 +1306,10 @@
                                        Foreground="{DynamicResource SecondaryTextBrush}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding PendingTasks.SelectedCount, StringFormat=已选 {0} 项}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                            <Button Content="清空已选" Command="{Binding PendingTasks.ClearSelectionCommand}" Style="{StaticResource LinkButtonStyle}" Margin="10,0,0,0" />
+                            <Button Content="导出已选任务" Click="ExportPendingInspection_Click" Command="{Binding PendingTasks.ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="112" Margin="10,0,0,0" AutomationProperties.Name="导出已选待排查任务" />
+                            <Button Content="导入排查结果" Click="OpenPendingInspection_Click" IsEnabled="{Binding PendingTasks.CanUseImport}" Style="{StaticResource SecondaryButtonStyle}" Width="112" Margin="8,0,0,0" AutomationProperties.Name="导入待排查结果" />
                             <TextBlock Text="正在加载…"
                                        Visibility="{Binding PendingTasks.IsLoading, Converter={StaticResource BoolToVisibility}}"
                                        FontSize="13"
@@ -1340,6 +1344,9 @@
                                       IsTabStop="True"
                                       Focusable="True">
                                 <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="选择" Width="52">
+                                        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" HorizontalAlignment="Center" AutomationProperties.Name="选择待排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="阶段" Width="78">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -1400,6 +1407,9 @@
                                       IsTabStop="True"
                                       Focusable="True">
                                 <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="选择" Width="52">
+                                        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" HorizontalAlignment="Center" AutomationProperties.Name="选择待排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="阶段" Width="78">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
