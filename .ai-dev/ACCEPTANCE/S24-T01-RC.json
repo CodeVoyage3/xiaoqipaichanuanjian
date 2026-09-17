@@ -1,0 +1,185 @@
+{
+  "status": "USER_RELEASE_GUI_PENDING",
+  "productSourceSha": "280c86f2f30686092f9e603a9bbb8ac593355a27",
+  "builderSourceSha": "180b6f534742d5fee6b4f709db3bcc643e1fde94",
+  "candidateIdentity": "f3a75491-7eae-4520-b25d-915c3407586f",
+  "candidateRun": "C:\\Users\\39037\\AppData\\Local\\Temp\\2c2ad4ed-69ea-4e77-b893-9415e4e2288b\\f3a75491-7eae-4520-b25d-915c3407586f",
+  "appVersion": "1.1.3",
+  "updaterVersion": "1.1.3",
+  "migrationCount": 10,
+  "lastMigration": "20260912083448_AdjustCatchupWindowConstraint",
+  "migration11": "NOT_CREATED",
+  "efModelDrift": "NONE",
+  "sameSchema": true,
+  "zipEntryCount": 618,
+  "pdbCount": 0,
+  "nonWindowsRuntimeCount": 0,
+  "archiveAudit": "PASS",
+  "productionRevalidateForInstall": "Verified",
+  "signatureVerified": true,
+  "isccExitCode": 0,
+  "productionBuild": {
+    "updater": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "app": {
+      "errors": 0,
+      "warnings": 0
+    }
+  },
+  "files": [
+    {
+      "name": "StoreExpiryInspector-1.1.3-win-x64.zip",
+      "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\2c2ad4ed-69ea-4e77-b893-9415e4e2288b\\f3a75491-7eae-4520-b25d-915c3407586f\\assets\\StoreExpiryInspector-1.1.3-win-x64.zip",
+      "bytes": 109479872,
+      "sha256": "4FC04F243CF50FCACD87FBE92080FF1EF81932322A31FCE9F08597D18099AB07"
+    },
+    {
+      "name": "StoreExpiryInspector-Setup-1.1.3.exe",
+      "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\2c2ad4ed-69ea-4e77-b893-9415e4e2288b\\f3a75491-7eae-4520-b25d-915c3407586f\\assets\\StoreExpiryInspector-Setup-1.1.3.exe",
+      "bytes": 75371245,
+      "sha256": "3584D097C614DD8539793EC702C8AA13613F4CD39454B1AA1B195C8FBAD3A333"
+    },
+    {
+      "name": "update-manifest.json",
+      "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\2c2ad4ed-69ea-4e77-b893-9415e4e2288b\\f3a75491-7eae-4520-b25d-915c3407586f\\assets\\update-manifest.json",
+      "bytes": 914,
+      "sha256": "D75D30CCCCABB3D8D16FC37E25900BC149D6EB5FA2F21B3CF0A4159E989E2792"
+    },
+    {
+      "name": "update-manifest.sig",
+      "path": "C:\\Users\\39037\\AppData\\Local\\Temp\\2c2ad4ed-69ea-4e77-b893-9415e4e2288b\\f3a75491-7eae-4520-b25d-915c3407586f\\assets\\update-manifest.sig",
+      "bytes": 384,
+      "sha256": "90C3A8522B9E1480581BEF47B079F2495EA140477C4971F9493133794CDFD767"
+    }
+  ],
+  "terraBlockerCommit": "280c86f2f30686092f9e603a9bbb8ac593355a27",
+  "solBlockerAcceptanceCommit": "eb79c97979f7403eddbf69efaa17ee8fbe31a4c3",
+  "full": {
+    "status": "PASS",
+    "total": 1301,
+    "executed": 1301,
+    "passed": 1301,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "19m47s",
+    "trx": "C:\\Users\\39037\\AppData\\Local\\Temp\\19e9d062-9fcb-4f27-a3d0-da8af5f0786a\\S9T07-final-full.trx",
+    "evidenceRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\d1bce097-2a31-4592-b19f-78496c63f1f4",
+    "focusedPassed": 15
+  },
+  "setup": {
+    "status": "PASS",
+    "evidenceKind": "PRODUCTION_PAYLOAD_ISOLATED_SETUP_TEST_IDENTITY",
+    "resultRoot": "C:\\Users\\39037\\AppData\\Local\\Temp\\50c78531-c125-43b9-9ca1-5ab4248797f7",
+    "scenarios": [
+      {
+        "scenario": "Fresh",
+        "evidenceKind": "PRODUCTION_PAYLOAD_ISOLATED_SETUP_TEST_IDENTITY",
+        "identity": "0aac4e2c-f183-4aec-aafb-34e5f8c39261",
+        "install": "C:\\Users\\39037\\AppData\\Local\\Temp\\b550d5c4-f036-492e-914c-a787b8927fed",
+        "data": "C:\\Users\\39037\\AppData\\Local\\Temp\\0dd5b33e-6aba-40a7-acce-268926b5aebc",
+        "productSource": "280c86f2f30686092f9e603a9bbb8ac593355a27",
+        "candidateRun": "f3a75491-7eae-4520-b25d-915c3407586f",
+        "status": "PASS",
+        "validation": {
+          "migrationCount": 10,
+          "integrity": "ok",
+          "foreignKeys": 0,
+          "businessFingerprint": "8ef4deb01cff7c150c86e9a70db2d0a3ba204e696d05a5b915e12fbd060628f8"
+        }
+      },
+      {
+        "scenario": "SameSchema",
+        "evidenceKind": "PRODUCTION_PAYLOAD_ISOLATED_SETUP_TEST_IDENTITY",
+        "identity": "ce6eefb5-5b0a-41ad-a1bc-e34ddfd73f90",
+        "install": "C:\\Users\\39037\\AppData\\Local\\Temp\\41d377c3-e965-4dce-928d-281da02df961",
+        "data": "C:\\Users\\39037\\AppData\\Local\\Temp\\6e767e21-f796-4cab-a26a-346380c84209",
+        "productSource": "280c86f2f30686092f9e603a9bbb8ac593355a27",
+        "candidateRun": "f3a75491-7eae-4520-b25d-915c3407586f",
+        "status": "PASS",
+        "before": "62c6482a9dc2c53489183ed74a77bae26ff2ab3b2cd922b2a0486f34c8192c0f",
+        "beforeDb": "3EE23ED2AAF829014EFA25C0EC7D1D9846E7206A8C30B8B67F263DA370547049",
+        "afterSetupDb": "3EE23ED2AAF829014EFA25C0EC7D1D9846E7206A8C30B8B67F263DA370547049",
+        "after": "62c6482a9dc2c53489183ed74a77bae26ff2ab3b2cd922b2a0486f34c8192c0f",
+        "validation": {
+          "migrationCount": 10,
+          "integrity": "ok",
+          "foreignKeys": 0,
+          "businessFingerprint": "62c6482a9dc2c53489183ed74a77bae26ff2ab3b2cd922b2a0486f34c8192c0f"
+        }
+      },
+      {
+        "scenario": "DowngradeBlock",
+        "evidenceKind": "PRODUCTION_PAYLOAD_ISOLATED_SETUP_TEST_IDENTITY",
+        "identity": "31ecba5e-eb50-43d5-9603-e2efe716f9e0",
+        "install": "C:\\Users\\39037\\AppData\\Local\\Temp\\d1a351b7-e45e-43a3-bca3-345c60704bf4",
+        "data": "C:\\Users\\39037\\AppData\\Local\\Temp\\496e1ff2-6f18-4273-9485-544ad2181781",
+        "productSource": "280c86f2f30686092f9e603a9bbb8ac593355a27",
+        "candidateRun": "f3a75491-7eae-4520-b25d-915c3407586f",
+        "status": "PASS",
+        "validation": {
+          "migrationCount": 10,
+          "integrity": "ok",
+          "foreignKeys": 0,
+          "businessFingerprint": "8ef4deb01cff7c150c86e9a70db2d0a3ba204e696d05a5b915e12fbd060628f8"
+        },
+        "beforeDb": "FCC9D92DA1234EB51D0E8A1DF4F4B3F5FEE56B4F4E9AF9614A8AB6604240F9E4",
+        "beforeTree": "0385B803D47A0C89A05603AB2F7A34EB583C435B98B5A92D319FA129880E3814",
+        "downgradeExit": 1,
+        "afterDb": "FCC9D92DA1234EB51D0E8A1DF4F4B3F5FEE56B4F4E9AF9614A8AB6604240F9E4",
+        "afterTree": "0385B803D47A0C89A05603AB2F7A34EB583C435B98B5A92D319FA129880E3814"
+      }
+    ]
+  },
+  "transactionEvidenceKind": "PRODUCTION_PAYLOAD_TEST_UPDATER_TEMP_GUID",
+  "userReleaseGui": "PENDING",
+  "formalTag": "NOT_CREATED",
+  "formalRelease": "NOT_CREATED",
+  "assetsUploaded": false,
+  "latest": "v1.1.2",
+  "S24T02": "NOT_STARTED",
+  "supersededCandidates": [
+    "8a1e52c7-8110-4025-ad8c-5b15ca241ffd"
+  ],
+  "failedBuilderRuns": [
+    "de9adf04-e5b7-4802-8010-9608e9add729"
+  ],
+  "forbiddenScope": {
+    "status": "PASS",
+    "blockerException": "Updater Program.cs exact transient SQLite sidecar directory-check fix; no transaction state/protocol change",
+    "forbiddenPaths": [],
+    "builderConfig": "Exact new installer harness TEST_ONLY classification; no Builder implementation change",
+    "allowedPaths": [
+      "src/StoreExpiryInspector.Updater/Program.cs",
+      "src/StoreExpiryInspector.Updater/StoreExpiryInspector.Updater.csproj",
+      "src/StoreExpiryInspector/StoreExpiryInspector.csproj",
+      "tools/release/change-impact-policy.json",
+      "tools/release/release-contract.json"
+    ],
+    "frozenProductionDelta": []
+  },
+  "transaction": {
+    "status": "PASS",
+    "evidenceKind": "PRODUCTION_PAYLOAD_TEST_UPDATER_TEMP_GUID",
+    "productSource": "280c86f2f30686092f9e603a9bbb8ac593355a27",
+    "install": "C:\\Users\\39037\\AppData\\Local\\Temp\\ab31ea04-7d13-4e66-8ee3-5172f4be0d96",
+    "data": "C:\\Users\\39037\\AppData\\Local\\Temp\\03f0b016-f356-4da7-afd5-4c458e7d0610",
+    "journal": "C:\\Users\\39037\\AppData\\Local\\Temp\\03f0b016-f356-4da7-afd5-4c458e7d0610\\updates\\7f3b4d98-ef0d-490e-ba70-3dc094e65e25\\journal.json",
+    "source": "1.1.2",
+    "target": "1.1.3",
+    "migrationCount": 10,
+    "integrity": "ok",
+    "foreignKeys": 0,
+    "businessFingerprint": "62c6482a9dc2c53489183ed74a77bae26ff2ab3b2cd922b2a0486f34c8192c0f",
+    "normalLaunch": "Loaded",
+    "schema": "UNCHANGED"
+  },
+  "businessValidation": {
+    "migrationCount": 10,
+    "integrity": "ok",
+    "foreignKeys": 0,
+    "businessFingerprint": "62c6482a9dc2c53489183ed74a77bae26ff2ab3b2cd922b2a0486f34c8192c0f"
+  },
+  "independentAcceptance": "Sol verified final TRX, exact frozen asset hashes, setup scenarios, signed transaction and empty post-freeze production diff"
+}

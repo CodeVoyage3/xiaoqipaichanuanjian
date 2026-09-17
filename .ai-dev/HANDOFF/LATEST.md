@@ -1,3 +1,32 @@
+# 2026-09-17 S24-T01 TECHNICAL_RELEASE_GATE_PASS / USER_RELEASE_GUI_PENDING
+
+Stage24 = IN_PROGRESS. S24-T01 = USER_RELEASE_GUI_PENDING (not CLOSED / ACCEPTED).
+S24-T02 = NOT_STARTED / NOT_AUTHORIZED. User RC GUI PASS remains required before publication.
+PRODUCT_SOURCE_SHA = 280c86f2f30686092f9e603a9bbb8ac593355a27.
+BUILDER_SOURCE_SHA = 180b6f534742d5fee6b4f709db3bcc643e1fde94.
+Candidate = f3a75491-7eae-4520-b25d-915c3407586f, immutable assets verified.
+App / Updater = 1.1.3 (assembly/file 1.1.3.0); migration = 10; migration11 = NOT_CREATED.
+Production App and Updater Release build = 0 warning / 0 error. EF pending model changes = NONE.
+Final formal FULL = 1301/1301 PASS, 0 failed / 0 skipped, 19m47s.
+Fresh install / first launch, v1.1.2 -> v1.1.3 same-schema install/launch/data retention,
+downgrade blocking = PASS with production payload, isolated Setup test identity and TEMP/GUID roots.
+Signed frozen package transaction = PASS with existing TEMP test updater adapter:
+Completed / normal-launch Loaded; integrity ok / FK 0 / migration10 / unchanged business fingerprint.
+These automated truth scopes do not replace user acceptance of the formal installed RC.
+ZIP618 entries / PDB0 / non-Windows runtimes0; archive audit / RSA-PSS manifest signature /
+production RevalidateForInstall = PASS; ISCC exit0.
+Terra blocker commit = 280c86f2f30686092f9e603a9bbb8ac593355a27.
+Sol blocker acceptance = eb79c97979f7403eddbf69efaa17ee8fbe31a4c3.
+Confirmed production blocker: transient SQLite sidecar disappeared between enumeration and attributes.
+Exact DataRoot sidecar guard fixed; all unrelated missing/reparse/path checks remain fail-closed.
+Forbidden-scope diff PASS; no src/installer changes after source freeze. Builder implementation unchanged.
+Old candidate8a1e52c7 SUPERSEDED; failed buildde9adf04 and failed FULL evidence retained as history.
+Fresh origin/main = aff932484adf62aed35222f08ec0eb0f4b7fb9aa; Latest = v1.1.2.
+No v1.1.3 tag / Release / upload / Latest change; no main push. Original dirty workspace unchanged.
+Detailed machine receipt: .ai-dev/ACCEPTANCE/S24-T01-RC.json.
+GUI launcher/checklist in the parent isolated artifacts folder; eight Stage23 checks only.
+
+Historical progress follows; old states/identities below never supersede this current disposition.
 # 2026-09-17 Stage24 AUTHORIZED / IN_PROGRESS
 
 Stage24: v1.1.3 Same-Schema Release. Baseline aff932484adf62aed35222f08ec0eb0f4b7fb9aa. Stage23 CLOSED / ACCEPTED with real GUI PASS retained. migration=10; migration11=NOT_CREATED; no schema/protocol/product feature changes. Original dirty workspace untouched. Formal v1.1.3 tag/Release/upload/Latest forbidden until user RC GUI PASS.
