@@ -627,7 +627,7 @@ internal static class UpdateTransaction
             string.Equals(journal.AppPath, journal.OldPath, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(journal.StagingPath, journal.OldPath, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
         ValidateOrdinaryTree(journal.InstallRoot);
-        ValidateOrdinaryTree(journal.DataRoot);
+        ValidateOrdinaryTree(journal.DataRoot, true);
         ValidateOrdinaryTree(Path.GetDirectoryName(path)!);
         if (journal.Schema is not null)
         {
@@ -647,7 +647,7 @@ internal static class UpdateTransaction
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if (!string.Equals(data, Path.Combine(local, "StoreExpiryInspector"), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
 #endif
-        ValidateOrdinaryTree(data);
+        ValidateOrdinaryTree(data, true);
     }
     private static void RequireUnder(string root, string value, string? firstSegment = null)
     {
@@ -655,14 +655,30 @@ internal static class UpdateTransaction
         if (relative == "." || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) || Path.IsPathRooted(relative)) throw new InvalidDataException();
         if (firstSegment is not null && !string.Equals(relative.Split(Path.DirectorySeparatorChar)[0], firstSegment, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
     }
-    private static void ValidateOrdinaryTree(string root)
+#if S9T05_TEST
+    internal static Action<string>? OrdinaryTreeEntryProbe;
+#endif
+    internal static void ValidateOrdinaryTree(string root, bool allowMissingSqliteSidecars = false)
     {
         try { if (new DriveInfo(Path.GetPathRoot(root)!).DriveType != DriveType.Fixed) throw new InvalidDataException(); }
         catch (ArgumentException) { throw new InvalidDataException(); }
         for (var current = new DirectoryInfo(root); current is not null; current = current.Parent)
             if (!current.Exists || (current.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException();
         foreach (var entry in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.AllDirectories))
-            if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException();
+        {
+#if S9T05_TEST
+            OrdinaryTreeEntryProbe?.Invoke(entry);
+#endif
+            try { if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException(); }
+            catch (FileNotFoundException) when (allowMissingSqliteSidecars &&
+                new[] { "app.db-shm", "app.db-wal", "app.db-journal" }.Any(name =>
+                    string.Equals(entry, Path.Combine(root, "data", name), StringComparison.OrdinalIgnoreCase)))
+            {
+                // SQLite may remove its sidecar between enumeration and the attribute read.
+                try { if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException(); }
+                catch (FileNotFoundException) { }
+            }
+        }
     }
     private static void Require(TreeFingerprint actual, TreeFingerprint expected) { if (actual.Hash != expected.Hash || !actual.Files.SequenceEqual(expected.Files, StringComparer.Ordinal)) throw new InvalidDataException(); }
     private static bool Matches(string path, TreeFingerprint expected)
@@ -727,7 +743,7 @@ internal static class UpdateTransaction
     {
         var operation = Path.Combine(journal.DataRoot, "updates", journal.OperationId);
         if (!string.Equals(Path.GetFullPath(path), Path.Combine(operation, "health-ack.json"), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException();
-        ValidateOrdinaryTree(journal.DataRoot);
+        ValidateOrdinaryTree(journal.DataRoot, true);
         ValidateOrdinaryTree(operation);
     }
     private static void TryDeleteOperationPackage(UpdateJournal journal)
