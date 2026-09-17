@@ -1,0 +1,8 @@
+# S24-T01 version semantic audit
+A. Upgrade current product versions: src/StoreExpiryInspector/StoreExpiryInspector.csproj and src/StoreExpiryInspector.Updater/StoreExpiryInspector.Updater.csproj Version 1.1.2 -> 1.1.3. Existing AssemblyVersion/FileVersion derivation unchanged.
+A. Append targetVersion 1.1.3 to tools/release/release-contract.json following existing Same-Schema Slim protocol: previousRelease v1.1.2, source version exactly1.1.2, minimumDirectVersion1.1.2, minimumProtocolVersion2, crossSchemaAllowed=false, identical migration range20260912083448_AdjustCatchupWindowConstraint, inherited ACCEPTED schema evidence. Existing contracts unchanged.
+B. Preserve historical upgrade sources: existing contract source/previousRelease and installer downgrade fixtures (including tests/S21T01-RunInstallerSlim.ps1 v1.1.2).
+C. Preserve historical tests/fixtures/manifests/contracts: existing ReleaseCandidateBuilderTests v1.1.2 contract assertions and all historical payload version identities.
+D. Preserve Stage23 1.1.2 source identity and all historical v1.1.2 Release evidence/documents.
+Release gate blocker found: S16T02InstallerLaunchTests.Candidate_versions_are_1_0_8 reads CURRENT project files while hardcoding1.0.8. Correct only this obsolete current-version assertion to verify valid/current App-Updater version parity/derived four-part format; never rewrite genuine historical fixtures or hardcode1.1.3 for green.
+Fresh release clone baseline: HEAD==origin/main==aff932484adf62aed35222f08ec0eb0f4b7fb9aa; ahead/behind0/0; initially clean.
