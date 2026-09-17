@@ -45,6 +45,7 @@ public sealed class S25T01GuiFixtureTests
             Assert.Equal(2, context.ScopeBaselines.Count(scope => scope.IsCompleted));
             Assert.All(context.Products, product => Assert.Equal(10, product.EffectiveStockQty));
             Assert.All(context.Tasks.SelectMany(task => task.Items), item => Assert.Equal(item.Batch!.AttentionVersion, item.AttentionVersion));
+            var completedTaskId = context.Tasks.Single(task => task.Product.ProductCode == "S25-GUI-001").Id;
             var planPath = Path.Combine(root, "S25-pending-plan.xlsx");
             var exported = new TodayInspectionPlanExportUseCase().Execute(context, new(planPath, context.Tasks.Select(task => task.Id).ToArray()));
             Assert.Equal(55, exported.TaskCount);
@@ -60,13 +61,38 @@ public sealed class S25T01GuiFixtureTests
                 confirmSubmission: () => true);
             var session = CreateSession();
             await session.PreviewAsync(planPath);
-            session.InspectorName = "S25 GUI";
-            await session.SubmitAsync();
+            var pending = new PendingTasksViewModel(request =>
+            {
+                using var query = DatabaseInitializer.CreateContext(databasePath);
+                return new InspectionTaskQuery().SearchOpenTasks(query, request);
+            }, importSession: session);
+            await pending.LoadAsync();
+            pending.Items[0].IsSelected = true;
+            pending.ClearSelectionCommand.Execute(null);
+            Assert.Equal(0, pending.SelectedCount);
+            Assert.All(pending.Items, item => Assert.False(item.IsSelected));
+            Assert.True(pending.CanUseImport);
+
+            var submitted = CreateSession();
+            await submitted.PreviewAsync(planPath);
+            var filled = Assert.Single(submitted.PreviewRows, row => row.TaskId == completedTaskId);
+            Assert.Equal("11", filled.CheckedQtyText);
+            Assert.Equal("可提交", filled.ResultText);
+            submitted.InspectorName = "S25 GUI";
+            await submitted.SubmitAsync();
             Assert.Equal(1, confirmations);
             using (var verify = DatabaseInitializer.CreateContext(databasePath)) Assert.Single(verify.Inspections);
             var reopened = CreateSession();
             await reopened.PreviewAsync(planPath);
             Assert.Empty(reopened.CompleteTaskIds);
+            var closed = Assert.Single(reopened.PreviewRows, row => row.ProductName == filled.ProductName);
+            Assert.Equal("状态变化", closed.ResultText);
+            Assert.Contains("状态已经变化", closed.Reason);
+            using (var verify = DatabaseInitializer.CreateContext(databasePath))
+                Assert.DoesNotContain(completedTaskId, new InspectionPlanDraftApplyUseCase().Preview(verify, planPath).ApplicableTaskIds);
+            reopened.InspectorName = "S25 GUI 重提";
+            await reopened.SubmitAsync();
+            Assert.Equal(1, confirmations);
             using (var verify = DatabaseInitializer.CreateContext(databasePath)) Assert.Single(verify.Inspections);
         }
         finally

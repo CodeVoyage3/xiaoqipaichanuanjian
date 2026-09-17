@@ -13,13 +13,19 @@ public sealed class S25T01PendingTasksViewModelTests
         var vm = Create((_, ids) => { exported = ids; return new("C:\\selected.xlsx", ids.Count, ids.Count); });
         await vm.LoadAsync();
         vm.Items[0].IsSelected = true;
+        await vm.ExportSelectedAsync("C:\\selected.xlsx");
+        Assert.Equal([1], exported!.Order());
         vm.Items[1].IsSelected = true;
+        await vm.ExportSelectedAsync("C:\\selected.xlsx");
+        Assert.Equal([1, 2], exported!.Order());
         await vm.GoToNextPageAsync();
         vm.Items[0].IsSelected = true;
-
         await vm.ExportSelectedAsync("C:\\selected.xlsx");
-
-        Assert.Equal(new long[] { 1, 2, 51 }, exported!.Order());
+        Assert.Equal([1, 2, 51], exported!.Order());
+        vm.ClearSelectionCommand.Execute(null);
+        Assert.Equal(0, vm.SelectedCount);
+        Assert.All(vm.Items, item => Assert.False(item.IsSelected));
+        Assert.False(vm.ExportCommand.CanExecute(null));
     }
 
     [Fact]
