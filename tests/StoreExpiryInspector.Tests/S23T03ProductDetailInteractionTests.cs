@@ -126,6 +126,18 @@ public sealed class S23T03ProductDetailInteractionTests
         Assert.True(thread.Join(TimeSpan.FromSeconds(30))); Assert.Null(failure);
     }
 
+    [Fact]
+    public async Task Catalog_detail_navigation_uses_the_row_parameter_without_row_selection()
+    {
+        var shell = CreateShell(); shell.NavigateTo(ShellPage.ProductCatalog);
+        var row = new ProductCatalogItem(1, "测试商品", "15060502310890", "6976879890025", "食品", 80, 99, null, "discount_50", 1, null, 7);
+        shell.OpenProductCatalogDetailCommand.Execute(row);
+        for (var count = 0; count < 200 && shell.ProductCatalog.IsLoading; count++) await Task.Delay(5);
+        Assert.Equal(ShellPage.ProductCatalogDetail, shell.CurrentPage);
+        Assert.Equal(row.ProductId, shell.ProductCatalog.Selected!.Product.ProductId);
+        shell.ReturnFromProductCatalogCommand.Execute(null);
+        Assert.Equal(ShellPage.ProductCatalog, shell.CurrentPage);
+    }
     private static ShellViewModel CreateShell() => new(
         dashboardLoader: () => new(0, 0, 0, 0, 0, [], ProductCount: 0, BatchCount: 0),
         taskLoader: _ => new([], 0, 1, 50),
@@ -211,6 +223,10 @@ public sealed class S23T03ProductDetailInteractionTests
                 var copied = ReadClipboard(Clipboard.GetText); Console.WriteLine($"copy-column={column};raw={Escape(copied)}");
                 Assert.Equal(expected, copied); Assert.DoesNotContain('\t', copied); Assert.DoesNotContain('\r', copied); Assert.DoesNotContain('\n', copied);
             }
+            Assert.Null(grid.SelectedItem);
+            var entry = Descendants<Button>(catalogWindow).Single(value => AutomationProperties.GetName(value) == "查看商品详情");
+            Assert.Same(row, entry.CommandParameter);
+            Assert.True(entry.Command.CanExecute(entry.CommandParameter));
             catalogWindow.Close();
         }
         finally
