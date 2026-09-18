@@ -1,3 +1,14 @@
+﻿# 2026-09-18 S25-T02 real-source matrix — WAITING_USER_MANUAL_ENV
+
+Current: IN_PROGRESS / WAITING_USER_MANUAL_ENV / BLOCKED_BY_TEST_ENV / NOT_ACCEPTED.
+TEST_CANDIDATE_SIGNING=PASS (user accepted); real Setup4-source=PASS; real original App/Updater Online direct4-source=PASS; recovery3-source=PASS + v1.1.1 AccessDenied/FailedNeedsManualRecovery BLOCKED.
+Setup verified minimum1.1.0; Online numeric candidate1.1.0, complete recovery gate unresolved; generation minimumStatus staysCANDIDATE_NOT_VERIFIED, no minimum raise/new generation/bridge.
+Evidence and source truth scope: .ai-dev/ACCEPTANCE/S25-T02-MATRIX.md. Private99.25.2 retained with frozen/final hashes; no public release/tag/Latest/assets/main integration. Only next action is manual-v111-recovery.wsb for a fresh independent v1.1.1 recovery proof; no production fix or successor card.
+A/B/D PASS at recorded scopes; C PARTIAL; E NOT_VERIFIED_PENDING_RECOVERY_GATE. Do not assert A-E complete or USER_GOVERNANCE_PENDING/CLOSED/ACCEPTED yet.
+FULL=NOT_RUN / NO_FULL; S25-T01 CLOSED/ACCEPTED/REAL_USER_GUI_PASS retained; S25-T03 NOT_STARTED. Original dirty workspace untouched.
+
+Historical records below.
+
 # S25-T02 | Same-Schema 跨版本直升策略与兼容基线治理
 
 Status: AUTHORIZED / IN_PROGRESS
