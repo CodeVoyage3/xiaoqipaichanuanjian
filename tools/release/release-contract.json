@@ -7,7 +7,8 @@
       {
         "id": "G1-m10-protocol2",
         "minimumSourceVersion": "1.1.0",
-        "minimumStatus": "CANDIDATE_NOT_VERIFIED",
+        "minimumStatus": "VERIFIED",
+        "verificationEvidence": ".ai-dev/ACCEPTANCE/S25-T02-MATRIX.md",
         "minimumProtocolVersion": 2,
         "migrations": [
           "20260826123739_InitialCreate",

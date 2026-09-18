@@ -1,4 +1,20 @@
-﻿# 2026-09-18 S25-T02 real-source matrix — WAITING_USER_MANUAL_ENV
+# S25-T02 最终技术收口｜USER_GOVERNANCE_PENDING
+
+当前状态：TECHNICAL_PASS / USER_GOVERNANCE_PENDING / NOT_ACCEPTED，等待用户最终裁决。
+A Generation/Builder、B 四源真实 Setup、C 四源真实 Online 正常直升及故障恢复、D 已登记拒绝边界、E Generation minimum 技术验证均 PASS。
+v1.1.0 / v1.1.1 / v1.1.2 / v1.1.3：Setup=PASS，Online=PASS。v1.1.2 恢复采用实际自然 AccessDenied 回滚证据，原计划进程故障未注入断言仍保留，不伪造受控注入 PASS。
+v1.1.1 人工独立 Sandbox 恢复 operation=5134dac6-246e-46f2-b5ed-1847735ebbf2；发布版 Updater SHA076520E9707EAEE5F0B9A89DEEE49CF848EB746F15561870EB262520D998CA75；实际候选验证进程 ACK 前终止，Phase15 RolledBack、旧1.1.1健康 ACK及正常窗口、完整有序10条 migration、integrity=ok/FK=0/DataRoot一致，前后指纹5be06a9441979d3814bb2d1833e9f44f6d0388ed9257bbeacfb5fc5add2f4fbd保持。
+原 v1.1.1 AccessDenied 归类 E 测试环境阻断，人工复核解除当前门禁；不支持协议 breaking/必须桥接结论。原具体拒绝文件和占用者未定位，不宣称取证根因已证明，原失败日志保留。
+G1-m10-protocol2 minimum 技术状态 VERIFIED，minimumSourceVersion=1.1.0；Setup minimumDirectVersion=1.1.0，Online source.minVersion=1.1.0，两路径正式技术基线一致。用户治理尚未 ACCEPTED/CLOSED。
+未来同 Generation 新版本必须继承1.1.0 minimum；previousRelease只决定谱系及source.maxVersion，不抬高minimum。改变minimum须新Generation及明确breaking/桥接证据和用户裁决。
+若未来v1.1.4仍属G1且上一正式版为v1.1.3：source.minVersion=1.1.0、maxVersion=1.1.3、minMigration=maxMigration=20260912083448_AdjustCatchupWindowConstraint；minimumDirectVersion=1.1.0、minimumProtocolVersion=2、SAME_SCHEMA_SLIM、crossSchemaAllowed=false。仅推荐，不创建未来release条目/tag/候选。
+独立核验：s25-t02-evidence/Verify-FinalTechnicalClosure.ps1；sandbox-matrix/technical-closure-verification.json=PASS；人工原始证据output-user-v111/v111-recovery。四源其余原始证据及冻结四资产SHA256重新核验有效。
+Sidecar/WAL历史风险及私有源真实性范围保持原报告限定：不宣称所有旧Updater竞态消除，也不把AccessDenied归因WAL；不是公共GitHub线路验证。
+99.25.2=PRIVATE_RETAINED_FOR_EVIDENCE，哈希不变，无公开上传/Latest/tag/门店交付/正式资产替换。正式私钥及宿主机原dirty工作区未动。
+FULL=NOT_RUN / NO_FULL；S25-T03=NOT_STARTED；不merge/push main；S25-T01原GUI PASS/CLOSED保留。
+
+以下为历史记录；此前等待人工复核状态已由上述最终技术结论取代。
+# 2026-09-18 S25-T02 real-source matrix — WAITING_USER_MANUAL_ENV
 
 Current: IN_PROGRESS / WAITING_USER_MANUAL_ENV / BLOCKED_BY_TEST_ENV / NOT_ACCEPTED.
 TEST_CANDIDATE_SIGNING=PASS (user accepted); real Setup4-source=PASS; real original App/Updater Online direct4-source=PASS; recovery3-source=PASS + v1.1.1 AccessDenied/FailedNeedsManualRecovery BLOCKED.
