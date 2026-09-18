@@ -55,7 +55,9 @@ $changed = Clone $document
 $changed.compatibilityPolicy.generations[0].minimumSourceVersion = '1.1.3'
 Rejected (Probe $changed $release) 'create an evidenced new generation'
 Rejected (Probe $changed $release $before) 'earliest historical'
-Rejected (Probe $document $release $document 'RELEASE_CANDIDATE') 'independently verified'
+$unverified = Clone $document
+$unverified.compatibilityPolicy.generations[0].minimumStatus = 'CANDIDATE_NOT_VERIFIED'
+Rejected (Probe $unverified $release $document 'RELEASE_CANDIDATE') 'independently verified'
 $newRoot = Clone $document
 $rootGeneration = Clone $newRoot.compatibilityPolicy.generations[0]
 $rootGeneration.id = 'G2-without-evidence'
@@ -77,6 +79,6 @@ $missing = Clone $document
 $missing.PSObject.Properties.Remove('compatibilityPolicy')
 Rejected (Probe $missing $release) 'require compatibility generation'
 $changed = Clone $document
-$changed.releases[-1].source.minVersion = '1.1.0'
+$changed.releases | Where-Object targetVersion -eq '1.1.3' | ForEach-Object { $_.source.minVersion = '1.1.0' }
 Rejected (Probe $changed $release $before) 'historical release contract changed'
 Write-Output "PASS: $checks generation/Builder assertions; no build, FULL or runtime matrix executed"

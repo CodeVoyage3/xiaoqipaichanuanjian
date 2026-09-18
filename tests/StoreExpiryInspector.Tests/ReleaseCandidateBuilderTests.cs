@@ -34,6 +34,29 @@ public sealed class ReleaseCandidateBuilderTests
     }
 
     [Fact]
+    public void Version114ContractUsesVerifiedGenerationAndVersion113Predecessor()
+    {
+        using var contract = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "release", "release-contract.json")));
+        var release = contract.RootElement.GetProperty("releases").EnumerateArray().Single(item => item.GetProperty("targetVersion").GetString() == "1.1.4");
+        Assert.Equal("v1.1.3", release.GetProperty("previousRelease").GetString());
+        Assert.Equal(2, release.GetProperty("minimumProtocolVersion").GetInt32());
+        var setup = release.GetProperty("setupCompatibility");
+        Assert.Equal("SAME_SCHEMA_SLIM", setup.GetProperty("setupMode").GetString());
+        Assert.Equal("1.1.0", setup.GetProperty("minimumDirectVersion").GetString());
+        Assert.False(setup.GetProperty("crossSchemaAllowed").GetBoolean());
+        var source = release.GetProperty("source");
+        Assert.Equal("1.1.0", source.GetProperty("minVersion").GetString());
+        Assert.Equal("1.1.3", source.GetProperty("maxVersion").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, source.GetProperty("minMigration").GetString());
+        Assert.Equal(CurrentSchemaIdentity.LastMigration, source.GetProperty("maxMigration").GetString());
+        var generation = contract.RootElement.GetProperty("compatibilityPolicy").GetProperty("generations").EnumerateArray().Single();
+        Assert.Equal("G1-m10-protocol2", generation.GetProperty("id").GetString());
+        Assert.Equal("VERIFIED", generation.GetProperty("minimumStatus").GetString());
+        Assert.Equal(2, generation.GetProperty("minimumProtocolVersion").GetInt32());
+        Assert.Equal(10, generation.GetProperty("migrations").GetArrayLength());
+    }
+
+    [Fact]
     public void ContractAndReceiptSchemaStayNarrow()
     {
         var root = RepositoryRoot();
