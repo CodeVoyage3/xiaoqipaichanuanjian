@@ -1040,12 +1040,11 @@
                                 </Grid>
                             </Border>
 
-                            <Border Margin="0,12,0,0" Padding="16,12" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                            <Border Margin="0,12,0,0" Padding="16,10" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6">
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Dashboard.TodayWorkText}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" />
-                                        <TextBlock Text="{Binding Dashboard.TomorrowWorkText}" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Content="进入今日排查" Command="{Binding OpenTodayTasksCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="16,0,0,0" VerticalAlignment="Center" />
                                 </Grid>
