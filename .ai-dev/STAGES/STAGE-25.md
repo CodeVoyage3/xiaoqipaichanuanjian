@@ -1,3 +1,13 @@
+# 2026-09-18 S25-T03 方案一授权实施
+
+Stage25 = IN_PROGRESS；S25-T03 = AUTHORIZED / IN_PROGRESS / NOT_ACCEPTED。
+用户锁定：导航仅排序、首页紧凑今日主入口、已有数量复用、首页按钮明确回今日、普通导航保持；无 Badge/新查询/折叠代码。
+基线 626a114914fba6265a1e847f471f44b1e24dc716，T01 GUI PASS/CLOSED、T02 CLOSED/ACCEPTED 全部保留。
+全新 Terra 实施、Sol 独立技术验收；FULL = NOT_RUN / NO_FULL；技术后 USER_GUI_PENDING，真实用户 GUI PASS 前不关闭。
+隔离分支 codex/s25-t03-today-entry；原 dirty 工作区与旧 Stage25 链不动；不 main/push/Version/Release。
+详见 .ai-dev/TASKS/S25-T03.md 与 .ai-dev/ACCEPTANCE/S25-T03.md。
+
+以下为历史记录。
 # 2026-09-18 S25-T02 用户治理裁决｜CLOSED / ACCEPTED
 
 S25-T02 = CLOSED / ACCEPTED，用户最终治理裁决通过；USER_GOVERNANCE_PENDING 已解除。
@@ -137,4 +147,5 @@ Version App/Updater=1.1.3；migration=10；migration11=NOT_CREATED。
 
 S25-T02：Same-Schema｜跨版本直升策略与兼容基线治理。
 同一兼容世代内，Schema、Updater、manifest/signature、持久化格式和必要转换均兼容时，旧版本默认直接升级当前最新版，无需逐版本升级。只有明确 breaking change 才提高最低兼容版本或要求桥接；未验证不等于技术不兼容。最低兼容版本由未来 T02 审计确定，不预先写死。已发布资产不可偷换。本轮不审计或实施 T02。
+
 

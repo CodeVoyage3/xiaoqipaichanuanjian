@@ -1,3 +1,13 @@
+# 2026-09-18 S25-T03 方案一授权实施
+
+Stage25 = IN_PROGRESS；S25-T03 = AUTHORIZED / IN_PROGRESS / NOT_ACCEPTED。
+用户锁定：导航仅排序、首页紧凑今日主入口、已有数量复用、首页按钮明确回今日、普通导航保持；无 Badge/新查询/折叠代码。
+基线 626a114914fba6265a1e847f471f44b1e24dc716，T01 GUI PASS/CLOSED、T02 CLOSED/ACCEPTED 全部保留。
+全新 Terra 实施、Sol 独立技术验收；FULL = NOT_RUN / NO_FULL；技术后 USER_GUI_PENDING，真实用户 GUI PASS 前不关闭。
+隔离分支 codex/s25-t03-today-entry；原 dirty 工作区与旧 Stage25 链不动；不 main/push/Version/Release。
+详见 .ai-dev/TASKS/S25-T03.md 与 .ai-dev/ACCEPTANCE/S25-T03.md。
+
+以下为历史记录。
 # 2026-09-18 S25-T02 用户治理裁决｜CLOSED / ACCEPTED
 
 S25-T02 = CLOSED / ACCEPTED，用户最终治理裁决通过；USER_GOVERNANCE_PENDING 已解除。
@@ -1395,5 +1405,6 @@ Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02 TECHNICALLY_ACCEPTED / 
 - V1-UI-01 最终结论（2026-09-03）：用户真实 WPF 首轮已通过导航顺序、整体蓝色降噪、Search/Refresh/分页中性视觉、ComboBox 产品方案、三条件组合筛选、清空、计数/空态/分页、StageBadge 与 Primary/Danger 语义；GUI R1 后又明确确认品牌区紧凑布局及阶段/大类中文 display 两项重验 `PASSED`。结合 Sol 既有新鲜技术门禁，V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`。V1-F03/I04 继续 `CLOSED`；Stage 8/9 与在线升级均未启动，下一阶段等待用户另行批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
+
 
 
