@@ -1,3 +1,24 @@
+# 2026-09-18 两项UI返修技术通过 / USER_GUI_PENDING
+
+用户已确认S25-T01主功能GUI通过，本次仅复验复选框视觉一致性与分页跳闪。S25-T01=USER_GUI_PENDING，禁止CLOSED/ACCEPTED；T02 NOT_STARTED；FULL=NOT_RUN / NO_FULL。
+全新Terra提交3aca2107d09302ae71f3dd6b40737b8f8c77e352。仅MainWindow.xaml、Stage4ViewModels.cs与直接S25专项测试；SelectedTaskIds/跨页规则/Count/Export/Import/正式UseCase/Excel/Schema/migration/Version均无改动。
+提取今日排查原实际CheckBox即时绑定、居中、Focusable规则为InspectionTaskCheckBoxStyle，今日和待排查两布局三处共用；待排查仅选择列模板固定透明背景，不绘制Cell选中蓝块和焦点边框，其他列/全局DataGrid样式不变。
+分页移除IsLoading折叠整个待排查DataGrid的触发器；加载提示Hidden保留工具栏空间防止换行高度变化。查询期间旧页集合保持不动，新行全部准备后一次替换Items并发一次属性通知；原HashSet恢复逻辑不动。
+Sol独立19/19 PASS、0skip，含真实STA共享样式/透明选中cell/计数/跨页/筛选刷新清选及blockedquery双向保持旧行且一次发布；Production Release build0warning/0error。真实肉眼无跳闪仍需用户两项GUI复验，不替代GUI回执。
+候选C:\Users\39037\Documents\S25-T01-UI复验\app；启动验收.cmd及桌面「S25-T01 两项UI复验」。旧两种验收桌面入口也更新至此新候选。
+隔离根C:\Users\39037\AppData\Local\Temp\2c3380ef-d0a8-4e71-85c7-00cbd7241306；复用上一候选启动前已验证synthetic fixture备份复制到全新GUID根，DB源/副本SHA匹配。本轮不额外重跑fixture业务测试；正式DB不读不改。
+真实WinPS入口启动PID32912、窗口921470、RespondingTrue，命令行显式新根。DLL SHA256 F31AD1845E428DD794519D573AC78879495DE0B272B03B8FABF6A9236F283042。
+证据checks/sol-ui-polish.trx、production-build.log、actual-launch.log；Version1.1.3/migration10/migration11未创建（相关源文件无diff）。原dirty正式工作区未变，不main/push/tag/Release。
+
+以下保留历史记录。
+# 2026-09-18 主功能GUI通过 / 两项UI返修
+
+用户确认选择、导出、回导主功能GUI通过；S25-T01=USER_GUI_PENDING，仍不得CLOSED/ACCEPTED。只复验复选框视觉一致性和分页跳闪；S25-T02=NOT_STARTED；FULL=NOT_RUN / NO_FULL。
+Sol只读：选择列模板仍绘制Cell Background导致选中蓝块；今日排查checkbox是已验收的行内模板，没有现成专用Style。提取共享视觉规则，保持今日行为，待排查仅选择列透明且无明显cell焦点框，其他列不动。
+分页IsLoading会让PendingDataGridStyle VisibilityCollapsed；成功结果又Clear/Add重建行集合。仅修加载显示和页结果一次发布，不改选择规则、Count、Export/Import及其他正式合同。
+本轮全新Terra /root/s25_t01_ui_polish_new；Sol独立最小专项和Production Release build，完成提供新隔离候选。原dirty正式工作区不触碰，不main/push/Release。
+
+以下保留历史记录。
 # 2026-09-18 选择链返修技术通过 / 新候选 USER_GUI_PENDING
 
 用户GUI_FAIL回执仍有效，S25-T01=GUI_FAIL / REPAIR_REQUIRED，不CLOSED/ACCEPTED；新返修候选等待用户复验选择链。其他导出/回导人工验收保持暂停，选择链确认后再继续。Stage25 IN_PROGRESS；T02 NOT_STARTED；FULL=NOT_RUN / NO_FULL。
