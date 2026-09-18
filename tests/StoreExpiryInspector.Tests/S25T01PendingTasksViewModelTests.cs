@@ -112,6 +112,30 @@ public sealed class S25T01PendingTasksViewModelTests
         await vm.GoToPreviousPageAsync(); Assert.All(vm.Items, row => Assert.False(row.IsSelected));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SelectionNotificationsSurviveRowsBeingReplaced(bool clearSelection)
+    {
+        var vm = Create((path, ids) => new(path, ids.Count, ids.Count));
+        await vm.LoadAsync();
+        var row = vm.Items[0];
+        if (clearSelection) row.IsSelected = true;
+        row.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(row.IsSelected)) vm.Items.Clear();
+        };
+
+        if (clearSelection) vm.ClearSelectionCommand.Execute(null);
+        else row.IsSelected = true;
+
+        Assert.Equal(clearSelection ? 0 : 1, vm.SelectedCount);
+        Assert.Equal(!clearSelection, vm.ExportCommand.CanExecute(null));
+        Assert.Equal(!clearSelection, vm.ClearSelectionCommand.CanExecute(null));
+        await vm.LoadAsync();
+        Assert.Equal(!clearSelection, vm.Items[0].IsSelected);
+    }
+
     [Fact]
     public async Task CrossPageSelectionExportsOnlyTheExplicitSelectedTaskIds()
     {

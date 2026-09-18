@@ -1140,21 +1140,21 @@ public sealed class PendingTasksViewModel : ViewModelBase
     private void SetSelected(long taskId, bool selected)
     {
         if (selected) _selectedTaskIds.Add(taskId); else _selectedTaskIds.Remove(taskId);
-        foreach (var item in Items.Where(item => item.TaskId == taskId)) item.NotifySelectionChanged();
+        foreach (var item in Items.ToArray().Where(item => item.TaskId == taskId)) item.NotifySelectionChanged();
         RaiseSelectionState();
     }
 
     private void RemoveSubmittedTaskIds(IReadOnlyList<long> taskIds)
     {
         foreach (var taskId in taskIds) _selectedTaskIds.Remove(taskId);
-        foreach (var item in Items) item.NotifySelectionChanged();
+        foreach (var item in Items.ToArray()) item.NotifySelectionChanged();
         RaiseSelectionState();
     }
 
     private void ClearSelection()
     {
         _selectedTaskIds.Clear();
-        foreach (var item in Items) item.NotifySelectionChanged();
+        foreach (var item in Items.ToArray()) item.NotifySelectionChanged();
         RaiseSelectionState();
     }
 
