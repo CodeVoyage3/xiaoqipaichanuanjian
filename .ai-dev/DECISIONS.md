@@ -1,3 +1,15 @@
+# 2026-09-18 S25-T02 用户治理裁决｜CLOSED / ACCEPTED
+
+S25-T02 = CLOSED / ACCEPTED，用户最终治理裁决通过；USER_GOVERNANCE_PENDING 已解除。
+Stage25 = IN_PROGRESS / WAITING_USER_NEXT_STEP；S25-T01 原 CLOSED / ACCEPTED / REAL_USER_GUI_PASS 保留；S25-T03 = NOT_STARTED / NOT_AUTHORIZED。
+当前 Compatibility Generation = G1-m10-protocol2；已验证最低兼容来源 = v1.1.0；Setup minimumDirectVersion = 1.1.0；Online source.minVersion = 1.1.0，两条路径基线一致。
+同一 Generation 后续版本继续继承 v1.1.0 minimum。previousRelease 只决定来源版本上限，不得自动抬高 minimum。只有明确 breaking change 才能建立新 Compatibility Generation，并保留既定 breaking/桥接证据及用户裁决门禁。
+四源真实 Setup / Online 矩阵技术收口及已验证 minimum 获用户接受。旧 Updater sidecar / WAL 时序风险不宣称彻底消除；既有私有测试源范围、历史失败取证及风险说明全部保留。
+99.25.2 = PRIVATE_RETAINED_FOR_EVIDENCE；不公开、不发布、不替换正式资产。
+本次仅治理登记：未重新测试、未重新 build、未修改生产代码或发布契约；FULL = NOT_RUN / NO_FULL；未 merge / push main；未启动 S25-T03。
+本地治理提交完成后停止，等待用户确认下一步。
+
+以下为历史技术收口及验证记录，历史等待裁决状态不代表当前状态。
 # S25-T02 最终技术收口｜USER_GOVERNANCE_PENDING
 
 当前状态：TECHNICAL_PASS / USER_GOVERNANCE_PENDING / NOT_ACCEPTED，等待用户最终裁决。
