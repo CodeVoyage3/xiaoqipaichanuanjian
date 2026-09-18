@@ -1,3 +1,15 @@
+# 2026-09-18 S25-T03 首页局部小修 R1｜USER_GUI_PENDING
+
+S25-T03 = TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED；未 CLOSED / ACCEPTED，用户仅复验首页此处。
+全新 Terra 提交 fdbd30f471996bcec9415bf4a4812d791bb637bf：仅 MainWindow.xaml 顶部 Dashboard.TomorrowWorkText 行删除、Padding16,12→16,10；Sol 精确重建预期文本比对 PASS，其他源内容全部相同，下方 TomorrowPlanText 明日提示保持。
+Sol 最小界面专项1/1 PASS、0skip（既有XAML层级/Command/style/导航顺序用例，no-build）；此前23/23直接专项保留，不重复执行。Production Release build0warning/0error，测试模式false、Version1.1.3.0；FULL = NOT_RUN / NO_FULL。
+新候选：C:\Users\39037\.codex\visualizations\2026\09\18\01a0b319-cbb0-73d1-88d9-0d513f92adaa\S25-T03-GUI-R1；启动验收.cmd、GUI复验清单.md。冻结上一候选启动前模拟DB复制至全新GUID根，源副本SHA匹配，不重跑夹具、不使用活跃旧DB或正式DB。
+新模拟数据根 D:\DevCache\Temp\df276f1b-36a6-4124-9e8b-f7d9502ddffc；实际WinPS入口启动PID36868、窗口463920、Responding=true，命令行显式新根。技术启动不代替用户 GUI PASS。
+新DLL SHA256：413627E812649D56FFE5259C31F11DD97B5FF89CB082F844BA81D5ECA0C2DE62。
+技术证据在候选checks：sol-exact-diff.log、sol-ui-r1.trx、production-build.log、fixture-copy.json、actual-launch.json；完整回执 .ai-dev/ACCEPTANCE/S25-T03.json 的 uiRevisionR1。
+导航、首页进入今日行为、次级待排查、今日/明日计算、T01/T02、Schema/migration、Version及发布链均不改；原dirty和旧Stage25链保持。不main/push/tag/Release；等待用户单处复验回执。
+
+以下为历史记录。
 # 2026-09-18 S25-T03 技术通过｜USER_GUI_PENDING
 
 S25-T03 = TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED；真实用户 GUI PASS 前不得 CLOSED / ACCEPTED。
@@ -165,6 +177,7 @@ Version App/Updater=1.1.3；migration=10；migration11=NOT_CREATED。
 
 S25-T02：Same-Schema｜跨版本直升策略与兼容基线治理。
 同一兼容世代内，Schema、Updater、manifest/signature、持久化格式和必要转换均兼容时，旧版本默认直接升级当前最新版，无需逐版本升级。只有明确 breaking change 才提高最低兼容版本或要求桥接；未验证不等于技术不兼容。最低兼容版本由未来 T02 审计确定，不预先写死。已发布资产不可偷换。本轮不审计或实施 T02。
+
 
 
 

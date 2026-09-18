@@ -58,12 +58,40 @@
     "head": "626a114914fba6265a1e847f471f44b1e24dc716",
     "status": []
   },
-  "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI",
+  "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R1",
   "limitations": [
     "GUI visual and real user acceptance pending",
     "Targeted test build retained NU1900 audit network warnings; production build zero warnings",
     "Initial GUI preparation MSBuild C TEMP access denied; new D TEMP run passed; failure logs retained"
   ],
   "mainMergePush": "NOT_DONE",
-  "release": "UNCHANGED"
+  "release": "UNCHANGED",
+  "uiRevisionR1": {
+    "baseline": "edd35371e1ba0ddeb67702043975be8e41f1b010",
+    "terraCommit": "fdbd30f471996bcec9415bf4a4812d791bb637bf",
+    "scope": "MainWindow.xaml only: delete top tomorrow line; Padding16,12 to16,10",
+    "exactDiff": "PASS",
+    "targetedTest": "1/1 PASS; no-build XamlKeepsNavigationAndHomeEntryHierarchy",
+    "productionBuild": "PASS / 0warning / 0error",
+    "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R1",
+    "dllSha256": "413627E812649D56FFE5259C31F11DD97B5FF89CB082F844BA81D5ECA0C2DE62",
+    "fixtureCopy": {
+      "source": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI/checks/synthetic-prelaunch.db",
+      "root": "D:\\DevCache\\Temp\\df276f1b-36a6-4124-9e8b-f7d9502ddffc",
+      "copyHash": "356545CE696A84FB0785EEB1AE5190F0156F60998E6B7DF77C5406FBC9AFDF8B",
+      "sourceHash": "356545CE696A84FB0785EEB1AE5190F0156F60998E6B7DF77C5406FBC9AFDF8B",
+      "match": true
+    },
+    "launch": {
+      "PID": 36868,
+      "Window": 463920,
+      "Title": "门店效期排查软件",
+      "Responding": true,
+      "CommandLine": "\"C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R1\\app\\StoreExpiryInspector.exe\" --data-root \"D:\\DevCache\\Temp\\df276f1b-36a6-4124-9e8b-f7d9502ddffc\" --allow-existing-isolated-data-root "
+    },
+    "userGui": "PENDING; home entry only",
+    "full": "NOT_RUN / NO_FULL",
+    "previousTargeted": "23/23 retained; not rerun",
+    "version": "1.1.3.0"
+  }
 }
