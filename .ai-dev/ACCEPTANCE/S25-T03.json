@@ -58,7 +58,7 @@
     "head": "626a114914fba6265a1e847f471f44b1e24dc716",
     "status": []
   },
-  "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R1",
+  "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R2",
   "limitations": [
     "GUI visual and real user acceptance pending",
     "Targeted test build retained NU1900 audit network warnings; production build zero warnings",
@@ -93,5 +93,74 @@
     "full": "NOT_RUN / NO_FULL",
     "previousTargeted": "23/23 retained; not rerun",
     "version": "1.1.3.0"
+  },
+  "fixtureRevisionR2": {
+    "userGui": "PENDING",
+    "full": "NOT_RUN / NO_FULL",
+    "after": {
+      "HasNoImportData": false,
+      "HasError": false,
+      "IsLoading": false,
+      "OpenTaskCount": 54,
+      "WithdrawCount": 18,
+      "Discount50Count": 36,
+      "PriorityRows": 5,
+      "LastImportText": "最近一次成功导入：2026-09-18 14:21",
+      "PriorityListVisibleByExistingGates": true
+    },
+    "sourceChanges": "NONE / production and tests unchanged",
+    "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R2",
+    "productionBuild": "NOT_RERUN; all R1 program bytes retained and SHA256-equivalent",
+    "root": "D:\\DevCache\\Temp\\9b9eaef2-4387-4009-997e-a274b530b35c",
+    "launch": {
+      "PID": 40540,
+      "Window": 11473462,
+      "Title": "门店效期排查软件",
+      "Responding": true,
+      "CommandLine": "\"C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R2\\app\\StoreExpiryInspector.exe\" --data-root \"D:\\DevCache\\Temp\\9b9eaef2-4387-4009-997e-a274b530b35c\" --allow-existing-isolated-data-root "
+    },
+    "correction": {
+      "before": [
+        [
+          1,
+          "succeeded",
+          "2026-09-18 06:21:00.6229517",
+          0
+        ]
+      ],
+      "after": [
+        [
+          1,
+          "Succeeded",
+          "2026-09-18 06:21:00.6229517",
+          0
+        ]
+      ],
+      "integrity": "ok",
+      "foreignKeyErrors": 0,
+      "openStages": [
+        [
+          "discount_50",
+          36
+        ],
+        [
+          "withdraw",
+          18
+        ]
+      ]
+    },
+    "detail": "Existing synthetic ImportRecord used lowercase succeeded; production expects Succeeded; ConfirmedImportExecutor writes correct constant",
+    "classification": "A / GUI fixture invalid ImportRecord status",
+    "before": {
+      "HasNoImportData": true,
+      "HasError": false,
+      "IsLoading": false,
+      "OpenTaskCount": 54,
+      "WithdrawCount": 18,
+      "Discount50Count": 36,
+      "PriorityRows": 5,
+      "LastImportText": "暂无导入数据",
+      "PriorityListVisibleByExistingGates": false
+    }
   }
 }

@@ -1,3 +1,16 @@
+# 2026-09-18 S25-T03 首页只读诊断｜仅验收数据 R2
+
+S25-T03 保持 TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED，不 CLOSED / ACCEPTED。
+分类 A：GUI模拟夹具 ImportRecord 状态不合正式合同；不是此次现象对应的生产逻辑BUG。
+首页HasNoImportData=成功加载但无LastSuccessfulImportAtUtc；DashboardDataGridStyle据此隐藏优先处理。Query仅取Status==ImportStatuses.Succeeded、未撤销、有ConfirmedAtUtc的导入。正式常量为Succeeded，正式ConfirmedImportExecutor使用该常量；夹具S25T01GuiFixtureTests写succeeded（小写），所以实际存在记录但不被认作成功导入。不是没有生成ImportRecord。
+只修新模拟DB现有id1的status：succeeded→Succeeded；不新增重复导入、不改生产或测试源码、不重建生产程序。以后新模拟数据应复用R2 corrected fixture-after.db，不能盲用原夹具。
+Sol外部只读探针对候选现有编译Query/VM对照：修正前HasNoImportData=true、优先数据5条但隐藏；修正后及实际启动后HasNoImportData=false、优先数据5条且全部显示条件满足；待排查54、收仓18、5折36保持。DB完整性ok、FK0。
+探针仅checks内独立工具，引用冻结程序集并以Sqlite ReadOnly打开模拟DB；无生产ProjectReference或生产build。初引用相对路径错误日志保留，最终对照PASS。
+R2候选路径及新数据根见S25-T03.json的fixtureRevisionR2。全部程序文件与R1逐文件SHA256一致；实际PID40540、窗口11473462、Responding=true，命令行显式全新模拟根。技术启动不代替真实GUI确认。
+候选checks保留修正前后DB、fixture-correction.json、dashboard-before/after/after-launch.json、app-hash-equivalence.log及actual-launch.json。
+FULL=NOT_RUN / NO_FULL；原23/23、UI1/1及R1生产build证据保留，不重复业务专项或生产build。T01/T02/导航/规则/Schema/migration/Version/Release保持；无main merge/push；原dirty与旧Stage25链不动。
+
+以下为历史记录。
 # 2026-09-18 S25-T03 首页局部小修 R1｜USER_GUI_PENDING
 
 S25-T03 = TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED；未 CLOSED / ACCEPTED，用户仅复验首页此处。
@@ -1435,6 +1448,7 @@ Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02 TECHNICALLY_ACCEPTED / 
 - V1-UI-01 最终结论（2026-09-03）：用户真实 WPF 首轮已通过导航顺序、整体蓝色降噪、Search/Refresh/分页中性视觉、ComboBox 产品方案、三条件组合筛选、清空、计数/空态/分页、StageBadge 与 Primary/Danger 语义；GUI R1 后又明确确认品牌区紧凑布局及阶段/大类中文 display 两项重验 `PASSED`。结合 Sol 既有新鲜技术门禁，V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`。V1-F03/I04 继续 `CLOSED`；Stage 8/9 与在线升级均未启动，下一阶段等待用户另行批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
+
 
 
 
