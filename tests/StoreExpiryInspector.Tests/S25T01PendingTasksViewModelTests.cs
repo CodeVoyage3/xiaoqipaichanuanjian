@@ -28,15 +28,22 @@ public sealed class S25T01PendingTasksViewModelTests
                 var document = XDocument.Load(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
                 var templates = document.Descendants(ns + "CheckBox").Where(element => (string?)element.Attribute("AutomationProperties.Name") == "选择待排查任务").Select(element => element.Parent!).ToArray();
                 Assert.Equal(2, templates.Length);
+                var sharedStyleElement = document.Descendants(ns + "Style").Single(element => (string?)element.Attribute(x + "Key") == "InspectionTaskCheckBoxStyle");
+                sharedStyleElement.Attribute(x + "Key")!.Remove();
+                var sharedStyle = (Style)XamlReader.Parse(sharedStyleElement.ToString());
+                var checkboxes = document.Descendants(ns + "CheckBox").Where(element => ((string?)element.Attribute("AutomationProperties.Name"))?.StartsWith("选择") == true).ToArray();
+                Assert.Equal(3, checkboxes.Length);
+                Assert.All(checkboxes, check => Assert.Equal("{StaticResource InspectionTaskCheckBoxStyle}", (string?)check.Attribute("Style")));
                 foreach (var templateElement in templates)
                 {
+                    templateElement.Element(ns + "CheckBox")!.Attribute("Style")!.Remove();
                     var template = (DataTemplate)XamlReader.Parse(templateElement.ToString());
                     var panel = new StackPanel { BindingGroup = new BindingGroup() };
                     var window = new Window { Content = panel, Width = 100, Height = 100, ShowInTaskbar = false };
                     CheckBox Bind(PendingInspectionTaskViewModel row)
                     {
                         panel.Children.Clear(); panel.DataContext = row;
-                        var check = (CheckBox)template.LoadContent(); panel.Children.Add(check);
+                        var check = (CheckBox)template.LoadContent(); check.Style = sharedStyle; panel.Children.Add(check);
                         check.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
                         return check;
                     }
@@ -67,10 +74,13 @@ public sealed class S25T01PendingTasksViewModelTests
                 var styleElement = document.Descendants(ns + "Style").Single(element => (string?)element.Attribute(x + "Key") == "PendingTaskSelectionCellStyle");
                 styleElement.Attribute(x + "Key")!.Remove();
                 var style = (Style)XamlReader.Parse(styleElement.ToString());
-                var cell = new DataGridCell { Style = style, Content = new CheckBox(), BorderThickness = new Thickness(2) };
+                var cell = new DataGridCell { Style = style, Content = new CheckBox(), BorderThickness = new Thickness(2), Background = System.Windows.Media.Brushes.Blue, IsSelected = true };
                 cell.ApplyTemplate(); cell.Measure(new Size(52, 40)); cell.Arrange(new Rect(0, 0, 52, 40));
                 var border = Assert.IsType<Border>(System.Windows.Media.VisualTreeHelper.GetChild(cell, 0));
                 Assert.Equal(new Thickness(0), border.BorderThickness);
+                Assert.Equal(System.Windows.Media.Brushes.Transparent, border.Background);
+                var gridStyle = document.Descendants(ns + "Style").Single(element => (string?)element.Attribute(x + "Key") == "PendingDataGridStyle");
+                Assert.DoesNotContain(gridStyle.Descendants(ns + "DataTrigger"), trigger => (string?)trigger.Attribute("Binding") == "{Binding PendingTasks.IsLoading}");
                 Assert.Equal(HorizontalAlignment.Center, cell.HorizontalContentAlignment);
                 Assert.Equal(VerticalAlignment.Center, cell.VerticalContentAlignment);
             }
@@ -78,6 +88,50 @@ public sealed class S25T01PendingTasksViewModelTests
         });
         thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
         if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+
+    [Fact]
+    public async Task PagingRetainsOldRowsUntilOneReadyPageIsPublished()
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var block = false;
+        var vm = new PendingTasksViewModel(request =>
+        {
+            if (block) { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); }
+            var rows = Enumerable.Range((request.Page - 1) * request.PageSize + 1, request.Page == 1 ? 50 : 5)
+                .Select(id => new InspectionTaskListItem(id, id, $"商品 {id}", $"SKU-{id}", null, "expired", 1, 10, DateOnly.FromDateTime(DateTime.Today), false, "食品")).ToArray();
+            return new(rows, 55, request.Page, request.PageSize);
+        });
+        await vm.LoadAsync();
+        vm.Items[0].IsSelected = true;
+        var publications = 0;
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(vm.Items)) { publications++; Assert.NotEmpty(vm.Items); }
+        };
+        foreach (var next in new[] { true, false })
+        {
+            var oldRows = vm.Items;
+            var oldCollectionChanges = 0;
+            oldRows.CollectionChanged += (_, _) => oldCollectionChanges++;
+            entered.Reset(); release.Reset(); block = true;
+            var transition = next ? vm.GoToNextPageAsync() : vm.GoToPreviousPageAsync();
+            try
+            {
+                Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+                Assert.True(vm.IsLoading);
+                Assert.Same(oldRows, vm.Items);
+                Assert.NotEmpty(vm.Items);
+            }
+            finally { release.Set(); }
+            await transition;
+            Assert.NotSame(oldRows, vm.Items);
+            Assert.Equal(0, oldCollectionChanges);
+            Assert.Equal(1, vm.SelectedCount);
+        }
+        Assert.Equal(2, publications);
+        Assert.True(vm.Items[0].IsSelected);
     }
 
     [Fact]

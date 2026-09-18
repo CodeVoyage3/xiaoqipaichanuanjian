@@ -766,7 +766,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
         ExportCommand = new RelayCommand(_ => { }, _ => SelectedCount != 0 && !IsActionBusy && _export is not null);
     }
 
-    public ObservableCollection<PendingInspectionTaskViewModel> Items { get; } = [];
+    public ObservableCollection<PendingInspectionTaskViewModel> Items { get; private set; } = [];
     public InspectionResultImportSessionViewModel? ImportSession { get; }
     public IReadOnlyCollection<long> SelectedTaskIds => _selectedTaskIds;
     public int SelectedCount => _selectedTaskIds.Count;
@@ -1069,11 +1069,9 @@ public sealed class PendingTasksViewModel : ViewModelBase
                 return;
             }
 
-            Items.Clear();
-            foreach (var item in result.Items)
-            {
-                Items.Add(new PendingInspectionTaskViewModel(item, _selectedTaskIds.Contains, SetSelected));
-            }
+            Items = new ObservableCollection<PendingInspectionTaskViewModel>(result.Items.Select(
+                item => new PendingInspectionTaskViewModel(item, _selectedTaskIds.Contains, SetSelected)));
+            OnPropertyChanged(nameof(Items));
 
             HasLoadedResult = true;
         }

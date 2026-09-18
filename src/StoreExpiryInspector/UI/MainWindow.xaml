@@ -25,11 +25,17 @@
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="StageBadgeResources.xaml" />
         </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="InspectionTaskCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Focusable" Value="True" />
+        </Style>
         <Style x:Key="PendingTaskSelectionCellStyle" TargetType="DataGridCell">
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Template">
-                <Setter.Value><ControlTemplate TargetType="DataGridCell"><Border Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" /></Border></ControlTemplate></Setter.Value>
+                <Setter.Value><ControlTemplate TargetType="DataGridCell"><Border Background="Transparent"><ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" /></Border></ControlTemplate></Setter.Value>
             </Setter>
         </Style>
         <ui:DateOnlyDisplayConverter x:Key="DateOnlyDisplayConverter" />
@@ -386,9 +392,6 @@
             <Setter Property="RowHeight" Value="44" />
             <Setter Property="ColumnHeaderHeight" Value="40" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding PendingTasks.IsLoading}" Value="True">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                </DataTrigger>
                 <DataTrigger Binding="{Binding PendingTasks.HasError}" Value="True">
                     <Setter Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
@@ -1323,10 +1326,20 @@
                             <Button Content="导出已选任务" Click="ExportPendingInspection_Click" Command="{Binding PendingTasks.ExportCommand}" Style="{StaticResource PrimaryButtonStyle}" Width="112" Margin="10,0,0,0" AutomationProperties.Name="导出已选待排查任务" />
                             <Button Content="导入排查结果" Click="OpenPendingInspection_Click" IsEnabled="{Binding PendingTasks.CanUseImport}" Style="{StaticResource SecondaryButtonStyle}" Width="112" Margin="8,0,0,0" AutomationProperties.Name="导入待排查结果" />
                             <TextBlock Text="正在加载…"
-                                       Visibility="{Binding PendingTasks.IsLoading, Converter={StaticResource BoolToVisibility}}"
                                        FontSize="13"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PendingTasks.IsLoading}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <Button Content="清空筛选"
                                     Command="{Binding PendingTasks.ClearFiltersCommand}"
                                     Style="{StaticResource LinkButtonStyle}"
@@ -1358,7 +1371,7 @@
                                       Focusable="True">
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="选择" Width="52" CellStyle="{StaticResource PendingTaskSelectionCellStyle}">
-                                        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择待排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox Style="{StaticResource InspectionTaskCheckBoxStyle}" AutomationProperties.Name="选择待排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="阶段" Width="78">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -1422,7 +1435,7 @@
                                       Focusable="True">
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="选择" Width="52" CellStyle="{StaticResource PendingTaskSelectionCellStyle}">
-                                        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择待排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox Style="{StaticResource InspectionTaskCheckBoxStyle}" AutomationProperties.Name="选择待排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="阶段" Width="78">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -3110,7 +3123,7 @@
                                 <DataGrid Grid.Row="1" ItemsSource="{Binding TodayInspection.VisibleTasks}" IsEnabled="{Binding TodayInspection.CanUseContent}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell" AutomationProperties.Name="今日排查任务列表" GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource TableDividerBrush}" VerticalGridLinesBrush="{DynamicResource TableDividerBrush}" BorderBrush="{DynamicResource TableDividerBrush}"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <DataGrid.Columns>
-                                            <DataGridTemplateColumn Header="选择" Width="52" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="True" AutomationProperties.Name="选择今日排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="选择" Width="52" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox Style="{StaticResource InspectionTaskCheckBoxStyle}" AutomationProperties.Name="选择今日排查任务" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                             <DataGridTextColumn Header="条码" Binding="{Binding ProductBarcode}" Width="148" ElementStyle="{StaticResource TableCellTextStyle}" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}" />
                                             <DataGridTemplateColumn Header="商品名称" Width="*" HeaderStyle="{StaticResource TableGridColumnHeaderStyle}"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                                             <DataGridTextColumn Header="大类" Binding="{Binding CategoryName}" Width="76" ElementStyle="{StaticResource TableCenterTextStyle}" HeaderStyle="{StaticResource TableCenterColumnHeaderStyle}" />
