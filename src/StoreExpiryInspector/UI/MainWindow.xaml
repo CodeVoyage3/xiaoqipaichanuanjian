@@ -675,19 +675,6 @@
                                Text="排查管理"
                                FontSize="12"
                                Foreground="{DynamicResource MutedTextBrush}" />
-                    <Button x:Name="NavigationTasksButton"
-                            AutomationProperties.Name="待排查任务"
-                            ToolTip="待排查任务"
-                            Command="{Binding NavigateTasksCommand}"
-                            Tag="{Binding IsPendingTasksVisible}"
-                            Style="{StaticResource NavButtonStyle}">
-                        <StackPanel Orientation="Horizontal">
-                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
-                                <Path Data="{StaticResource NavTasksIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                            </Viewbox>
-                            <TextBlock x:Name="NavigationTasksText" Margin="14,0,0,0" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
                     <Button x:Name="NavigationTodayInspectionButton"
                             AutomationProperties.Name="今日排查"
                             ToolTip="今日排查"
@@ -699,6 +686,19 @@
                                 <Path Data="{StaticResource NavTodayInspectionIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                             </Viewbox>
                             <TextBlock x:Name="NavigationTodayInspectionText" Margin="14,0,0,0" Text="今日排查" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="NavigationTasksButton"
+                            AutomationProperties.Name="待排查任务"
+                            ToolTip="待排查任务"
+                            Command="{Binding NavigateTasksCommand}"
+                            Tag="{Binding IsPendingTasksVisible}"
+                            Style="{StaticResource NavButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center">
+                                <Path Data="{StaticResource NavTasksIcon}" Width="1024" Height="1024" Stretch="None" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Viewbox>
+                            <TextBlock x:Name="NavigationTasksText" Margin="14,0,0,0" Text="待排查任务" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="NavigationHistoryButton"
@@ -1037,6 +1037,17 @@
                                                VerticalAlignment="Center"
                                                TextTrimming="CharacterEllipsis"
                                                ToolTip="{Binding Dashboard.LastImportText}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Margin="0,12,0,0" Padding="16,12" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Dashboard.TodayWorkText}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" />
+                                        <TextBlock Text="{Binding Dashboard.TomorrowWorkText}" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="进入今日排查" Command="{Binding OpenTodayTasksCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="16,0,0,0" VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
 

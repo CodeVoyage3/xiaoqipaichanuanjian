@@ -193,6 +193,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private bool _isLoading;
     private bool _hasError;
     private bool _hasLoadedResult;
+    private bool _hasWorkCounts;
     private string _errorMessage = string.Empty;
     private int _openTaskCount;
     private int _expiredCount;
@@ -202,6 +203,8 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _productCount;
     private int _batchCount;
     public int TomorrowPlanCount { get; private set; }
+    public string TodayWorkText => HasError ? "今日任务加载失败" : IsLoading ? "今日任务加载中…" : !_hasWorkCounts ? "今日任务数量暂不可用" : $"今日需排查 {OpenTaskCount} 项";
+    public string TomorrowWorkText => HasError || IsLoading || !_hasWorkCounts ? string.Empty : $"明天需排查 {TomorrowPlanCount} 项";
     public string TomorrowPlanText => $"明日需排查 {TomorrowPlanCount} 项";
     private FutureExpiryRiskOverview? _futureRisk;
     private DateTime? _lastSuccessfulImportAtUtc;
@@ -285,6 +288,8 @@ public sealed class DashboardViewModel : ViewModelBase
             }
 
             _isLoading = value;
+            OnPropertyChanged(nameof(TodayWorkText));
+            OnPropertyChanged(nameof(TomorrowWorkText));
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasNoSearchResults));
         }
@@ -301,6 +306,8 @@ public sealed class DashboardViewModel : ViewModelBase
             }
 
             _hasError = value;
+            OnPropertyChanged(nameof(TodayWorkText));
+            OnPropertyChanged(nameof(TomorrowWorkText));
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasLoadedResult));
             OnPropertyChanged(nameof(HasNoImportData));
@@ -321,6 +328,8 @@ public sealed class DashboardViewModel : ViewModelBase
             }
 
             _hasLoadedResult = value;
+            OnPropertyChanged(nameof(TodayWorkText));
+            OnPropertyChanged(nameof(TomorrowWorkText));
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasNoImportData));
             OnPropertyChanged(nameof(HasNoOpenTasks));
@@ -355,6 +364,8 @@ public sealed class DashboardViewModel : ViewModelBase
             }
 
             _openTaskCount = value;
+            OnPropertyChanged(nameof(TodayWorkText));
+            OnPropertyChanged(nameof(TomorrowWorkText));
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasNoOpenTasks));
         }
@@ -575,6 +586,7 @@ public sealed class DashboardViewModel : ViewModelBase
                 return;
             }
 
+            _hasWorkCounts = true;
             OpenTaskCount = result.OpenTaskCount;
             ExpiredCount = result.ExpiredCount;
             WithdrawCount = result.WithdrawCount;
@@ -584,6 +596,7 @@ public sealed class DashboardViewModel : ViewModelBase
             BatchCount = result.BatchCount;
             TomorrowPlanCount = result.TomorrowPlanCount;
             OnPropertyChanged(nameof(TomorrowPlanCount)); OnPropertyChanged(nameof(TomorrowPlanText));
+            OnPropertyChanged(nameof(TomorrowWorkText));
             _futureRisk = result.FutureRisk;
             foreach (var name in new[] { "Future7Discount50", "Future7Discount20", "Future7Withdraw", "Future7Expired", "Future14Discount50", "Future14Discount20", "Future14Withdraw", "Future14Expired", "Future30Discount50", "Future30Discount20", "Future30Withdraw", "Future30Expired" }) OnPropertyChanged(name);
             OnPropertyChanged(nameof(FutureRiskSummary));
@@ -605,6 +618,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
             _logException?.Invoke(exception);
             UrgentTasks.Clear();
+            _hasWorkCounts = false;
             HasLoadedResult = false;
             HasError = true;
             ErrorMessage = "数据加载失败";
@@ -1419,6 +1433,7 @@ public sealed class ShellViewModel : ViewModelBase
         NavigateHistoryCommand = new RelayCommand(_ => NavigateTo(ShellPage.History), _ => CanNavigate);
         NavigateImportCommand = new RelayCommand(_ => NavigateTo(ShellPage.Import), _ => CanNavigate);
         NavigateProductCatalogCommand = new RelayCommand(_ => NavigateTo(ShellPage.ProductCatalog), _ => CanNavigate);
+        OpenTodayTasksCommand = new RelayCommand(_ => { _ = OpenTodayTasksAsync(); }, _ => CanNavigate && TodayInspection.CanUseContent);
         NavigateTodayInspectionCommand = new RelayCommand(_ => NavigateTo(ShellPage.TodayInspection), _ => CanNavigate);
         NavigateBackupRestoreCommand = new RelayCommand(_ => NavigateTo(ShellPage.BackupRestore), _ => CanNavigate);
         NavigateSettingsCommand = new RelayCommand(_ => { }, _ => false);
@@ -1469,6 +1484,7 @@ public sealed class ShellViewModel : ViewModelBase
         TodayInspection.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(TodayInspectionViewModel.IsActionBusy)) NotifyNavigationState();
+            if (args.PropertyName == nameof(TodayInspectionViewModel.CanUseContent)) OpenTodayTasksCommand.RaiseCanExecuteChanged();
         };
         PendingTasks.PropertyChanged += (_, args) =>
         {
@@ -1515,6 +1531,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public RelayCommand NavigateImportCommand { get; }
     public RelayCommand NavigateProductCatalogCommand { get; }
+
+    public RelayCommand OpenTodayTasksCommand { get; }
 
     public RelayCommand NavigateTodayInspectionCommand { get; }
 
@@ -1626,6 +1644,13 @@ public sealed class ShellViewModel : ViewModelBase
             History.LoadAsync(),
             TodayInspection.ReloadAfterBusinessDataResetAsync(),
             BackupRestore.LoadAsync(force: true));
+    }
+
+    public async Task OpenTodayTasksAsync()
+    {
+        if (!CanNavigate || !TodayInspection.CanUseContent) return;
+        await TodayInspection.SelectDayAsync(0);
+        await NavigateToAsync(ShellPage.TodayInspection);
     }
 
     public async Task NavigateToAsync(ShellPage page)
@@ -1934,6 +1959,7 @@ public sealed class ShellViewModel : ViewModelBase
         NavigateHistoryCommand.RaiseCanExecuteChanged();
         NavigateImportCommand.RaiseCanExecuteChanged();
         NavigateTodayInspectionCommand.RaiseCanExecuteChanged();
+        OpenTodayTasksCommand.RaiseCanExecuteChanged();
         NavigateBackupRestoreCommand.RaiseCanExecuteChanged();
         OpenDetailCommand.RaiseCanExecuteChanged();
     }
