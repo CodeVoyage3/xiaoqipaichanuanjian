@@ -1,3 +1,10 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Markup;
+using System.Windows.Threading;
+using System.Xml.Linq;
 using StoreExpiryInspector.Application.Tasks;
 using StoreExpiryInspector.UI;
 using Xunit;
@@ -6,6 +13,105 @@ namespace StoreExpiryInspector.Tests;
 
 public sealed class S25T01PendingTasksViewModelTests
 {
+    [Fact]
+    public async Task BothRealCheckboxTemplatesCommitImmediatelyRestorePagesAndClearTheirDisplay()
+    {
+        var vm = Create((path, ids) => new(path, ids.Count, ids.Count));
+        await vm.LoadAsync();
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+                XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+                var document = XDocument.Load(Path.Combine(FindRepositoryRoot(), "src", "StoreExpiryInspector", "UI", "MainWindow.xaml"));
+                var templates = document.Descendants(ns + "CheckBox").Where(element => (string?)element.Attribute("AutomationProperties.Name") == "选择待排查任务").Select(element => element.Parent!).ToArray();
+                Assert.Equal(2, templates.Length);
+                foreach (var templateElement in templates)
+                {
+                    var template = (DataTemplate)XamlReader.Parse(templateElement.ToString());
+                    var panel = new StackPanel { BindingGroup = new BindingGroup() };
+                    var window = new Window { Content = panel, Width = 100, Height = 100, ShowInTaskbar = false };
+                    CheckBox Bind(PendingInspectionTaskViewModel row)
+                    {
+                        panel.Children.Clear(); panel.DataContext = row;
+                        var check = (CheckBox)template.LoadContent(); panel.Children.Add(check);
+                        check.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
+                        return check;
+                    }
+                    try
+                    {
+                        window.Show();
+                        var check = Bind(vm.Items[0]);
+                        check.SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+                        Assert.Equal(1, vm.SelectedCount); Assert.True(vm.ExportCommand.CanExecute(null)); Assert.True(vm.ClearSelectionCommand.CanExecute(null));
+                        Assert.Equal(HorizontalAlignment.Center, check.HorizontalAlignment);
+                        Assert.Equal(VerticalAlignment.Center, check.VerticalAlignment);
+                        vm.GoToNextPageAsync().GetAwaiter().GetResult();
+                        check = Bind(vm.Items[0]); check.SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+                        Assert.Equal(2, vm.SelectedCount);
+                        vm.GoToPreviousPageAsync().GetAwaiter().GetResult(); check = Bind(vm.Items[0]); Assert.True(check.IsChecked);
+                        vm.GoToNextPageAsync().GetAwaiter().GetResult(); check = Bind(vm.Items[0]); Assert.True(check.IsChecked);
+                        vm.ClearSelectionCommand.Execute(null);
+                        check.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
+                        Assert.False(check.IsChecked); Assert.Empty(vm.SelectedTaskIds);
+                        check.SetCurrentValue(ToggleButton.IsCheckedProperty, true); vm.SearchText = "商品";
+                        check.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
+                        Assert.False(check.IsChecked); Assert.Equal(0, vm.SelectedCount);
+                        vm.SearchText = "";
+                        vm.GoToPreviousPageAsync().GetAwaiter().GetResult();
+                    }
+                    finally { window.Close(); }
+                }
+                var styleElement = document.Descendants(ns + "Style").Single(element => (string?)element.Attribute(x + "Key") == "PendingTaskSelectionCellStyle");
+                styleElement.Attribute(x + "Key")!.Remove();
+                var style = (Style)XamlReader.Parse(styleElement.ToString());
+                var cell = new DataGridCell { Style = style, Content = new CheckBox(), BorderThickness = new Thickness(2) };
+                cell.ApplyTemplate(); cell.Measure(new Size(52, 40)); cell.Arrange(new Rect(0, 0, 52, 40));
+                var border = Assert.IsType<Border>(System.Windows.Media.VisualTreeHelper.GetChild(cell, 0));
+                Assert.Equal(new Thickness(0), border.BorderThickness);
+                Assert.Equal(HorizontalAlignment.Center, cell.HorizontalContentAlignment);
+                Assert.Equal(VerticalAlignment.Center, cell.VerticalContentAlignment);
+            }
+            catch (Exception exception) { failure = exception; }
+        });
+        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
+        if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+
+    [Fact]
+    public async Task SelectionCountCommandsAndPageRestorationShareTheTaskIdSet()
+    {
+        var vm = Create((path, ids) => new(path, ids.Count, ids.Count));
+        await vm.LoadAsync();
+        var notifications = new List<string?>();
+        var exportChanges = 0; var clearChanges = 0;
+        vm.PropertyChanged += (_, e) => notifications.Add(e.PropertyName);
+        vm.ExportCommand.CanExecuteChanged += (_, _) => exportChanges++;
+        vm.ClearSelectionCommand.CanExecuteChanged += (_, _) => clearChanges++;
+        vm.Items[0].IsSelected = true;
+        Assert.Equal(1, vm.SelectedCount);
+        Assert.True(vm.ExportCommand.CanExecute(null));
+        Assert.True(vm.ClearSelectionCommand.CanExecute(null));
+        vm.Items[1].IsSelected = true; vm.Items[2].IsSelected = true;
+        Assert.Equal(3, vm.SelectedCount);
+        vm.Items[1].IsSelected = false;
+        Assert.Equal(2, vm.SelectedCount);
+        await vm.GoToNextPageAsync(); vm.Items[0].IsSelected = true;
+        Assert.Equal(3, vm.SelectedCount);
+        await vm.GoToPreviousPageAsync();
+        Assert.True(vm.Items[0].IsSelected); Assert.False(vm.Items[1].IsSelected); Assert.True(vm.Items[2].IsSelected);
+        await vm.GoToNextPageAsync(); Assert.True(vm.Items[0].IsSelected);
+        Assert.Equal(new long[] { 1, 3, 51 }, vm.SelectedTaskIds.Order());
+        vm.ClearSelectionCommand.Execute(null);
+        Assert.Empty(vm.SelectedTaskIds); Assert.All(vm.Items, row => Assert.False(row.IsSelected));
+        Assert.False(vm.ExportCommand.CanExecute(null)); Assert.False(vm.ClearSelectionCommand.CanExecute(null));
+        Assert.Contains(nameof(vm.SelectedCount), notifications);
+        Assert.True(exportChanges >= 5); Assert.True(clearChanges >= 5);
+        await vm.GoToPreviousPageAsync(); Assert.All(vm.Items, row => Assert.False(row.IsSelected));
+    }
+
     [Fact]
     public async Task CrossPageSelectionExportsOnlyTheExplicitSelectedTaskIds()
     {

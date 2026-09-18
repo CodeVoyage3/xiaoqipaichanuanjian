@@ -694,10 +694,10 @@ public sealed record StageBadge(string HighestStage);
 
 public sealed class PendingInspectionTaskViewModel : ViewModelBase
 {
-    private bool _isSelected;
-    public PendingInspectionTaskViewModel(InspectionTaskListItem item, bool isSelected, Action<long, bool> changed)
+    private readonly Func<long, bool> _contains;
+    public PendingInspectionTaskViewModel(InspectionTaskListItem item, Func<long, bool> contains, Action<long, bool> changed)
     {
-        Item = item; _isSelected = isSelected; _changed = changed;
+        Item = item; _contains = contains; _changed = changed;
     }
     private readonly Action<long, bool> _changed;
     public InspectionTaskListItem Item { get; }
@@ -710,7 +710,8 @@ public sealed class PendingInspectionTaskViewModel : ViewModelBase
     public int PendingBatchCount => Item.PendingBatchCount;
     public int EffectiveStockQty => Item.EffectiveStockQty;
     public DateOnly? NearestExpiryDate => Item.NearestExpiryDate;
-    public bool IsSelected { get => _isSelected; set { if (_isSelected == value) return; _isSelected = value; OnPropertyChanged(); _changed(TaskId, value); } }
+    public bool IsSelected { get => _contains(TaskId); set { if (IsSelected == value) return; _changed(TaskId, value); } }
+    internal void NotifySelectionChanged() => OnPropertyChanged(nameof(IsSelected));
 }
 
 public sealed class PendingTasksViewModel : ViewModelBase
@@ -1071,7 +1072,7 @@ public sealed class PendingTasksViewModel : ViewModelBase
             Items.Clear();
             foreach (var item in result.Items)
             {
-                Items.Add(new PendingInspectionTaskViewModel(item, _selectedTaskIds.Contains(item.TaskId), SetSelected));
+                Items.Add(new PendingInspectionTaskViewModel(item, _selectedTaskIds.Contains, SetSelected));
             }
 
             HasLoadedResult = true;
@@ -1139,21 +1140,21 @@ public sealed class PendingTasksViewModel : ViewModelBase
     private void SetSelected(long taskId, bool selected)
     {
         if (selected) _selectedTaskIds.Add(taskId); else _selectedTaskIds.Remove(taskId);
+        foreach (var item in Items.Where(item => item.TaskId == taskId)) item.NotifySelectionChanged();
         RaiseSelectionState();
     }
 
     private void RemoveSubmittedTaskIds(IReadOnlyList<long> taskIds)
     {
         foreach (var taskId in taskIds) _selectedTaskIds.Remove(taskId);
-        foreach (var item in Items) item.IsSelected = _selectedTaskIds.Contains(item.TaskId);
+        foreach (var item in Items) item.NotifySelectionChanged();
         RaiseSelectionState();
     }
 
     private void ClearSelection()
     {
-        if (_selectedTaskIds.Count == 0) return;
         _selectedTaskIds.Clear();
-        foreach (var item in Items) item.IsSelected = false;
+        foreach (var item in Items) item.NotifySelectionChanged();
         RaiseSelectionState();
     }
 
