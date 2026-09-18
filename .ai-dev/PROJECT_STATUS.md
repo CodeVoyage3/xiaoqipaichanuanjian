@@ -1,3 +1,21 @@
+# 2026-09-18 S25-T03 技术通过｜USER_GUI_PENDING
+
+S25-T03 = TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED；真实用户 GUI PASS 前不得 CLOSED / ACCEPTED。
+Stage25 = IN_PROGRESS；S25-T01 CLOSED / ACCEPTED / REAL_USER_GUI_PASS、S25-T02 CLOSED / ACCEPTED 均保持。
+全新 Terra 生产提交：3ac6723dd22c950056d41c95299f0374bd3b40c7；冻结范围治理提交 c64f828；基于完整 continuation 626a114914fba6265a1e847f471f44b1e24dc716。
+Sol 独立审查生产仅 MainWindow.xaml 与 Stage4ViewModels.cs，另直接 S25T03TodayEntryTests；导航原按钮块仅排序、普通 NavigateTodayInspectionCommand 不变；首页状态下/优先处理前紧凑主入口、明日弱辅助；原查看全部待排查保持 LinkButtonStyle。无新数据库查询、Badge或折叠代码；T01/T02/Schema/migration/Version/Installer/Updater/Builder无修改。
+首页 OpenTodayTasksCommand 复用 SelectDayAsync(0)，忙时禁用并通知恢复；明天/后天回今日，普通导航保原日期。数量仅完整 Dashboard 成功后有效；加载/失败/未完整成功不把默认0显示成无任务。
+Sol 独立专项23/23 PASS、0skip，覆盖本卡5项、首页直接回归、导航状态/折叠、待排查选择/导出/回导专项及日期/忙状态直接回归；模拟数据夹具单跑1/1 PASS。FULL = NOT_RUN / NO_FULL。
+Production Release build：0warning / 0error，明确 S9T07TestMode=false / S9T07HardKillTestMode=false；程序集1.1.3.0。专项构建原NU1900网络审计warning保留；初GUI准备C TEMP权限失败日志保留，D TEMP新根成功，不算业务测试失败。
+GUI候选：C:\Users\39037\.codex\visualizations\2026\09\18\01a0b319-cbb0-73d1-88d9-0d513f92adaa\S25-T03-GUI；双击启动验收.cmd，GUI验收清单.md含用户五项检查。
+新模拟数据根：D:\DevCache\Temp\7202dab1-8306-4cce-b4b9-b07741e298fb；启动前DB备份及源副本SHA匹配；integrity=ok / FK=0 /完整有序10条migration，migration11未创建；未访问正式DB。
+实际WinPS入口启动PID29448、窗口9048234、Responding=true，命令行显式新模拟根。技术启动不等于真实 GUI PASS。
+生产DLL SHA256：56ADFC37FD55421F75FC10DD98C20C23B75B536BEA33F29F17B55656E9E7F37B。
+完整技术回执：.ai-dev/ACCEPTANCE/S25-T03.json；外部checks保留专项TRX/构建/实际启动/模拟DB证据及初失败日志。
+原dirty工作区HEAD a6a47f2及1modified+4untracked保持；旧Stage25隔离链626a114 clean保持；本轮分支codex/s25-t03-today-entry。未merge/push main、tag、Version/Release或后续任务启动。
+下一步只等待用户真实GUI回执，收到问题则限定返修；没有 GUI PASS 不关闭 Stage/Task、不自动发布。
+
+以下为历史记录。
 # 2026-09-18 S25-T03 方案一授权实施
 
 Stage25 = IN_PROGRESS；S25-T03 = AUTHORIZED / IN_PROGRESS / NOT_ACCEPTED。
@@ -1405,6 +1423,7 @@ Stage9 IN_PROGRESS / WAITING_NEXT_AUTHORIZATION；S9-T02 TECHNICALLY_ACCEPTED / 
 - V1-UI-01 最终结论（2026-09-03）：用户真实 WPF 首轮已通过导航顺序、整体蓝色降噪、Search/Refresh/分页中性视觉、ComboBox 产品方案、三条件组合筛选、清空、计数/空态/分页、StageBadge 与 Primary/Danger 语义；GUI R1 后又明确确认品牌区紧凑布局及阶段/大类中文 display 两项重验 `PASSED`。结合 Sol 既有新鲜技术门禁，V1-UI-01 为 `GUI_ACCEPTANCE_PASSED / CLOSED`。V1-F03/I04 继续 `CLOSED`；Stage 8/9 与在线升级均未启动，下一阶段等待用户另行批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
+
 
 
 

@@ -1,0 +1,69 @@
+{
+  "task": "S25-T03",
+  "status": "TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED",
+  "baseline": "626a114914fba6265a1e847f471f44b1e24dc716",
+  "scopeCommit": "c64f828",
+  "terraCommit": "3ac6723dd22c950056d41c95299f0374bd3b40c7",
+  "scopeCheck": "PASS",
+  "changedImplementationFiles": [
+    "src/StoreExpiryInspector/UI/MainWindow.xaml",
+    "src/StoreExpiryInspector/UI/Stage4ViewModels.cs",
+    "tests/StoreExpiryInspector.Tests/S25T03TodayEntryTests.cs"
+  ],
+  "solTargeted": {
+    "trx": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI/checks/sol-t03-targeted.trx",
+    "failed": 0,
+    "skipped": 0,
+    "passed": 23
+  },
+  "guiFixture": {
+    "migrations": 10,
+    "prelaunchBackup": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI/checks/synthetic-prelaunch.db",
+    "failed": 0,
+    "root": "D:\\DevCache\\Temp\\7202dab1-8306-4cce-b4b9-b07741e298fb",
+    "integrity": "ok",
+    "foreignKeyErrors": 0,
+    "passed": 1
+  },
+  "productionBuild": {
+    "appVersion": "1.1.3.0",
+    "warnings": 0,
+    "dllSha256": "56ADFC37FD55421F75FC10DD98C20C23B75B536BEA33F29F17B55656E9E7F37B",
+    "result": "PASS",
+    "log": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI/checks/production-build-final.log",
+    "errors": 0
+  },
+  "launch": {
+    "PID": 29448,
+    "Window": {
+      "value": 9048234
+    },
+    "Title": "门店效期排查软件",
+    "Responding": true,
+    "CommandLine": "\"C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI\\app\\StoreExpiryInspector.exe\" --data-root \"D:\\DevCache\\Temp\\7202dab1-8306-4cce-b4b9-b07741e298fb\" --allow-existing-isolated-data-root "
+  },
+  "full": "NOT_RUN / NO_FULL",
+  "realUserGui": "PENDING",
+  "originalWorkspace": {
+    "head": "a6a47f2a255f3eaad5687a7700d72818d0ee5898",
+    "status": [
+      " M tests/StoreExpiryInspector.Tests/Stage4ViewModelTests.cs",
+      "?? docs/门店效期排查软件_操作手册.html",
+      "?? docs/门店效期排查软件_效期规则说明.html",
+      "?? tools/Reset-StoreExpiryInspectorTestHost.cmd",
+      "?? tools/Reset-StoreExpiryInspectorTestHost.ps1"
+    ]
+  },
+  "previousStage25": {
+    "head": "626a114914fba6265a1e847f471f44b1e24dc716",
+    "status": []
+  },
+  "candidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI",
+  "limitations": [
+    "GUI visual and real user acceptance pending",
+    "Targeted test build retained NU1900 audit network warnings; production build zero warnings",
+    "Initial GUI preparation MSBuild C TEMP access denied; new D TEMP run passed; failure logs retained"
+  ],
+  "mainMergePush": "NOT_DONE",
+  "release": "UNCHANGED"
+}
