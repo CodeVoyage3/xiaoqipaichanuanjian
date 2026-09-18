@@ -1,0 +1,146 @@
+{
+  "guiDataRoot": "D:\\DevCache\\Temp\\28c7d0b4-1054-4237-9ed1-df72845aea69",
+  "full": "NOT_RUN / NO_FULL",
+  "candidateRun": "657ceab6-1974-4d36-824b-45ea46e76106",
+  "migrationCount": 10,
+  "productSourceSha": "96cb01a843eaed80791762416dd87329ec802449",
+  "s26T02": "NOT_STARTED / NOT_AUTHORIZED",
+  "contract": {
+    "crossSchemaAllowed": false,
+    "setupMode": "SAME_SCHEMA_SLIM",
+    "generation": "G1-m10-protocol2",
+    "sourceMax": "1.1.3",
+    "minimumProtocolVersion": 2,
+    "minimumDirectVersion": "1.1.0",
+    "sourceMin": "1.1.0"
+  },
+  "tests": {
+    "failedInitialExportImport": {
+      "disposition": "TEST_ONLY_FIXED_AND_52_PASS",
+      "pass": 51,
+      "reason": "historical inline binding assertion stale",
+      "fail": 1
+    },
+    "exportAndImport": 52,
+    "generationAssertions": 50,
+    "directAndSecurity": 54
+  },
+  "builderSha": "ee089dd19c325ef00cdeae8186ccfc58ce1ce568",
+  "migration11": "NOT_CREATED",
+  "guiPass": "PENDING_REAL_USER",
+  "endpointMatrix": "PASS_4_ENDPOINT_CASES_PLUS_FRESH",
+  "guiCandidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S26-T01-v1.1.4-RC-GUI",
+  "publication": "NOT_STARTED",
+  "status": "TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED",
+  "assets": [
+    {
+      "fileName": "StoreExpiryInspector-1.1.4-win-x64.zip",
+      "bytes": 109485799,
+      "sha256": "32c3d42d67668669ae421166a8f3bf4985a80d32dcef77d689a4d60fbea05ca9"
+    },
+    {
+      "fileName": "StoreExpiryInspector-Setup-1.1.4.exe",
+      "bytes": 75385824,
+      "sha256": "bf40231ed5c4996dd653ac2763afa0de4f6fbad01a24a977ade2f11880452f01"
+    },
+    {
+      "fileName": "update-manifest.json",
+      "bytes": 914,
+      "sha256": "9e7563ba259733b6ae2dc0d5e3d5b516cc550ca983c0ec1c9c82db5e3648a23e"
+    },
+    {
+      "fileName": "update-manifest.sig",
+      "bytes": 384,
+      "sha256": "ae6001060e49e1fc2249649b737711422fa95828330b8c69c72b4b2182302542"
+    }
+  ],
+  "independentSolVerification": {
+    "cases": [
+      {
+        "integrity": "ok",
+        "path": "Setup",
+        "target": "1.1.4",
+        "businessFingerprint": "29184b94a0968f0656bc45f8b0c8822657ee478dc853643424bb46f222cba918",
+        "fullMigrationIdentity": "MATCH_10",
+        "foreignKeys": 0,
+        "products": 55,
+        "status": "PASS",
+        "source": "1.1.0",
+        "evidence": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\s26-evidence\\sandbox-endpoints\\output-r2\\1.1.0-Setup"
+      },
+      {
+        "integrity": "ok",
+        "path": "Online",
+        "target": "1.1.4",
+        "businessFingerprint": "1dc73005d11368eaa2750cdf45dd9fad679b70a96d0e22a75c962d085e015716",
+        "fullMigrationIdentity": "MATCH_10",
+        "foreignKeys": 0,
+        "products": 55,
+        "status": "PASS",
+        "source": "1.1.0",
+        "evidence": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\s26-evidence\\sandbox-endpoints\\output-r3\\1.1.0-Online"
+      },
+      {
+        "integrity": "ok",
+        "path": "Setup",
+        "target": "1.1.4",
+        "businessFingerprint": "29184b94a0968f0656bc45f8b0c8822657ee478dc853643424bb46f222cba918",
+        "fullMigrationIdentity": "MATCH_10",
+        "foreignKeys": 0,
+        "products": 55,
+        "status": "PASS",
+        "source": "1.1.3",
+        "evidence": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\s26-evidence\\sandbox-endpoints\\output-r2\\1.1.3-Setup"
+      },
+      {
+        "integrity": "ok",
+        "path": "Online",
+        "target": "1.1.4",
+        "businessFingerprint": "1dc73005d11368eaa2750cdf45dd9fad679b70a96d0e22a75c962d085e015716",
+        "fullMigrationIdentity": "MATCH_10",
+        "foreignKeys": 0,
+        "products": 55,
+        "status": "PASS",
+        "source": "1.1.3",
+        "evidence": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\s26-evidence\\sandbox-endpoints\\output-r3\\1.1.3-Online"
+      }
+    ],
+    "candidateRun": "657ceab6-1974-4d36-824b-45ea46e76106",
+    "full": "NOT_RUN / NO_FULL",
+    "productSourceSha": "96cb01a843eaed80791762416dd87329ec802449",
+    "middleVersions": "1.1.1/1.1.2 reuse accepted S25-T02 real matrix; unchanged protocol/schema/runtime except target version",
+    "status": "SOL_TECHNICAL_PASS",
+    "fresh": {
+      "version": "1.1.4",
+      "foreignKeys": 0,
+      "integrity": "ok",
+      "scenario": "Fresh",
+      "migrationCount": 10,
+      "status": "PASS",
+      "normalLaunch": true
+    },
+    "frozenAssetsEquivalent": true,
+    "userGui": "PENDING_REAL_USER",
+    "s26T02": "NOT_STARTED / NOT_AUTHORIZED"
+  },
+  "fixtureCorrections": [
+    "Source normal startup before freezing baseline",
+    "Only simulated reminder time 23:59; avoid unacknowledged old daily-reminder modal"
+  ],
+  "evidenceRoot": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\s26-evidence",
+  "currentPublicBaseline": {
+    "latestTag": "v1.1.3",
+    "latestReleaseId": 390497014,
+    "originMain": "c096c15364a7904c7bb306d146f705c727f881a0",
+    "checkedAt": "2026-09-18T07:41:40.8483143Z",
+    "formalPublicationPerformed": false
+  },
+  "originalDirtyPreservation": {
+    "head": "a6a47f2a255f3eaad5687a7700d72818d0ee5898",
+    "checkedAt": "2026-09-18T07:28:14.1969659Z",
+    "dirtyCount": 5,
+    "headUnchanged": true,
+    "statusUnchanged": true,
+    "allFiveFileHashesUnchanged": true
+  }
+}
