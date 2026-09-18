@@ -4,7 +4,7 @@
   "candidateRun": "657ceab6-1974-4d36-824b-45ea46e76106",
   "migrationCount": 10,
   "productSourceSha": "96cb01a843eaed80791762416dd87329ec802449",
-  "s26T02": "AUTHORIZED / IN_PROGRESS",
+  "s26T02": "CLOSED / ACCEPTED",
   "contract": {
     "crossSchemaAllowed": false,
     "setupMode": "SAME_SCHEMA_SLIM",
@@ -30,7 +30,7 @@
   "guiPass": "PASS_REAL_USER",
   "endpointMatrix": "PASS_4_ENDPOINT_CASES_PLUS_FRESH",
   "guiCandidate": "C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S26-T01-v1.1.4-RC-GUI",
-  "publication": "IN_PROGRESS",
+  "publication": "PUBLISHED_AND_ANONYMOUS_VERIFIED",
   "status": "CLOSED / ACCEPTED",
   "assets": [
     {

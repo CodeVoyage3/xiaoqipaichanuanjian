@@ -1,3 +1,28 @@
+# 2026-09-18 v1.1.4 正式发布完成
+Stage26=CLOSED / ACCEPTED。
+S26-T01=CLOSED / ACCEPTED；真实用户 Release RC GUI=PASS（回执已单独登记）。
+S26-T02=CLOSED / ACCEPTED；Sol正式发布与公网验证=PASS。
+PRODUCT_SOURCE_SHA=96cb01a843eaed80791762416dd87329ec802449
+正式tag v1.1.4 peel等于PRODUCT_SOURCE_SHA；Release ID=391379910；Latest=v1.1.4。
+Release：https://github.com/CodeVoyage3/xiaoqipaichanuanjian/releases/tag/v1.1.4
+四项资产：独立草稿下载与公网匿名HTTP 200下载，size/SHA256全部等于冻结RC，GitHub digest一致；生产公钥RSA-PSS/SHA256 manifest验签PASS。
+App / Updater=1.1.4（公网ZIP内Assembly/FileVersion=1.1.4.0）。
+Compatibility Generation=G1-m10-protocol2；source.minVersion=1.1.0，source.maxVersion=1.1.3。
+minimumDirectVersion=1.1.0；minimumProtocolVersion=2；setupMode=SAME_SCHEMA_SLIM；crossSchemaAllowed=false。
+migration=10；migration11=NOT_CREATED；CurrentSchemaIdentity未改变。
+正式发布只使用冻结原资产；无生产修改、无重建、无新增测试；FULL=NOT_RUN / NO_FULL。
+原dirty工作区HEAD/status/五项文件哈希保持；main仅普通ff-only集成、普通push。
+下一Stage=NOT_STARTED。
+详见ACCEPTANCE/S26-T02.json与其evidenceRoot。
+
+| 正式资产 | bytes | SHA256 |
+|---|---:|---|
+| StoreExpiryInspector-1.1.4-win-x64.zip | 109485799 | 32c3d42d67668669ae421166a8f3bf4985a80d32dcef77d689a4d60fbea05ca9 |
+| StoreExpiryInspector-Setup-1.1.4.exe | 75385824 | bf40231ed5c4996dd653ac2763afa0de4f6fbad01a24a977ade2f11880452f01 |
+| update-manifest.json | 914 | 9e7563ba259733b6ae2dc0d5e3d5b516cc550ca983c0ec1c9c82db5e3648a23e |
+| update-manifest.sig | 384 | ae6001060e49e1fc2249649b737711422fa95828330b8c69c72b4b2182302542 |
+
+以下为历史记录，当前状态以本次收口为准。
 # 2026-09-18 真实用户 Release GUI PASS / 正式发布授权
 S26-T01=CLOSED / ACCEPTED；RC GUI=PASS（真实用户回执）。
 S26-T02=AUTHORIZED / IN_PROGRESS；Stage26=AUTHORIZED / IN_PROGRESS。
