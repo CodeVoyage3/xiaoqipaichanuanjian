@@ -16,6 +16,10 @@
   ],
   "exactRules": [
     {
+      "path": "tests/S25T02-CheckGeneration.ps1",
+      "categories": ["RELEASE_TOOLING", "TEST_ONLY"]
+    },
+    {
       "path": "tools/release/release-contract.json",
       "categories": ["RELEASE_TOOLING", "UPDATE_PACKAGE_SECURITY"]
     },

@@ -227,7 +227,89 @@ function Audit-Archive([string]$Path) {
 }
 function Authenticode([string]$Path) { (Get-AuthenticodeSignature -LiteralPath $Path).Status.ToString() }
 
+function Resolve-GenerationContract($Document, $Contract, $PreviousDocument, [string]$BuildMode) {
+  $policy = $Document.compatibilityPolicy
+  if ([Version]$Contract.targetVersion -le [Version]'1.1.3') { return $Contract }
+  Require ($null -ne $policy) 'future releases require compatibility generation policy'
+  Require ($policy.appliesAfterVersion -eq '1.1.3') 'generation adoption boundary must preserve published releases through 1.1.3'
+  $id = if ($Contract.compatibilityGeneration) { [string]$Contract.compatibilityGeneration } else { [string]$policy.defaultGeneration }
+  $matches = @($policy.generations | Where-Object { $_.id -eq $id })
+  Require ($matches.Count -eq 1) 'release must resolve exactly one compatibility generation'
+  Require (@($policy.generations.id | Select-Object -Unique).Count -eq @($policy.generations).Count) 'duplicate compatibility generation'
+  Require (@($policy.generations | Where-Object { -not $_.previousGeneration }).Count -eq 1) 'only initial generation may omit predecessor; new generations require breaking-change/bridge evidence'
+  $generation = $matches[0]
+  $minimum = [string]$generation.minimumSourceVersion
+  Require ($minimum -match '^\d+\.\d+\.\d+$' -and ([Version]$minimum).ToString(3) -eq $minimum) 'generation minimum must be an exact three-part version'
+  Require ($Contract.previousRelease -match '^v\d+\.\d+\.\d+$') 'generation previousRelease must name a formal version tag'
+  $maximum = $Contract.previousRelease.Substring(1)
+  Require ([Version]$minimum -le [Version]$maximum -and [Version]$maximum -lt [Version]$Contract.targetVersion) 'generation source range or previousRelease is invalid'
+  $migrations = @($generation.migrations)
+  Require ($migrations.Count -gt 0 -and @($migrations | Select-Object -Unique).Count -eq $migrations.Count) 'generation requires full unique migration identity'
+  Require (($migrations -join "`n") -ceq (($migrations | Sort-Object) -join "`n") -and @($migrations | Where-Object { $_ -notmatch '^\d{14}_[A-Za-z0-9_]+$' }).Count -eq 0) 'generation migration identity must contain ordered migration IDs'
+  Require ($generation.breakingChange -is [bool]) 'generation requires explicit breakingChange boolean'
+  Require ([int]$generation.minimumProtocolVersion -eq 2) 'generation requires existing protocol 2; protocol changes need separate runtime authorization'
+  $previousPolicy = $PreviousDocument.compatibilityPolicy
+  foreach ($historicalRelease in @($PreviousDocument.releases | Where-Object { [Version]$_.targetVersion -le [Version]'1.1.3' })) {
+    $retainedRelease = @($Document.releases | Where-Object { $_.targetVersion -eq $historicalRelease.targetVersion })
+    Require ($retainedRelease.Count -eq 1 -and ($historicalRelease | ConvertTo-Json -Depth 10 -Compress) -ceq ($retainedRelease[0] | ConvertTo-Json -Depth 10 -Compress)) 'published historical release contract changed'
+  }
+  if ($previousPolicy) {
+    Require ($previousPolicy.appliesAfterVersion -eq $policy.appliesAfterVersion) 'generation adoption boundary changed'
+    foreach ($old in $previousPolicy.generations) {
+      $retained = @($policy.generations | Where-Object { $_.id -eq $old.id })
+      Require ($retained.Count -eq 1) 'previous generation must be retained'
+      foreach ($field in @('minimumSourceVersion','minimumProtocolVersion','migrations','breakingChange','previousGeneration','breakingChangeEvidence')) {
+        Require (($old.$field | ConvertTo-Json -Depth 10 -Compress) -ceq ($retained[0].$field | ConvertTo-Json -Depth 10 -Compress)) "existing generation $($old.id) $field changed; create an evidenced new generation"
+      }
+    }
+  }
+  if (-not $generation.previousGeneration) {
+    Require (-not $generation.breakingChange) 'initial generation cannot claim a breaking change'
+    $historical = @($Document.releases | Where-Object { [Version]$_.targetVersion -le [Version]$policy.appliesAfterVersion -and $_.source.maxMigration -eq $migrations[-1] -and $_.setupCompatibility.setupMode -eq 'SAME_SCHEMA_SLIM' } | Sort-Object { [Version]$_.source.minVersion })
+    Require ($historical.Count -gt 0 -and $minimum -eq $historical[0].source.minVersion) 'initial generation minimum must inherit earliest historical same-schema source'
+  } else {
+    $predecessor = @($policy.generations | Where-Object { $_.id -eq $generation.previousGeneration })
+    Require ($predecessor.Count -eq 1 -and $predecessor[0].id -ne $id) 'new generation requires a distinct retained predecessor'
+    Require ([Version]$minimum -gt [Version]$predecessor[0].minimumSourceVersion) 'new generation minimum must advance beyond its predecessor'
+    Require ($generation.breakingChange -eq $true) 'new generation requires breaking-change evidence'
+    $evidence = $generation.breakingChangeEvidence
+    foreach ($field in @('reason','affectedVersions','bridge','userUpgradePath','whyPreviousGenerationCannotContinue','reference')) {
+      Require (-not [string]::IsNullOrWhiteSpace([string]$evidence.$field)) "new generation requires breaking-change/bridge evidence: $field"
+    }
+    Require ($evidence.setupMinimum -eq $minimum -and $evidence.onlineMinimum -eq $minimum) 'new generation evidence must declare matching Setup and Online minima'
+  }
+  Require ($generation.minimumStatus -in @('CANDIDATE_NOT_VERIFIED','VERIFIED')) 'generation minimum status is required'
+  if ($BuildMode -eq 'RELEASE_CANDIDATE') {
+    Require ($generation.minimumStatus -eq 'VERIFIED' -and -not [string]::IsNullOrWhiteSpace([string]$generation.verificationEvidence)) 'public release candidate requires independently verified generation minimum evidence'
+    foreach ($reference in @($generation.verificationEvidence, $generation.breakingChangeEvidence.reference) | Where-Object { $_ }) {
+      Require ($reference -match '^\.ai-dev/' -and -not ($reference.Split('/') | Where-Object { $_ -eq '..' }) -and (Test-Path -LiteralPath (Join-Path $builderRoot $reference) -PathType Leaf)) 'release generation evidence must reference an existing governance file inside repository'
+    }
+  }
+  if ($Contract.minimumProtocolVersion) { Require ($Contract.minimumProtocolVersion -eq $generation.minimumProtocolVersion) 'release protocol must inherit generation' }
+  foreach ($field in @('minVersion','maxVersion','minMigration','maxMigration')) {
+    $expected = switch ($field) { 'minVersion' { $minimum }; 'maxVersion' { $maximum }; default { $migrations[-1] } }
+    if ($Contract.source -and $Contract.source.PSObject.Properties[$field]) { Require ($Contract.source.$field -eq $expected) "release source $field must inherit generation/previousRelease; narrowing is forbidden" }
+  }
+  if ($Contract.setupCompatibility.minimumDirectVersion) { Require ($Contract.setupCompatibility.minimumDirectVersion -eq $minimum) 'Setup minimumDirectVersion must inherit generation minimum' }
+  Require ($Contract.setupCompatibility.setupMode -eq 'SAME_SCHEMA_SLIM' -and $Contract.setupCompatibility.crossSchemaAllowed -eq $false) 'generation resolver currently supports Same-Schema slim releases only'
+  $resolved = $Contract | ConvertTo-Json -Depth 15 | ConvertFrom-Json
+  $resolved | Add-Member -Force NoteProperty minimumProtocolVersion ([int]$generation.minimumProtocolVersion)
+  $resolved | Add-Member -Force NoteProperty source ([pscustomobject]@{ minVersion=$minimum; maxVersion=$maximum; minMigration=$migrations[-1]; maxMigration=$migrations[-1] })
+  $resolved.setupCompatibility | Add-Member -Force NoteProperty minimumDirectVersion $minimum
+  $resolved | Add-Member -Force NoteProperty generationMigrations $migrations
+  return $resolved
+}
+
 $changeImpactPolicy = Get-Content -Raw (Join-Path $PSScriptRoot 'change-impact-policy.json') | ConvertFrom-Json
+if ($env:S25_RELEASE_GENERATION_PROBE -and $env:S25_RELEASE_GENERATION_INPUT) {
+  try {
+    $inputDocument = Get-Content -Raw $env:S25_RELEASE_GENERATION_INPUT | ConvertFrom-Json
+    $resolved = Resolve-GenerationContract $inputDocument.document $inputDocument.contract $inputDocument.previousDocument ([string]$inputDocument.mode)
+    $probeResult = @{ status='PASS'; contract=$resolved; failureReason=$null }
+  } catch { $probeResult = @{ status='FAILED'; contract=$null; failureReason=$_.Exception.Message } }
+  [IO.File]::WriteAllText($env:S25_RELEASE_GENERATION_PROBE, ($probeResult | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))
+  return
+}
 if ($env:S20_RELEASE_CHANGE_IMPACT_PROBE -and $env:S20_RELEASE_CHANGE_IMPACT_INPUT) {
   try {
     $probeInput = Get-Content -Raw $env:S20_RELEASE_CHANGE_IMPACT_INPUT | ConvertFrom-Json
@@ -290,9 +372,14 @@ try {
   Require $receipt.builderSourceClean 'builder source must be clean'
 
   $gate = 'RELEASE_CONTRACT'
-  $contracts = @((Get-Content -Raw (Join-Path $PSScriptRoot 'release-contract.json') | ConvertFrom-Json).releases | Where-Object { $_.targetVersion -eq $Version })
+  $contractDocument = Get-Content -Raw (Join-Path $PSScriptRoot 'release-contract.json') | ConvertFrom-Json
+  $contracts = @($contractDocument.releases | Where-Object { $_.targetVersion -eq $Version })
   Require ($contracts.Count -eq 1) 'input Version must have exactly one release contract'
   $contract = $contracts[0]
+  $previousDocument = if ($contractDocument.compatibilityPolicy -and [Version]$Version -gt [Version]$contractDocument.compatibilityPolicy.appliesAfterVersion) {
+    Native-CapturedText 'previous formal release contract' 'git' @('-c',"safe.directory=$builderRoot",'-C',$builderRoot,'show',"$($contract.previousRelease):tools/release/release-contract.json") $builderRoot | ConvertFrom-Json
+  } else { $null }
+  $contract = Resolve-GenerationContract $contractDocument $contract $previousDocument $Mode
 
   $gate = 'CANDIDATE_SOURCE'
   Native-Checked 'candidate commit lookup' 'git' @('-c',"safe.directory=$builderRoot",'-C',$builderRoot,'cat-file','-e',"$CandidateSha^{commit}") $builderRoot
@@ -341,6 +428,9 @@ try {
   $receipt.currentSchemaIdentity = @($identity.currentSchemaIdentity)
   $receipt.migrationCount = [int]$identity.migrationCount
   $receipt.latestMigration = [string]$identity.latestMigration
+  if ($contract.generationMigrations) {
+    Require (($contract.generationMigrations -join "`n") -ceq ($receipt.currentSchemaIdentity -join "`n")) 'candidate full schema identity does not match compatibility generation'
+  }
 
   $gate = 'SCHEMA_GATE'
   $schemaChanged = $contract.source.maxMigration -ne $receipt.latestMigration
