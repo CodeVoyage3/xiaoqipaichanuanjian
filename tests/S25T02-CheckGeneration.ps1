@@ -25,7 +25,7 @@ function Probe($config, $release, $previous = $document, $mode = 'NOT_FOR_PUBLIC
     return Get-Content -Raw $env:S25_RELEASE_GENERATION_PROBE | ConvertFrom-Json
   } finally {
     Remove-Item Env:S25_RELEASE_GENERATION_INPUT,Env:S25_RELEASE_GENERATION_PROBE -ErrorAction SilentlyContinue
-    Remove-Item -LiteralPath $scratch -Recurse -Force
+    Write-Host "Probe evidence retained: $scratch"
   }
 }
 function Rejected($result, [string]$reason) { Check ($result.status -eq 'FAILED' -and $result.failureReason.Contains($reason)) "expected rejection: $reason, actual: $($result | ConvertTo-Json -Compress)" }

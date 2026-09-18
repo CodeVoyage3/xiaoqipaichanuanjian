@@ -17,6 +17,52 @@ namespace StoreExpiryInspector.Tests;
 public sealed class S9T04SignedUpdatePackageTests
 {
     [Theory]
+    [InlineData("signature", UpdatePackageOutcome.InvalidManifestSignature)]
+    [InlineData("package-identity", UpdatePackageOutcome.AssetMissing)]
+    [InlineData("protocol", UpdatePackageOutcome.UnsupportedProtocol)]
+    [InlineData("full-schema", UpdatePackageOutcome.VersionMismatch)]
+    [InlineData("below-minimum", UpdatePackageOutcome.SourceNotSupported)]
+    [InlineData("source-migration", UpdatePackageOutcome.SourceNotSupported)]
+    public async Task S25T02SignedRejectionsPreserveOriginalAppAndData(string boundary, UpdatePackageOutcome expected)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "S25SignedBoundary", Guid.NewGuid().ToString("N"));
+        var cache = Path.Combine(root, "cache"); Directory.CreateDirectory(cache);
+        var app = Path.Combine(root, "original-app.dll"); var database = Path.Combine(root, "original-app.db");
+        await File.WriteAllTextAsync(app, "synthetic original app sentinel");
+        await File.WriteAllTextAsync(database, "synthetic original data sentinel");
+        var appBefore = SHA256.HashData(await File.ReadAllBytesAsync(app));
+        var dataBefore = SHA256.HashData(await File.ReadAllBytesAsync(database));
+        var migrations = StoreExpiryInspector.UpdateSafety.CurrentSchemaIdentity.Migrations;
+        var manifest = System.Text.Json.JsonSerializer.SerializeToNode(new
+        {
+            schemaVersion = 1, version = "1.1.4", releaseTag = "v1.1.4", repository = "CodeVoyage3/xiaoqipaichanuanjian", channel = "stable", rid = "win-x64", minimumProtocolVersion = 2,
+            package = new { fileName = "StoreExpiryInspector-1.1.4-win-x64.zip", bytes = 1, sha256 = new string('0', 64) },
+            targetMigrations = migrations,
+            source = new { minVersion = "1.1.0", maxVersion = "1.1.3", minMigration = migrations[^1], maxMigration = migrations[^1] }
+        })!;
+        if (boundary == "package-identity") manifest["package"]!["fileName"] = "StoreExpiryInspector-1.1.3-win-x64.zip";
+        if (boundary == "protocol") manifest["minimumProtocolVersion"] = 3;
+        if (boundary == "full-schema") manifest["targetMigrations"] = System.Text.Json.JsonSerializer.SerializeToNode(migrations.Skip(1));
+        if (boundary == "source-migration") { manifest["source"]!["minMigration"] = migrations[8]; manifest["source"]!["maxMigration"] = migrations[8]; }
+        var bytes = Encoding.UTF8.GetBytes(manifest.ToJsonString());
+        using var rsa = RSA.Create(2048);
+        var signature = rsa.SignData(bytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
+        if (boundary == "signature") signature[0] ^= 1;
+        var routes = new Routes(bytes, signature, [0], "1.1.4");
+        var downloader = new SignedUpdatePackageDownloader(routes, new UpdatePackageOptions(rsa.ExportParameters(false), CacheRoot: cache));
+        var release = new CheckedRelease(new Version(1, 1, 4), 7, "v1.1.4", ["update-manifest.json", "update-manifest.sig", "StoreExpiryInspector-1.1.4-win-x64.zip"]);
+        var result = await downloader.PrepareAsync(release, Version.Parse(boundary == "below-minimum" ? "1.0.9" : "1.1.0"), null, CancellationToken.None);
+        // Preserve inputs/outcome even if an assertion fails; these synthetic files never touch installation roots.
+        await File.WriteAllBytesAsync(Path.Combine(root, "manifest.json"), bytes);
+        await File.WriteAllBytesAsync(Path.Combine(root, "manifest.sig"), signature);
+        await File.WriteAllTextAsync(Path.Combine(root, "outcome.json"), System.Text.Json.JsonSerializer.Serialize(new { boundary, expected, result.Outcome, result.Message, root }));
+        Assert.Equal(expected, result.Outcome); Assert.Null(result.Package);
+        Assert.Equal(appBefore, SHA256.HashData(await File.ReadAllBytesAsync(app)));
+        Assert.Equal(dataBefore, SHA256.HashData(await File.ReadAllBytesAsync(database)));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(cache)); Assert.True(routes.Requests <= 3);
+    }
+
+    [Theory]
     [InlineData("[]")]
     [InlineData("{\"schemaVersion\":\"1\"}")]
     [InlineData("{\"schemaVersion\":null}")]
