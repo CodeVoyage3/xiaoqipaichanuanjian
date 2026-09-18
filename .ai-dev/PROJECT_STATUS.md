@@ -1,3 +1,20 @@
+# 2026-09-18 S25-T01 CLOSED / ACCEPTED — REAL_USER_GUI_PASS
+
+真实用户最终回执：「S25-T01 最终 GUI 验收通过。」此前主功能选择/导出/回导GUI已通过，本次最终回执覆盖复选框视觉一致性和分页跳闪两项复验，USER_GUI_PENDING已解除。以下旧GUI_FAIL/REPAIR_REQUIRED/USER_GUI_PENDING均为历史记录，不是当前状态。
+
+当前状态：
+- Stage25 = IN_PROGRESS
+- S25-T01 = CLOSED / ACCEPTED / REAL_USER_GUI_PASS
+- S25-T02 = NOT_STARTED
+- S25-T03 = NOT_STARTED（本轮仅登记状态，不定义或启动实施）
+
+已验收生产提交：3aca2107d09302ae71f3dd6b40737b8f8c77e352；对应候选治理基线e2ea185fc5369b85d70e51d77ed61433ddfc5827。
+GUI候选：C:\Users\39037\Documents\S25-T01-UI复验\app；DLL SHA256 F31AD1845E428DD794519D573AC78879495DE0B272B03B8FABF6A9236F283042。
+沿用既有Sol独立专项19/19 PASS、Production Release build0warning/0error证据，本轮没有重新测试或build；FULL=NOT_RUN / NO_FULL。
+本轮只治理收口，无生产代码修改、无merge/push main、无发布、无后续任务启动。原dirty正式工作区保留不动。
+下一步：等待用户明确确认；不自动集成main或启动S25-T02/S25-T03。
+
+以下为历史记录。
 # 2026-09-18 两项UI返修技术通过 / USER_GUI_PENDING
 
 用户已确认S25-T01主功能GUI通过，本次仅复验复选框视觉一致性与分页跳闪。S25-T01=USER_GUI_PENDING，禁止CLOSED/ACCEPTED；T02 NOT_STARTED；FULL=NOT_RUN / NO_FULL。
