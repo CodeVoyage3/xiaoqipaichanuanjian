@@ -566,7 +566,8 @@ public sealed class V1F03I04TodayInspectionViewModelTests
             .Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal))
             .Zip(new[] { "选择", "条码", "商品名称", "大类", "预计阶段", "总库存", "预计排查日期" }.Select(header => window.IndexOf($"Header=\"{header}\"", StringComparison.Ordinal)).Skip(1), (left, right) => left < right)
             .All(value => value));
-        Assert.Contains("CheckBox IsChecked=\"{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\"", window, StringComparison.Ordinal);
+        Assert.Contains("CheckBox Style=\"{StaticResource InspectionTaskCheckBoxStyle}\"", window, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"IsChecked\" Value=\"{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\" />", allWindow, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.Name=\"选择今日排查任务\"", window, StringComparison.Ordinal);
         Assert.DoesNotContain("<DataGridCheckBoxColumn Header=\"选择\"", window, StringComparison.Ordinal);
         Assert.Contains("TodayInspection.IsLoadingTasks", window, StringComparison.Ordinal);
