@@ -1,6 +1,6 @@
 {
   "task": "S25-T03",
-  "status": "TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED",
+  "status": "CLOSED / ACCEPTED / REAL_USER_GUI_PASS",
   "baseline": "626a114914fba6265a1e847f471f44b1e24dc716",
   "scopeCommit": "c64f828",
   "terraCommit": "3ac6723dd22c950056d41c95299f0374bd3b40c7",
@@ -43,7 +43,7 @@
     "CommandLine": "\"C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI\\app\\StoreExpiryInspector.exe\" --data-root \"D:\\DevCache\\Temp\\7202dab1-8306-4cce-b4b9-b07741e298fb\" --allow-existing-isolated-data-root "
   },
   "full": "NOT_RUN / NO_FULL",
-  "realUserGui": "PENDING",
+  "realUserGui": "PASS",
   "originalWorkspace": {
     "head": "a6a47f2a255f3eaad5687a7700d72818d0ee5898",
     "status": [
@@ -89,13 +89,13 @@
       "Responding": true,
       "CommandLine": "\"C:\\Users\\39037\\.codex\\visualizations\\2026\\09\\18\\01a0b319-cbb0-73d1-88d9-0d513f92adaa\\S25-T03-GUI-R1\\app\\StoreExpiryInspector.exe\" --data-root \"D:\\DevCache\\Temp\\df276f1b-36a6-4124-9e8b-f7d9502ddffc\" --allow-existing-isolated-data-root "
     },
-    "userGui": "PENDING; home entry only",
+    "userGui": "Covered by final real user GUI PASS of R2",
     "full": "NOT_RUN / NO_FULL",
     "previousTargeted": "23/23 retained; not rerun",
     "version": "1.1.3.0"
   },
   "fixtureRevisionR2": {
-    "userGui": "PENDING",
+    "userGui": "PASS / REAL_USER_GUI_PASS",
     "full": "NOT_RUN / NO_FULL",
     "after": {
       "HasNoImportData": false,
@@ -162,5 +162,19 @@
       "LastImportText": "暂无导入数据",
       "PriorityListVisibleByExistingGates": false
     }
+  },
+  "stageStatus": "CLOSED / ACCEPTED",
+  "finalUserAcceptance": {
+    "confirmed": [
+      "R2首页优先处理正常显示",
+      "问题仅为验收夹具状态大小写错误，不属于生产BUG",
+      "生产代码无需修改"
+    ],
+    "candidate": "R2",
+    "receipt": "S25-T03 最终 GUI 验收通过。",
+    "priorHead": "a671b3648a9a1b07b50b9f4dccfb79a95ed3c7b2",
+    "closureScope": "GOVERNANCE_ONLY / NO_TEST / NO_BUILD / NO_PRODUCTION_CHANGE / NO_MAIN_MERGE_PUSH / NO_NEXT_STAGE",
+    "date": "2026-09-18",
+    "gate": "REAL_USER_GUI_PASS"
   }
 }

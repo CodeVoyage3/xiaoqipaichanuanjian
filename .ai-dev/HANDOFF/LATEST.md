@@ -1,3 +1,18 @@
+# 2026-09-18 Stage25 最终治理收口｜CLOSED / ACCEPTED
+
+真实用户最终回执：「S25-T03 最终 GUI 验收通过。」
+用户确认 R2 首页优先处理已正常显示；本次问题仅为验收夹具状态大小写错误，不属于生产 BUG；生产代码无需修改。
+S25-T03 = CLOSED / ACCEPTED / REAL_USER_GUI_PASS；USER_GUI_PENDING 已解除。
+Stage25 = CLOSED / ACCEPTED；S25-T01 CLOSED / ACCEPTED / REAL_USER_GUI_PASS，S25-T02 CLOSED / ACCEPTED 全部保留，Stage25 三张计划 Task 完成。
+最终 GUI 验收对象为 R2：生产代码沿用 R1 fdbd30f471996bcec9415bf4a4812d791bb637bf，R2 全部程序文件与 R1 哈希一致，仅模拟 ImportRecord 状态 succeeded→Succeeded；未发生生产修复。
+保留已通过 Sol 专项23/23、UI小修1/1、模拟夹具1/1及 Production Release build0warning/0error历史证据，R2既有只读首页Query/VM对照与实际启动证据保留；本轮没有重新测试或build。
+Compatibility Generation G1-m10-protocol2、Setup及Online最低兼容v1.1.0保持，previousRelease只负责source上限；旧Updater sidecar/WAL风险说明不撤销。99.25.2保持PRIVATE_RETAINED_FOR_EVIDENCE，不公开或作为正式版本。
+本轮仅更新治理文件，未修改生产代码、测试源码或模拟数据；FULL=NOT_RUN / NO_FULL；未merge/push main、tag、Version/Release；未启动或授权下一Stage。
+原dirty正式工作区与旧Stage25 clean continuation保持；最终Stage25 HEAD为包含本收口登记的本地治理提交，提交后由Sol读取汇报。
+当前停止点：Stage25验收完成，等待用户后续明确指令；完成Stage不自动集成main或Release。
+以下 USER_GUI_PENDING / NOT_ACCEPTED 等为历史记录，不代表当前状态。
+
+以下为历史记录。
 # 2026-09-18 S25-T03 首页只读诊断｜仅验收数据 R2
 
 S25-T03 保持 TECHNICAL_PASS / USER_GUI_PENDING / NOT_ACCEPTED，不 CLOSED / ACCEPTED。
@@ -1519,6 +1534,7 @@ S9-T06 `IN_PROGRESS / NOT_ACCEPTED / USER_GUI_BLOCKED`；Stage9仍 `IN_PROGRESS 
 - 完成本卡普通push后停止；不得创建S8-T04或重置数据Task，不做强杀/断电/人工损坏、不启动Stage9或在线升级。下一卡需用户明确批准。
 
 诊断进展：本机使用正式1.0.0 DLL/.NET10.0.10逐阶段复验，Refresh200、Manifest/Signature/Package均302→CDN200且原版冻结规则通过，最终Verified。本机继承代理环境变量，失败实机代理/传输结果未知；根因未建立，不能把Sandbox或网络笼统当原因。已准备安全独立诊断包，下一步仅收标准实机JSONL，不做After。详见ANALYSIS/S9-T06-NETWORK-BLOCKER.md及ACCEPTANCE/S9-T06-NETWORK-DIAG。未修改生产代码/版本/公开资产。
+
 
 
 
