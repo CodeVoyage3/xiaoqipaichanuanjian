@@ -3,6 +3,8 @@ using StoreExpiryInspector.Application.Updates;
 using StoreExpiryInspector.Infrastructure;
 using StoreExpiryInspector.UpdateSafety;
 using System.Diagnostics;
+using System.IO.Compression;
+using System.Reflection;
 using System.Runtime.Loader;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -114,7 +116,12 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Contains("setupMode", required);
         Assert.Contains("minimumDirectSetupVersion", required);
         Assert.Contains("embeddedUpdateAssets", required);
-        Assert.Equal(3, schema.RootElement.GetProperty("properties").GetProperty("schemaVersion").GetProperty("const").GetInt32());
+        Assert.Contains("zipBytes", required);
+        Assert.Contains("zipSha256", required);
+        Assert.Contains("advanceCompVersion", required);
+        Assert.Contains("zipHeaderNormalization", required);
+        Assert.Contains("productionExtractAuditedArchive", required);
+        Assert.Equal(4, schema.RootElement.GetProperty("properties").GetProperty("schemaVersion").GetProperty("const").GetInt32());
         var changeImpactRequired = schema.RootElement.GetProperty("properties").GetProperty("changeImpact")
             .GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
         Assert.Contains("baseProductSource", changeImpactRequired);
@@ -322,6 +329,86 @@ public sealed class ReleaseCandidateBuilderTests
     }
 
     [Fact]
+    public void ReleaseZipProbePreservesPayloadAndChangesOnlyFlagHeaders()
+    {
+        var fixture = CreateZipFixture();
+        try
+        {
+            var before = File.ReadAllBytes(fixture.Zip);
+            using var result = RunZipProbe(fixture, normalize: true);
+            Assert.Equal("PASS", result.RootElement.GetProperty("status").GetString());
+            var details = result.RootElement.GetProperty("result");
+            var changedHeaders = details.GetProperty("ChangedHeaderCount").GetInt32();
+            Assert.True(changedHeaders > 0);
+            var after = File.ReadAllBytes(fixture.Zip);
+            Assert.Equal(before.Length, after.Length);
+            Assert.Equal(changedHeaders, before.Zip(after).Count(pair => pair.First != pair.Second));
+            using var secondPass = RunZipProbe(fixture, normalize: true);
+            Assert.Equal(0, secondPass.RootElement.GetProperty("result").GetProperty("ChangedHeaderCount").GetInt32());
+        }
+        finally { DeleteTree(fixture.Root); }
+    }
+
+    [Fact]
+    public void ReleaseZipProbeRejectsHeaderPayloadMethodAndSizeMismatches()
+    {
+        var header = CreateZipFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(header.Zip); bytes[6] ^= 0x02; File.WriteAllBytes(header.Zip, bytes);
+            AssertZipFailed(RunZipProbe(header, normalize: true), "mismatch");
+        }
+        finally { DeleteTree(header.Root); }
+
+        var payload = CreateZipFixture();
+        try
+        {
+            File.WriteAllText(Path.Combine(payload.Payload, "extra.dll"), "extra");
+            AssertZipFailed(RunZipProbe(payload, normalize: true), "paths");
+        }
+        finally { DeleteTree(payload.Root); }
+
+        var hash = CreateZipFixture();
+        try
+        {
+            File.WriteAllText(Path.Combine(hash.Payload, "StoreExpiryInspector.exe"), "changed");
+            AssertZipFailed(RunZipProbe(hash, normalize: true), "mismatch");
+        }
+        finally { DeleteTree(hash.Root); }
+
+        var method = CreateZipFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(method.Zip); bytes[8] = 0; bytes[9] = 0;
+            var central = FindSignature(bytes, 0x02014b50); bytes[central + 10] = 0; bytes[central + 11] = 0; File.WriteAllBytes(method.Zip, bytes);
+            AssertZipFailed(RunZipProbe(method, normalize: true), "metadata");
+        }
+        finally { DeleteTree(method.Root); }
+
+        var size = CreateZipFixture();
+        try { AssertZipFailed(RunZipProbe(size, normalize: true, maxBytes: 1), "smaller"); }
+        finally { DeleteTree(size.Root); }
+    }
+
+    [Fact]
+    public void ReleaseZipProbeFailsClosedWhenAdvanceCompIsMissingOrWrongVersion()
+    {
+        var fixture = CreateZipFixture();
+        try
+        {
+            AssertZipFailed(RunZipProbe(fixture, normalize: true, advanceComp: Path.Combine(fixture.Root, "missing.exe")), "unavailable");
+            AssertZipFailed(RunZipProbe(fixture, normalize: true, advanceComp: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "dotnet.exe")), "v2.6");
+            var failing = Path.Combine(fixture.Root, "failing-advzip.cmd");
+            File.WriteAllLines(failing, ["@echo off", "if \"%~1\"==\"--version\" (echo advancecomp v2.6 test& exit /b 0)", "echo simulated failure 1>&2", "exit /b 7"]);
+            AssertZipFailed(RunZipProbe(fixture, normalize: true, advanceComp: failing), "exit 7");
+            var unexpected = Path.Combine(fixture.Root, "unexpected-advzip.cmd");
+            File.WriteAllLines(unexpected, ["@echo off", "if \"%~1\"==\"--version\" (echo advancecomp v2.6 test& exit /b 0)", "echo unexpected", "exit /b 0"]);
+            AssertZipFailed(RunZipProbe(fixture, normalize: true, advanceComp: unexpected), "unexpected output");
+        }
+        finally { DeleteTree(fixture.Root); }
+    }
+
+    [Fact]
     public void ProductionTrustAnchorRevalidatesReleaseCandidate()
     {
         var assets = Environment.GetEnvironmentVariable("S20_RELEASE_ASSET_DIR");
@@ -349,6 +436,49 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Equal(UpdatePackageOutcome.Verified, result.Outcome);
     }
 
+    [Fact]
+    public void ProductionUpdaterExtractsReleaseCandidateWithoutChangingPayload()
+    {
+        var zip = Environment.GetEnvironmentVariable("S26_RELEASE_ZIP_PATH");
+        var payload = Environment.GetEnvironmentVariable("S26_RELEASE_PUBLISH_DIR");
+        if (string.IsNullOrWhiteSpace(zip) || string.IsNullOrWhiteSpace(payload)) return;
+        var staging = Path.Combine(Path.GetTempPath(), "S26Extract", Guid.NewGuid().ToString("N"));
+        try
+        {
+            using var stream = File.OpenRead(zip);
+            var method = typeof(UpdateInstallationPreparer).GetMethod("ExtractAuditedArchive", BindingFlags.NonPublic | BindingFlags.Static)!;
+            method.Invoke(null, [stream, staging, CancellationToken.None]);
+            var expected = Directory.EnumerateFiles(payload, "*", SearchOption.AllDirectories).Where(path => IncludePackageFile(Path.GetRelativePath(payload, path).Replace('\\', '/')))
+                .ToDictionary(path => Path.GetRelativePath(payload, path), path => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))), StringComparer.OrdinalIgnoreCase);
+            var actual = Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories)
+                .ToDictionary(path => Path.GetRelativePath(staging, path), path => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))), StringComparer.OrdinalIgnoreCase);
+            Assert.Equal(expected.OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase), actual.OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase));
+        }
+        finally { DeleteTree(staging); }
+    }
+
+    [Fact]
+    public void ProductionUpdaterReadsAndAuditsReleaseZip()
+    {
+        var zip = Environment.GetEnvironmentVariable("S26_RELEASE_ZIP_PATH");
+        var manifestPath = Environment.GetEnvironmentVariable("S26_RELEASE_MANIFEST_PATH");
+        if (string.IsNullOrWhiteSpace(zip) || string.IsNullOrWhiteSpace(manifestPath)) return;
+        var type = typeof(SignedUpdatePackageDownloader); var flags = BindingFlags.NonPublic | BindingFlags.Static;
+        var directoryArguments = new object?[] { zip, null };
+        Assert.True((bool)type.GetMethod("TryReadZipDirectory", flags)!.Invoke(null, directoryArguments)!);
+        using (var archive = ZipFile.OpenRead(zip)) Assert.Equal(archive.Entries.Count, ((System.Collections.IDictionary)directoryArguments[1]!).Count);
+
+        var manifestArguments = new object?[] { File.ReadAllBytes(manifestPath), null };
+        Assert.True((bool)type.GetMethod("TryParseManifest", flags)!.Invoke(null, manifestArguments)!);
+        var scratch = Path.Combine(Path.GetTempPath(), "S26Audit", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(scratch);
+        try
+        {
+            var outcome = (UpdatePackageOutcome)type.GetMethod("AuditArchive", flags)!.Invoke(null, [zip, scratch, manifestArguments[1], CancellationToken.None])!;
+            Assert.Equal(UpdatePackageOutcome.Verified, outcome);
+        }
+        finally { DeleteTree(scratch); }
+    }
+
     private static string RepositoryRoot()
     {
         for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
@@ -364,6 +494,9 @@ public sealed class ReleaseCandidateBuilderTests
 
     private static JsonDocument RunSetupModeProbe(object input) =>
         RunBuilderProbe(input, "S21T01", "S21_RELEASE_SETUP_MODE_INPUT", "S21_RELEASE_SETUP_MODE_PROBE");
+
+    private static JsonDocument RunZipProbe((string Root, string Payload, string Zip) fixture, bool normalize, long? maxBytes = null, string? advanceComp = null) =>
+        RunBuilderProbe(new { zipPath = fixture.Zip, payloadRoot = fixture.Payload, normalize, maxBytes, advanceComp }, "S26ZIP", "S26_RELEASE_ZIP_INPUT", "S26_RELEASE_ZIP_PROBE");
 
     private static JsonDocument RunBuilderProbe(object input, string temporaryName, string inputVariable, string outputVariable)
     {
@@ -439,6 +572,41 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Equal("SETUP_COMPATIBILITY", result.RootElement.GetProperty("failedGate").GetString());
         Assert.Contains(reasonFragment, result.RootElement.GetProperty("failureReason").GetString()!, StringComparison.OrdinalIgnoreCase);
     }
+
+    private static (string Root, string Payload, string Zip) CreateZipFixture()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "S26ZIPFixture", Guid.NewGuid().ToString("N"));
+        var payload = Path.Combine(root, "payload"); var zip = Path.Combine(root, "candidate.zip");
+        Directory.CreateDirectory(Path.Combine(payload, "Updater"));
+        File.WriteAllText(Path.Combine(payload, "StoreExpiryInspector.exe"), new string('a', 4096));
+        File.WriteAllText(Path.Combine(payload, "StoreExpiryInspector.dll"), new string('b', 2048));
+        File.WriteAllText(Path.Combine(payload, "Updater", "StoreExpiryInspector.Updater.exe"), new string('c', 4096));
+        using var archive = ZipFile.Open(zip, ZipArchiveMode.Create);
+        foreach (var path in Directory.EnumerateFiles(payload, "*", SearchOption.AllDirectories).OrderBy(path => path, StringComparer.Ordinal))
+        {
+            var relative = Path.GetRelativePath(payload, path).Replace('\\', '/');
+            ZipFileExtensions.CreateEntryFromFile(archive, path, relative, CompressionLevel.SmallestSize);
+        }
+        return (root, payload, zip);
+    }
+
+    private static int FindSignature(byte[] bytes, uint signature)
+    {
+        for (var index = 0; index <= bytes.Length - 4; index++) if (BitConverter.ToUInt32(bytes, index) == signature) return index;
+        throw new InvalidDataException("ZIP signature not found");
+    }
+
+    private static void AssertZipFailed(JsonDocument result, string reasonFragment)
+    {
+        Assert.Equal("FAILED", result.RootElement.GetProperty("status").GetString());
+        Assert.Equal("ZIP", result.RootElement.GetProperty("failedGate").GetString());
+        Assert.Contains(reasonFragment, result.RootElement.GetProperty("failureReason").GetString()!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IncludePackageFile(string relative) =>
+        !relative.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) &&
+        (!relative.StartsWith("runtimes/", StringComparison.OrdinalIgnoreCase) || relative.StartsWith("runtimes/win-x64/", StringComparison.OrdinalIgnoreCase)) &&
+        (relative is "StoreExpiryInspector.exe" or "createdump.exe" or "StoreExpiryInspector.dll" or "Updater/StoreExpiryInspector.Updater.exe" or "Updater/createdump.exe" || relative.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || relative.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || relative.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase));
 
     private static string CreateProbeRepository()
     {

@@ -3,6 +3,7 @@ param(
   [Parameter(Mandatory)][string]$CandidateSha,
   [ValidateSet('NOT_FOR_PUBLICATION','RELEASE_CANDIDATE')][string]$Mode = 'NOT_FOR_PUBLICATION',
   [string]$Compiler,
+  [string]$AdvanceComp,
   [string]$SigningKeyFile,
   [string]$OutputRoot
 )
@@ -10,9 +11,11 @@ param(
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+Add-Type -Path (Join-Path $PSScriptRoot 'ReleaseZipArchive.cs')
 $builderRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $CandidateSha = $CandidateSha.ToLowerInvariant()
 $Compiler = if ($Compiler) { $Compiler } elseif ($env:STORE_EXPIRY_ISCC) { $env:STORE_EXPIRY_ISCC } else { Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe' }
+$AdvanceComp = if ($AdvanceComp) { $AdvanceComp } elseif ($env:STORE_EXPIRY_ADVZIP) { $env:STORE_EXPIRY_ADVZIP } else { Join-Path $env:LOCALAPPDATA 'Programs\AdvanceCOMP\advzip.exe' }
 $SigningKeyFile = if ($SigningKeyFile) { $SigningKeyFile } else { $env:STORE_EXPIRY_SIGNING_KEY_FILE }
 $OutputRoot = if ($OutputRoot) { $OutputRoot } elseif ($env:STORE_EXPIRY_RELEASE_OUTPUT_ROOT) { $env:STORE_EXPIRY_RELEASE_OUTPUT_ROOT } else { Join-Path $env:LOCALAPPDATA 'StoreExpiryInspector.ReleaseBuilder\runs' }
 $runId = [guid]::NewGuid().ToString()
@@ -39,6 +42,14 @@ function Native-Checked([string]$Name, [string]$File, [string[]]$Arguments, [str
   Push-Location $WorkingDirectory
   try { & $File @Arguments; if ($LASTEXITCODE -ne 0) { throw "$Name failed with exit $LASTEXITCODE" } }
   finally { Pop-Location }
+}
+function Native-AllText([string]$Name, [string]$File, [string[]]$Arguments, [string]$WorkingDirectory) {
+  Push-Location $WorkingDirectory
+  try {
+    $lines = @(& $File @Arguments 2>&1); $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) { throw "$Name failed with exit $exitCode`n$($lines -join [Environment]::NewLine)" }
+    return ($lines -join [Environment]::NewLine)
+  } finally { Pop-Location }
 }
 function Native-CapturedText([string]$Name, [string]$File, [string[]]$Arguments, [string]$WorkingDirectory) {
   $start = [Diagnostics.ProcessStartInfo]::new($File)
@@ -185,6 +196,21 @@ function Include-PackageFile([string]$Relative) {
     $Relative.EndsWith('.dll', [StringComparison]::OrdinalIgnoreCase) -or
     $Relative.EndsWith('.deps.json', [StringComparison]::OrdinalIgnoreCase) -or
     $Relative.EndsWith('.runtimeconfig.json', [StringComparison]::OrdinalIgnoreCase)
+}
+function Package-Paths([string]$Root) {
+  return @(Get-ChildItem -LiteralPath $Root -File -Recurse | ForEach-Object { [IO.Path]::GetRelativePath($Root, $_.FullName).Replace('\', '/') } | Where-Object { Include-PackageFile $_ } | Sort-Object -CaseSensitive)
+}
+function Require-AdvanceComp([string]$Path, [string]$WorkingDirectory) {
+  Require (Test-Path -LiteralPath $Path -PathType Leaf) 'AdvanceCOMP advzip is unavailable; configure STORE_EXPIRY_ADVZIP or -AdvanceComp'
+  $version = (Native-AllText 'AdvanceCOMP version' $Path @('--version') $WorkingDirectory).Trim()
+  Require ($version -match '^advancecomp v2\.6(?:\s|$)') "AdvanceCOMP v2.6 is required; received: $version"
+  return $version.Split([Environment]::NewLine, [StringSplitOptions]::RemoveEmptyEntries)[0].Trim()
+}
+function Invoke-AdvanceComp([string]$Path, [string]$ZipPath, [string]$WorkingDirectory) {
+  $version = Require-AdvanceComp $Path $WorkingDirectory
+  $output = Native-AllText 'AdvanceCOMP advzip -4' $Path @('-z','-4','-k',$ZipPath) $WorkingDirectory
+  Require (-not [string]::IsNullOrWhiteSpace($output) -and $output -match '(?m)^\s*\d+\s+\d+\s+\d+%') 'AdvanceCOMP returned unexpected output'
+  return [ordered]@{ version=$version; output=$output }
 }
 function Write-Receipt {
   if (-not $receiptPath) { return }
@@ -336,14 +362,37 @@ if ($env:S21_RELEASE_SETUP_MODE_PROBE -and $env:S21_RELEASE_SETUP_MODE_INPUT) {
   [IO.File]::WriteAllText($env:S21_RELEASE_SETUP_MODE_PROBE, ($probeResult | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
   return
 }
+if ($env:S26_RELEASE_ZIP_PROBE -and $env:S26_RELEASE_ZIP_INPUT) {
+  try {
+    $probeInput = Get-Content -Raw $env:S26_RELEASE_ZIP_INPUT | ConvertFrom-Json
+    $probePaths = [string[]](Package-Paths ([string]$probeInput.payloadRoot))
+    if ($probeInput.create) {
+      $probeArchive = [IO.Compression.ZipFile]::Open([string]$probeInput.zipPath, [IO.Compression.ZipArchiveMode]::Create)
+      try { $probePaths | ForEach-Object { [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($probeArchive, (Join-Path ([string]$probeInput.payloadRoot) $_), $_, [IO.Compression.CompressionLevel]::SmallestSize) | Out-Null } }
+      finally { $probeArchive.Dispose() }
+    }
+    if ($probeInput.advanceComp) {
+      $tool = Invoke-AdvanceComp ([string]$probeInput.advanceComp) ([string]$probeInput.zipPath) ([string]$probeInput.payloadRoot)
+      $toolVersion = $tool.version
+    } else { $toolVersion = $null }
+    $result = [StoreExpiryInspector.ReleaseTools.ReleaseZipArchive]::VerifyAndNormalize([string]$probeInput.zipPath, [string]$probeInput.payloadRoot, $probePaths, [bool]$probeInput.normalize)
+    if ($probeInput.maxBytes) { Require ($result.ZipBytes -lt [long]$probeInput.maxBytes) "ZIP must be smaller than $($probeInput.maxBytes) bytes; actual=$($result.ZipBytes)" }
+    $probeResult = [ordered]@{ status='PASS'; failedGate=$null; toolVersion=$toolVersion; result=$result; failureReason=$null }
+  } catch {
+    $probeResult = [ordered]@{ status='FAILED'; failedGate='ZIP'; toolVersion=$null; result=$null; failureReason=$_.Exception.Message }
+  }
+  [IO.File]::WriteAllText($env:S26_RELEASE_ZIP_PROBE, ($probeResult | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+  return
+}
 
 $receipt = [ordered]@{
-  schemaVersion = 3; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
+  schemaVersion = 4; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
   builderSha = $null; sourceClean = $null; builderSourceClean = $null; rid = 'win-x64'; selfContained = $true
   setupMode = $null; minimumDirectSetupVersion = $null; embeddedUpdateAssets = $null
   appVersion = $null; updaterVersion = $null; currentSchemaIdentity = $null; migrationCount = $null; latestMigration = $null
-  pdbCount = $null; nonWindowsRuntimeCount = $null; zipEntryCount = $null; archiveAudit = $null
-  productionRevalidateForInstall = $null; signingAlgorithm = $null; signingFingerprint = $null; signatureVerified = $null
+  pdbCount = $null; nonWindowsRuntimeCount = $null; zipEntryCount = $null; zipBytes = $null; zipSha256 = $null
+  zipCompression = $null; advanceCompVersion = $null; zipHeaderNormalization = $null; archiveAudit = $null
+  productionRevalidateForInstall = $null; productionExtractAuditedArchive = $null; signingAlgorithm = $null; signingFingerprint = $null; signatureVerified = $null
   authenticodeStatus = $null; isccExitCode = $null; assets = @(); changeImpact = $null
   startedAt = $startedAt; completedAt = $null; publishAuthorized = $false; failedGate = $null; failureReason = $null
 }
@@ -449,17 +498,32 @@ try {
 
   $gate = 'ZIP'
   $zip = Join-Path $assets "StoreExpiryInspector-$Version-win-x64.zip"
+  $packagePaths = [string[]](Package-Paths $publish)
   $archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
   try {
-    Get-ChildItem -LiteralPath $publish -File -Recurse | Sort-Object FullName | ForEach-Object {
-      $relative = [IO.Path]::GetRelativePath($publish, $_.FullName).Replace('\', '/')
-      if (Include-PackageFile $relative) { [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $_.FullName, $relative, [IO.Compression.CompressionLevel]::Optimal) | Out-Null }
+    $packagePaths | ForEach-Object {
+      [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $publish $_), $_, [IO.Compression.CompressionLevel]::SmallestSize) | Out-Null
     }
   } finally { $archive.Dispose() }
+  $null = [StoreExpiryInspector.ReleaseTools.ReleaseZipArchive]::VerifyAndNormalize($zip, $publish, $packagePaths, $false)
+
+  $gate = 'ADVANCECOMP'
+  $advanceCompResult = Invoke-AdvanceComp $AdvanceComp $zip $run
+  $receipt.advanceCompVersion = $advanceCompResult.version
+  [IO.File]::WriteAllText((Join-Path $logs 'advzip.stdout.log'), $advanceCompResult.output, [Text.UTF8Encoding]::new($false))
+  Require (Test-Path -LiteralPath $zip -PathType Leaf) 'AdvanceCOMP did not leave the ZIP output in place'
+
+  $gate = 'ZIP_HEADER_NORMALIZATION'
+  $zipResult = [StoreExpiryInspector.ReleaseTools.ReleaseZipArchive]::VerifyAndNormalize($zip, $publish, $packagePaths, $true)
+  $receipt.zipEntryCount = $zipResult.EntryCount; $receipt.zipBytes = $zipResult.ZipBytes; $receipt.zipSha256 = $zipResult.ZipSha256
+  $receipt.zipCompression = 'Deflate/.NET SmallestSize + AdvanceCOMP v2.6 advzip -4'
+  $receipt.zipHeaderNormalization = "PASS; clearedLocalAndCentralHeaders=$($zipResult.ChangedHeaderCount); compressedDataSha256=$($zipResult.CompressedDataSha256)"
+  Require ($receipt.zipBytes -lt 100000000) "ZIP must be smaller than 100000000 bytes; actual=$($receipt.zipBytes)"
 
   $gate = 'ARCHIVE_AUDIT'
   $audit = Audit-Archive $zip
-  $receipt.zipEntryCount = $audit.entryCount; $receipt.pdbCount = $audit.pdbCount; $receipt.nonWindowsRuntimeCount = $audit.nonWindowsRuntimeCount
+  Require ($audit.entryCount -eq $receipt.zipEntryCount) 'archive entry count changed after ZIP verification'
+  $receipt.pdbCount = $audit.pdbCount; $receipt.nonWindowsRuntimeCount = $audit.nonWindowsRuntimeCount
   Require ($receipt.pdbCount -eq 0 -and $receipt.nonWindowsRuntimeCount -eq 0) 'archive contains forbidden publish output'
   $receipt.archiveAudit = 'PASS'
 
@@ -501,6 +565,10 @@ try {
   Require (Test-Path -LiteralPath $revalidation -PathType Leaf) 'production revalidation did not produce output'
   $receipt.productionRevalidateForInstall = (Get-Content -Raw $revalidation | ConvertFrom-Json).outcome
   Require ($receipt.productionRevalidateForInstall -eq 'Verified') 'production RevalidateForInstall did not return Verified'
+  $env:S26_RELEASE_ZIP_PATH = $zip; $env:S26_RELEASE_PUBLISH_DIR = $publish
+  try { Native-Checked 'production ExtractAuditedArchive' 'dotnet' @('test',(Join-Path $builderRoot 'tests\StoreExpiryInspector.Tests\StoreExpiryInspector.Tests.csproj'),'-c','Release','-p:NuGetAudit=false','--filter','FullyQualifiedName~ReleaseCandidateBuilderTests.ProductionUpdaterExtractsReleaseCandidateWithoutChangingPayload','--logger','console;verbosity=minimal') $builderRoot }
+  finally { 'S26_RELEASE_ZIP_PATH','S26_RELEASE_PUBLISH_DIR' | ForEach-Object { Remove-Item "Env:$_" -ErrorAction SilentlyContinue } }
+  $receipt.productionExtractAuditedArchive = 'PASS'
 
   $gate = 'ISCC'
   Require (Test-Path -LiteralPath $Compiler -PathType Leaf) 'ISCC is unavailable; configure STORE_EXPIRY_ISCC'
