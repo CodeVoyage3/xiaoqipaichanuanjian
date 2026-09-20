@@ -212,6 +212,13 @@ function Invoke-AdvanceComp([string]$Path, [string]$ZipPath, [string]$WorkingDir
   Require (-not [string]::IsNullOrWhiteSpace($output) -and $output -match '(?m)^\s*\d+\s+\d+\s+\d+%') 'AdvanceCOMP returned unexpected output'
   return [ordered]@{ version=$version; output=$output }
 }
+function Resolve-ZipSizeGate([long]$Bytes) {
+  $limit = 100000000L; $warningThreshold = 97000000L
+  Require ($Bytes -lt $limit) "ZIP must be smaller than $limit bytes; actual=$Bytes"
+  $warning = $Bytes -ge $warningThreshold
+  if ($warning) { Write-Warning "GITEE ZIP SIZE WARNING: $Bytes bytes; only $($limit - $Bytes) bytes remain before the $limit-byte release blocker" }
+  return [ordered]@{ remainingBytes=$limit - $Bytes; warning=$warning }
+}
 function Write-Receipt {
   if (-not $receiptPath) { return }
   $required = @((Get-Content -Raw (Join-Path $PSScriptRoot 'release-receipt.schema.json') | ConvertFrom-Json).required)
@@ -376,22 +383,23 @@ if ($env:S26_RELEASE_ZIP_PROBE -and $env:S26_RELEASE_ZIP_INPUT) {
       $toolVersion = $tool.version
     } else { $toolVersion = $null }
     $result = [StoreExpiryInspector.ReleaseTools.ReleaseZipArchive]::VerifyAndNormalize([string]$probeInput.zipPath, [string]$probeInput.payloadRoot, $probePaths, [bool]$probeInput.normalize)
-    if ($probeInput.maxBytes) { Require ($result.ZipBytes -lt [long]$probeInput.maxBytes) "ZIP must be smaller than $($probeInput.maxBytes) bytes; actual=$($result.ZipBytes)" }
-    $probeResult = [ordered]@{ status='PASS'; failedGate=$null; toolVersion=$toolVersion; result=$result; failureReason=$null }
+    $sizeGate = Resolve-ZipSizeGate $(if ($null -ne $probeInput.gateBytes) { [long]$probeInput.gateBytes } else { $result.ZipBytes })
+    $probeResult = [ordered]@{ status='PASS'; failedGate=$null; toolVersion=$toolVersion; result=$result; sizeGate=$sizeGate; failureReason=$null }
   } catch {
-    $probeResult = [ordered]@{ status='FAILED'; failedGate='ZIP'; toolVersion=$null; result=$null; failureReason=$_.Exception.Message }
+    $probeResult = [ordered]@{ status='FAILED'; failedGate='ZIP'; toolVersion=$null; result=$null; sizeGate=$null; failureReason=$_.Exception.Message }
   }
   [IO.File]::WriteAllText($env:S26_RELEASE_ZIP_PROBE, ($probeResult | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
   return
 }
 
 $receipt = [ordered]@{
-  schemaVersion = 4; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
+  schemaVersion = 5; runId = $runId; status = 'RUNNING'; mode = $Mode; version = $Version; candidateSha = $CandidateSha
   builderSha = $null; sourceClean = $null; builderSourceClean = $null; rid = 'win-x64'; selfContained = $true
   setupMode = $null; minimumDirectSetupVersion = $null; embeddedUpdateAssets = $null
   appVersion = $null; updaterVersion = $null; currentSchemaIdentity = $null; migrationCount = $null; latestMigration = $null
   pdbCount = $null; nonWindowsRuntimeCount = $null; zipEntryCount = $null; zipBytes = $null; zipSha256 = $null
-  zipCompression = $null; advanceCompVersion = $null; zipHeaderNormalization = $null; archiveAudit = $null
+  zipCompression = $null; advanceCompVersion = $null; zipHeaderNormalization = $null
+  giteeSizeRemainingBytes = $null; giteeSizeWarning = $null; archiveAudit = $null
   productionRevalidateForInstall = $null; productionExtractAuditedArchive = $null; signingAlgorithm = $null; signingFingerprint = $null; signatureVerified = $null
   authenticodeStatus = $null; isccExitCode = $null; assets = @(); changeImpact = $null
   startedAt = $startedAt; completedAt = $null; publishAuthorized = $false; failedGate = $null; failureReason = $null
@@ -518,7 +526,8 @@ try {
   $receipt.zipEntryCount = $zipResult.EntryCount; $receipt.zipBytes = $zipResult.ZipBytes; $receipt.zipSha256 = $zipResult.ZipSha256
   $receipt.zipCompression = 'Deflate/.NET SmallestSize + AdvanceCOMP v2.6 advzip -4'
   $receipt.zipHeaderNormalization = "PASS; clearedLocalAndCentralHeaders=$($zipResult.ChangedHeaderCount); compressedDataSha256=$($zipResult.CompressedDataSha256)"
-  Require ($receipt.zipBytes -lt 100000000) "ZIP must be smaller than 100000000 bytes; actual=$($receipt.zipBytes)"
+  $zipSizeGate = Resolve-ZipSizeGate $receipt.zipBytes
+  $receipt.giteeSizeRemainingBytes = $zipSizeGate.remainingBytes; $receipt.giteeSizeWarning = $zipSizeGate.warning
 
   $gate = 'ARCHIVE_AUDIT'
   $audit = Audit-Archive $zip

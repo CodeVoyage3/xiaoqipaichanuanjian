@@ -120,8 +120,10 @@ public sealed class ReleaseCandidateBuilderTests
         Assert.Contains("zipSha256", required);
         Assert.Contains("advanceCompVersion", required);
         Assert.Contains("zipHeaderNormalization", required);
+        Assert.Contains("giteeSizeRemainingBytes", required);
+        Assert.Contains("giteeSizeWarning", required);
         Assert.Contains("productionExtractAuditedArchive", required);
-        Assert.Equal(4, schema.RootElement.GetProperty("properties").GetProperty("schemaVersion").GetProperty("const").GetInt32());
+        Assert.Equal(5, schema.RootElement.GetProperty("properties").GetProperty("schemaVersion").GetProperty("const").GetInt32());
         var changeImpactRequired = schema.RootElement.GetProperty("properties").GetProperty("changeImpact")
             .GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
         Assert.Contains("baseProductSource", changeImpactRequired);
@@ -386,8 +388,28 @@ public sealed class ReleaseCandidateBuilderTests
         finally { DeleteTree(method.Root); }
 
         var size = CreateZipFixture();
-        try { AssertZipFailed(RunZipProbe(size, normalize: true, maxBytes: 1), "smaller"); }
+        try { AssertZipFailed(RunZipProbe(size, normalize: true, gateBytes: 100000000), "smaller"); }
         finally { DeleteTree(size.Root); }
+    }
+
+    [Fact]
+    public void ReleaseZipSizeGateWarnsAt97000000AndBlocksAt100000000Bytes()
+    {
+        var fixture = CreateZipFixture();
+        try
+        {
+            using var below = RunZipProbe(fixture, normalize: true, gateBytes: 96999999);
+            Assert.False(below.RootElement.GetProperty("sizeGate").GetProperty("warning").GetBoolean());
+            Assert.Equal(3000001, below.RootElement.GetProperty("sizeGate").GetProperty("remainingBytes").GetInt64());
+            using var warning = RunZipProbe(fixture, normalize: true, gateBytes: 97000000);
+            Assert.True(warning.RootElement.GetProperty("sizeGate").GetProperty("warning").GetBoolean());
+            Assert.Equal(3000000, warning.RootElement.GetProperty("sizeGate").GetProperty("remainingBytes").GetInt64());
+            using var lastByte = RunZipProbe(fixture, normalize: true, gateBytes: 99999999);
+            Assert.True(lastByte.RootElement.GetProperty("sizeGate").GetProperty("warning").GetBoolean());
+            Assert.Equal(1, lastByte.RootElement.GetProperty("sizeGate").GetProperty("remainingBytes").GetInt64());
+            AssertZipFailed(RunZipProbe(fixture, normalize: true, gateBytes: 100000000), "smaller");
+        }
+        finally { DeleteTree(fixture.Root); }
     }
 
     [Fact]
@@ -495,8 +517,8 @@ public sealed class ReleaseCandidateBuilderTests
     private static JsonDocument RunSetupModeProbe(object input) =>
         RunBuilderProbe(input, "S21T01", "S21_RELEASE_SETUP_MODE_INPUT", "S21_RELEASE_SETUP_MODE_PROBE");
 
-    private static JsonDocument RunZipProbe((string Root, string Payload, string Zip) fixture, bool normalize, long? maxBytes = null, string? advanceComp = null) =>
-        RunBuilderProbe(new { zipPath = fixture.Zip, payloadRoot = fixture.Payload, normalize, maxBytes, advanceComp }, "S26ZIP", "S26_RELEASE_ZIP_INPUT", "S26_RELEASE_ZIP_PROBE");
+    private static JsonDocument RunZipProbe((string Root, string Payload, string Zip) fixture, bool normalize, long? gateBytes = null, string? advanceComp = null) =>
+        RunBuilderProbe(new { zipPath = fixture.Zip, payloadRoot = fixture.Payload, normalize, gateBytes, advanceComp }, "S26ZIP", "S26_RELEASE_ZIP_INPUT", "S26_RELEASE_ZIP_PROBE");
 
     private static JsonDocument RunBuilderProbe(object input, string temporaryName, string inputVariable, string outputVariable)
     {
